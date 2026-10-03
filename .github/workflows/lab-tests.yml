@@ -11,7 +11,7 @@ on:
         required: true
         default: repo-deep-dive
       ref:
-        description: Branch, tag, or SHA (default: repo default)
+        description: 'Branch, tag, or SHA (default: the repo default branch)'
         required: false
         default: ''
       command:
