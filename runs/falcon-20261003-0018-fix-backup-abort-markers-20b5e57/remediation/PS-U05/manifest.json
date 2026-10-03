@@ -1,0 +1,76 @@
+{
+  "patch_set": "PS-U05",
+  "title": "Unassigned EXEC findings (catch-all) - canonical release gate / lab-vs-production reconciliation",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u05-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "4529dbdb966a639a79d46d85c3d32de9ae865925",
+  "commit_subject": "docs: close EXEC-P1-001 [EXEC-P1-001]",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/24",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["EXEC-P1-001"],
+  "finding_status": {
+    "EXEC-P1-001": "partially-fixed"
+  },
+  "files": [
+    "docs/RELEASE_GATE.md",
+    "README.md"
+  ],
+  "in_scope_files": [
+    "docs/RELEASE_GATE.md",
+    "README.md"
+  ],
+  "test_files": [],
+  "deferred": [
+    {
+      "finding": "EXEC-P1-001",
+      "part": "reviewer-produced C1 disposition and the verdict rebind / release authorization",
+      "reason": "docs/phase9/OWNER_ACTIONS.md A1/A3 and release-integrity condition C0 (FINAL-P0-001 / HYG-P0-001 / HYG-P0-002) require a named reviewer's artifact and the owner's adoption. A repo-local docs PR cannot produce those, so the documentation half is closed here and the reviewer/owner half is recorded as open."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-U05/diff.patch",
+    "sha256": "AF14BA33AA88929A792999E29BBC632BB5B6CAE838F866D9C5D63B1D5CF534EA",
+    "bytes": 6318,
+    "files_changed": 2,
+    "insertions": 82,
+    "deletions": 0
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 30/30 shell suites incl. readme_ledger_drift_test.sh (resolves the new README link); shellcheck 172 scripts; secret scan; yaml/json parse"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner 172.23.128.51 (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~6,219 bytes scanned)"
+    },
+    {
+      "command": "test -f docs/RELEASE_GATE.md && grep -q 'A lab pass is not a production pass' docs/RELEASE_GATE.md && grep -q 'NO-GO for a production-readiness claim' docs/RELEASE_GATE.md && grep -q 'EXEC-P1-001' docs/RELEASE_GATE.md && grep -q 'docs/RELEASE_GATE.md' README.md",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: DOCS_CHECK_OK (new page exists; carries the lab/production rule, the conditional verdict, and the EXEC-P1-001 reference; README links it)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "live production-readiness gate / reviewer approval",
+      "reason": "requires a named reviewer's artifact and the owner's adoption (docs/phase9/OWNER_ACTIONS.md A1/A3); out of scope for a repo-local docs change and not fabricated."
+    }
+  ],
+  "env_note": "lab-sync.ps1 extracts the Windows working tree; the extracted clone has core.fileMode=false, so the 592 tracked mode-100755 files were chmod +x'd before the gate (without that the offline suites that execute tracked scripts exit 126). Four docs/phase8/reviews/*.md files stay 'modified' from pre-existing mixed-EOL blobs (HYG-P2-002), unrelated to this patch. The lab job API runs with HOME unset, so the gate is invoked with HOME=/root.",
+  "verify_log": "remediation/PS-U05/verify.log",
+  "pr_body": "remediation/PS-U05/pr_body.md",
+  "scopeCheck": "pass - docs only: 1 new doc + 1 edited README; no code, workflow, dependency, schema, ledger, lockfile or machine-artifact changes",
+  "generated_at": "2026-10-03T15:05:00Z"
+}

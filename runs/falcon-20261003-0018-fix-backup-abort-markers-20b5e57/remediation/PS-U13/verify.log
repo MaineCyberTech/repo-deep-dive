@@ -1,0 +1,113 @@
+# PS-U13 verification log (falcon)
+
+run:        20261003-0018-fix-backup-abort-markers-20b5e57
+repo:       MaineCyberTech/falcon
+base:       origin/main 430da82274af4c0821542627fdb9e6ab74afa826
+branch:     remediation/ps-u13-20261003-0018-fix-backup-abort-markers-20b5e57
+commit:     ed2f739a05030a860b06f9f4e58b58d054fd28ca
+runner:     lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)
+
+preflight: chmod +x 592 tracked mode-100755 files
+
+$ env HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (602 scripts)
+PASS  shellcheck (174 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.8s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/backup_e2e_test.sh (1.5s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/ledger_provenance_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (1.9s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.6s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.4s)
+PASS  shell tests (32 suite(s))
+
+validation_failures=0
+EXIT=0
+----------
+
+$ python3 ci/validate.py --fast
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  shell syntax (602 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+
+validation_failures=0
+EXIT=0
+----------
+
+$ bash automation/validation/tests/backup_e2e_test.sh
+== case 1: full offsite run writes the freshness stamp and clears the markers ==
+== case 2: SIGTERM during the run leaves the abort marker and does not stamp ==
+== case 3: a Spaces probe failure writes the dead-letter and does not stamp ==
+== case 4: recovery run clears the dead-letter and refreshes the stamp ==
+backup_e2e_test_checks=22 backup_e2e_test_failures=0
+EXIT=0
+----------
+
+$ bash automation/validation/tests/ledger_provenance_test.sh
+PASS ledger_provenance (rows=1127; absolute_path_rows=464; allowed_legacy_hashes=457)
+EXIT=0
+----------
+
+$ bash automation/validation/tests/ledger_provenance_test.sh
+FAIL ledger_provenance
+   T-TESTP1-999: absolute host path not in the legacy allowlist (sha256=00000000000000000000000000000000000000000000000000000000000000ff): /tmp/opencode/new-absolute-proc.sh
+   1 new absolute-path row(s); capture with a repo-relative command, or explicitly mark the row by adding the raw-artifact hash to automation/validation/ledger_provenance_legacy.sha256
+EXIT=1
+----------
+
+$ bash automation/validation/tests/ledger_provenance_test.sh
+PASS ledger_provenance (rows=1127; absolute_path_rows=464; allowed_legacy_hashes=457)
+EXIT=0
+----------
+
+$ git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m3:46PM[0m [32mINF[0m [1mscanned ~52470 bytes (52.47 KB) in 262ms[0m
+[90m3:46PM[0m [32mINF[0m [1mno leaks found[0m
+EXIT=0
+----------
+
+summary: full=0 fast=0 e2e=0 provenance=0 negative=1 restore=0 gitleaks=0

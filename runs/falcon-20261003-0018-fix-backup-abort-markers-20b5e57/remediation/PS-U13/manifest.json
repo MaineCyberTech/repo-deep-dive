@@ -1,0 +1,126 @@
+{
+  "patch_set": "PS-U13",
+  "title": "Unassigned TEST findings (catch-all) - ledger provenance guard, --fast smoke subset, offsite backup e2e",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u13-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "ed2f739a05030a860b06f9f4e58b58d054fd28ca",
+  "commit_subject": "test: close unassigned testing findings [PS-U13]",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/28",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["TEST-P1-001", "TEST-P1-002", "TEST-P2-001"],
+  "finding_status": {
+    "TEST-P1-001": "partially-fixed",
+    "TEST-P1-002": "partially-fixed",
+    "TEST-P2-001": "partially-fixed"
+  },
+  "files": [
+    "ci/validate.py",
+    "docs/phase9/TEST_PROCEDURES.md",
+    "automation/validation/tests/backup_e2e_test.sh",
+    "automation/validation/tests/ledger_provenance_test.sh",
+    "automation/validation/ledger_provenance_legacy.sha256",
+    "automation/validation/tests/remediation_guards_test.sh"
+  ],
+  "in_scope_files": [
+    "ci/validate.py",
+    "docs/phase9/TEST_PROCEDURES.md"
+  ],
+  "test_files": [
+    "automation/validation/tests/backup_e2e_test.sh",
+    "automation/validation/tests/ledger_provenance_test.sh",
+    "automation/validation/ledger_provenance_legacy.sha256",
+    "automation/validation/tests/remediation_guards_test.sh"
+  ],
+  "companion_files": [],
+  "base_state": {
+    "TEST-P1-001": "partially addressed at base: docs/phase9/TEST_PROCEDURES.md section 3 records the append-only policy (historical rows keep the path that ran; new work must live in-repo) but no checker enforced it. This PR adds the guard and an explicit legacy allowlist.",
+    "TEST-P1-002": "partially addressed at base: the gate already supports `--only shell-tests` and FALCON_SHELL_TESTS=0, and TEST_PROCEDURES.md documents them, but there was no named bounded smoke subset. This PR adds `--fast`.",
+    "TEST-P2-001": "partially addressed at base: offsite_backup_reuse_test.sh and offsite_upload_delta_test.sh cover the uploader and delta at unit level; there was no single offline suite asserting the freshness stamp and the abort/dead-letter marker lifecycle across the offsite run. This PR adds backup_e2e_test.sh."
+  },
+  "deferred": [
+    {
+      "finding": "TEST-P1-002",
+      "part": "container image for the gate",
+      "reason": "baking a gate image changes the build/release model and CI runner assumptions; infrastructure/owner decision. The documented fast subset (--fast / --only) is implemented."
+    },
+    {
+      "finding": "TEST-P2-001",
+      "part": "drive bootstrap/85-backup-job.sh (snapshot creation + local freshness state) offline as part of the e2e",
+      "reason": "85 hardcodes /srv/falcon paths and calls repo scripts by absolute path; making it testable overlaps the open PATCH-1/PATCH-2 abort-contract changes to the same file. Sequencing/owner decision. The offsite leg (80 main) is covered end to end."
+    },
+    {
+      "finding": "TEST-P1-001",
+      "part": "add a repo-relative command/procedure column (or resolver) to ledgers/test_execution.csv",
+      "reason": "regenerating the ledger needs the off-repo evidence tree (unavailable in CI) and would rewrite historical rows; the guard + explicit SHA-256 allowlist closes the 'flag new absolute paths' validation without rewriting history. Ledger-format owner decision."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U13/diff.patch",
+    "sha256": "287c3ee9202a98ab3b25e445457f90c436bd04e34aa5231b95f0a9ba7499a88f",
+    "bytes": 106814,
+    "files_changed": 6,
+    "insertions": 840,
+    "deletions": 3
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 32/32 shell suites incl. backup_e2e_test.sh and ledger_provenance_test.sh; shell syntax 602 scripts; shellcheck 174 scripts; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "python3 ci/validate.py --fast",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: 5 checks (parsers, compose-pins, gate-ledger, credential-sourcing, shell-syntax), validation_failures=0; ~2s (time real 0m1.951s)"
+    },
+    {
+      "command": "bash automation/validation/tests/backup_e2e_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: backup_e2e_test_checks=22 backup_e2e_test_failures=0 (success advances the freshness stamp and clears markers; SIGTERM leaves the abort marker, writes the dead-letter and does not stamp; probe failure writes the dead-letter and does not stamp; recovery clears the dead-letter)"
+    },
+    {
+      "command": "bash automation/validation/tests/ledger_provenance_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: PASS ledger_provenance (rows=1127; absolute_path_rows=464; allowed_legacy_hashes=457)"
+    },
+    {
+      "command": "append a new absolute-path ledger row; bash automation/validation/tests/ledger_provenance_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected failure: FAIL ledger_provenance / T-TESTP1-999: absolute host path not in the legacy allowlist ... /tmp/opencode/new-absolute-proc.sh (negative control; ledger restored from backup after)"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~52 KB scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "85-backup-job.sh offline orchestration in the gate",
+      "reason": "85 hardcodes /srv/falcon paths and absolute helper-script calls; making it testable overlaps the open PATCH-1/PATCH-2 changes to the same file (sequencing/owner decision). Not fabricated."
+    },
+    {
+      "command": "gate container image build",
+      "reason": "infrastructure/owner decision; no container policy in the patch set."
+    }
+  ],
+  "env_note": "The lab job API runs commands with HOME unset; the gate is invoked with HOME=/root (recorded). The lab tar extraction sets core.fileMode=false, so the 592 tracked mode-100755 files were chmod +x'd before the gate (otherwise suites that execute tracked scripts fail). The negative-control ledger edit was made in the lab worktree and restored from a backup copy before the final guard run; the committed ledger is unchanged.",
+  "verify_log": "remediation/PS-U13/verify.log",
+  "pr_body": "remediation/PS-U13/pr_body.md",
+  "scopeCheck": "pass - 6 files: ci/validate.py (additive --fast flag), docs/phase9/TEST_PROCEDURES.md, and four automation/validation test/allowlist files; no runtime service, workflow, dependency, schema, ledger or lockfile change",
+  "generated_at": "2026-10-03T15:50:00Z"
+}

@@ -1,0 +1,123 @@
+diff --git a/automation/validation/tests/alert_rule_lint_test.sh b/automation/validation/tests/alert_rule_lint_test.sh
+new file mode 100644
+index 0000000..5a45391
+--- /dev/null
++++ b/automation/validation/tests/alert_rule_lint_test.sh
+@@ -0,0 +1,78 @@
++#!/usr/bin/env bash
++# Offline lint over every provisioned alert rule expression (audit OBS-P1-001/OBS-P1-002).
++#
++# `bootstrap/90-alerting.sh` is the source of truth for the alert-rule set (the committed
++# ALERT_CATALOGUE.yaml is generated from the live Grafana API and can only be regenerated
++# with live access). This guard parses every `write_rule` call statically and checks the
++# rule *set* rather than hand-maintained counts:
++#   - the rule count is derived from the source, not asserted by hand;
++#   - no duplicate rule UIDs (duplicate pages; OBS-P1-002);
++#   - no two rules share an identical expression (overlapping conditions; OBS-P1-002);
++#   - every expression is non-empty and has balanced (), [] and {} delimiters (a cheap
++#     "does it parse" sanity check for the comparison-style guard; OBS-P1-001).
++#
++# It is intentionally static and offline: no network, docker, root or /srv. It runs in the
++# ci/validate.py shell-test gate. Usage: alert_rule_lint_test.sh [path-to-alerting-script]
++set -u
++REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
++TARGET="${1:-$REPO_ROOT/bootstrap/90-alerting.sh}"
++
++python3 - "$TARGET" <<'PY'
++import re
++import sys
++from collections import Counter
++
++path = sys.argv[1]
++text = open(path, encoding="utf-8", errors="replace").read()
++
++cont = r"(?:\\\s*)?"
++pat = re.compile(
++    r'write_rule\s+"([^"]+)"\s*' + cont + r'"([^"]*)"\s*' + cont + r"'([^']*)'", re.S)
++rows = pat.findall(text)
++
++fails = []
++
++if len(rows) < 60:
++    fails.append(f"parsed only {len(rows)} write_rule calls (expected the provisioned set)")
++
++uids = [r[0] for r in rows]
++dups = sorted(u for u, n in Counter(uids).items() if n > 1)
++if dups:
++    fails.append("duplicate rule uid(s): " + ", ".join(dups))
++
++exprs = [r[2].strip() for r in rows]
++dup_exprs = sorted({e for e, n in Counter(exprs).items() if n > 1})
++if dup_exprs:
++    fails.append("rules sharing an identical expression: " + "; ".join(dup_exprs))
++
++def balanced(expr):
++    # Drop quoted label values/regexes so their contents cannot unbalance the count.
++    bare = re.sub(r'"[^"]*"', "", expr)
++    bare = re.sub(r"'[^']*'", "", bare)
++    pairs = {")": "(", "]": "[", "}": "{"}
++    stack = []
++    for ch in bare:
++        if ch in "([{":
++            stack.append(ch)
++        elif ch in ")]}":
++            if not stack or stack.pop() != pairs[ch]:
++                return False
++    return not stack
++
++for uid, _title, expr in rows:
++    e = expr.strip()
++    if not e:
++        fails.append(f"{uid}: empty expression")
++    elif not balanced(e):
++        fails.append(f"{uid}: unbalanced delimiters in expression: {e}")
++
++if fails:
++    print("FAIL alert_rule_lint")
++    for f in fails:
++        print("   " + f)
++    sys.exit(1)
++
++print(f"PASS alert_rule_lint (derived_rule_count={len(rows)}; unique_uids={len(set(uids))}; "
++      f"unique_expressions={len(set(exprs))})")
++sys.exit(0)
++PY
+diff --git a/automation/validation/tests/remediation_guards_test.sh b/automation/validation/tests/remediation_guards_test.sh
+index c462e59..7c7290f 100644
+--- a/automation/validation/tests/remediation_guards_test.sh
++++ b/automation/validation/tests/remediation_guards_test.sh
+@@ -43,6 +43,14 @@ check_contains .github/workflows/validate.yml 'curl -sL --fail'
+ # OBS-P1-001: alert-expression bool guard present.
+ [ -f "$REPO_ROOT/automation/validation/tests/alert_expression_bool_test.sh" ] || { echo "FAIL: alert-expression guard missing"; fail=1; }
+ 
++# OBS-P1-001/002: static alert-rule linter (de-duplication + derived rule count) present.
++[ -f "$REPO_ROOT/automation/validation/tests/alert_rule_lint_test.sh" ] || { echo "FAIL: alert-rule linter missing"; fail=1; }
++
++# OBS-P1-003: per-path relay delivery-failure alert present and the per-path metric is
++# still exported by the relay (a single degraded path must be visible without the canary).
++check_contains bootstrap/90-alerting.sh 'falcon-relay-path-failures'
++check_contains automation/alerting/ntfy_relay.py 'falcon_alert_relay_path_failures_total'
++
+ # INFRA-P2-001: container drift timer present and installed.
+ [ -f "$REPO_ROOT/config/systemd/falcon-container-drift.timer" ] || { echo "FAIL: container-drift timer missing"; fail=1; }
+ check_contains bootstrap/90-alerting.sh 'falcon-container-drift.timer'
+diff --git a/bootstrap/90-alerting.sh b/bootstrap/90-alerting.sh
+index af9c011..83c144f 100755
+--- a/bootstrap/90-alerting.sh
++++ b/bootstrap/90-alerting.sh
+@@ -528,6 +528,15 @@ write_rule "falcon-relay-publish-failures" \
+   "Alert relay publish failures" 'increase(falcon_alert_relay_publish_failures_total[15m]) > 0' "5m" "critical" \
+   "The alert relay failed to publish one or more notifications (check the independent ntfy path)."
+ 
++# OBS-P1-003 (per-path delivery): publish_failures_total only moves when EVERY delivery
++# path fails, so one degraded destination (lab or independent) stays invisible until the
++# weekly canary. The relay already exports per-path outcomes
++# (falcon_alert_relay_path_failures_total{path="lab|alt"}, automation/alerting/ntfy_relay.py);
++# alert on any path failing so partial-path loss is caught within one evaluation interval.
++write_rule "falcon-relay-path-failures" \
++  "Alert relay delivery path failing" 'increase(falcon_alert_relay_path_failures_total[15m]) > 0' "5m" "warning" \
++  "The alert relay failed to deliver to one delivery path (lab or independent) in the last 15 minutes while the other path kept working; a degraded destination may be silently dropping alerts."
++
+ # 2026-09-30 audit condition C4 residual: the weekly alert-path canary
+ # (automation/validation/alert_canary.sh -> falcon_alert_canary.prom) proves all three
+ # delivery paths and makes a silent path visible.

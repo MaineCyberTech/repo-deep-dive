@@ -1,0 +1,424 @@
+diff --git a/automation/validation/check_event_time_consistency.py b/automation/validation/check_event_time_consistency.py
+new file mode 100644
+index 0000000..424b856
+--- /dev/null
++++ b/automation/validation/check_event_time_consistency.py
+@@ -0,0 +1,198 @@
++#!/usr/bin/env python3
++"""Offline consistency check for the `event_time` field (audit DATA-P2-001).
++
++The `event_time` contract is owned by two files that are edited independently:
++
++  * `config/opensearch/falcon-eve-template.json` - the index template that pins the
++    field type; it is the deployed source of truth (`bootstrap/61-search-policies.sh`).
++  * `config/vector/{aggregator,edge}.yaml` - the remap transforms that emit
++    `event_time` (device wall clock re-interpreted in the device IANA timezone).
++
++`mapping_drift_check.py` compares the *live* indices against the template, but it
++needs docker, credentials and a running cluster, so nothing asserts at HEAD that the
++two owners still agree. A drift there fails silently: the template maps `event_time`
++as `date`, so a transform that emits a string re-maps the field on the next daily
++index and the `.keyword`/range consumers return empty (mapping-drift class, R-25).
++
++This check is static and offline:
++
++  1. The template must pin `event_time` as `date`.
++  2. Every Vector remap transform that assigns `.event_time` must derive the value
++     from a timestamp producer (`parse_timestamp(...)` / `now()`), directly or
++     through a local variable, so the emitted value is an OpenSearch `date`. A
++     transform that assigns a string/number literal is a failure (an explicit
++     `null` means the field is unset for that event).
++  3. At least one transform must emit `event_time` (otherwise the field is orphaned).
++
++Usage: check_event_time_consistency.py [--root DIR]
++Exit:  0 = template and Vector transforms agree
++       1 = drift / missing owner
++       2 = usage or parse error
++"""
++import argparse
++import os
++import re
++import sys
++
++import yaml
++
++DEFAULT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++TEMPLATE_REL = os.path.join("config", "opensearch", "falcon-eve-template.json")
++VECTOR_GLOB = os.path.join("config", "vector")
++
++# A field assignment to the emitted document; the local form omits the leading dot.
++FIELD_ASSIGN_RE = re.compile(r"^\s*\.event_time\s*=\s*(.+?)\s*$")
++# `name, err = parse_timestamp(...)` and `name = parse_timestamp(...)`.
++TUPLE_ASSIGN_RE = re.compile(
++    r"^\s*([A-Za-z_]\w*)\s*,\s*[A-Za-z_]\w*\s*(?<![=!<>])=(?!=)\s*(.+?)\s*$")
++LOCAL_ASSIGN_RE = re.compile(
++    r"^\s*([A-Za-z_]\w*)\s*(?<![=!<>])=(?!=)\s*(.+?)\s*$")
++TIMESTAMP_PRODUCER = re.compile(r"\b(?:parse_timestamp|from_unix_timestamp|now)\s*\(")
++IDENT_RE = re.compile(r"^[A-Za-z_]\w*$")
++NULL_LITERAL = "null"
++
++
++def template_event_time_type(root):
++    """The template's `event_time` type, or None when the field is not pinned."""
++    import json
++
++    path = os.path.join(root, TEMPLATE_REL)
++    with open(path, encoding="utf-8") as fh:
++        template = json.load(fh)
++    node = template.get("template", {}).get("mappings", {}).get("properties", {}).get("event_time")
++    if not isinstance(node, dict):
++        return None
++    return node.get("type")
++
++
++def _statements(source):
++    """VRL statements: split on newlines, braces and semicolons so inline blocks
++    (`if err == null { event_time = parsed }`) are parsed as separate statements."""
++    return [s for s in re.split(r"[\n{};]+", source) if s.strip()]
++
++
++def timestamp_vars(source):
++    """Local variables that resolve to a Vector timestamp (transitively)."""
++    tuples = []
++    simples = []
++    for stmt in _statements(source):
++        m = TUPLE_ASSIGN_RE.match(stmt)
++        if m:
++            tuples.append((m.group(1), m.group(2)))
++            continue
++        m = LOCAL_ASSIGN_RE.match(stmt)
++        if m:
++            simples.append((m.group(1), m.group(2)))
++
++    resolved = set()
++    for _ in range(len(tuples) + len(simples) + 1):
++        changed = False
++        for name, expr in tuples + simples:
++            if name in resolved:
++                continue
++            if TIMESTAMP_PRODUCER.search(expr):
++                resolved.add(name)
++                changed = True
++            elif IDENT_RE.match(expr.strip()) and expr.strip() in resolved:
++                resolved.add(name)
++                changed = True
++        if not changed:
++            break
++    return resolved
++
++
++def event_time_assignments(source):
++    """RHS expressions of every `.event_time = ...` field assignment."""
++    assignments = []
++    for stmt in _statements(source):
++        m = FIELD_ASSIGN_RE.match(stmt)
++        if m:
++            assignments.append(m.group(1))
++    return assignments
++
++
++def transform_issues(name, source):
++    """Failures for one remap transform's event_time handling (empty when clean)."""
++    assignments = event_time_assignments(source)
++    if not assignments:
++        return []  # this transform does not emit event_time
++
++    ts_vars = timestamp_vars(source)
++    issues = []
++    for expr in assignments:
++        expr = expr.strip()
++        if TIMESTAMP_PRODUCER.search(expr):
++            continue
++        if IDENT_RE.match(expr):
++            if expr in ts_vars:
++                continue
++            issues.append(f"transform {name!r}: .event_time = {expr} is not a timestamp variable")
++        elif expr == NULL_LITERAL:
++            continue  # explicitly unset; the field is simply absent for that event
++        else:
++            issues.append(f"transform {name!r}: .event_time = {expr} is not a timestamp expression")
++    return issues
++
++
++def vector_emitters(root):
++    """[(file, transform, issues)] for every Vector transform in config/vector/."""
++    vector_dir = os.path.join(root, VECTOR_GLOB)
++    results = []
++    if not os.path.isdir(vector_dir):
++        return results
++    for fn in sorted(os.listdir(vector_dir)):
++        if not fn.endswith((".yaml", ".yml")):
++            continue
++        path = os.path.join(vector_dir, fn)
++        with open(path, encoding="utf-8") as fh:
++            config = yaml.safe_load(fh) or {}
++        for name, transform in (config.get("transforms") or {}).items():
++            if not isinstance(transform, dict) or transform.get("type") != "remap":
++                continue
++            source = transform.get("source") or ""
++            if event_time_assignments(source):
++                results.append((fn, name, transform_issues(name, source)))
++    return results
++
++
++def main(argv=None):
++    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
++    ap.add_argument("--root", default=DEFAULT_ROOT)
++    args = ap.parse_args(argv)
++    root = os.path.abspath(args.root)
++
++    try:
++        event_time_type = template_event_time_type(root)
++        emitters = vector_emitters(root)
++    except (OSError, yaml.YAMLError) as exc:
++        print(f"event_time_consistency: ERROR {exc}", file=sys.stderr)
++        return 2
++
++    fails = []
++    if event_time_type != "date":
++        fails.append(
++            f"{TEMPLATE_REL}: event_time type is {event_time_type!r}, expected 'date' "
++            "(mapping drift can silently drop the field from consumer queries)")
++
++    if not emitters:
++        fails.append(
++            f"{VECTOR_GLOB}: no remap transform emits .event_time (field orphaned)")
++
++    for fn, name, issues in emitters:
++        for issue in issues:
++            fails.append(f"{os.path.join(VECTOR_GLOB, fn)}: {issue}")
++
++    if fails:
++        print("FAIL event_time consistency (DATA-P2-001)")
++        for f in fails:
++            print("  " + f)
++        return 1
++
++    emitters_desc = ", ".join(f"{fn}:{name}" for fn, name, _ in emitters)
++    print(f"PASS event_time consistency: template pins date; {len(emitters)} emitter(s) "
++          f"produce timestamps ({emitters_desc})")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/automation/validation/tests/event_time_consistency_test.sh b/automation/validation/tests/event_time_consistency_test.sh
+new file mode 100644
+index 0000000..9632f49
+--- /dev/null
++++ b/automation/validation/tests/event_time_consistency_test.sh
+@@ -0,0 +1,117 @@
++#!/usr/bin/env bash
++# Offline regression test for automation/validation/check_event_time_consistency.py
++# (DATA-P2-001). No network, docker, cluster or secrets; fixtures only.
++# Asserts: the template pin and the Vector emitter agree -> pass; a template type drift,
++# a transform that emits a non-timestamp, and a missing emitter each fail closed; and the
++# check is wired into ci/validate.py.
++set -u
++ROOT="$(cd "$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")" && pwd)"
++SCRIPT="$ROOT/automation/validation/check_event_time_consistency.py"
++VALIDATE="$ROOT/ci/validate.py"
++mkdir -p /tmp/opencode
++WORK="$(mktemp -d /tmp/opencode/event-time-consistency-test-XXXXXX)"
++trap 'rm -rf "$WORK"' EXIT
++
++# Build a minimal fixture repository: template + one Vector remap transform.
++python3 - "$WORK" <<'PY'
++import json, os, sys
++work = sys.argv[1]
++os.makedirs(os.path.join(work, "config", "opensearch"))
++os.makedirs(os.path.join(work, "config", "vector"))
++template = {"template": {"mappings": {"dynamic": False, "properties": {
++    "timestamp": {"type": "date"},
++    "event_time": {"type": "date"},
++}}}}
++with open(os.path.join(work, "config", "opensearch", "falcon-eve-template.json"), "w") as fh:
++    json.dump(template, fh)
++vector = """transforms:
++  syslog_identity:
++    type: remap
++    inputs: [syslog_tcp]
++    source: |
++      event_time = null
++      parsed, err = parse_timestamp(.timestamp, format: "%Y-%m-%d %H:%M:%S", timezone: "America/New_York")
++      if err == null { event_time = parsed }
++      .event_time = event_time
++      .timestamp = now()
++sinks:
++  opensearch:
++    type: elasticsearch
++"""
++with open(os.path.join(work, "config", "vector", "aggregator.yaml"), "w") as fh:
++    fh.write(vector)
++PY
++
++run() { python3 "$SCRIPT" --root "$1" 2>&1; }
++
++CHECKS=0 FAILS=0
++check() {  # check <desc> <expected> <actual>
++  CHECKS=$((CHECKS + 1))
++  if [ "$2" != "$3" ]; then echo "FAIL: $1 (expected '$2', got '$3')"; FAILS=$((FAILS + 1)); fi
++}
++contains() {  # contains <desc> <needle> <haystack>
++  CHECKS=$((CHECKS + 1))
++  case "$3" in *"$2"*) : ;; *) echo "FAIL: $1 (missing '$2')"; FAILS=$((FAILS + 1)) ;; esac
++}
++
++echo "== case 1: template date + timestamp emitter passes =="
++out="$(run "$WORK")"; rc=$?
++check "exit 0" "0" "$rc"
++contains "pass line" "PASS event_time consistency" "$out"
++contains "emitter named" "aggregator.yaml:syslog_identity" "$out"
++
++echo "== case 2: template type drift fails =="
++python3 - "$WORK" <<'PY'
++import json, os, sys
++path = os.path.join(sys.argv[1], "config", "opensearch", "falcon-eve-template.json")
++t = json.load(open(path))
++t["template"]["mappings"]["properties"]["event_time"] = {"type": "keyword"}
++json.dump(t, open(path, "w"))
++PY
++out="$(run "$WORK")"; rc=$?
++check "exit 1" "1" "$rc"
++contains "template failure" "expected 'date'" "$out"
++# restore
++python3 - "$WORK" <<'PY'
++import json, os, sys
++path = os.path.join(sys.argv[1], "config", "opensearch", "falcon-eve-template.json")
++t = json.load(open(path))
++t["template"]["mappings"]["properties"]["event_time"] = {"type": "date"}
++json.dump(t, open(path, "w"))
++PY
++
++echo "== case 3: transform emits a string (parse_timestamp used elsewhere) fails =="
++python3 - "$WORK" <<'PY'
++import os, sys
++path = os.path.join(sys.argv[1], "config", "vector", "aggregator.yaml")
++src = open(path).read().replace('.event_time = event_time', '.event_time = "2026-10-01T00:00:00Z"')
++open(path, "w").write(src)
++PY
++out="$(run "$WORK")"; rc=$?
++check "exit 1" "1" "$rc"
++contains "string failure" "not a timestamp" "$out"
++python3 - "$WORK" <<'PY'
++import os, sys
++path = os.path.join(sys.argv[1], "config", "vector", "aggregator.yaml")
++src = open(path).read().replace('.event_time = "2026-10-01T00:00:00Z"', '.event_time = event_time')
++open(path, "w").write(src)
++PY
++
++echo "== case 4: no emitter fails (field orphaned) =="
++python3 - "$WORK" <<'PY'
++import os, sys
++path = os.path.join(sys.argv[1], "config", "vector", "aggregator.yaml")
++src = open(path).read().replace('.event_time = event_time', '.event_time_other = event_time')
++open(path, "w").write(src)
++PY
++out="$(run "$WORK")"; rc=$?
++check "exit 1" "1" "$rc"
++contains "orphan failure" "no remap transform emits" "$out"
++
++echo "== case 5: check is wired into ci/validate.py =="
++out="$(python3 "$VALIDATE" --only event-time-consistency 2>&1)"; rc=$?
++check "gate exit 0" "0" "$rc"
++contains "gate pass" "PASS  event_time template/Vector consistency" "$out"
++
++echo "event_time_consistency_test_checks=$CHECKS event_time_consistency_test_failures=$FAILS"
++exit "$FAILS"
+diff --git a/ci/validate.py b/ci/validate.py
+index bcef0ce..9fe0c25 100755
+--- a/ci/validate.py
++++ b/ci/validate.py
+@@ -23,6 +23,9 @@ Checks (all read-only):
+  12. Shell regression tests: the offline/stubbed suites under automation/validation/tests/
+      (TEST-P2-001; they run in CI too). Suites needing root/docker declare it in their
+      header and are skipped with a note.
++  13. Event-time consistency: the OpenSearch template pins `event_time` as `date` and every
++      Vector remap transform that emits it produces a timestamp (DATA-P2-001;
++      automation/validation/check_event_time_consistency.py).
+ 
+ Run a subset while iterating: `python3 ci/validate.py --only shell-tests`.
+ 
+@@ -378,6 +381,24 @@ def check_shell_tests():
+         ok(f"shell tests ({summary})")
+ 
+ 
++def check_event_time_consistency():
++    """DATA-P2-001: the OpenSearch template and the Vector transforms independently own
++    `event_time`; assert offline that they still agree (template pins `date`; every
++    transform that emits it derives a timestamp). See
++    automation/validation/check_event_time_consistency.py."""
++    proc = subprocess.run(
++        [sys.executable, os.path.join(REPO, "automation", "validation",
++                                      "check_event_time_consistency.py"), "--root", REPO],
++        capture_output=True, text=True,
++    )
++    if proc.returncode != 0:
++        fail("event_time template/Vector consistency (DATA-P2-001)")
++        print(proc.stdout, end="")
++        print(proc.stderr, end="")
++    else:
++        ok("event_time template/Vector consistency")
++
++
+ CHECKS = {
+     "parsers": check_parsers,
+     "compose-pins": check_compose_pins,
+@@ -392,6 +413,7 @@ CHECKS = {
+     "secret-scan": check_secret_scan,
+     "edge-pin": check_edge_pin,
+     "shell-tests": check_shell_tests,
++    "event-time-consistency": check_event_time_consistency,
+ }
+ 
+ 
+diff --git a/docs/phase9/OPENSEARCH_TEMPLATE_EVENT_TIME_NOTE.md b/docs/phase9/OPENSEARCH_TEMPLATE_EVENT_TIME_NOTE.md
+index d8a8372..1115a1d 100644
+--- a/docs/phase9/OPENSEARCH_TEMPLATE_EVENT_TIME_NOTE.md
++++ b/docs/phase9/OPENSEARCH_TEMPLATE_EVENT_TIME_NOTE.md
+@@ -1,8 +1,9 @@
+ # OpenSearch template change needed for `event_time` (DQ-P2-005)
+ 
+-Recorded 2026-10-01 by the DQ wave. `config/opensearch/` is owned by another agent in this
+-wave, so the change below is **recorded here, not applied**. The coordinator should fold it
+-into the template change already in flight.
++Recorded 2026-10-01 by the DQ wave. The pin below was folded into the template change in
++flight and applied the same day (decision log 2026-10-01T19:37Z); the CI consistency check
++added for DATA-P2-001 (`automation/validation/check_event_time_consistency.py`, wired into
++`ci/validate.py`) now enforces it. This note is kept as the field-ownership record.
+ 
+ ## What changed in the pipeline
+ 
+@@ -14,22 +15,24 @@ device IANA timezone (`America/New_York`, DST-correct) as a UTC instant.
+ 
+ `timestamp`, `ingested_at` and `edge_ingested_at` keep their ingest-time meaning.
+ 
+-## Needed template change
++## Template pin
+ 
+ In `config/opensearch/falcon-eve-template.json` (source of truth; applied by
+-`bootstrap/61-search-policies.sh`, verified by `automation/validation/phase4_data_checks.sh`),
+-add to `template.mappings.properties`:
++`bootstrap/61-search-policies.sh`, verified by `automation/validation/phase4_data_checks.sh`).
++`template.mappings.properties` now carries:
+ 
+ ```json
+ "event_time": {"type": "date"},
+ ```
+ 
+-`device_timestamp_local` is already pinned as `date` in the current working copy of the
+-template; `event_time` is the missing field. Without the pin the first value in each new
+-daily index is dynamically mapped as date, but the field stays unpinned and vulnerable to
+-the silent-empty/mapping-drift class (DQ-P2-008 / SEARCH-P2-002).
++`device_timestamp_local` is pinned as `date` alongside it. Without the pin the first value in
++each new daily index is dynamically mapped as date, but the field stays unpinned and
++vulnerable to the silent-empty/mapping-drift class (DQ-P2-008 / SEARCH-P2-002). The
++`event_time` pin is enforced statically by
++`automation/validation/check_event_time_consistency.py` (DATA-P2-001): the template must type
++the field `date` and every Vector transform that emits it must produce a timestamp.
+ 
+-After editing, re-apply idempotently: `bash bootstrap/61-search-policies.sh`.
++Deploy changes idempotently: `bash bootstrap/61-search-policies.sh`.
+ 
+ ## Verification
+ 

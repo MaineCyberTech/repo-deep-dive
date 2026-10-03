@@ -1,0 +1,87 @@
+{
+  "patch_set": "PS-U06",
+  "title": "Unassigned FEAT findings (catch-all) - classify compose/mct first-party, mct/compose archive-only",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u06-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "f19acdbbb7670673446fa86df51f0e3374cd3057",
+  "commit_subject": "feat: close FEAT-P2-001 [PS-U06]",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/33",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["FEAT-P2-001"],
+  "finding_status": {
+    "FEAT-P2-001": "partially-fixed"
+  },
+  "files": [
+    "compose/mct/docker-compose.opencanary.yml",
+    "compose/mct/iris-web/docker-compose.yml",
+    "docs/runbooks/MCT_CONSOLIDATION.md",
+    "automation/validation/tests/remediation_guards_test.sh"
+  ],
+  "in_scope_files": [
+    "compose/mct/docker-compose.opencanary.yml",
+    "compose/mct/iris-web/docker-compose.yml",
+    "docs/runbooks/MCT_CONSOLIDATION.md"
+  ],
+  "test_files": [
+    "automation/validation/tests/remediation_guards_test.sh"
+  ],
+  "deferred": [
+    {
+      "finding": "FEAT-P2-001",
+      "part": "bring the vendored mct/compose/** tree into the pin check (with an exceptions file) or fail closed on any deployment reference",
+      "reason": "owner decision E-2b (coordinator-owned ci/validate.py edit) is unchecked in docs/OWNER_DECISION_PACKAGE_2026-10-02.md; choosing the pin-enforcement approach would preempt the owner. This PR adds a narrower first-party guard only; the vendored tree (29/37 unpinned refs) is untouched. Recorded as an open question."
+    },
+    {
+      "finding": "FEAT-P2-001",
+      "part": "MCT subtree fate: keep archive-only vs extract vs plan deletion",
+      "reason": "owner decision E-2a is unchecked; not a repo-local code change. Recorded as an open question."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U06/diff.patch",
+    "sha256": "0213130f472a17689c35f41ab151399646be77c97b3590a25f5576ba8966de58",
+    "bytes": 5015,
+    "files_changed": 4,
+    "insertions": 43,
+    "deletions": 0
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + ssh; job API also available)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 30/30 shell suites incl. remediation_guards_test.sh; shellcheck 172 scripts; compose pin + digest cross-check; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "bash automation/validation/tests/remediation_guards_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: PASS remediation_guards (classification markers present; no first-party compose/bootstrap artifact references archive-only mct/compose/)"
+    },
+    {
+      "command": "git diff origin/main..HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner 172.23.128.51 (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~5,023 bytes scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "live MCT staged-service revival / mct/compose pin enforcement",
+      "reason": "requires the owner's E-2a/E-2b decision and a runtime window; no staged MCT service is revived by this PR and no pin scope was changed."
+    }
+  ],
+  "env_note": "lab-sync.ps1 extracts the Windows working tree; the extracted clone has core.fileMode=false, so tracked *.sh/*.py files were chmod +x before the gate (without that the offline suites that execute tracked scripts exit 126). The lab job API is available but not used here; commands ran over SSH to 172.23.128.51. Working tree is clean LF (core.autocrlf=false).",
+  "verify_log": "remediation/PS-U06/verify.log",
+  "pr_body": "remediation/PS-U06/pr_body.md",
+  "scopeCheck": "pass - 2 comment-only compose headers + 1 docs section + 1 existing offline guard test; no service definition, image reference, dependency, lockfile, workflow, schema, ledger or machine-artifact change",
+  "generated_at": "2026-10-03T20:40:00Z"
+}

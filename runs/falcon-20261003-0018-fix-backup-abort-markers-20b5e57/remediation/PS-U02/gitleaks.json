@@ -1,0 +1,7 @@
+{
+  "exit": 0,
+  "stdout": "\u001b[90m2:36PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mscanned ~3244 bytes (3.24 KB) in 290ms\u001b[0m\n\u001b[90m2:36PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mno leaks found\u001b[0m\n",
+  "stderr": "",
+  "cwd": "/srv/work/falcon",
+  "duration": 0.8
+}

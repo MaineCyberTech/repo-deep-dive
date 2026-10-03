@@ -1,0 +1,94 @@
+diff --git a/automation/validation/check_digest_binding.py b/automation/validation/check_digest_binding.py
+index 96ad291..9247195 100644
+--- a/automation/validation/check_digest_binding.py
++++ b/automation/validation/check_digest_binding.py
+@@ -5,9 +5,9 @@ Owner tool for the publication session. It verifies that the declared
+ review-package and evidence manifest hashes equal the shipped files and that the
+ declared repository_commit exists.
+ 
+-It is intentionally NOT wired into ci/validate.py: the audited tree is legitimately
+-unbound until a publication rebind, so a blocking check would be red by design. Run
+-it during and after a publication, from a full-history clone.
++ci/validate.py runs this too (HYG-P1-001) so the repository's single local gate and CI
++share one implementation and a stale package or digest fails closed; the published tree
++is bound. It needs a full-history clone (the declared commit must resolve).
+ 
+ Usage: check_digest_binding.py [--root DIR]
+ Exit:  0 = bound (all declared hashes match and the commit resolves)
+diff --git a/ci/validate.py b/ci/validate.py
+index bcef0ce..a606339 100755
+--- a/ci/validate.py
++++ b/ci/validate.py
+@@ -23,6 +23,12 @@ Checks (all read-only):
+  12. Shell regression tests: the offline/stubbed suites under automation/validation/tests/
+      (TEST-P2-001; they run in CI too). Suites needing root/docker declare it in their
+      header and are skipped with a note.
++ 13. Digest binding: PACKAGE_DIGEST.txt binds the shipped review-package and evidence
++     manifest hashes (HYG-P1-001; automation/validation/check_digest_binding.py, also run
++     as a CI step).
++ 14. SBOM provenance: every committed sbom/ payload matches sbom/SBOM_MANIFEST.sha256 and
++     no unlisted artifact has appeared (HYG-P2-001; automation/validation/sbom_hashes.sh
++     verify, also run as a CI step).
+ 
+ Run a subset while iterating: `python3 ci/validate.py --only shell-tests`.
+ 
+@@ -378,6 +384,50 @@ def check_shell_tests():
+         ok(f"shell tests ({summary})")
+ 
+ 
++def check_digest_binding():
++    """HYG-P1-001: PACKAGE_DIGEST.txt must bind the shipped manifests.
++
++    Delegates to automation/validation/check_digest_binding.py (the owner tool, also run
++    as a CI step) so the repository's single local gate and CI share one implementation:
++    the declared review-package/evidence manifest hashes must equal the shipped files and
++    the declared repository_commit must resolve in the clone. A stale package or digest
++    therefore fails here instead of being mistaken for current.
++    """
++    proc = subprocess.run(
++        [sys.executable, os.path.join(REPO, "automation", "validation",
++                                      "check_digest_binding.py"), "--root", REPO],
++        capture_output=True, text=True,
++    )
++    if proc.returncode != 0:
++        fail("digest binding (HYG-P1-001)")
++        print(proc.stdout, end="")
++        print(proc.stderr, end="")
++    else:
++        ok("digest binding (PACKAGE_DIGEST binds the shipped manifests)")
++
++
++def check_sbom_hashes():
++    """HYG-P2-001: the committed SBOM/vulnerability set must match its manifest.
++
++    Delegates to automation/validation/sbom_hashes.sh verify (also run as a CI step):
++    every sbom/*.cdx.json, sbom/vuln/*.json and the summary must match
++    sbom/SBOM_MANIFEST.sha256, and an unlisted artifact fails. Keeps the generated set
++    honest while it remains committed; publishing it as CI/release assets instead is the
++    owner decision recorded for the finding.
++    """
++    script = os.path.join(REPO, "automation", "validation", "sbom_hashes.sh")
++    if not os.path.isfile(script):
++        ok("sbom hashes (skipped: sbom_hashes.sh absent)")
++        return
++    proc = subprocess.run(["bash", script, "verify"], capture_output=True, text=True)
++    if proc.returncode != 0:
++        fail("sbom hashes (HYG-P2-001)")
++        print(proc.stdout, end="")
++        print(proc.stderr, end="")
++    else:
++        ok("sbom hashes (committed SBOM/vuln set matches SBOM_MANIFEST.sha256)")
++
++
+ CHECKS = {
+     "parsers": check_parsers,
+     "compose-pins": check_compose_pins,
+@@ -388,6 +438,8 @@ CHECKS = {
+     "gate-ledger": check_gate_ledger,
+     "evidence-integrity": check_evidence_integrity,
+     "evidence-index": check_evidence_index,
++    "digest-binding": check_digest_binding,
++    "sbom-hashes": check_sbom_hashes,
+     "license": check_license_gate,
+     "secret-scan": check_secret_scan,
+     "edge-pin": check_edge_pin,

@@ -1,0 +1,112 @@
+# PS-U09 verification log (falcon)
+run:         20261003-0018-fix-backup-abort-markers-20b5e57
+repo:        MaineCyberTech/falcon
+base:        origin/main 430da82274af4c0821542627fdb9e6ab74afa826
+branch:      remediation/ps-u09-20261003-0018-fix-backup-abort-markers-20b5e57
+commit:      e31523a59c945126e1b3e1e6ea9e630559292812
+runner:      lab ci-runner ci-runner (scripts/lab-sync.ps1 + ssh; job API /run also available)
+core.autocrlf: false
+dirty_count: 4
+dirty_files:
+ M docs/phase8/reviews/INDEPENDENT_REVIEW_2026-09-23.md
+ M docs/phase8/reviews/INDEPENDENT_REVIEW_2026-09-23_UPDATE.md
+ M docs/phase8/reviews/INDEPENDENT_REVIEW_2026-09-23_UPDATE2.md
+ M docs/phase8/reviews/INDEPENDENT_REVIEW_2026-09-23_UPDATE3.md
+
+## changed files (branch vs origin/main)
+M	REPOSITORY.md
+M	automation/validation/check_evidence_index.py
+A	automation/validation/check_generated_drift.py
+A	automation/validation/resolve_evidence_path.py
+A	automation/validation/tests/generated_drift_check_test.sh
+A	automation/validation/tests/resolve_evidence_path_test.sh
+M	ci/validate.py
+
+## prep: restore exec bits on tracked shell scripts
+# lab-sync extraction has core.fileMode=false; the three backup suites exec helpers by path
+prep_exit=0
+
+## POSITIVE GATE: HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (602 scripts)
+PASS  shellcheck (174 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  generated drift (committed evidence tree matches MANIFEST.sha256)
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.8s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/generated_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (1.9s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.4s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/resolve_evidence_path_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.6s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.4s)
+PASS  shell tests (32 suite(s))
+
+validation_failures=0
+validate_exit=0
+
+## targeted: generated-artifact drift
+PASS generated_drift (2268 entries match their committed manifests)
+generated_drift_exit=0
+
+## targeted: evidence-path resolver
+evidence/raw/ARCH-P2-001/20261001T190250Z_nft-ruleset-9443-evidence.out
+resolver_exit=0
+evidence/raw/P0-G02/20260920T224801Z_time-and-dns-resolution.out
+resolver_legacy_exit=0
+
+## negative control: tamper a committed evidence capture -> generated-drift must fail
+FAIL generated_drift
+  evidence/MANIFEST.sha256: drift evidence/raw/ARCH-P2-001/20261001T190250Z_nft-ruleset-9443-evidence.out (declared=bcde762b3ede actual=d4a26f46c0c4)
+generated_drift: 1 drift finding(s) over 2268 manifest entries
+neg_generated_drift_exit=1
+restore check:
+PASS generated_drift (2268 entries match their committed manifests)
+
+## negative control: resolver with a non-capture path must fail closed
+UNRESOLVED: /etc/passwd (no 'evidence/raw/' component)
+neg_resolver_exit=1
+
+## secret gate: gitleaks on the committed diff
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m4:25PM[0m [32mINF[0m [1mscanned ~24353 bytes (24.35 KB) in 266ms[0m
+[90m4:25PM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0

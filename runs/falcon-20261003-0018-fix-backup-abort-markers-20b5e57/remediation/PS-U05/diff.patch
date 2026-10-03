@@ -1,0 +1,99 @@
+diff --git a/README.md b/README.md
+index 619704a..44ed565 100644
+--- a/README.md
++++ b/README.md
+@@ -106,6 +106,7 @@ Real hostnames:
+ | Access, accounts, rotation | `docs/runbooks/ACCESS_AND_ACCOUNTS.md`, `docs/phase7/runbooks/` |
+ | Independent review package | `review-package/` (build with `automation/validation/build_review_package.sh`) |
+ | Delivery and verification | `PACKAGE_DIGEST.txt`, `automation/validation/verify_delivery.sh` |
++| Release gate: lab vs production readiness | `docs/RELEASE_GATE.md` |
+ 
+ ## Evidence and delivery model
+ 
+diff --git a/docs/RELEASE_GATE.md b/docs/RELEASE_GATE.md
+new file mode 100644
+index 0000000..5a4f395
+--- /dev/null
++++ b/docs/RELEASE_GATE.md
+@@ -0,0 +1,81 @@
++# Release Gate ??? lab operation vs production readiness
++
++Canonical front page for the falcon program's release-gate reconciliation. It exists so that no
++reader ??? human, operator, or agent ??? can mistake a lab "GO" for a production approval, and so that
++the audit opinion and the program verdict stay clearly separate.
++
++Authority and doctrine: this page is an **advisory reconciliation**. It never overrides the
++program's own verdict. The ledgers are the source of truth (`ledgers/gate_ledger.csv`,
++`ledgers/phase9_gate_ledger.csv`, `ledgers/risk_register.md`), and `docs/CURRENT_STATE.md` is the
++authoritative current-state page; when this page and a ledger disagree, the ledger wins. The full
++audit opinion lives in the audit run's gate:
++
++- `docs/audits/repo-deep-dive/20261002-0522-main-67dec27/RELEASE_GATE.md`
++- `docs/audits/repo-deep-dive/20260930-0701-falcon-8282d3f_edge-45dfed0/RELEASE_GATE.md`
++
++## Rule (non-negotiable)
++
++**A lab pass is not a production pass.** Lab operation proceeds under `environment_class=LAB`
++(`REPOSITORY.md`); no lab result may be presented as a production approval. A production-readiness
++claim requires the reviewer-produced disposition and owner adoption in `docs/phase9/review/`, plus
++the release-integrity chain bound to the delivered commit.
++
++This rule is also encoded in the machine artifacts, which keep the two concepts in **separate
++keys** so they cannot be conflated:
++
++| Artifact | Lab signal | Production signal |
++|---|---|---|
++| `PACKAGE_DIGEST.txt` | `lab_implementation=SUBSTANTIALLY_SUPPORTED` | `production_readiness=APPROVED (controlled verdict 2026-09-29; docs/phase9/review/PRODUCTION_VERDICT.md)` |
++| `closeout/FINAL_RESPONSE.json` | `environment_class=LAB (single KVM host, Ubuntu 24.04.4 LTS)` | `production_readiness=APPROVED (controlled verdict 2026-09-29; docs/phase9/review/PRODUCTION_VERDICT.md)` |
++
++`docs/CURRENT_STATE.md` ??Program verdict records the program production verdict
++**APPROVED (2026-09-29)**. The audit opinion below **does not revoke** that verdict; it records
++deltas and a reconciliation path, which remains the program's own review/adoption flow.
++
++## Reconciliation with existing verdicts
++
++- Program production verdict: **APPROVED**, published 2026-09-29
++  (`docs/phase9/review/PRODUCTION_VERDICT.md`), reconciled with the inherited phase-8 gate P8-G10
++  and carrying the reviewer disposition and owner adoption as separate digests.
++- Audit opinion (repo-deep-dive): **NO-GO for any production-readiness claim; GO WITH CONDITIONS
++  for continued lab operation** (`docs/audits/repo-deep-dive/20261002-0522-main-67dec27/RELEASE_GATE.md`).
++  The run this reconciliation belongs to is `20261003-0018-fix-backup-abort-markers-20b5e57`; its
++  gate text is `23_executive_summary_release_gate.md` in that run folder (audit artifacts live
++  outside the repository).
++- The two records have different authority and different authors. This page's job is to keep them
++  from being read as one.
++
++## Current audit opinion (run `20261003-0018-fix-backup-abort-markers-20b5e57`, commit `20b5e57`)
++
++- **Verdict: NO-GO for a production-readiness claim; GO WITH CONDITIONS for continued lab
++  operation.** Rationale: the delivered bytes were not provably bound to the reviewed commit
++  (release integrity, `FINAL-P0-001` / `HYG-P0-001` / `HYG-P0-002`), so no production claim can be
++  substantiated at that commit; lab operation may continue under the conditions below.
++- Run roll-up: 46 findings ??? 4 P0, 20 P1, 18 P2, 4 P3.
++- These conditions are recorded at the audited commit. Later commits may have advanced them ??? treat
++  `docs/CURRENT_STATE.md` and the ledgers as authoritative for the present state.
++
++### Must close before a production-readiness claim
++
++| # | Condition | Findings |
++|---|---|---|
++| C0 | Release integrity: rebuild/rebind the delivery at a frozen commit; regenerate `closeout/FINAL_RESPONSE.json` and `PACKAGE_DIGEST.txt`; add a CI equality test binding digest ??? closeout ??? package manifest ??? HEAD; `verify_publication_chain.sh` returns 0 in a full clone | `FINAL-P0-001`, `HYG-P0-001`, `HYG-P0-002`, `HYG-P1-001` |
++
++### Conditions for continued lab operation (this week)
++
++| # | Condition | Findings |
++|---|---|---|
++| C1 | Abort/retry: fix the marker contract; extend the trap to the other long-running jobs; add retry/backoff with a dead-letter | `ARCH-P1-002`, `ARCH-P2-005`, `FEAT-P2-002` |
++| C2 | Observability: make monitoring-death detection independent of the textfile collector; add per-path relay metrics | `OBS-P0-001`, `OBS-P1-003` |
++| C3 | Capacity/data: set Wazuh/IRIS retention | `DATA-P1-001` |
++| C4 | Exposure edges: narrow the `wg0` accept; fence the OpenCanary ports; reconcile inbound state | `SEC-P1-001`, `SEC-P1-002`, `SEC-P1-003` |
++| C5 | Supply chain: close the digest-gate scope hole; gate vulnerabilities | `SUPPLY-P1-001`, `SUPPLY-P1-002` |
++| C6 | Evidence/CI: pairing verification; branch protection where the plan allows | `API-P1-001`, `CI-P1-002` |
++
++## Finding reference
++
++This reconciliation is the documentation half of **`EXEC-P1-001` ??? "lab GO can be misread as a
++production approval."** The recommended practice it implements: keep the reconciliation statement
++prominent in the gate and keep lab/production language separated in every machine artifact. The
++remediation status is tracked in the audit run's `follow_up_register.md`; the repo-local change is
++this page and its link from `README.md`.

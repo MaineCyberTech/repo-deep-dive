@@ -1,0 +1,110 @@
+diff --git a/automation/validation/r2_cold_copy.sh b/automation/validation/r2_cold_copy.sh
+index 10c5939..3be57f2 100755
+--- a/automation/validation/r2_cold_copy.sh
++++ b/automation/validation/r2_cold_copy.sh
+@@ -43,6 +43,12 @@
+ # COLD_COPY_MARKER_DIR, COLD_COPY_METRICS_FILE, COLD_COPY_NOW_EPOCH (tests).
+ set -u
+ 
++# FINAL-P1-001 / ARCH-P2-005: SIGTERM/SIGINT writes a durable abort marker (shared helper)
++# and exits 130, so an interrupted cold-copy run is visible to the next run instead of looking
++# current; the marker is cleared only on a clean (exit 0) completion, in main below.
++# shellcheck source=lib/abort.sh
++. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/abort.sh"
++
+ SEC="${COLD_COPY_SECRETS_DIR:-/srv/falcon/secrets}"
+ OS="${COLD_COPY_CONTAINER:-falcon-central-opensearch-1}"
+ MARKER_DIR="${COLD_COPY_MARKER_DIR:-/srv/falcon/backups/cold-copy}"
+@@ -211,8 +217,22 @@ delete_stale_snapshot() {
+   return 1
+ }
+ 
++# EXIT handler (FINAL-P1-001 / ARCH-P2-005): publish metrics as before, and clear the abort
++# marker only on a clean (exit 0) completion. A non-zero exit leaves the marker in place.
++r2_cold_copy_exit() {
++  local rc=$?
++  if [ "$DRY_RUN" != "1" ]; then publish_metrics || true; fi
++  if [ "$rc" -eq 0 ]; then clear_abort_marker "r2-cold-copy"; fi
++}
++
+ main() {
+-  trap 'if [ "$DRY_RUN" != "1" ]; then publish_metrics || true; fi' EXIT
++  # FINAL-P1-001 / ARCH-P2-005: write the abort marker on TERM/INT; clear it only on a clean
++  # (exit 0) completion. A non-zero exit leaves the marker so the next run re-verifies state.
++  install_abort_trap "r2-cold-copy"
++  if abort_marker_present "r2-cold-copy"; then
++    log "WARN: a previous cold-copy run aborted (marker present); re-verifying and continuing"
++  fi
++  trap 'r2_cold_copy_exit' EXIT
+   if [ "$(id -u)" -ne 0 ]; then
+     log "must run as root (installed by bootstrap/92-cold-copy.sh)"
+     exit 1
+diff --git a/automation/validation/tests/abort_marker_test.sh b/automation/validation/tests/abort_marker_test.sh
+index 6ef9768..ff8797b 100644
+--- a/automation/validation/tests/abort_marker_test.sh
++++ b/automation/validation/tests/abort_marker_test.sh
+@@ -42,14 +42,18 @@ if ! grep -q 'clear_abort_marker "falcon-backup"' "$REPO_ROOT/bootstrap/85-backu
+   echo "FAIL abort_marker: 85-backup-job.sh does not clear the marker"; exit 1
+ fi
+ 
+-# 4) the remaining long-running scripts install the trap (RES-P0-001 follow-up).
+-for f in bootstrap/80-offsite-backup.sh automation/validation/restore_rehearsal.sh automation/validation/disk_guard.sh; do
++# 4) the remaining long-running scripts install the trap (RES-P0-001 follow-up; FINAL-P1-001 /
++#    ARCH-P2-005 added the R2 cold-copy and Wazuh indexer backup jobs).
++for f in bootstrap/80-offsite-backup.sh automation/validation/restore_rehearsal.sh automation/validation/disk_guard.sh automation/validation/r2_cold_copy.sh automation/validation/wazuh_indexer_backup.sh; do
+   if ! grep -q 'install_abort_trap "' "$REPO_ROOT/$f"; then
+     echo "FAIL abort_marker: $f does not install the trap"; exit 1
+   fi
+ done
+-if ! grep -q 'clear_abort_marker' "$REPO_ROOT/automation/validation/restore_rehearsal.sh"; then
+-  echo "FAIL abort_marker: restore_rehearsal.sh does not clear the marker"; exit 1
+-fi
++# The newly covered jobs clear the marker only on a clean (exit 0) completion.
++for f in automation/validation/restore_rehearsal.sh automation/validation/r2_cold_copy.sh automation/validation/wazuh_indexer_backup.sh; do
++  if ! grep -q 'clear_abort_marker' "$REPO_ROOT/$f"; then
++    echo "FAIL abort_marker: $f does not clear the marker"; exit 1
++  fi
++done
+ 
+ echo "PASS abort_marker"
+diff --git a/automation/validation/wazuh_indexer_backup.sh b/automation/validation/wazuh_indexer_backup.sh
+index b102009..1ac402f 100755
+--- a/automation/validation/wazuh_indexer_backup.sh
++++ b/automation/validation/wazuh_indexer_backup.sh
+@@ -28,6 +28,12 @@
+ # WAZUH_BACKUP_WAIT_POLLS, WAZUH_BACKUP_DRY_RUN.
+ set -u
+ 
++# FINAL-P1-001 / ARCH-P2-005: SIGTERM/SIGINT writes a durable abort marker (shared helper)
++# and exits 130, so an interrupted indexer snapshot is visible to the next run instead of
++# looking current; the marker is cleared only on a clean (exit 0) completion, in main below.
++# shellcheck source=lib/abort.sh
++. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/abort.sh"
++
+ ENV_FILE="${WAZUH_BACKUP_ENV_FILE:-/opt/wazuh-docker/multi-node/.env}"
+ CREDS_FILE="${WAZUH_BACKUP_CREDS_FILE:-/opt/wazuh-docker/multi-node/ops/creds.env}"
+ IDX_URL="${WAZUH_BACKUP_URL:-https://127.0.0.1:9200}"
+@@ -68,8 +74,22 @@ publish_metrics() {
+   mv "$METRICS.tmp" "$METRICS"
+ }
+ 
++# EXIT handler (FINAL-P1-001 / ARCH-P2-005): publish metrics as before, and clear the abort
++# marker only on a clean (exit 0) completion. A non-zero exit leaves the marker in place.
++wazuh_indexer_backup_exit() {
++  local rc=$?
++  if [ "$DRY_RUN" != "1" ]; then publish_metrics || true; fi
++  if [ "$rc" -eq 0 ]; then clear_abort_marker "wazuh-indexer-backup"; fi
++}
++
+ main() {
+-  trap 'if [ "$DRY_RUN" != "1" ]; then publish_metrics || true; fi' EXIT
++  # FINAL-P1-001 / ARCH-P2-005: write the abort marker on TERM/INT; clear it only on a clean
++  # (exit 0) completion. A non-zero exit leaves the marker so the next run re-verifies state.
++  install_abort_trap "wazuh-indexer-backup"
++  if abort_marker_present "wazuh-indexer-backup"; then
++    log "WARN: a previous wazuh indexer backup aborted (marker present); re-verifying and continuing"
++  fi
++  trap 'wazuh_indexer_backup_exit' EXIT
+   if [ "$(id -u)" -ne 0 ]; then
+     log "must run as root (installed by bootstrap/86-wazuh-indexer-backup.sh)"
+     exit 1

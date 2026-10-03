@@ -1,0 +1,107 @@
+{
+  "patch_set": "PS-U02",
+  "title": "Unassigned ARCH findings (catch-all) - vendored Wazuh helper pin; owner/design findings deferred",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u02-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "41cd5a1e65e22f7ef1e957605bb0f0df2755328d",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/22",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["ARCH-P1-001", "ARCH-P2-001", "ARCH-P2-002", "ARCH-P2-003"],
+  "finding_status": {
+    "ARCH-P1-001": "still-open",
+    "ARCH-P2-001": "still-open",
+    "ARCH-P2-002": "partially-fixed",
+    "ARCH-P2-003": "still-open"
+  },
+  "files": [
+    "automation/wazuh/multi-node/docker-compose.override.yml",
+    "automation/validation/tests/vendored_compose_pin_test.sh"
+  ],
+  "in_scope_files": [
+    "automation/wazuh/multi-node/docker-compose.override.yml"
+  ],
+  "companion_files": [],
+  "test_files": ["automation/validation/tests/vendored_compose_pin_test.sh"],
+  "deferred": [
+    {
+      "finding": "ARCH-P2-002",
+      "part": "record elastiflow/flow-collector:7.26.2 and wazuh/wazuh-certs-generator:0.0.4 in pins/images.lock with digest-bound SBOM/vulnerability artifacts",
+      "reason": "the finding's stated dependency is SUPPLY-P1-001, implemented by PATCH-5 (PR #17, open) via pins/supply-chain-waivers.json, which explicitly assigns the tracking to ARCH-P2-002; adding lock entries requires real SBOM/vuln artifacts (no fabrication). The tag-only python:3-alpine reference (the third byte of the same finding) is fixed here."
+    },
+    {
+      "finding": "ARCH-P1-001",
+      "part": "single-host concentration / warm standby / independent external dead-man with a short window / restore SLA",
+      "reason": "needs an owner/ops design decision (capacity, recovery SLA, independent failure domain). docs/CURRENT_STATE.md C4 already records the external dead-man as an owner/ops item; no repo-local change can close it without inventing an SLA."
+    },
+    {
+      "finding": "ARCH-P2-001",
+      "part": "confirm the running fleet matches the declared hardening and capture a drift-check artifact at the maintenance window",
+      "reason": "live-deploy observation. The mitigation already ships (container_drift_check.sh + falcon-container-drift.timer wired in bootstrap/90-alerting.sh) and the 2026-10-03 full ordered deploy ran; confirming the live fleet is an ops action, not a static edit."
+    },
+    {
+      "finding": "ARCH-P2-003",
+      "part": "move live ingest from a shared-secret header to mTLS or request signing + idempotency keys",
+      "reason": "out-of-repo dependency: edge PKI. Same dependency deferral recorded for API-P2-002 in PS-U01. Vector's HTTP auth is basic; a content-only dedupe would not address spoofing."
+    }
+  ],
+  "not_reproducible": [
+    {
+      "finding": "ARCH-P2-002",
+      "claim": "compose/mct/iris-web/ and automation/wazuh/** are outside pins/images.lock",
+      "note": "the lock already contains the IRIS/OpenCanary/Wazuh images at the audited commit (git show 20b5e57:pins/images.lock), and compose/mct is already scanned by the digest cross-check; the reproducible residual is the ungated vendored tree (automation/wazuh), handled by SUPPLY-P1-001/PATCH-5 plus the flow-relay pin fixed here."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-U02/diff.patch",
+    "sha256": "94FA6C632FD170381B69BC25E1F1BC42FEC9B1E1568B1E819342FF53295625AA",
+    "files_changed": 2,
+    "insertions": 52,
+    "deletions": 1
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 31/31 shell suites (incl. vendored_compose_pin_test.sh); shellcheck 173 scripts; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "bash automation/validation/tests/vendored_compose_pin_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: vendored_compose_pin_test: 4/4 checks passed"
+    },
+    {
+      "command": "python3 automation/validation/check_compose_digests.py --compose-dir automation/wazuh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected residual: compose_digest_findings=2 (elastiflow/flow-collector, wazuh/wazuh-certs-generator); the former python:3-alpine finding is gone (deferred to SUPPLY-P1-001)"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~3,244 bytes scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "live container_drift_check on the lab host / redeploy of the declared hardening",
+      "reason": "live-deploy verification for ARCH-P2-001 is owner/ops; not performed by this static remediation."
+    },
+    {
+      "command": "edge PKI mTLS negative test (unsigned/foreign-cert rejected)",
+      "reason": "ARCH-P2-003 depends on the out-of-repo edge PKI; deferred."
+    }
+  ],
+  "env_note": "The lab job API runs commands with HOME unset; the gate is invoked with HOME=/root (recorded). lab-sync.ps1 wipes /srv/work/falcon; the remote worktree was at 41cd5a1 with scripts chmod +x'd before the gate.",
+  "verify_log": "remediation/PS-U02/verify.log",
+  "pr_body": "remediation/PS-U02/pr_body.md",
+  "generated_at": "2026-10-03T19:05:00Z"
+}

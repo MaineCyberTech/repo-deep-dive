@@ -1,0 +1,78 @@
+{
+  "patch_set": "PS-U07",
+  "title": "Unassigned FINAL findings (catch-all) - extend the abort trap to the remaining long-running jobs",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u07-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "a981b7b449ba48bf755ce9e9c0b17f1a94178e28",
+  "commit_subject": "docs: close FINAL-P1-001 [FINAL-P1-001]",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/25",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["FINAL-P1-001"],
+  "finding_status": {
+    "FINAL-P1-001": "partially-fixed"
+  },
+  "files": [
+    "automation/validation/r2_cold_copy.sh",
+    "automation/validation/wazuh_indexer_backup.sh",
+    "automation/validation/tests/abort_marker_test.sh"
+  ],
+  "in_scope_files": [
+    "automation/validation/r2_cold_copy.sh",
+    "automation/validation/wazuh_indexer_backup.sh"
+  ],
+  "test_files": [
+    "automation/validation/tests/abort_marker_test.sh"
+  ],
+  "deferred": [
+    {
+      "finding": "FINAL-P1-001",
+      "part": "Data retention (DATA-P1-001): Wazuh/IRIS retention windows",
+      "reason": "Requires the owner's explicit retention-window decision. Choosing a number in code would guess a product/retention policy and is not fabricated; recorded as an open question."
+    },
+    {
+      "finding": "FINAL-P1-001",
+      "part": "Abort-marker contract (ARCH-P1-002) and offsite retry/backoff + dead-letter (FEAT-P2-002)",
+      "reason": "Already fixed on origin/main at RES-P0-001 / RES-P0-002 (85-backup-job.sh, 80-offsite-backup.sh, restore_rehearsal.sh, disk_guard.sh)."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-U07/diff.patch",
+    "sha256": "B442B099FED1F7610E25871EFD5172A0A8CEA6AEAE8CC63510434E8C472B6718",
+    "bytes": 5638,
+    "files_changed": 3,
+    "insertions": 51,
+    "deletions": 7
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 30/30 shell suites incl. abort_marker_test.sh and wazuh_indexer_backup_test.sh; shellcheck 172 scripts; secret scan; yaml/json parse"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner 172.23.128.51 (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (5,638 bytes scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "data-retention policy change (DATA-P1-001)",
+      "reason": "Requires the owner's retention-window decision; out of scope for a minimal code fix and not fabricated."
+    }
+  ],
+  "env_note": "lab-sync.ps1 extracts the Windows working tree; the extracted clone has core.fileMode=false, so tracked *.sh/*.py files were chmod +x before the gate (without that the offline suites that execute tracked scripts exit 126). Pre-existing mixed-EOL docs/phase8/reviews/*.md blobs (HYG-P2-002) are unrelated to this patch. The lab job API runs with HOME unset, so the gate is invoked with HOME=/root.",
+  "verify_log": "remediation/PS-U07/verify.log",
+  "pr_body": "remediation/PS-U07/pr_body.md",
+  "scopeCheck": "pass - 2 job scripts (r2_cold_copy.sh, wazuh_indexer_backup.sh) + their existing offline test (abort_marker_test.sh); no workflow, dependency, schema, ledger, lockfile or machine-artifact changes",
+  "generated_at": "2026-10-03T19:10:00Z"
+}

@@ -1,0 +1,70 @@
+diff --git a/automation/validation/tests/vendored_compose_pin_test.sh b/automation/validation/tests/vendored_compose_pin_test.sh
+new file mode 100755
+index 0000000..f6551ce
+--- /dev/null
++++ b/automation/validation/tests/vendored_compose_pin_test.sh
+@@ -0,0 +1,48 @@
++#!/usr/bin/env bash
++# Regression test for ARCH-P2-002 (falcon side): vendored Wazuh stack image pinning.
++# Proves the flow-relay helper under automation/wazuh/multi-node references the same
++# digest-pinned python image recorded in pins/images.lock (and bound by its SBOM),
++# and that no tag-only python:3-alpine reference remains in the vendored tree.
++# Offline; reads repository files only (no network, docker or root).
++# Usage: bash automation/validation/tests/vendored_compose_pin_test.sh
++set -u
++ROOT="$(cd "$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")" && pwd)"
++OVERRIDE="$ROOT/automation/wazuh/multi-node/docker-compose.override.yml"
++LOCK="$ROOT/pins/images.lock"
++SBOM="$ROOT/sbom/python_3.12-alpine.cdx.json"
++
++PY=python3
++command -v python3 >/dev/null 2>&1 || PY=python
++
++CHECKS=0 FAILS=0
++check_true() { # check_true <desc> <command...>
++  local desc="$1"; shift
++  CHECKS=$((CHECKS + 1))
++  if ! "$@"; then echo "FAIL: $desc"; FAILS=$((FAILS + 1)); fi
++}
++
++[ -f "$OVERRIDE" ] || { echo "FAIL: missing $OVERRIDE"; exit 1; }
++[ -f "$LOCK" ] || { echo "FAIL: missing $LOCK"; exit 1; }
++[ -f "$SBOM" ] || { echo "FAIL: missing $SBOM"; exit 1; }
++
++DIGEST="$("$PY" - "$LOCK" <<'PY'
++import json
++import sys
++lock = json.load(open(sys.argv[1], encoding="utf-8"))
++for entry in lock.get("images", []):
++    if entry.get("image") == "python:3.12-alpine":
++        print(entry.get("digest", ""))
++        break
++PY
++)"
++check_true "lock records a python:3.12-alpine digest" test -n "$DIGEST"
++check_true "flow-relay uses the locked python:3.12-alpine digest" \
++  grep -q "image: python:3.12-alpine@${DIGEST}" "$OVERRIDE"
++check_true "no tag-only python:3-alpine reference remains in the vendored tree" \
++  bash -c "! grep -rq 'python:3-alpine@' '$ROOT/automation/wazuh'"
++check_true "the pinned python image is bound by its SBOM" \
++  grep -q "$DIGEST" "$SBOM"
++
++echo "vendored_compose_pin_test: $((CHECKS - FAILS))/$CHECKS checks passed"
++[ "$FAILS" -eq 0 ] || exit 1
++exit 0
+diff --git a/automation/wazuh/multi-node/docker-compose.override.yml b/automation/wazuh/multi-node/docker-compose.override.yml
+index 415d945..01ac2f0 100644
+--- a/automation/wazuh/multi-node/docker-compose.override.yml
++++ b/automation/wazuh/multi-node/docker-compose.override.yml
+@@ -71,7 +71,10 @@ services:
+   # native rules/active response. Host networking so the source IP is this host
+   # (matches the manager's remote-syslog allowed-ips).
+   flow-relay:
+-    image: python:3-alpine@sha256:a1321512d6a287428c50dcdf2ab3857761127e03a23b1f648e9c1c0de59288f8
++    # ARCH-P2-002: use the same digest-pinned helper image as the Wazuh alert
++    # forwarder (python:3.12-alpine, recorded in pins/images.lock with an SBOM)
++    # instead of the tag-only python:3-alpine reference.
++    image: python:3.12-alpine@sha256:4c47124a8391cb7a9f571164147d154777cf012a4ece5f86097130d7a4478111
+     container_name: flow-relay
+     restart: unless-stopped
+     network_mode: host

@@ -1,0 +1,91 @@
+{
+  "patch_set": "PS-U01",
+  "title": "Unassigned API findings (catch-all) - enrollment token expiry; cross-repo API findings deferred",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u01-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "c04c0068c182b7d61521978f154f5ac33ae42c2a",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/21",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["API-P1-001", "API-P2-001", "API-P2-002"],
+  "finding_status": {
+    "API-P1-001": "still-open",
+    "API-P2-001": "partially-fixed",
+    "API-P2-002": "still-open"
+  },
+  "files": [
+    "automation/vpn/enroll-service.py",
+    "automation/vpn/issue-enroll-token.sh",
+    "automation/vpn/test_enroll_service.sh",
+    "docs/security/ENROLL_API.md"
+  ],
+  "in_scope_files": [
+    "automation/vpn/enroll-service.py",
+    "automation/vpn/issue-enroll-token.sh",
+    "automation/vpn/test_enroll_service.sh",
+    "docs/security/ENROLL_API.md"
+  ],
+  "companion_files": [],
+  "test_files": ["automation/vpn/test_enroll_service.sh"],
+  "deferred": [
+    {
+      "finding": "API-P1-001",
+      "part": "vendor a signed edge digest manifest / pinned artifact URL so the cross-repo pairing verifies in CI",
+      "reason": "requires the private falcon-edge release artifacts (signed manifest/SBOM) or a pinned URL; the finding's own dependency is the edge session. verify_edge_pin.py already runs in ci/validate.py and skips when the delivery is absent."
+    },
+    {
+      "finding": "API-P2-002",
+      "part": "mTLS per sensor or HMAC request signing plus ingest idempotency keys",
+      "reason": "dependency is edge PKI (effort M); Vector's HTTP ingest does not sign requests and a content-only dedupe would drop legitimate repeats without addressing spoofing."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U01/diff.patch",
+    "sha256": "C1B1A1961777E05BF4AE9C809D4C6539D8774F2C766F4910039BEB740733AB55",
+    "files_changed": 4,
+    "insertions": 89,
+    "deletions": 29
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 30/30 shell suites; shellcheck 172 scripts; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "bash automation/vpn/test_enroll_service.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: enroll_test_pass=18 fail=0 (expired/malformed refused; future/legacy enroll)"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~13,002 bytes scanned)"
+    },
+    {
+      "command": "GitHub Actions workflow: validate",
+      "runner": "GitHub-hosted runner",
+      "exit_code": 0,
+      "result": "success (run 37129430156, job 111221408072)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "falcon-vpn-enroll.service restart + live expired-token request",
+      "reason": "deployment is owner-run; no live enrollment service on the remediation/lab CI path. The offline suite exercises the real HTTP service against stubs."
+    }
+  ],
+  "env_note": "The lab job API runs commands with HOME unset; the first ci/validate.py invocation failed only in the unrelated audit_run_lifecycle_test.sh fixture (HOME: unbound variable). Re-run with HOME=/root (recorded) passes; no repo change made.",
+  "verify_log": "remediation/PS-U01/verify.log",
+  "pr_body": "remediation/PS-U01/pr_body.md",
+  "generated_at": "2026-10-03T18:35:00Z"
+}

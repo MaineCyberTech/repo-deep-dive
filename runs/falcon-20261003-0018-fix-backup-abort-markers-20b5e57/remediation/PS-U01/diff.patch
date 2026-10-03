@@ -1,0 +1,254 @@
+diff --git a/automation/vpn/enroll-service.py b/automation/vpn/enroll-service.py
+index 7448586..c85a328 100644
+--- a/automation/vpn/enroll-service.py
++++ b/automation/vpn/enroll-service.py
+@@ -9,8 +9,11 @@ wg0.conf and applies it without dropping existing sessions.
+ Security (hardened 2026-10-01, audit ACM-P2-002 / SEC-P2-005):
+   - requests must carry an enrollment token from /srv/falcon/secrets/vpn_enroll.token
+     (0600 root). The file may hold one bare shared token per line (legacy) and/or
+-    per-device bindings "<name>:<token>"; a name with a per-device binding rejects
+-    the shared token, so a leaked shared token cannot shadow that device.
++    per-device bindings "<name>:<token>" or "<name>:<token>:<expiry-epoch>"; a name
++    with a per-device binding rejects the shared token, so a leaked shared token
++    cannot shadow that device. A per-device binding may carry an expiry timestamp
++    (Unix epoch seconds, issued by issue-enroll-token.sh); an expired binding is
++    rejected (403) and a malformed expiry fails closed as already expired.
+   - per-source-IP rate limiting (FALCON_ENROLL_RATE_MAX requests per 60 s, default 60)
+     throttles brute force; behind Traefik all web enrollments share the proxy source
+     address, so there the limit is a fleet-wide circuit breaker.
+@@ -55,10 +58,12 @@ def log(msg):
+ 
+ 
+ def load_tokens():
+-    """Return ({name: token}, [shared tokens]) from the token file.
++    """Return ({name: (token, expiry_or_None)}, [shared tokens]) from the token file.
+ 
+-    Lines: "<name>:<token>" bind a token to one device name; a bare "<token>" line
+-    is the legacy shared token and is accepted only for names without a binding.
++    Lines: "<name>:<token>" or "<name>:<token>:<expiry-epoch>" bind a token to one
++    device name; the optional third field is a Unix expiry timestamp and a malformed
++    value fails closed as already expired. A bare "<token>" line is the legacy shared
++    token and is accepted only for names without a binding.
+     """
+     named, shared = {}, []
+     try:
+@@ -68,10 +73,18 @@ def load_tokens():
+                 if not line or line.startswith("#"):
+                     continue
+                 if ":" in line:
+-                    name, _, token = line.partition(":")
++                    name, _, rest = line.partition(":")
++                    token, _, expiry_raw = rest.partition(":")
+                     name, token = name.strip().lower(), token.strip()
+-                    if name and token:
+-                        named[name] = token
++                    if not (name and token):
++                        continue
++                    expiry = None
++                    if expiry_raw.strip():
++                        try:
++                            expiry = int(expiry_raw.strip())
++                        except ValueError:
++                            expiry = 0  # malformed expiry -> already expired (fail closed)
++                    named[name] = (token, expiry)
+                 else:
+                     shared.append(line)
+     except OSError:
+@@ -80,14 +93,24 @@ def load_tokens():
+ 
+ 
+ def authorize(name, token):
+-    """Return the authorization label for a valid token, else None."""
++    """Return (label, expired) for name/token.
++
++    label is the authorization label on success and None otherwise; expired is True
++    when the token matches a per-device binding whose expiry timestamp has passed, so
++    the caller can log/report "expired" distinctly from "invalid token".
++    """
+     named, shared = load_tokens()
+     if name in named:
+-        return f"per-device:{name}" if hmac.compare_digest(token, named[name]) else None
++        expected, expiry = named[name]
++        if not hmac.compare_digest(token, expected):
++            return None, False
++        if expiry is not None and time.time() > expiry:
++            return None, True
++        return f"per-device:{name}", False
+     for candidate in shared:
+         if hmac.compare_digest(token, candidate):
+-            return "shared"
+-    return None
++            return "shared", False
++    return None, False
+ 
+ 
+ def rate_limited(ip):
+@@ -165,7 +188,11 @@ class Handler(BaseHTTPRequestHandler):
+             log(f"enroll throttled: source={client_ip} name={name!r}")
+             self._send(429, {"ok": False, "error": "too many enrollment requests"})
+             return
+-        auth = authorize(name, token)
++        auth, expired = authorize(name, token)
++        if expired:
++            log(f"enroll denied: expired token for name={name!r} source={client_ip}")
++            self._send(403, {"ok": False, "error": "expired token"})
++            return
+         if not auth:
+             log(f"enroll denied: bad token for name={name!r} source={client_ip}")
+             self._send(403, {"ok": False, "error": "invalid token"})
+diff --git a/automation/vpn/issue-enroll-token.sh b/automation/vpn/issue-enroll-token.sh
+index 0c55786..7a6bcc4 100755
+--- a/automation/vpn/issue-enroll-token.sh
++++ b/automation/vpn/issue-enroll-token.sh
+@@ -3,11 +3,16 @@
+ #
+ # Usage: issue-enroll-token.sh <device-name>
+ #
+-# Appends "<device-name>:<token>" to /srv/falcon/secrets/vpn_enroll.token (0600 root) and
+-# writes the token to /srv/falcon/secrets/wireguard/clients/<name>.enroll-token (0600) for
+-# delivery over the encrypted endpoint channel. A per-device binding overrides the shared
+-# token for that name (the service refuses the shared token once a binding exists).
++# Appends "<device-name>:<token>:<expiry-epoch>" to /srv/falcon/secrets/vpn_enroll.token
++# (0600 root) and writes the token to /srv/falcon/secrets/wireguard/clients/<name>.enroll-token
++# (0600) for delivery over the encrypted endpoint channel. A per-device binding overrides the
++# shared token for that name (the service refuses the shared token once a binding exists).
+ # Re-running replaces the binding and rotates that device's token.
++#
++# Expiry (API-P2-001): the binding carries a Unix expiry timestamp; the enrollment service
++# rejects an expired token with 403. The lifetime defaults to 86400s (24h) and is configurable
++# with FALCON_ENROLL_TOKEN_TTL_SECONDS. The endpoint enrolls immediately after issuance, so the
++# window only needs to cover delivery; re-run this script to rotate a device that re-enrolls.
+ set -euo pipefail
+ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ source "$REPO_ROOT/bootstrap/lib.sh"
+@@ -18,6 +23,11 @@ case "$NAME" in
+   ""|*[!a-z0-9-]*) log "invalid name '$NAME': use lowercase letters, digits and dashes"; exit 2 ;;
+ esac
+ 
++TTL="${FALCON_ENROLL_TOKEN_TTL_SECONDS:-86400}"
++case "$TTL" in
++  ""|*[!0-9]*) log "invalid FALCON_ENROLL_TOKEN_TTL_SECONDS '$TTL' (want whole seconds)"; exit 2 ;;
++esac
++
+ SEC="/srv/falcon/secrets"
+ TOKENS="$SEC/vpn_enroll.token"
+ OUTDIR="$SEC/wireguard/clients"
+@@ -29,11 +39,13 @@ tmp="$(mktemp "$SEC/.vpn_enroll.token.XXXXXX")"
+ chmod 0600 "$tmp"
+ grep -v "^${NAME}:" "$TOKENS" > "$tmp" || true
+ token="$(openssl rand -hex 24)"
+-printf '%s:%s\n' "$NAME" "$token" >> "$tmp"
++now="$(date +%s)"
++expiry="$((now + TTL))"
++printf '%s:%s:%s\n' "$NAME" "$token" "$expiry" >> "$tmp"
+ # in-place write keeps the inode and mode the running service already reads
+ cat "$tmp" > "$TOKENS"
+ rm -f "$tmp"
+ printf '%s\n' "$token" > "$OUTDIR/$NAME.enroll-token"
+ chmod 0600 "$OUTDIR/$NAME.enroll-token"
+-log "per-device token issued for $NAME -> $OUTDIR/$NAME.enroll-token (0600, deliver securely)"
++log "per-device token issued for $NAME (expires $expiry, ttl ${TTL}s) -> $OUTDIR/$NAME.enroll-token (0600, deliver securely)"
+ log "the service reads the token file per request; restart only when its code changed"
+diff --git a/automation/vpn/test_enroll_service.sh b/automation/vpn/test_enroll_service.sh
+index 0e3d804..18fc817 100755
+--- a/automation/vpn/test_enroll_service.sh
++++ b/automation/vpn/test_enroll_service.sh
+@@ -3,8 +3,8 @@
+ #
+ # Runs the real HTTP service against a throwaway wg0.conf, token file and wg/wg-quick
+ # stubs. No root, no external network, no WireGuard state is touched. Exercises token
+-# authorization (shared + per-device), name binding, peer replacement, server-side key
+-# generation and the rate limiter.
++# authorization (shared + per-device), token expiry (API-P2-001), name binding, peer
++# replacement, server-side key generation and the rate limiter.
+ #
+ # Usage: bash automation/vpn/test_enroll_service.sh
+ set -uo pipefail
+@@ -45,14 +45,18 @@ ListenPort = 5182
+ EOF
+ cat > "$WORK/tokens" <<'EOF'
+ sharedtoken123
+-laptop-01:perdevicetoken456
++laptop-01:perdevicetoken456:9999999999
++legacy-01:legacytoken111
++expired-01:expiredtoken789:1
++malformed-01:malformedtoken000:notanumber
++future-01:futuretoken222:9999999999
+ EOF
+ chmod 600 "$WORK/wg0.conf" "$WORK/tokens"
+ 
+ PATH="$WORK/bin:$PATH" \
+ FALCON_WG_CONF="$WORK/wg0.conf" \
+ FALCON_ENROLL_TOKEN_FILE="$WORK/tokens" \
+-FALCON_ENROLL_RATE_MAX=8 \
++FALCON_ENROLL_RATE_MAX=14 \
+ PORT="$PORT" \
+ python3 "$REPO_ROOT/automation/vpn/enroll-service.py" > "$WORK/service.log" 2>&1 &
+ SRV_PID=$!
+@@ -89,6 +93,8 @@ check() {  # check <label> <expected> <actual>
+ PUB1='AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE='
+ PUB2='AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI='
+ PUB3='AwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwM='
++PUB4='BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ='
++PUB5='BQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQU='
+ 
+ check "health" 200 "$(curl -s -o /dev/null -w '%{http_code}' "$URL/health")"
+ 
+@@ -113,6 +119,13 @@ check "re-enroll keeps the address" "10.99.0.21/32" "$(jq -r .address "$WORK/res
+ check "one peer block for desktop-02" 1 "$(grep -c '# client peer: desktop-02' "$WORK/wg0.conf")"
+ check "rotated key persisted" 1 "$(grep -c "$PUB3" "$WORK/wg0.conf")"
+ 
++# Token expiry (API-P2-001): an expired or malformed-expiry binding is refused; a future
++# expiry and a legacy binding without expiry still enroll.
++check "expired per-device token refused" 403 "$(req expired-01 expiredtoken789 "$PUB4")"
++check "malformed expiry refused (fail closed)" 403 "$(req malformed-01 malformedtoken000 "$PUB4")"
++check "future per-device token enrolls" 200 "$(req future-01 futuretoken222 "$PUB4")"
++check "legacy binding without expiry still enrolls" 200 "$(req legacy-01 legacytoken111 "$PUB5")"
++
+ seen429="none"
+ for i in $(seq 1 15); do
+   code="$(req "burst-$i" sharedtoken123 "$PUB1")"
+diff --git a/docs/security/ENROLL_API.md b/docs/security/ENROLL_API.md
+index d983772..afe1b37 100644
+--- a/docs/security/ENROLL_API.md
++++ b/docs/security/ENROLL_API.md
+@@ -18,7 +18,8 @@ Responses:
+ - `200`: `{"ok": true, "address": "10.99.0.x/32", ...}` (plus the generated private key when
+   the server generated it).
+ - `400`: invalid name / invalid public key.
+-- `403`: bad token (`enroll denied: bad token for name=... source=<ip>` logged).
++- `403`: bad token (`enroll denied: bad token for name=... source=<ip>` logged) or an expired
++  per-device token (`enroll denied: expired token for name=... source=<ip>` logged).
+ - `429`: rate limited (`enroll throttled: source=<ip> ...` logged; 60 requests / 60 s per source,
+   `FALCON_ENROLL_RATE_MAX`).
+ - `500`: config update or key generation failed.
+@@ -26,10 +27,15 @@ Responses:
+ 
+ ## Controls
+ 
+-- **Tokens**: `/srv/falcon/secrets/vpn_enroll.token` (0600 root). `<name>:<token>` binds a token
+-  to one device; a bare line is the legacy shared token (accepted only for names without a
+-  binding). Issue with `automation/vpn/issue-enroll-token.sh <name>`; a per-device binding
+-  overrides the shared token for that name.
++- **Tokens**: `/srv/falcon/secrets/vpn_enroll.token` (0600 root). `<name>:<token>` (or
++  `<name>:<token>:<expiry-epoch>`) binds a token to one device; a bare line is the legacy shared
++  token (accepted only for names without a binding). Issue with
++  `automation/vpn/issue-enroll-token.sh <name>`; a per-device binding overrides the shared token
++  for that name.
++- **Expiry** (API-P2-001): per-device bindings carry a Unix expiry timestamp; the lifetime
++  defaults to 86400 s (24 h) and is configurable with `FALCON_ENROLL_TOKEN_TTL_SECONDS`. The
++  service rejects an expired - or malformed-expiry - token with 403. A binding without the third
++  field (pre-existing or bootstrap-generated) remains valid indefinitely.
+ - **Rate limit**: 60/60 s per source address (fleet-wide behind Traefik); verified 2026-10-02:
+   70 rapid bad-token POSTs -> 60x 403 then 10x 429 (capture
+   `REVIEW-FIX/20261002T004153Z_api-p2-005-enroll-bruteforce`).
+@@ -42,6 +48,8 @@ Responses:
+ 
+ ## Residuals
+ 
+-- Token expiry/rotation metadata (owner decision; the finding's remaining item).
++- Per-device tokens expire (API-P2-001), but the bootstrap-generated **shared** token line still
++  has no expiry and stays until rotated; rotate/replace it after onboarding pauses
++  (`docs/security/ENROLLMENT_CLOSURE.md`, owner decision).
+ - The enrollment public route stays open (token-gated) until the pending devices onboard; the
+   shared token rotates after that (`docs/security/ENROLLMENT_CLOSURE.md`).

@@ -1,0 +1,91 @@
+{
+  "patch_set": "PS-U08",
+  "title": "Unassigned HYG findings (catch-all) - wire digest-binding + SBOM-integrity gates into ci/validate.py",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u08-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "3a200c9fe33c51c97a9e348fc5f32c846344a72b",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/26",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["HYG-P1-001", "HYG-P1-002", "HYG-P2-001"],
+  "finding_status": {
+    "HYG-P1-001": "partially-fixed",
+    "HYG-P1-002": "verified-fixed",
+    "HYG-P2-001": "partially-fixed"
+  },
+  "files": [
+    "ci/validate.py",
+    "automation/validation/check_digest_binding.py"
+  ],
+  "in_scope_files": [
+    "ci/validate.py",
+    "automation/validation/check_digest_binding.py"
+  ],
+  "companion_files": [],
+  "test_files": [],
+  "deferred": [
+    {
+      "finding": "HYG-P1-001",
+      "part": "remove the committed review-package/ (build it as a CI artifact) or add a deterministic fresh-build drift check over all 3,720 entries",
+      "reason": "changes the delivery model and the PACKAGE_DIGEST.txt/PACKAGE_MANIFEST.sha256 flow; a strict package-content gate cannot pass until the package is rebuilt and the digest rebound (HYG-P0-001/PATCH-6). The committed package is already stale vs its own MANIFEST.sha256 at the base commit (4 mismatches, 1 missing file). Owner/release decision."
+    },
+    {
+      "finding": "HYG-P2-001",
+      "part": "publish the SBOM/vulnerability JSON as CI/release assets and keep only hashes/manifests in-repo",
+      "reason": "requires an artifact pipeline and a retention/signing decision (docs/security/SBOM_COVERAGE_AND_PROVENANCE.md records the unsigned-manifest gap). Owner/release decision. The committed set is now hash-gated by ci/validate.py in the interim."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U08/diff.patch",
+    "sha256": "3001f94749166f5157e40be7a42521ebd7d008f08902b4ef66fea966fecbf11e",
+    "files_changed": 2,
+    "insertions": 55,
+    "deletions": 3
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; PASS digest binding; PASS sbom hashes; 30/30 shell suites; shellcheck 172 scripts; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "mutate PACKAGE_DIGEST.review_package_manifest_sha256=deadbeef; python3 automation/validation/check_digest_binding.py",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected failure: FAIL digest binding, declared=deadbeef actual=4167f360... (negative control)"
+    },
+    {
+      "command": "append newline to sbom/vuln/redis_8.8.2.json; bash automation/validation/sbom_hashes.sh verify",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected failure: 1 computed checksum did NOT match; sbom_hashes: FAIL (negative control)"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~4.5 KB scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "deterministic review-package rebuild + fresh-build diff over 3,720 entries",
+      "reason": "needs the release rebind (HYG-P0-001/PATCH-6); the committed package is stale vs its own manifest, so the content gate is deferred as an owner/rebind item and documented with evidence."
+    },
+    {
+      "command": "SBOM/vulnerability publication to CI/release assets",
+      "reason": "owner/release pipeline decision (HYG-P2-001 residual); not performed by this static remediation."
+    }
+  ],
+  "env_note": "The lab job API runs commands with HOME unset; the gate is invoked with HOME=/root (recorded). The lab worktree carries pre-existing CRLF-only differences in four docs/phase8/reviews/*.md files (HYG-P2-002); they are not in this diff. Tracked *.sh files were chmod +x before the gate (lab-sync extraction has core.fileMode=false).",
+  "verify_log": "remediation/PS-U08/verify.log",
+  "pr_body": "remediation/PS-U08/pr_body.md",
+  "generated_at": "2026-10-03T19:30:00Z"
+}

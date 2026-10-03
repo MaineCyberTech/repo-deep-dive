@@ -1,0 +1,83 @@
+{
+  "patch_set": "PS-U04",
+  "title": "Unassigned DATA findings (catch-all) - enforce event_time template/Vector consistency (DATA-P2-001)",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u04-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "eee84c8ec4a69f5614a7b0b267231a14a1ff65f5",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/31",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["DATA-P2-001"],
+  "finding_status": {
+    "DATA-P2-001": "partially-fixed"
+  },
+  "files": [
+    "automation/validation/check_event_time_consistency.py",
+    "automation/validation/tests/event_time_consistency_test.sh",
+    "ci/validate.py",
+    "docs/phase9/OPENSEARCH_TEMPLATE_EVENT_TIME_NOTE.md"
+  ],
+  "in_scope_files": [
+    "automation/validation/check_event_time_consistency.py",
+    "automation/validation/tests/event_time_consistency_test.sh",
+    "ci/validate.py",
+    "docs/phase9/OPENSEARCH_TEMPLATE_EVENT_TIME_NOTE.md"
+  ],
+  "companion_files": [],
+  "test_files": ["automation/validation/tests/event_time_consistency_test.sh"],
+  "deferred": [
+    {
+      "finding": "DATA-P2-001",
+      "part": "generate config/opensearch/falcon-eve-template.json from a single schema source so the template and Vector cannot diverge by construction",
+      "reason": "changes the template generation/review/deploy pipeline and who owns the schema source; the finding explicitly offers the CI consistency check as the alternative, which is implemented here. Owner/architecture decision if drift recurs."
+    }
+  ],
+  "not_reproducible": [],
+  "not_run": [
+    {
+      "command": "live per-index mapping drift (automation/validation/mapping_drift_check.py)",
+      "reason": "requires docker, OpenSearch credentials and a running cluster; it remains the runtime authority and is unchanged. This PR only adds the offline HEAD-time consistency check."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-U04/diff.patch",
+    "sha256": "9BC40C3F05F6C586E8730FFE445768266FEF92736FF533DE5F04EA5BD413C467",
+    "files_changed": 4,
+    "insertions": 351,
+    "deletions": 11
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 31/31 shell suites including event_time_consistency_test.sh; PASS event_time template/Vector consistency; shellcheck 173 scripts; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "git ls-files -z | xargs -0 chmod +x",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "setup: the tar-based lab sync drops the exec bit; tracked *.sh are restored +x before the gate (same as the other remediation runs)"
+    },
+    {
+      "command": "gitleaks stdin --redact --exit-code 1 < /tmp/psu04.diff",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: scanned ~17342 bytes (17.34 KB), no leaks found (exact base..HEAD patch; generated on the audit host because the lab clone cannot read the packed base object)"
+    }
+  ],
+  "negative_controls": [
+    "template event_time type -> keyword: check exits 1 with \"expected 'date'\"",
+    "transform assigns .event_time = \"2026-10-01T00:00:00Z\" (parse_timestamp used elsewhere): exits 1 with \"not a timestamp\"",
+    "transform drops the .event_time assignment: exits 1 with \"no remap transform emits\""
+  ],
+  "env_note": "The lab job API runs commands with HOME possibly unset; the gate is invoked with HOME=/root (recorded). The tar-based lab sync drops the exec bit (core.fileMode=false), so tracked *.sh are chmod +x before the gate. The lab .git cannot read the packed origin/main object, so the gitleaks diff was generated on the audit host (complete .git) and uploaded; the gate itself does not need that object.",
+  "verify_log": "remediation/PS-U04/verify.log",
+  "pr_body": "remediation/PS-U04/pr_body.md",
+  "generated_at": "2026-10-03T16:15:00Z"
+}

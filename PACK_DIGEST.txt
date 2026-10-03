@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T15:28:04Z
-# files: 959
+# generated: 2026-10-03T16:34:14Z
+# files: 1024
 # format: sha256  path
 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
@@ -453,7 +453,7 @@ a606d33dbde5ccd5ba3679a26d96e2f35f3437e2f09805219027ff06fca90de3  ./runs/falcon-
 00b77b74af3dc4c033bc2cefc94617378462942f05f112f954f45103f2a1e881  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/dashboard.html
 360632d45d901215b29154cd21ba58f2fe643819bb5d45fa289660e5cf0d6265  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/dashboard.md
 9dccb36177fef0fcc774b11b9f9379b24e53bd2b6ff363608e4e2146d3bcd42d  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/findings.json
-dcdaaf395a4e29fc3955e1a614130d031bd9da7aef4a30cc8a753661b6ebe2d2  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/follow_up_register.md
+f8ccce06a4425ace35b12a57791693de036cd2448598996b42dfe5fba7871d93  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/follow_up_register.md
 b464f12bbacb90ff5c5da4661d7a4f83b1fbf5b358c5dcb8096a6b487e09dc03  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/inventory.json
 50585f3321b358b81c502f6640f1b392e6b9a41a80a19741e4b37702a5ed3cac  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/patch_plan.md
 fc6af9b1edcc587bce45c648b309ea7f0742e750389479dcaf99202c7d0b5afa  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/pr_comment.md
@@ -491,11 +491,76 @@ e83a0652c371b4063b313aef53acb05485f2070247d604ff27453f9931c06c27  ./runs/falcon-
 cec09d91dba9bbd6642150f01d39fa4579961b1b29c43e7ad70de4920e9037da  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PATCH-8/manifest.json
 0d12ebf611658016301843759b472cfdcaad8e3af52b76b4090dbf3d8b55720c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PATCH-8/pr_body.md
 e72098862c127dddfb9d1eff0143c5bf8c6f4c79a58bfe958eb3e9fdea906ba4  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PATCH-8/verify.log
-556b13625a2a722d74decf4bc835d670fe87e3795382ca778eef20121f854e48  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation_plan.json
+c1b1a1961777e05bf4ae9c809d4c6539d8774f2c766f4910039beb740733ab55  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U01/diff.patch
+530cc71184d88cf685529aa4d46232885bf14861994cd27abb7a19b19a408ce9  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U01/manifest.json
+750ee7538ddf6a8f7c5ae4b94eb4b7d6090646cb3119f7c878ea85a80f62de64  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U01/pr_body.md
+6884d085a172a33543e609172313f9cef5aebd217fb69c1ac955b11a190f9bda  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U01/verify.log
+5b40bfa6a3a6988a07c07902d109b94afd3e2ccd7e4e8709ce78a4f57c7ca433  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U02/diff.patch
+0e8bae3f4d1f781478ad975c36aab0275f26d7bd77355d6835789a0e578686ef  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U02/gitleaks.json
+c884276354224caeaf2f80e83b94ce95595ea7b353d0c0445ac441371304077d  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U02/manifest.json
+5116637e2340fcadd506bc30f3f28cdd0753f501133cb112beb2d2fe0d994727  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U02/pin_check.json
+575dbeea930dc7b3427fc3de40bb11862efbcf0f53896d3e6340c2ddf9125491  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U02/pr_body.md
+3eb6a35657def4764e51ce8944ef5f7fb290acc204282936597432de85a53d96  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U02/validate.json
+2d63345d72ef59a5da1f0eb92bbed3a3d7f787d63ac14df1f00bd926c0d15ab9  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U02/verify.log
+8458e94a2e3a748c352745074a809035aa8287b7a3f23c98db7fa60104a676af  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U03/diff.patch
+1c9d540fb3c0a437470b08fdf2228c5f4b02c935cff278abbf698b55373ba97e  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U03/manifest.json
+d914eb409a31e3fd94168da900840b834a5e5b16e56a2f1d29e4cf6b6989008e  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U03/pr.txt
+291e4984020117093540b2c46061958e3a1c0580745790638971c1c755230161  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U03/pr_body.md
+7a9d6e725fc62a6980a68b1d071040ee115a01cad06f8b8097656d4123cac958  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U03/validate.raw.log
+44158b71494f2a090293bdbf19c840dbe8496f1e5c6e7830e671ed091c310330  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U03/verify.log
+9bc40c3f05f6c586e8730ffe445768266fef92736ff533de5f04ea5bd413c467  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U04/diff.patch
+440c03224aa949a1af57490c202d3f9066a25cc7f30c021d0d6f326f2402a1f0  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U04/manifest.json
+2d39a40497fa09d1199d81b00da24d22ef3f94a67fa0614368a16ca5283369d7  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U04/pr_body.md
+936d6cb7f2b142170f46a330b24bef0091bec8756aed7dfac68772d0a130a749  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U04/verify.log
+4015b343507f487353abd0dcb720d07d8efc26d56a1de982b62ebaee6c521a92  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U05/diff.patch
+06ea2973bee1649b90eaca0a8e89edb7ae85530ec98202c58f547d464c85eaf2  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U05/manifest.json
+a272a4660b37012b48cf6a80bd096f79217b2211721d123f8cd0e36e39faf966  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U05/pr_body.md
+66d457fcebe27d6f8ac23608151b06d341d6297eae66c33ad4aa86ce85e099a2  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U05/verify.log
+0213130f472a17689c35f41ab151399646be77c97b3590a25f5576ba8966de58  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U06/diff.patch
+4a558ff5b0798ba1315ac328b6cc95a4e483b570801197d328fd5acd1537e0d1  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U06/manifest.json
+836cc92b264b313b30912826094630eb1e0297e5a6a5c6b378874c2d442f1fb5  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U06/pr_body.md
+e981572fd791c5681be42a605bb9439dfdcfc93f4ba53f69d2ec04f9ddcbfee4  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U06/verify.log
+b442b099fed1f7610e25871efd5172a0a8cea6aeae8cc63510434e8c472b6718  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U07/diff.patch
+7d2c10895fb077bae79716d0ec6eb88c2d2e89691922b684f98d8a39fa7ae5ab  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U07/gitleaks.raw.log
+a5ed5bdc1a5c4ca47e37a02e877e282d94a3e476ac3ed0f184c8f268d412dd17  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U07/manifest.json
+d716c62a621266e0337be44e9ef27f5a6afe706ff7b9d1d04d728f57076141f5  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U07/pr.txt
+874f49bdfb8ecfc72bb9f9bd1e0bea4a6458455428f1a7057b91db8d07ea985c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U07/pr_body.md
+3a6864fbcaad0c8cc00bc643281c7e5adf2676801f383cd843c574580ead3aaf  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U07/validate.raw.log
+6aa87a8bb5b8a2480c8e0548ee19bc4087423c3011c096f9e823aec6f34ca19b  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U07/verify.log
+ae664bd45bff6f331020c6aa551eb984fb96e977ce59854d4c70567e528edb8f  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/diff.patch
+07f303fa8d7b80732ebecc322129359ba2f50ac7e1a55c45a91064ceedd5a570  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/manifest.json
+cd41e79c1a8a372ac37951058992bab046c054769267226f8f4d23500c498c2c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/negatives.log
+11094ef6231c68a2d7faa7b9ecf86d98f1b7d438cc071958571c4fdd09748595  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/negatives.raw.log
+e9fcc293f585cc908b0c1f166fa4cf331bdd3f1ee990fe682bfe03068a5b3917  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/negatives2.log
+1affa99de01082d49f507b2ff0d53a62ffc62be7815c9e2c35756f239d77d0b6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/pr_body.md
+be14e81b7900bd23eb8d2c16363833df8663fcb3beba2002496442386ae67512  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/validate.raw.log
+a41fcd0666942605ae1efcaab93a5ac14e3841a147c12efb799b3d17a877510d  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U08/verify.log
+7c68909638d69dc6b7caa7abee2005d3823f92565825eab5509e2926f33f45d8  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U09/diff.patch
+8aadb0c1cec23cec3a659dfcbb641680865aa8a9bf6508606871d84d32dd1c4c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U09/manifest.json
+e072f6be6d00dc9fea65c0764eedad7c944b25935714de13c33f985d9a9a1ebc  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U09/pr_body.md
+4c1cf862b93a2f11c1d563aba1d9ebccb556ca6d0733ba62145920534ce00d67  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U09/verify.log
+1523144ffc56278a1c54b5bf848c1f06095081db8a87d4b90f1ee4a00fcae565  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U10/diff.patch
+41d882fb2e3054181e1007dd14e4434684c77679c6ecfcfa45e0ec278b1b6a83  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U10/manifest.json
+e8c38083aa3f4a860d0ba4d6307ebb0f31d57ea4f2569300626dd00340c63104  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U10/pr_body.md
+19602518477cf1a53b0d9195ded088bbf9cd88e56003dfc800b0ccc3323863bb  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U10/ps-u10-verify.sh
+64801347900d18a212cea09dea24bcc5355565c3189c2b5f659d9d4535d68812  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U10/verify.log
+f65d864d5c969be82016b658d82522cdf741a5ea448b63a58ba1821af9aa92a6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U11/diff.patch
+4a9f3768a0da73455cef582eb094fbce4dae87f950a3bf2228f2ce40c66f5037  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U11/manifest.json
+ba1becd093002c54adeecad4dc257c91994a07a7515bdc4bf1a9837cee420303  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U11/pr_body.md
+c3a664d57f5253fd7e3b85fb74b659d7d3a943a90d7a678d9c211722060b619a  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U11/verify.log
+b698d29a3cdcd3fcb118f6794393bd9c0a461c9bbb6ea6a11add3a0d330d6610  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U12/diff.patch
+bed6d280fb03ab96551bf796c7144462a9193700224c5cc029ebcaf78bf0504c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U12/manifest.json
+9b72f8e25ec089681c773d74ea85aec26e1c33d534051819f941b47c9ab56953  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U12/pr_body.md
+e77bb3e698f010aa3194f733d8f410171c187274ad3a36799aed6547ccf2099b  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U12/verify.log
+287c3ee9202a98ab3b25e445457f90c436bd04e34aa5231b95f0a9ba7499a88f  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U13/diff.patch
+094798892d99df64a7eb1d9f73fc9be47e57198328197a7bf91d2f8da80cf62f  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U13/manifest.json
+c8ecd29caf0fba08a44302eb9fbabdd6e2a2fec8e06133a43aeb798c08c2d283  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U13/pr_body.md
+2b437ff22e22afe4beb9bb2ac7fadffcb6c29469c63bacb041fae39ab567b032  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U13/verify.log
+47a0d8af389c66d04d3d38a1789006f8f8cf5cf6c906a3a893f4b9d8e42e374e  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation_plan.json
 dae02c835ebc9225c638b1a18b5c29a6acdf38d5dc5ed7bb642c210118c050a6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/risk_register.md
 4539311b7335758f72c9a2f87b578e1ca6dd3f3ebf362ee4289afbbb7ed6b10c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/risk_score.json
 1388bcedc1322bce125dd629ed512600ff45159d913e116d496efd1f78c1472a  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/roadmap.md
-21c7c7caa5ed17205eb635684de8fbf91a025cada5241f431c9ee3f0538251cb  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/verification_log.md
+f18e578f07709b7acec9d5023993a829e0594553338c210aa0e18a057fb0772e  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/verification_log.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md

@@ -1,0 +1,83 @@
+# PS-U03 lab verification (findings CI-P1-001, CI-P1-002, CI-P2-001, CI-P2-002, CI-P3-001)
+# run: 20261003-0018-fix-backup-abort-markers-20b5e57
+# branch: remediation/ps-u03-20261003-0018-fix-backup-abort-markers-20b5e57
+# base: 430da82274af4c0821542627fdb9e6ab74afa826 (origin/main)
+# runner: lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 then tools/lab_runner.py job API)
+# note: lab-sync wipes /srv/work/falcon; core.fileMode=false, so tracked *.sh are chmod +x before the gate.
+# note: the 4 docs/phase8/reviews/*.md files stay 'modified' from the repo's mixed-EOL blobs (pre-existing HYG-P2-002), unrelated to this patch.
+commit=375c4fb13d5ff24b2fa1df2d48565e9ec11f2124
+branch=remediation/ps-u03-20261003-0018-fix-backup-abort-markers-20b5e57
+
+================================================================================ 1) repository gate
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (601 scripts)
+PASS  shellcheck (173 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.7s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/ci_governance_guard_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (1.4s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.1s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.3s)
+PASS  shell tests (31 suite(s))
+
+validation_failures=0
+VALIDATE_EXIT=0
+
+================================================================================ 2) actionlint (no workflow changed; run for completeness)
+ACTIONLINT_EXIT=0
+
+================================================================================ 3) shellcheck (new guard test)
+SHELLCHECK_EXIT=0
+
+================================================================================ 4) mutation test: guard fails when the label gate is removed
+--- mutant (label removed) ---
+FAIL: CI-P2-002: .github/workflows/dependabot-merge.yml does not match /dependabot-approved/
+MUTANT_EXIT=1
+--- restored ---
+PASS ci_governance_guard
+RESTORED_EXIT=0
+
+================================================================================ 5) secret gate (diff vs base)
+powershell : 2:46PM INF scanned ~3937 bytes (3.94 KB) in 247ms
+At line:1 char:138
++ ... proxmox-vm; powershell -ExecutionPolicy Bypass -File .\scripts\ssh-pu ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2:46PM...B) in 247ms:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2:46PM INF no leaks found
+GITLEAKS_EXIT=0

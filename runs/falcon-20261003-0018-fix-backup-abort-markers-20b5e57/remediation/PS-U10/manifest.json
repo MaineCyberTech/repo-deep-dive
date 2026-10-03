@@ -1,0 +1,120 @@
+{
+  "patch_set": "PS-U10",
+  "title": "Unassigned OBS findings (catch-all) - per-path relay failure alert + alert-rule linter",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u10-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "aef63addacb79888c0d540257a8b0470115c3102",
+  "commit_subject": "obs: close unassigned P1 observability findings [PS-U10]",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/27",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["OBS-P1-001", "OBS-P1-002", "OBS-P1-003"],
+  "finding_status": {
+    "OBS-P1-001": "partially-fixed",
+    "OBS-P1-002": "partially-fixed",
+    "OBS-P1-003": "partially-fixed"
+  },
+  "files": [
+    "bootstrap/90-alerting.sh",
+    "automation/validation/tests/alert_rule_lint_test.sh",
+    "automation/validation/tests/remediation_guards_test.sh"
+  ],
+  "in_scope_files": [
+    "bootstrap/90-alerting.sh"
+  ],
+  "test_files": [
+    "automation/validation/tests/alert_rule_lint_test.sh",
+    "automation/validation/tests/remediation_guards_test.sh"
+  ],
+  "companion_files": [],
+  "base_state": {
+    "OBS-P1-001": "already addressed at base: automation/validation/tests/alert_expression_bool_test.sh (commit a29fcf3) runs in the ci/validate.py shell-test gate; no new source change required, a static expression linter is added as a guard.",
+    "OBS-P1-002": "already addressed at base: no duplicate rule UIDs or identical expressions (78 unique); readme_ledger_drift_test.sh asserts the README count against the committed ALERT_CATALOGUE.yaml; commit f1d2d0a surfaced the authoritative firing-proof coverage.",
+    "OBS-P1-003": "half-fixed at base: per-path counters exist (commit 85b068d) but no alert fired on a single failing path; total-failure rule only moves when every path fails."
+  },
+  "deferred": [
+    {
+      "finding": "OBS-P1-003",
+      "part": "live firing proof (deploy the rule + fault-inject one relay path)",
+      "reason": "needs the provisioned rule deployed to Grafana and a deliberate single-path relay failure; cannot be produced from a static repo-local change and is not fabricated. Recorded as partially-fixed."
+    },
+    {
+      "finding": "OBS-P1-003",
+      "part": "suppress alt-path outcome records when MON_RELAY_ALT_URL is unset",
+      "reason": "ntfy_relay.py records an alt failure even when the independent path is disabled, so the new warning would false-fire if the owner later removes the alt URL. The shipped unit sets the alt URL. A relay behaviour change left as an owner decision."
+    },
+    {
+      "finding": "OBS-P1-002",
+      "part": "regenerate docs/phase9/ALERT_CATALOGUE.yaml + README count from the live Grafana API after deploy",
+      "reason": "the committed catalogue is generated from the live API and already lags the rule source (76 recorded vs 77 at base, 78 with this rule); it needs a live regen, not a hand-edit."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U10/diff.patch",
+    "sha256": "1523144ffc56278a1c54b5bf848c1f06095081db8a87d4b90f1ee4a00fcae565",
+    "bytes": 5994,
+    "files_changed": 3,
+    "insertions": 95,
+    "deletions": 0
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 31/31 shell suites incl. alert_rule_lint_test.sh; shell syntax 601 scripts; shellcheck 173 scripts; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "bash automation/validation/tests/alert_rule_lint_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: PASS alert_rule_lint (derived_rule_count=78; unique_uids=78; unique_expressions=78)"
+    },
+    {
+      "command": "bash automation/validation/tests/remediation_guards_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: PASS remediation_guards"
+    },
+    {
+      "command": "append a rule re-using UID falcon-relay-path-failures; bash automation/validation/tests/alert_rule_lint_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected failure: FAIL alert_rule_lint / duplicate rule uid(s): falcon-relay-path-failures (negative control)"
+    },
+    {
+      "command": "remove the falcon-relay-path-failures rule; bash automation/validation/tests/remediation_guards_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected failure: FAIL bootstrap/90-alerting.sh does not match /falcon-relay-path-failures/ (negative control)"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (5,994 bytes scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "live per-path relay fault injection (OBS-P1-003 suggested validation)",
+      "reason": "needs the provisioned Grafana rule deployed and a deliberate single-path delivery failure; out of scope for a static repo-local PR and not fabricated."
+    },
+    {
+      "command": "promtool check rules",
+      "reason": "there is no config/prometheus/rules directory; alert rules are Grafana-provisioned from bootstrap/90-alerting.sh via the API, so promtool has no artifact to check."
+    }
+  ],
+  "env_note": "lab-sync.ps1 extracts the Windows working tree; the extracted clone has core.fileMode=false, so every tracked mode-100755 file was chmod +x'd before the gate (otherwise offline suites that execute tracked scripts exit 126). Four docs/phase8/reviews/*.md files stay 'modified' from pre-existing mixed-EOL blobs (HYG-P2-002); unrelated and not in this diff. The lab job API runs with HOME unset, so the gate is invoked with HOME=/root.",
+  "verify_log": "remediation/PS-U10/verify.log",
+  "pr_body": "remediation/PS-U10/pr_body.md",
+  "scopeCheck": "pass - 3 observability files: 1 alert rule in bootstrap/90-alerting.sh + 2 offline test files; no workflow, dependency, schema, ledger, lockfile or machine-artifact changes",
+  "generated_at": "2026-10-03T15:35:00Z"
+}

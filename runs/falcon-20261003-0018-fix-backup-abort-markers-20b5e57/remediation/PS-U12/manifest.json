@@ -1,0 +1,136 @@
+{
+  "patch_set": "PS-U12",
+  "title": "Unassigned SUPPLY findings (catch-all) - gitleaks allowlist narrowing, lock-freshness gate, full RepoDigests check",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u12-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "5f9cf9a304fba3ecd82dfee951e8d299c9a93f15",
+  "commit_subject": "chore(supply): close unassigned supply findings [PS-U12]",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/30",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["SUPPLY-P2-001", "SUPPLY-P2-002", "SUPPLY-P3-001"],
+  "finding_status": {
+    "SUPPLY-P2-001": "partially-fixed",
+    "SUPPLY-P2-002": "partially-fixed",
+    "SUPPLY-P3-001": "partially-fixed"
+  },
+  "files": [
+    ".gitleaks.toml",
+    "ci/validate.py",
+    "pins/verify-digests.sh",
+    "automation/validation/tests/verify_digests_multiarch_test.sh",
+    "docs/security/SCANNER_ALLOWLIST_CHANGES.md"
+  ],
+  "in_scope_files": [
+    ".gitleaks.toml",
+    "ci/validate.py",
+    "pins/verify-digests.sh",
+    "docs/security/SCANNER_ALLOWLIST_CHANGES.md"
+  ],
+  "test_files": [
+    "automation/validation/tests/verify_digests_multiarch_test.sh"
+  ],
+  "companion_files": [],
+  "base_state": {
+    "SUPPLY-P2-001": ".gitleaks.toml allowlisted generic-api-key for the whole docs/audits/ and ledgers/ subtrees; the 4 suppressed matches live in exactly two files.",
+    "SUPPLY-P2-002": "automation/validation/check_compose_digests.py supports --max-lock-age-days and its offline suite tests it, but ci/validate.py invoked the checker without the flag, so lock freshness was ungated (lock 2026-09-20).",
+    "SUPPLY-P3-001": "pins/verify-digests.sh compared docker image inspect {{index .RepoDigests 0}} only; a multi-arch image with the pinned digest at another index would fail or mis-compare."
+  },
+  "deferred": [
+    {
+      "finding": "SUPPLY-P2-002",
+      "part": "scheduled lock refresh",
+      "reason": "The gate now fails closed on a stale lock (LOCK_MAX_AGE_DAYS=30). The refresh cadence (pins/pull-and-record.sh + pins/verify-digests.sh on a schedule) is an operational/owner decision; no scheduler lives in the repository."
+    },
+    {
+      "finding": "SUPPLY-P3-001",
+      "part": "pins/pull-and-record.sh uses the same {{index .RepoDigests 0}} idiom when recording",
+      "reason": "The finding names only pins/verify-digests.sh. Changing the recorder could alter the digests written to the lock, so it is left out of the named scope."
+    },
+    {
+      "finding": "SUPPLY-P2-001",
+      "part": "line-scoped regex (regexTarget/regexes) for the REDACTED marker",
+      "reason": "Attempted; under gitleaks 8.30.1 neither regexTarget=line nor regexTarget=match with regex REDACTED suppressed the hits. The two-file path narrowing was verified to keep tree AND full history clean while catching new files."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U12/diff.patch",
+    "sha256": "b698d29a3cdcd3fcb118f6794393bd9c0a461c9bbb6ea6a11add3a0d330d6610",
+    "bytes": 22206,
+    "files_changed": 5,
+    "insertions": 139,
+    "deletions": 8
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + ssh/job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 31/31 shell suites incl. verify_digests_multiarch_test.sh (5/5); PASS image lock freshness (12d <= 30d); edge-pin skipped (delivery absent); secret scan pass"
+    },
+    {
+      "command": "python3 ci/validate.py --only lock-age",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: PASS image lock freshness (12d <= 30d)"
+    },
+    {
+      "command": "bash automation/validation/tests/verify_digests_multiarch_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: verify_digests_multiarch_test: 5/5 checks passed (pinned digest as second of two RepoDigests passes; pinned digest as sole entry passes; absent digest fails)"
+    },
+    {
+      "command": "python3 automation/validation/check_compose_digests.py --max-lock-age-days 30",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: lock_age_days=12, compose_files=5 image_refs=18, compose_digest_findings=0"
+    },
+    {
+      "command": "python3 automation/validation/check_compose_digests.py --max-lock-age-days 1",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected failure (negative control): FINDING pins/images.lock is 12 days old (limit 1)"
+    },
+    {
+      "command": "gitleaks detect --no-git --source . --redact --config .gitleaks.toml --no-banner",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~7.43 MB); the 4 previously suppressed matches remain covered by the two narrowed file paths"
+    },
+    {
+      "command": "gitleaks detect --source . --config .gitleaks.toml --redact --log-opts=--all --exit-code 1 --no-banner",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: 747 commits scanned (~74 MB), no leaks found"
+    },
+    {
+      "command": "plant api_key = \"<32-hex>\" under ledgers/ and docs/audits/, re-run gitleaks then remove",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 1,
+      "result": "expected failure (negative control): 2 generic-api-key hits (docs/audits/ps-u12-planted.tmp, ledgers/ps-u12-planted.tmp); files removed, 0 leftovers"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "live docker image inspect against a real multi-arch image on the host",
+      "reason": "The lab guest has no docker daemon; the fix is read-only and the finding's suggested fixture (two RepoDigests) is covered by the committed stub test."
+    },
+    {
+      "command": "scheduled lock refresh (pins/pull-and-record.sh on a cadence)",
+      "reason": "Operational cadence; no scheduler in the repository (owner decision). The gate enforces the window."
+    }
+  ],
+  "env_note": "The lab tar extraction sets core.fileMode=false, so the tracked mode-100755 files were chmod +x'd before the gate. The gitleaks negative-control files were created in the lab worktree and removed before finishing; the committed tree is unchanged.",
+  "verify_log": "remediation/PS-U12/verify.log",
+  "pr_body": "remediation/PS-U12/pr_body.md",
+  "scopeCheck": "pass - 5 files: .gitleaks.toml (narrowed allowlist), ci/validate.py (additive lock-age check), pins/verify-digests.sh (RepoDigests membership), docs/security/SCANNER_ALLOWLIST_CHANGES.md, automation/validation/tests/verify_digests_multiarch_test.sh. No compose-gate/waiver/vuln-gate (PATCH-5) edits, runtime service, workflow, dependency, schema or lockfile change.",
+  "generated_at": "2026-10-03T16:10:00Z"
+}

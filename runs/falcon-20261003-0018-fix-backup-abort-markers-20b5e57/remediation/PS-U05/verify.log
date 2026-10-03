@@ -1,0 +1,83 @@
+# PS-U05 lab verification (finding EXEC-P1-001)
+# run: 20261003-0018-fix-backup-abort-markers-20b5e57
+# branch: remediation/ps-u05-20261003-0018-fix-backup-abort-markers-20b5e57
+# base: 430da82274af4c0821542627fdb9e6ab74afa826 (origin/main)
+# commit: 4529dbdb966a639a79d46d85c3d32de9ae865925
+# runner: lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 then tools/lab_runner.py job API)
+# note: lab-sync extracts the Windows working tree; the extracted clone has core.fileMode=false,
+#       so the 592 tracked mode-100755 files were chmod +x before the gate. The four
+#       docs/phase8/reviews/*.md files stay 'modified' from the repo's mixed-EOL blobs
+#       (pre-existing HYG-P2-002), unrelated to this patch.
+
+================================================================================ 1) repository gate
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (600 scripts)
+PASS  shellcheck (172 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.8s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (1.6s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.2s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.3s)
+PASS  shell tests (30 suite(s))
+
+validation_failures=0
+VALIDATE_EXIT=0
+[exit=0 duration=31.4s cwd=/srv/work/falcon]
+
+================================================================================ 2) secret gate (diff vs origin/main)
+GITLEAKS_EXIT=0
+[exit=0 duration=0.7s cwd=/srv/work/falcon]
+python : 
+At line:1 char:161
++ ... ?'; $out2 = python tools/lab_runner.py --url http://172.23.128.51:872 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    \u25cb
+    \u2502\u2572
+    \u2502 \u25cb
+    \u25cb \u2591
+    \u2591    gitleaks
+
+[90m2:57PM[0m [32mINF[0m [1mscanned ~6219 bytes (6.22 KB) in 247ms[0m
+[90m2:57PM[0m [32mINF[0m [1mno leaks found[0m
+
+================================================================================ 3) docs checks (new gate page + README link)
+DOCS_CHECK_OK
+DOCS_EXIT=0
+[exit=0 duration=0.0s cwd=/srv/work/falcon]

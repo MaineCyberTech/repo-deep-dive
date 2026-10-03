@@ -1,0 +1,108 @@
+# PS-U01 lab verification (findings API-P1-001, API-P2-001, API-P2-002)
+run: 20261003-0018-fix-backup-abort-markers-20b5e57
+runner: lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 -Repo falcon + tools/lab_runner.py job API)
+base: 430da82274af4c0821542627fdb9e6ab74afa826 (origin/main)
+branch: remediation/ps-u01-20261003-0018-fix-backup-abort-markers-20b5e57
+commit under test: c04c0068c182b7d61521978f154f5ac33ae42c2a
+worktree: clean LF (core.autocrlf=false; .gitattributes eol=lf); remote /srv/work/falcon at c04c006
+note: the lab job API runs commands with HOME unset. The first `ci/validate.py` invocation failed
+only in the unrelated offline `audit_run_lifecycle_test.sh` fixture (`HOME: unbound variable`,
+line 25 of automation/validation/audit_run_lifecycle.sh). Re-running the same gate with a normal
+`HOME=/root` passes; that is the recorded command below. No repository change was needed for it
+and none was made.
+
+$ git -C /srv/work/falcon rev-parse HEAD
+c04c0068c182b7d61521978f154f5ac33ae42c2a
+
+$ find /srv/work/falcon -name '*.sh' -exec chmod +x {} +
+chmod_done
+
+================================================================================
+1) Repository gate
+$ cd /srv/work/falcon && HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py
+EXIT=0
+
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (600 scripts)
+PASS  shellcheck (172 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.7s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (1.7s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.1s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.4s)
+PASS  shell tests (30 suite(s))
+
+validation_failures=0
+[exit=0 duration=36.1s]
+
+================================================================================
+2) API-P2-001 regression suite (token expiry)
+$ cd /srv/work/falcon && bash automation/vpn/test_enroll_service.sh
+EXIT=0
+
+PASS health
+PASS per-device token enrolls
+PASS first address is 10.99.0.20/32
+PASS shared token refused for a bound name
+PASS wrong per-device token refused
+PASS shared token enrolls an unbound name
+PASS second address is 10.99.0.21/32
+PASS server-side keygen for a token-bearing request
+PASS keygen returns a private key
+PASS re-enroll replaces the same-name peer
+PASS re-enroll keeps the address
+PASS one peer block for desktop-02
+PASS rotated key persisted
+PASS expired per-device token refused
+PASS malformed expiry refused (fail closed)
+PASS future per-device token enrolls
+PASS legacy binding without expiry still enrolls
+PASS rate limiter throttles a burst
+enroll_test_pass=18 fail=0
+[exit=0 duration=0.6s]
+
+================================================================================
+3) Secret gate
+$ cd /srv/work/falcon && git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1
+EXIT=0
+
+    gitleaks
+INF scanned ~13002 bytes (13 KB) in 279ms
+INF no leaks found
+
+================================================================================
+Result: all three gates exit 0 at c04c0068c182b7d61521978f154f5ac33ae42c2a.

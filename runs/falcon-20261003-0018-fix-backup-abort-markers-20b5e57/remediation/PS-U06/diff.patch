@@ -1,0 +1,86 @@
+diff --git a/automation/validation/tests/remediation_guards_test.sh b/automation/validation/tests/remediation_guards_test.sh
+index c462e59..a079b9e 100644
+--- a/automation/validation/tests/remediation_guards_test.sh
++++ b/automation/validation/tests/remediation_guards_test.sh
+@@ -47,6 +47,18 @@ check_contains .github/workflows/validate.yml 'curl -sL --fail'
+ [ -f "$REPO_ROOT/config/systemd/falcon-container-drift.timer" ] || { echo "FAIL: container-drift timer missing"; fail=1; }
+ check_contains bootstrap/90-alerting.sh 'falcon-container-drift.timer'
+ 
++# FEAT-P2-001: compose/mct is first-party (adopted) and says so; the vendored mct/compose
++# snapshot is archive-only, so no first-party deployment entrypoint may reference it.
++check_contains compose/mct/docker-compose.opencanary.yml 'FIRST-PARTY'
++check_contains compose/mct/iris-web/docker-compose.yml 'FIRST-PARTY'
++check_contains docs/runbooks/MCT_CONSOLIDATION.md 'Live vs staged classification'
++check_contains docs/runbooks/MCT_CONSOLIDATION.md 'archive-only'
++bad_ref="$(grep -rInE '(^|[[:space:]])(-f|--file)[[:space:]]+[^[:space:]]*mct/compose/|(^|[[:space:]])file:[[:space:]]*[^[:space:]]*mct/compose/' \
++  "$REPO_ROOT/compose" "$REPO_ROOT/bootstrap" 2>/dev/null || true)"
++if [ -n "$bad_ref" ]; then
++  echo "FAIL: first-party deployment artifact references archive-only mct/compose: $bad_ref"; fail=1
++fi
++
+ if [ "$fail" -eq 0 ]; then
+   echo "PASS remediation_guards"
+ else
+diff --git a/compose/mct/docker-compose.opencanary.yml b/compose/mct/docker-compose.opencanary.yml
+index 18b07aa..3d481df 100644
+--- a/compose/mct/docker-compose.opencanary.yml
++++ b/compose/mct/docker-compose.opencanary.yml
+@@ -1,5 +1,11 @@
+ name: mct-security-stack
+ 
++# Classification: FIRST-PARTY (adopted), not vendored. This is the consolidated, digest-pinned
++# OpenCanary deployment path for the lab (FEAT-P2-001); it is in the pin/SBOM scope that
++# ci/validate.py enforces for compose/** and pins/images.lock covers. The imported snapshot
++# under the vendored mct/compose tree stays archive-only and must not be used as a deployment
++# source (mct/VENDORING.md P3/P4). Live-vs-staged authority: docs/runbooks/MCT_CONSOLIDATION.md.
++#
+ # OpenCanary deception layer on the lab (consolidated from the MCT stack, VM 101).
+ # Adapted from mct/compose/docker-compose.opencanary.yml:
+ #   - the retired external mct-security network is a local network here
+diff --git a/compose/mct/iris-web/docker-compose.yml b/compose/mct/iris-web/docker-compose.yml
+index 0fe3ca0..dc3012a 100644
+--- a/compose/mct/iris-web/docker-compose.yml
++++ b/compose/mct/iris-web/docker-compose.yml
+@@ -15,6 +15,12 @@
+ #  along with this program; if not, write to the Free Software Foundation,
+ #  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ 
++# Classification: FIRST-PARTY (adopted), not vendored. This is the consolidated, digest-pinned
++# DFIR-IRIS deployment path for the lab (FEAT-P2-001); it is in the pin/SBOM scope that
++# ci/validate.py enforces for compose/** and pins/images.lock covers. The imported snapshot
++# under the vendored mct/compose tree stays archive-only and must not be used as a deployment
++# source (mct/VENDORING.md P3/P4). Live-vs-staged authority: docs/runbooks/MCT_CONSOLIDATION.md.
++
+ services:
+   rabbitmq:
+     extends:
+diff --git a/docs/runbooks/MCT_CONSOLIDATION.md b/docs/runbooks/MCT_CONSOLIDATION.md
+index 89dabf4..1cb09f4 100644
+--- a/docs/runbooks/MCT_CONSOLIDATION.md
++++ b/docs/runbooks/MCT_CONSOLIDATION.md
+@@ -19,6 +19,25 @@ The portable MCT content is imported under **`mct/`** (843 files): the project d
+ - secrets: `.env`, `config/shuffle-api-key`, `config/shuffle-tls/` (private key). Sanitized
+   references are recorded in `ledgers/redactions.md`.
+ 
++## Live vs staged classification (FEAT-P2-001)
++
++Single authoritative live-vs-staged map. `compose/mct/` is **first-party** (adopted): the
++consolidated services are digest-pinned and in the pin/SBOM scope that `ci/validate.py`
++enforces for `compose/**` with `pins/images.lock`. The imported snapshot under
++**`mct/compose/` is archive-only** (vendored; not a deployment source — `mct/VENDORING.md`
++P3/P4), so no first-party deployment artifact may reference it. A cheap static guard asserts
++both boundaries (`automation/validation/tests/remediation_guards_test.sh`).
++
++| Service(s) | Classification | Path | Pin/SBOM scope |
++|---|---|---|---|
++| DFIR-IRIS, OpenCanary | Live — first-party, adopted | `compose/mct/` | yes (`compose/**` pin check + `pins/images.lock`) |
++| Shuffle, MISP, Velociraptor, OTel | Staged — archive-only | `mct/compose/` | no (must be pinned before revival) |
++| Greenbone, Security Onion | On their own VMs (preserved) | `mct/compose/` | no |
++
++The subtree fate (keep vs extract) and the archive-only enforcement approach are still the
++owner's decision (`docs/OWNER_DECISION_PACKAGE_2026-10-02.md` E-2a/E-2b); this
++classification does not preempt it.
++
+ ## Services on the lab
+ 
+ | Service | Where | Access | Notes |

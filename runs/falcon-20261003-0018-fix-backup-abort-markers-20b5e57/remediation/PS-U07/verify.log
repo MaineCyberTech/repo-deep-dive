@@ -1,0 +1,78 @@
+# PS-U07 lab verification (finding FINAL-P1-001)
+# run: 20261003-0018-fix-backup-abort-markers-20b5e57
+# branch: remediation/ps-u07-20261003-0018-fix-backup-abort-markers-20b5e57
+# base: 430da82274af4c0821542627fdb9e6ab74afa826 (origin/main)
+# commit: a981b7b449ba48bf755ce9e9c0b17f1a94178e28
+# runner: lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 then tools/lab_runner.py job API)
+# note: lab-sync extracts the Windows working tree; the extracted clone has core.fileMode=false,
+#       so all tracked *.sh/*.py files were chmod +x before the gate. The pre-existing mixed-EOL
+#       docs/phase8/reviews/*.md blobs (HYG-P2-002) are unrelated to this patch.
+================ 1) repository gate: HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py
+CHMOD_OK
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (600 scripts)
+PASS  shellcheck (172 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.6s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.8s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (1.6s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.3s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.3s)
+PASS  shell tests (30 suite(s))
+
+validation_failures=0
+VALIDATE_EXIT=0
+[exit=0 duration=35.8s cwd=/srv/work/falcon]
+
+================ 2) secret gate: git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1
+GITLEAKS_EXIT=0
+DIFF_BYTES=5638
+[exit=0 duration=0.7s cwd=/srv/work/falcon]
+python : 
+At line:1 char:317
++ ... u07.diff)'; python C:\temp\repo-deep-dive\tools\lab_runner.py --url h ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    \u25cb
+    \u2502\u2572
+    \u2502 \u25cb
+    \u25cb \u2591
+    \u2591    gitleaks
+
+[90m3:05PM[0m [32mINF[0m [1mscanned ~5638 bytes (5.64 KB) in 253ms[0m
+[90m3:05PM[0m [32mINF[0m [1mno leaks found[0m

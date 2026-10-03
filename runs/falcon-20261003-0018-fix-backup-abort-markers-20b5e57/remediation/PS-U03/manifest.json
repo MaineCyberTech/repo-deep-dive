@@ -1,0 +1,91 @@
+{
+  "patch_set": "PS-U03",
+  "title": "Unassigned CI findings (catch-all) - regression guard for the CI compensating controls; plan-gated environment/protection deferred",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u03-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "375c4fb13d5ff24b2fa1df2d48565e9ec11f2124",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/23",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["CI-P1-001", "CI-P1-002", "CI-P2-001", "CI-P2-002", "CI-P3-001"],
+  "finding_status": {
+    "CI-P1-001": "verified-fixed",
+    "CI-P1-002": "owner-accepted",
+    "CI-P2-001": "verified-fixed",
+    "CI-P2-002": "partially-fixed",
+    "CI-P3-001": "verified-fixed"
+  },
+  "files": [
+    "automation/validation/tests/ci_governance_guard_test.sh"
+  ],
+  "in_scope_files": [],
+  "companion_files": [],
+  "test_files": ["automation/validation/tests/ci_governance_guard_test.sh"],
+  "deferred": [
+    {
+      "finding": "CI-P1-002",
+      "part": "server-side branch protection and required checks",
+      "reason": "plan-gated on a private GitHub Free repository; the owner decision to stay on Free and rely on the label gate/CODEOWNERS compensating controls is recorded in docs/security/BRANCH_PROTECTION.md. No repo-local change can enforce it."
+    },
+    {
+      "finding": "CI-P2-002",
+      "part": "protected environment (required reviewers / wait timer) around the Dependabot merge job",
+      "reason": "on private repositories, environment required reviewers and wait timers are only available on higher GitHub plans (Free/Pro/Team restrict them to public repositories). This is the same plan constraint already accepted for branch protection, so it is recorded as an owner/plan open question rather than guessed. The repo-local compensating controls (Dependabot-only author, dependabot-approved label, green checks) are present and now guarded by an offline test."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U03/diff.patch",
+    "sha256": "8458E94A2E3A748C352745074A809035AA8287B7A3F23C98DB7FA60104A676AF",
+    "files_changed": 1,
+    "insertions": 85,
+    "deletions": 0
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 31/31 shell suites incl. ci_governance_guard_test.sh; shellcheck 173 scripts; secret scan; yaml/json parse"
+    },
+    {
+      "command": "actionlint -color .github/workflows/validate.yml .github/workflows/dependabot-merge.yml .github/workflows/external-smoke.yml",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: all workflows lint clean (no workflow file changed by this patch; run for completeness)"
+    },
+    {
+      "command": "shellcheck --severity=warning --format=gcc automation/validation/tests/ci_governance_guard_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: no findings"
+    },
+    {
+      "command": "sed -i s/dependabot-approved/XXremovedXX/ .github/workflows/dependabot-merge.yml && bash automation/validation/tests/ci_governance_guard_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 1,
+      "result": "expected mutant failure: FAIL CI-P2-002 does not match /dependabot-approved/ (MUTANT_EXIT=1); file restored and guard re-run exits 0 (RESTORED_EXIT=0, git shows the file clean)"
+    },
+    {
+      "command": "git diff 430da82274af4c0821542627fdb9e6ab74afa826 HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner 172.23.128.51 (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~3,937 bytes scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "live Dependabot merge workflow run with/without the approval label",
+      "reason": "exercising the scheduled workflow requires the GitHub Actions runner and real Dependabot PRs; this patch changes no workflow, so there is no behavioural change to exercise. The compensating controls are asserted statically."
+    }
+  ],
+  "env_note": "lab-sync.ps1 wipes /srv/work/falcon and extracts the Windows working tree; the extracted repo has core.fileMode=false, so tracked *.sh were chmod +x'd before the gate. Four docs/phase8/reviews/*.md files remain reported modified from pre-existing mixed-EOL blobs (HYG-P2-002); they are unrelated to this patch. The lab job API runs with HOME unset, so the gate is invoked with HOME=/root.",
+  "verify_log": "remediation/PS-U03/verify.log",
+  "pr_body": "remediation/PS-U03/pr_body.md",
+  "generated_at": "2026-10-03T14:50:00Z"
+}

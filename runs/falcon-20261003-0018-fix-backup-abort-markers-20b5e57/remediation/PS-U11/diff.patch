@@ -1,0 +1,134 @@
+diff --git a/automation/validation/tests/cloudflare_token_argv_test.sh b/automation/validation/tests/cloudflare_token_argv_test.sh
+new file mode 100755
+index 0000000..61c444d
+--- /dev/null
++++ b/automation/validation/tests/cloudflare_token_argv_test.sh
+@@ -0,0 +1,79 @@
++#!/usr/bin/env bash
++# Regression test for SEC-P2-002: the Cloudflare API bearer token must never be
++# passed to curl as a command-line argument (argv is readable via ps and
++# /proc/<pid>/cmdline). The token is delivered through `curl --config -` (stdin).
++#
++# Offline: extracts the shipped api() function from
++# bootstrap/97-cloudflare-api-config.sh and runs it against a stub curl that
++# records its argv and stdin, proving the token reaches curl only on stdin.
++#
++# Usage: bash automation/validation/tests/cloudflare_token_argv_test.sh
++set -u
++ROOT="$(cd "$(dirname "$(dirname "$(dirname "$(dirname "$0")")")")" && pwd)"
++SCRIPT="$ROOT/bootstrap/97-cloudflare-api-config.sh"
++mkdir -p /tmp/opencode
++WORK="$(mktemp -d /tmp/opencode/cloudflare-token-argv-XXXXXX)"
++trap 'rm -rf "$WORK"' EXIT
++
++fails=0
++fail() { echo "FAIL: $1"; fails=$((fails + 1)); }
++pass() { echo "ok   $1"; }
++
++# 1. Static: no curl invocation may carry an inline Authorization header.
++if matches="$(grep -nE 'curl[^|]*Authorization' "$SCRIPT")" && [ -n "$matches" ]; then
++  echo "$matches"
++  fail "bootstrap/97 still passes the bearer token as a curl argv"
++else
++  pass "no inline Authorization header on a curl command line"
++fi
++
++# 2. Static: the header is delivered through `curl --config -` (stdin).
++if grep -q -- '--config -' "$SCRIPT"; then
++  pass "curl reads its config from stdin (--config -)"
++else
++  fail "bootstrap/97 does not use 'curl --config -'"
++fi
++if grep -q 'header = "Authorization: Bearer' "$SCRIPT"; then
++  pass "Authorization header is defined in the curl config"
++else
++  fail "bootstrap/97 does not define the Authorization header in the curl config"
++fi
++
++# 3. Runtime: run the shipped api() against a stub curl and inspect argv/stdin.
++STUB="$WORK/bin"
++mkdir -p "$STUB"
++cat > "$STUB/curl" <<'EOS'
++#!/usr/bin/env bash
++printf '%s\n' "$@" > "$STUB_ARGV"
++cat > "$STUB_STDIN"
++exit 0
++EOS
++chmod +x "$STUB/curl"
++
++awk '/^api\(\) \{/{f=1} f{print} f&&/^\}$/{exit}' "$SCRIPT" > "$WORK/api.inc"
++if ! grep -q '^api() {' "$WORK/api.inc"; then
++  fail "could not extract api() from bootstrap/97 (function shape changed?)"
++else
++  # shellcheck source=/dev/null
++  . "$WORK/api.inc"
++  export STUB_ARGV="$WORK/argv" STUB_STDIN="$WORK/stdin"
++  cf_api="TESTTOKEN_DO_NOT_PRINT" cf_key="" PATH="$STUB:$PATH" \
++    api GET "/accounts/abc/access/apps" >/dev/null 2>&1 || true
++  if grep -q 'TESTTOKEN' "$WORK/argv" 2>/dev/null; then
++    fail "token appeared on the curl command line (argv)"
++  else
++    pass "token absent from the curl command line"
++  fi
++  if grep -q 'TESTTOKEN' "$WORK/stdin" 2>/dev/null; then
++    pass "token delivered to curl via stdin config"
++  else
++    fail "token was not delivered to curl stdin (config)"
++  fi
++fi
++
++if [ "$fails" -eq 0 ]; then
++  echo "PASS cloudflare_token_argv (token never on curl argv; delivered via --config -)"
++  exit 0
++fi
++echo "FAIL cloudflare_token_argv ($fails check(s) failed)"
++exit 1
+diff --git a/bootstrap/97-cloudflare-api-config.sh b/bootstrap/97-cloudflare-api-config.sh
+index b13fe38..9d6d377 100755
+--- a/bootstrap/97-cloudflare-api-config.sh
++++ b/bootstrap/97-cloudflare-api-config.sh
+@@ -37,12 +37,16 @@ OWNER_EMAIL_DOMAIN="${cf_email_domain:-mainecybertech.us}"
+ unset CF_TUNNEL_TOKEN TOKEN cf_tkey
+ 
+ api() {  # api METHOD PATH [JSON]
+-  local method="$1" path="$2" body="${3:-}"
++  # SEC-P2-002: the bearer token is delivered through `curl --config -` (stdin), never
++  # as an argv element, so it is not exposed in `ps`/`/proc/<pid>/cmdline` captures.
++  local method="$1" path="$2" body="${3:-}" token="${cf_api:-${cf_key:-}}"
++  local -a curl_args=(--config - -s -X "$method" -H "Content-Type: application/json")
+   if [ -n "$body" ]; then
+-    curl -s -X "$method" -H "Authorization: Bearer ${cf_api:-${cf_key}}" -H "Content-Type: application/json" \
+-      --data "$body" "https://api.cloudflare.com/client/v4$path"
++    printf 'header = "Authorization: Bearer %s"\n' "$token" | \
++      curl "${curl_args[@]}" --data "$body" "https://api.cloudflare.com/client/v4$path"
+   else
+-    curl -s -X "$method" -H "Authorization: Bearer ${cf_api:-${cf_key}}" "https://api.cloudflare.com/client/v4$path"
++    printf 'header = "Authorization: Bearer %s"\n' "$token" | \
++      curl "${curl_args[@]}" "https://api.cloudflare.com/client/v4$path"
+   fi
+ }
+ 
+diff --git a/config/nftables/falcon.nft b/config/nftables/falcon.nft
+index 16ac021..d55de77 100644
+--- a/config/nftables/falcon.nft
++++ b/config/nftables/falcon.nft
+@@ -46,11 +46,17 @@ table inet falcon_filter {
+ 
+   chain forward {
+     type filter hook forward priority filter; policy accept;
+-    # Docker owns forward policy in its ip filter table; this chain adds no restriction.
++    # SEC-P3-001: this managed table intentionally does NOT enforce forwarding policy.
++    # The default-deny allowlist for forwarded container traffic lives in the separate
++    # DOCKER-USER chain (bootstrap/31-docker-user-firewall.sh), which Docker evaluates
++    # ahead of this table. Do not read this table as default-deny for the forward hook.
++    # Assertion: at deploy/health check `iptables -S DOCKER-USER` must be non-empty and
++    # end with the falcon-lab DROP rule (automation/validation/post_reboot_verify.sh).
+   }
+ 
+   chain output {
+     type filter hook output priority filter; policy accept;
+-    # Egress permitted; destinations are constrained by policy and monitoring.
++    # Egress from this host is intentionally permitted; destinations are constrained by
++    # policy and monitoring, not by the rules of this table (SEC-P3-001).
+   }
+ }

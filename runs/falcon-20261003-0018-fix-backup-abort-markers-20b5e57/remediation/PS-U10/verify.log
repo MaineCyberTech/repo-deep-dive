@@ -1,0 +1,108 @@
+# PS-U10 verification log (falcon)
+
+run:        20261003-0018-fix-backup-abort-markers-20b5e57
+repo:       MaineCyberTech/falcon
+base:       origin/main 430da82274af4c0821542627fdb9e6ab74afa826
+branch:     remediation/ps-u10-20261003-0018-fix-backup-abort-markers-20b5e57
+commit:     aef63addacb79888c0d540257a8b0470115c3102
+runner:     lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)
+
+## Positive gate: HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py  (exit 0)
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (601 scripts)
+PASS  shellcheck (173 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/alert_rule_lint_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.8s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (1.5s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.2s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.3s)
+PASS  shell tests (31 suite(s))
+
+validation_failures=0
+[exit=0 duration=32.0s cwd=/srv/work/falcon]
+
+## Targeted verification + negative controls (lab ci-runner)
+
+# PS-U10 targeted verification - alert-rule linter + per-path relay guard
+commit: aef63addacb79888c0d540257a8b0470115c3102
+branch: remediation/ps-u10-20261003-0018-fix-backup-abort-markers-20b5e57
+
+## 1. alert_rule_lint_test.sh (positive)
+PASS alert_rule_lint (derived_rule_count=78; unique_uids=78; unique_expressions=78)
+LINT_EXIT=0
+
+## 2. remediation_guards_test.sh (positive)
+PASS remediation_guards
+GUARDS_EXIT=0
+
+## 3. negative control: planted duplicate rule UID must be rejected
+FAIL alert_rule_lint
+   duplicate rule uid(s): falcon-relay-path-failures
+NEG_DUP_LINT_EXIT=1
+
+## 4. negative control: missing per-path relay rule must be rejected
+FAIL: bootstrap/90-alerting.sh does not match /falcon-relay-path-failures/
+NEG_GUARD_EXIT=1
+
+## 5. restore check (must be clean against the committed branch)
+restore_clean_exit=0
+
+## 6. Prometheus rule-file check (Grafana-provisioned rules; promtool N/A)
+no config/prometheus/rules directory; alert rules are Grafana-provisioned via API (no promtool artifact)
+
+TARGETED_DONE
+
+## Secret gate: git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1  (exit 0)
+INF scanned ~5994 bytes (5.99 KB) in 218ms
+INF no leaks found
+GITLEAKS_EXIT=0
+
+## Diff summary
+ automation/validation/tests/alert_rule_lint_test.sh       | 78 ++++++++++++++++++++++
+ automation/validation/tests/remediation_guards_test.sh    |  8 +++
+ bootstrap/90-alerting.sh                                  |  9 +++
+ 3 files changed, 95 insertions(+)
+
+## Environment note
+lab-sync.ps1 extracts the Windows working tree; the extracted clone has core.fileMode=false, so
+every tracked mode-100755 file was chmod +x'd before the gate (without that, offline suites that
+execute tracked scripts exit 126). Four docs/phase8/reviews/*.md files stay 'modified' from
+pre-existing mixed-EOL blobs (finding HYG-P2-002); they are unrelated to this patch and are not in
+this diff. The lab job API runs commands with HOME unset, so the gate is invoked with HOME=/root.
+No Prometheus rule files exist in the repo; the alert rules are Grafana-provisioned from
+bootstrap/90-alerting.sh, so no promtool check applies (recorded, not fabricated).

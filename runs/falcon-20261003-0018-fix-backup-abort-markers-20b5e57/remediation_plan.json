@@ -1,7 +1,7 @@
 {
   "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
   "repo": "",
-  "generated": "2026-10-03T06:04:47Z",
+  "generated": "2026-10-03T14:11:59Z",
   "patchSets": [
     {
       "id": "PATCH-1",
@@ -172,41 +172,224 @@
       "verification": [],
       "severity": "P1",
       "branch": "remediation/PATCH-8-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PS-U01",
+      "title": "Unassigned API findings (catch-all)",
+      "findings": [
+        "API-P1-001",
+        "API-P2-001",
+        "API-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U01-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U02",
+      "title": "Unassigned ARCH findings (catch-all)",
+      "findings": [
+        "ARCH-P1-001",
+        "ARCH-P2-001",
+        "ARCH-P2-002",
+        "ARCH-P2-003"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U02-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U03",
+      "title": "Unassigned CI findings (catch-all)",
+      "findings": [
+        "CI-P1-001",
+        "CI-P1-002",
+        "CI-P2-001",
+        "CI-P2-002",
+        "CI-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U03-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U04",
+      "title": "Unassigned DATA findings (catch-all)",
+      "findings": [
+        "DATA-P2-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U04-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U05",
+      "title": "Unassigned EXEC findings (catch-all)",
+      "findings": [
+        "EXEC-P1-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U05-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U06",
+      "title": "Unassigned FEAT findings (catch-all)",
+      "findings": [
+        "FEAT-P2-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U06-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U07",
+      "title": "Unassigned FINAL findings (catch-all)",
+      "findings": [
+        "FINAL-P1-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U07-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U08",
+      "title": "Unassigned HYG findings (catch-all)",
+      "findings": [
+        "HYG-P1-001",
+        "HYG-P1-002",
+        "HYG-P2-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U08-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U09",
+      "title": "Unassigned INV findings (catch-all)",
+      "findings": [
+        "INV-P2-001",
+        "INV-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U09-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U10",
+      "title": "Unassigned OBS findings (catch-all)",
+      "findings": [
+        "OBS-P1-001",
+        "OBS-P1-002",
+        "OBS-P1-003"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U10-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U11",
+      "title": "Unassigned SEC findings (catch-all)",
+      "findings": [
+        "SEC-P2-001",
+        "SEC-P2-002",
+        "SEC-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U11-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U12",
+      "title": "Unassigned SUPPLY findings (catch-all)",
+      "findings": [
+        "SUPPLY-P2-001",
+        "SUPPLY-P2-002",
+        "SUPPLY-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U12-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U13",
+      "title": "Unassigned TEST findings (catch-all)",
+      "findings": [
+        "TEST-P1-001",
+        "TEST-P1-002",
+        "TEST-P2-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U13-20261003-0018-fix-backup-abort-markers-20b5e57",
+      "catchAll": true
     }
   ],
-  "unassignedFindings": [
-    "API-P1-001",
-    "API-P2-001",
-    "API-P2-002",
-    "ARCH-P1-001",
-    "ARCH-P2-001",
-    "ARCH-P2-002",
-    "ARCH-P2-003",
-    "CI-P1-001",
-    "CI-P1-002",
-    "CI-P2-001",
-    "CI-P2-002",
-    "CI-P3-001",
-    "DATA-P2-001",
-    "EXEC-P1-001",
-    "FEAT-P2-001",
-    "FINAL-P1-001",
-    "HYG-P1-001",
-    "HYG-P1-002",
-    "HYG-P2-001",
-    "INV-P2-001",
-    "INV-P3-001",
-    "OBS-P1-001",
-    "OBS-P1-002",
-    "OBS-P1-003",
-    "SEC-P2-001",
-    "SEC-P2-002",
-    "SEC-P3-001",
-    "SUPPLY-P2-001",
-    "SUPPLY-P2-002",
-    "SUPPLY-P3-001",
-    "TEST-P1-001",
-    "TEST-P1-002",
-    "TEST-P2-001"
+  "unassignedFindings": [],
+  "catchAllSets": [
+    "PS-U01",
+    "PS-U02",
+    "PS-U03",
+    "PS-U04",
+    "PS-U05",
+    "PS-U06",
+    "PS-U07",
+    "PS-U08",
+    "PS-U09",
+    "PS-U10",
+    "PS-U11",
+    "PS-U12",
+    "PS-U13"
   ]
 }

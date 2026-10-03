@@ -1,0 +1,69 @@
+=== PS-U04 verify (finding DATA-P2-001) ===
+host: lab ci-runner 172.23.128.51  repo: /srv/work/falcon
+date (UTC): 2026-10-03
+commit: eee84c8ec4a69f5614a7b0b267231a14a1ff65f5 (base 430da82274af4c0821542627fdb9e6ab74afa826)
+env note: lab-sync tar extraction drops the exec bit; tracked *.sh are chmod +x before the gate.
+--- command: git ls-files -z | xargs -0 chmod +x
+[exit=0 duration=0.1s cwd=/srv/work/falcon]
+exit=0
+--- command: HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (601 scripts)
+PASS  shellcheck (173 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.9s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.7s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/event_time_consistency_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (3.8s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.9s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.4s)
+PASS  shell tests (31 suite(s))
+PASS  event_time template/Vector consistency
+
+validation_failures=0
+[exit=0 duration=35.1s cwd=/srv/work/falcon]
+exit=0
+--- diff --stat (base 430da82274af4c0821542627fdb9e6ab74afa826 -> HEAD eee84c8, generated on the audit host with a complete .git; uploaded as /tmp/psu04.diff)
+ .../validation/check_event_time_consistency.py     | 198 +++++++++++++++++++++
+ .../tests/event_time_consistency_test.sh           | 117 ++++++++++++
+ ci/validate.py                                     |  22 +++
+ docs/phase9/OPENSEARCH_TEMPLATE_EVENT_TIME_NOTE.md |  25 +--
+ 4 files changed, 351 insertions(+), 11 deletions(-)
+--- command: gitleaks stdin --redact --exit-code 1 < /tmp/psu04.diff
+[exit=0 duration=0.8s cwd=/srv/work/falcon]
+INF scanned ~17342 bytes (17.34 KB) in 275ms
+INF no leaks found
+exit=0

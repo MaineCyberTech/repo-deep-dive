@@ -1,0 +1,103 @@
+{
+  "patch_set": "PS-U11",
+  "title": "Unassigned SEC findings (catch-all) - token off curl argv + forward/output clarity",
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "MaineCyberTech/falcon",
+  "local_repo": "C:\\temp\\falcon",
+  "base_branch": "main",
+  "base_sha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "branch": "remediation/ps-u11-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "commit": "1127bf6015f6026c7f930032fe969dbebe320b52",
+  "commit_subject": "fix(sec): close unassigned security findings [PS-U11]",
+  "pr_url": "https://github.com/MaineCyberTech/falcon/pull/29",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["SEC-P2-001", "SEC-P2-002", "SEC-P3-001"],
+  "finding_status": {
+    "SEC-P2-001": "open",
+    "SEC-P2-002": "partially-fixed",
+    "SEC-P3-001": "partially-fixed"
+  },
+  "files": [
+    "bootstrap/97-cloudflare-api-config.sh",
+    "config/nftables/falcon.nft",
+    "automation/validation/tests/cloudflare_token_argv_test.sh"
+  ],
+  "in_scope_files": [
+    "bootstrap/97-cloudflare-api-config.sh",
+    "config/nftables/falcon.nft"
+  ],
+  "test_files": [
+    "automation/validation/tests/cloudflare_token_argv_test.sh"
+  ],
+  "companion_files": [],
+  "base_state": {
+    "SEC-P2-001": "open at base: config/traefik/dynamic.yml public routers (falcon-grafana, falcon-dash, iris-public, soc-wazuh, vpn-enroll, ntfy-public) use only sec-headers/public-rate-limit; ntfy-auth (lines 26-28) is referenced by no router. Not changed.",
+    "SEC-P2-002": "open at base: bootstrap/97-cloudflare-api-config.sh passed the bearer token as a curl -H argv element (lines 42, 45).",
+    "SEC-P3-001": "open at base: config/nftables/falcon.nft forward/output chains are policy accept with a brief comment; clarified here."
+  },
+  "deferred": [
+    {
+      "finding": "SEC-P2-001",
+      "part": "add origin auth to the Cloudflare-fronted public routers, or record a testable owner acceptance + automated Access-posture check",
+      "reason": "changes the auth UX / adds a second factor and depends on the Access policy export; an ops+owner product decision. Recorded as an open question, not guessed."
+    }
+  ],
+  "open_questions": [
+    {
+      "finding": "SEC-P2-001",
+      "question": "Do we add independent origin auth (mTLS/basic/OIDC) to falcon-grafana, falcon-dash, iris-public, soc-wazuh, vpn-enroll and ntfy-public, or record a testable owner acceptance? ntfy-auth is defined but unwired; wiring it (or a second factor) changes client behaviour and may break existing consumers.",
+      "owner": "ops+owner"
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U11/diff.patch",
+    "sha256": "f65d864d5c969be82016b658d82522cdf741a5ea448b63a58ba1821af9aa92a6",
+    "bytes": 5863,
+    "files_changed": 3,
+    "insertions": 95,
+    "deletions": 6
+  },
+  "verification": [
+    {
+      "command": "HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + tools/lab_runner.py job API)",
+      "exit_code": 0,
+      "result": "pass: validation_failures=0; 31/31 shell suites incl. cloudflare_token_argv_test.sh; shell syntax 601 scripts; shellcheck 173 scripts; secret scan; edge-pin skipped (delivery absent)"
+    },
+    {
+      "command": "bash automation/validation/tests/cloudflare_token_argv_test.sh",
+      "runner": "lab ci-runner 172.23.128.51",
+      "exit_code": 0,
+      "result": "pass: PASS cloudflare_token_argv (token never on curl argv; delivered via --config -); stub curl argv has no token, stdin config has it"
+    },
+    {
+      "command": "git diff origin/main HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (~5.87 KB scanned)"
+    }
+  ],
+  "not_run": [
+    {
+      "command": "live ps capture during a real Cloudflare API call (SEC-P2-002 suggested validation)",
+      "reason": "needs the account-scoped token and a provisioned deploy run; the committed offline argv/stdin proof is the fail-closed guard instead, not fabricated."
+    },
+    {
+      "command": "direct-to-origin request without Access returning 401/403 (SEC-P2-001 suggested validation)",
+      "reason": "requires a network probe of the live public hosts and the owner's auth decision; not run."
+    },
+    {
+      "command": "iptables -S DOCKER-USER at deploy (SEC-P3-001 suggested validation)",
+      "reason": "live host assertion; the repo already asserts the falcon-lab DROP rule in automation/validation/post_reboot_verify.sh, referenced from the nftables comments."
+    }
+  ],
+  "env_note": "lab-sync.ps1 extracts the Windows working tree; the extracted clone has core.fileMode=false, so every tracked mode-100755 file was chmod +x'd before the gate. Four docs/phase8/reviews/*.md files stay 'modified' from pre-existing mixed-EOL blobs (HYG-P2-002); unrelated and not in this diff. The lab job API runs with HOME unset, so the gate is invoked with HOME=/root.",
+  "verify_log": "remediation/PS-U11/verify.log",
+  "pr_body": "remediation/PS-U11/pr_body.md",
+  "scopeCheck": "pass - 2 security source files (bootstrap/97-cloudflare-api-config.sh, config/nftables/falcon.nft) + 1 offline test file; no workflow, dependency, schema, ledger, lockfile or machine-artifact changes",
+  "generated_at": "2026-10-03T15:55:00Z"
+}

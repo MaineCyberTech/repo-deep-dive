@@ -1,0 +1,7 @@
+{
+  "exit": 0,
+  "stdout": "vendored_compose_pin_test: 4/4 checks passed\n--- residual vendored digest findings (deferred to SUPPLY-P1-001) ---\nlock_file=/srv/work/falcon/pins/images.lock\nlock_generated_utc=2026-09-20T23:06:36Z\nlock_age_days=12\ncompose_files=12 image_refs=11\nFINDING automation/wazuh/multi-node/docker-compose.override.yml: image not in pins/images.lock: elastiflow/flow-collector:7.26.2@sha256:c668429f354f0dcd705d7d4668915896cf369710d3e9aed3ef8143f1b5673eb2\nFINDING automation/wazuh/multi-node/generate-indexer-certs.yml: image missing from pins/images.lock: wazuh/wazuh-certs-generator:0.0.4\ncompose_digest_findings=2\nEXIT_RESIDUAL=True\n",
+  "stderr": "",
+  "cwd": "/srv/work/falcon",
+  "duration": 0.1
+}
