@@ -79,7 +79,7 @@ def update_register(path, statuses, note):
                     cells.append("")
                 cells[col["Status"]] = st
                 if col.get("Post-audit note") is not None:
-                    cells[col["Post-audit note"]] = (note or cells[col["Post-audit note"]]).replace("|", "/")
+                    cells[col["Post-audit note"]] = (extra or note or cells[col["Post-audit note"]]).replace("|", "/")
                 out.append("| " + " | ".join(cells) + " |\n")
                 continue
         out.append(ln)
@@ -122,7 +122,7 @@ def main():
         ps = u.get("patchSet", "")
         st = STATE_TO_STATUS.get((u.get("state") or "").lower(), "partially-fixed")
         findings = ps_map.get(ps, {}).get("findings", [])
-        ev = u.get("commit") or u.get("pr") or ""
+        ev = " ".join(x for x in (u.get("commit") or "", u.get("pr") or "") if x)
         for fid in findings:
             statuses[fid] = (st, ("remediation %s %s %s" % (ps, u.get("state"), ev)).strip())
         log.append("| %s | %s | %s | %s | %s | %s |" % (
