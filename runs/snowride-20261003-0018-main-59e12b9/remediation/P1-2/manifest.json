@@ -1,0 +1,75 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "P1-2",
+  "title": "Branch protection",
+  "findings": ["CI-P1-001"],
+  "branch": "remediation/p1-2-20261003-0018-main-59e12b9",
+  "commit": "54c60700ef0cf5daf9d6069f059025497bfd4d50",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/8",
+  "prState": "draft",
+  "generated": "2026-10-03T07:02:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-p1-2 clean worktree)",
+  "node": "v20.20.2",
+  "commands": [
+    {
+      "cmd": "npm ci",
+      "exit": 0,
+      "result": "628 packages installed in the clean worktree"
+    },
+    {
+      "cmd": "npm run lint",
+      "exit": 0,
+      "result": "0 errors, 1 pre-existing warning in apps/web Home.tsx"
+    },
+    {
+      "cmd": "npm test",
+      "exit": 0,
+      "result": "build ok; 132 test files, 879 tests passed; includes tests/branch-protection.test.ts (6)"
+    },
+    {
+      "cmd": "npx prettier --check .github/branch-protection.json scripts/verify-branch-protection.mjs tests/branch-protection.test.ts",
+      "exit": 0,
+      "result": "All matched files use Prettier code style"
+    },
+    {
+      "cmd": "node scripts/verify-branch-protection.mjs --self-test",
+      "exit": 0,
+      "result": "PASS policy is complete and matches ci-foundation jobs"
+    },
+    {
+      "cmd": "actionlint .github/workflows/ci-foundation.yml",
+      "exit": 0,
+      "result": "no findings (workflow unchanged)"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source <P1-2 diff.patch>",
+      "exit": 0,
+      "result": "no leaks found (29472 bytes scanned)"
+    },
+    {
+      "cmd": "GITHUB_TOKEN=... GITHUB_REPOSITORY=MaineCyberTech/snowride node scripts/verify-branch-protection.mjs",
+      "exit": null,
+      "result": "not run - token lacks administration:read (API 403); operator action documented in the runbook"
+    }
+  ],
+  "artifacts": {
+    "diff.patch": {
+      "bytes": 14339,
+      "sha256": "2b9ea4665cf00945775fd3f713754ba8409e0c89612cda5131324e0721a3c29e"
+    },
+    "verify.log": {
+      "bytes": 25576,
+      "sha256": "4bd5abd95d452fffdb170b60a399b272ac824587f5f7e3bf454029315e60323f"
+    }
+  },
+  "filesChanged": [
+    ".github/branch-protection.json",
+    "scripts/verify-branch-protection.mjs",
+    "tests/branch-protection.test.ts",
+    "docs/runbooks/BRANCH_PROTECTION.md",
+    "CONTRIBUTING.md"
+  ],
+  "status": "partially-fixed (draft PR open; live GitHub protection remains an operator action; verified-fixed only on merge + applied setting)"
+}

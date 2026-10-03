@@ -52,3 +52,54 @@ Severity: P0 critical, P1 high, P2 medium, P3 low. Status vocabulary: open / par
 | 46 | HYG-P3-002 | P3 | HYG | No `.gitattributes` | root | Add file | Maintainer | S | open |
 
 Note: row 8 (TEST-P2-003) is the same control as row 7 (DATA-P2-001) viewed from the testing area; both IDs are retained because the reports cite them independently.
+
+## Finding index
+
+| ID | Severity | Title |
+|---|---|---|
+| CI-P1-001 | P1 | No evidence of branch protection or required status checks on `main` |
+| DATA-P1-001 | P1 | Attested migration head (0055) is one behind the repository head (0056) |
+| FINAL-P1-001 | P1 | Release trust is assembled from self-asserted and stale identities |
+| OBS-P1-001 | P1 | Alerting and scheduled detection are defined only on the host, not in the repository |
+| SEC-P1-001 | P1 | Launch owner approval is unverified free text, so release identity binding is not enforced |
+| SUPPLY-P1-001 | P1 | No SBOM artifact generated or bound to the release commit |
+| API-P2-001 | P2 | API contract is hand-maintained with no automated drift test |
+| ARCH-P2-001 | P2 | Compose services define no CPU, memory or PID limits |
+| ARCH-P2-002 | P2 | Readiness endpoint cannot fail when a dependency is unavailable |
+| ARCH-P2-003 | P2 | Authoritative lobby/LiveOps state is process-local and lost on restart |
+| CI-P2-001 | P2 | No dependency-vulnerability audit or repository secret scan in CI |
+| CI-P2-002 | P2 | GitHub Actions are pinned by mutable tags, not commit SHAs |
+| DATA-P2-001 | P2 | RLS/negative SQL suites are manual and not gated in CI |
+| DATA-P2-002 | P2 | No migration checksum/manifest; gaps are only documented |
+| EXEC-P2-001 | P2 | Release gate is conditional because release-identity controls are not yet enforced |
+| FEAT-P2-001 | P2 | Kill-switch defaults drift between repo documentation and production compose |
+| FINAL-P2-001 | P2 | Operational reliability controls are not version-controlled or exercised per release |
+| HYG-P2-001 | P2 | Only `apps/web` is linted; the other workspaces have no lint script |
+| HYG-P2-002 | P2 | Duplicated generated artifacts and a large binary inflate the repository |
+| HYG-P2-003 | P2 | Backup runbook contradicts the (fixed) assurance freshness check |
+| INV-P2-001 | P2 | Duplicate full-source repomix exports committed to the repository |
+| INV-P2-002 | P2 | Evidence tree dominates the repository by file count and size |
+| OBS-P2-001 | P2 | OTel traces are exported only to the collector `debug` exporter |
+| OBS-P2-002 | P2 | No committed SLO/error-budget definitions |
+| SEC-P2-001 | P2 | HTTP surface enforces no Origin/CORS allowlist |
+| SEC-P2-002 | P2 | No repository-tree secret scanning in CI or pre-commit |
+| SUPPLY-P2-001 | P2 | License and vulnerability enforcement is host-only, not merge-gating |
+| SUPPLY-P2-002 | P2 | Install scripts are allowlisted for several dependencies without provenance checks |
+| TEST-P2-001 | P2 | No coverage thresholds and coverage never runs in CI |
+| TEST-P2-002 | P2 | E2E matrix is Chromium-only despite a multi-browser product claim |
+| TEST-P2-003 | P2 | SQL negative/RLS suites are not gated by any pipeline |
+| API-P3-001 | P3 | Public operational endpoints are unauthenticated and unversioned |
+| API-P3-002 | P3 | No explicit CORS response headers for cross-origin HTTP dev/deploy |
+| CI-P3-001 | P3 | CI produces no durable artifacts bound to the commit |
+| DATA-P3-001 | P3 | Production database schema state is unverified in this audit |
+| FEAT-P3-001 | P3 | `/launch-readiness` reports flags as `deployed: true` unconditionally |
+| HYG-P3-001 | P3 | No release/version lineage in the repository |
+| HYG-P3-002 | P3 | No `.gitattributes`; binary/large content handled plainly |
+| INV-P3-001 | P3 | Tracked `.log` files contradict the `*.log` gitignore rule |
+| INV-P3-002 | P3 | One-off review artifacts at repository root |
+| OBS-P3-001 | P3 | Metrics are process-local counters with durable history only when the snapshot timer is enabled |
+| SEC-P3-001 | P3 | Claim-less SQL callers are treated as trusted by `social_guard_*` |
+| SEC-P3-002 | P3 | Service-role key delivered via environment rather than a Docker secret |
+| SUPPLY-P3-001 | P3 | Dependabot is configured but ungrouped for security updates |
+| TEST-P3-001 | P3 | `test:unit` script resolves to a non-existent path |
+| TEST-P3-002 | P3 | Local `verify-all.sh` is a weaker gate than CI, and audit could not reproduce tests |

@@ -1,0 +1,13 @@
+gitleaks_full_exit=1
+total_findings 19
+   evidence/phase2/20260908T2110Z-p2/G06-authorization/full_actor_operation_matrix.sql 1
+   evidence/production-acceptance/repomix-r71-repair/repomix-output.3.xml 1
+   evidence/production-acceptance/repomix-r71-repair/repomix-output.8.xml 6
+   evidence/production-acceptance/repomix-r71-repair/repomix-output.9.xml 1
+   evidence/production-acceptance/repomix-r71/repomix-output.3.xml 1
+   evidence/production-acceptance/repomix-r71/repomix-output.9.xml 1
+   evidence/production-acceptance/repomix-split/repomix-output.3.xml 1
+   evidence/recovery/recovery_ledger_r71.jsonl 6
+   scripts/bundle-secret-gate.mjs 1
+
+[exit=0 duration=6.7s cwd=/srv/work]

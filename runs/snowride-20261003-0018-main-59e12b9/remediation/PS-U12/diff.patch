@@ -1,0 +1,184 @@
+diff --git a/.github/dependabot.yml b/.github/dependabot.yml
+index 43cfc60..301a76c 100644
+--- a/.github/dependabot.yml
++++ b/.github/dependabot.yml
+@@ -12,6 +12,13 @@ updates:
+         dependency-type: production
+       development:
+         dependency-type: development
++      # SUPPLY-P3-001: security updates get their own grouped PR so they are
++      # not queued behind routine version updates under the shared
++      # open-pull-requests-limit.
++      security:
++        applies-to: security-updates
++        patterns:
++          - "*"
+ 
+   - package-ecosystem: github-actions
+     directory: "/"
+@@ -20,3 +27,9 @@ updates:
+     labels:
+       - dependencies
+       - ci
++    groups:
++      # SUPPLY-P3-001: group security updates for actions separately.
++      security:
++        applies-to: security-updates
++        patterns:
++          - "*"
+diff --git a/.github/workflows/supply-chain.yml b/.github/workflows/supply-chain.yml
+new file mode 100644
+index 0000000..66fb661
+--- /dev/null
++++ b/.github/workflows/supply-chain.yml
+@@ -0,0 +1,64 @@
++# SUPPLY-P2-001: merge-gating supply-chain checks.
++#
++# The license allow-list and the production vulnerability/provenance checks used
++# to run only on the daily host lane (scripts/assurance/assurance.sh), so a
++# disallowed license or a high-severity advisory could reach `main` and ship
++# before the next scheduled run. This workflow runs the same gates on the pull
++# request that changes the dependency graph.
++#
++# It is deliberately ADDITIVE: it does not edit the foundation/migrations/e2e
++# jobs in ci-foundation.yml, so it does not conflict with the SBOM step
++# (SUPPLY-P1-001 / P1-3) or the pinned-secret-scan work (CI-P2-001/002).
++name: supply-chain
++on:
++  pull_request:
++    paths:
++      - package.json
++      - package-lock.json
++      - scripts/license-assurance.mjs
++      - .github/workflows/supply-chain.yml
++  push:
++    paths:
++      - package.json
++      - package-lock.json
++
++permissions:
++  contents: read
++
++jobs:
++  license-and-vulnerability:
++    runs-on: ubuntu-latest
++    timeout-minutes: 15
++    steps:
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (pin: CI-P2-002)
++        with:
++          persist-credentials: false
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (pin: CI-P2-002)
++        with:
++          node-version: 24
++          cache: npm
++      - run: npm ci
++      - name: license assurance (production dependency allow-list) (SUPPLY-P2-001)
++        # Blocking. Offline gate over the installed production tree; exits 1 on
++        # an unknown/prohibited/missing license. Same script the daily host lane
++        # runs, now merge-gating.
++        run: node scripts/license-assurance.mjs
++      - name: production dependency audit (SUPPLY-P2-001)
++        # Advisory (non-blocking) at the current base: the production tree has
++        # one high advisory in the transitive runtime dep @grpc/grpc-js
++        # (GHSA-m9gg-hp2v-232j / GHSA-f596-whhp-79r4). Blocking here would make
++        # every PR red; clearing it needs a lockfile dependency bump outside
++        # this patch set (see PR open questions). The daily host lane already
++        # reports it. License enforcement above is the blocking gate that was
++        # previously missing.
++        continue-on-error: true
++        run: npm audit --omit=dev --audit-level=high
++      - name: registry signature verification (SUPPLY-P2-002)
++        # Advisory at the current base: `npm audit signatures` reports
++        # @playwright/test@1.63.0 "has attestations but no corresponding public
++        # key(s) can be found" (EMISSINGSIGNATUREKEY), so a blocking step would
++        # red every PR. The check is still run and surfaces the drift; resolving
++        # it is tracked in the PR open questions. The install-script allowlist
++        # and provenance policy are documented in docs/SUPPLY_CHAIN.md.
++        continue-on-error: true
++        run: npm audit signatures
+diff --git a/docs/SUPPLY_CHAIN.md b/docs/SUPPLY_CHAIN.md
+new file mode 100644
+index 0000000..491ff0a
+--- /dev/null
++++ b/docs/SUPPLY_CHAIN.md
+@@ -0,0 +1,80 @@
++# Supply-chain policy
++
++This document records how dependency trust is enforced for Snowride. It exists
++because the 2026-10-03 audit found two provisional gaps:
++
++- **SUPPLY-P2-001** — license and vulnerability enforcement was host-only (the
++  daily `scripts/assurance/assurance.sh` lane), not merge-gating.
++- **SUPPLY-P2-002** — install (lifecycle) scripts were allowlisted for several
++  dependencies without documented provenance checks.
++
++## Merge-gating checks
++
++[`.github/workflows/supply-chain.yml`](../.github/workflows/supply-chain.yml)
++runs on every pull request that touches `package.json`, `package-lock.json`, or
++`scripts/license-assurance.mjs`:
++
++| Gate | Command | Scope | Failure |
++|---|---|---|---|
++| License allow-list | `node scripts/license-assurance.mjs` | production dependency tree | blocking |
++| Production advisories | `npm audit --omit=dev --audit-level=high` | production dependencies | advisory (see note) |
++| Registry signatures | `npm audit signatures` | packages installed by `npm ci` | advisory (see note) |
++
++The production advisory check runs advisory rather than blocking because the
++current production tree carries one high advisory in the transitive runtime
++dependency `@grpc/grpc-js`; making it fatal would red every pull request until
++that dependency is bumped (tracked as a PR open question). `npm audit
++signatures` is likewise advisory because the registry returns no public key for
++`@playwright/test@1.63.0`'s attestation (EMISSINGSIGNATUREKEY). The license
++allow-list — the half of SUPPLY-P2-001 that was previously missing entirely
++from merge time — is fully blocking. Once the two advisories clear, both checks
++should be promoted to blocking.
++
++These duplicate the intent of the daily host lane so a disallowed license or a
++high-severity advisory cannot enter `main` between scheduled runs. The daily
++lane in `scripts/assurance/assurance.sh` remains the scheduled recurrence and
++ledger record.
++
++## Install-script allowlist
++
++The root `package.json` carries an `allowScripts` inventory of the packages
++whose `postinstall`/install lifecycle scripts are knowingly accepted during
++`npm ci` (npm runs lifecycle scripts by default; `npm ci --ignore-scripts`
++disables all of them). Each entry is reviewed on the cadence below.
++
++| Package | Why its install script is required |
++|---|---|
++| `esbuild@0.28.2`, `esbuild@0.25.12` | Installs/validates the platform-native esbuild binary used by the bundler and vitest. The binary is pinned through the lockfile and registry signatures. |
++| `protobufjs@7.6.6` | Post-install step for the generated static code used by the realtime transport. Pulled transitively; exact version pinned in the lockfile. |
++| `puppeteer@25.10.0` | Downloads the pinned Chromium build used by the e2e/a11y/perf lanes. Browser revision is fixed by the Puppeteer version, not fetched ad hoc at test time. |
++| `unrs-resolver` | Native resolver binding used by the lint/import toolchain; its post-install link step is required for the package to load. |
++
++Rules:
++
++1. **No new entry without review.** Adding a package to `allowScripts`, or
++   accepting a lockfile change that introduces a new lifecycle-script package,
++   requires an explicit reviewer decision recorded in the PR.
++2. **Provenance first.** `npm audit signatures` must pass in
++   `.github/workflows/supply-chain.yml` before the allowlist is considered
++   current; a package whose registry signature cannot be verified is not
++   accepted.
++3. **Prefer removal.** If an install script can be dropped (for example by
++   using a prebuilt artifact or `--ignore-scripts` plus an explicit build step),
++   do so rather than adding an allowlist entry.
++
++## Verification (manual / release review)
++
++```sh
++npm ci
++node scripts/license-assurance.mjs   # exit 0 = all production licenses allowed
++npm audit --omit=dev --audit-level=high
++npm audit signatures                 # provenance; currently EMISSINGSIGNATUREKEY for @playwright/test
++```
++
++## Related documents
++
++- `scripts/assurance/assurance.sh` — daily OSV/audit/license lane.
++- `scripts/license-assurance.mjs` — offline license allow-list gate.
++- `SECURITY.md` — vulnerability reporting and hardening baseline.
++- SBOM generation/retention is covered by the SBOM step in
++  `.github/workflows/ci-foundation.yml` (SUPPLY-P1-001).

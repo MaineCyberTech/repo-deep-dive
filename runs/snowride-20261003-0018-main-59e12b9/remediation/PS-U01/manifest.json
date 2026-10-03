@@ -1,0 +1,77 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U01",
+  "title": "Unassigned API findings (catch-all)",
+  "findings": ["API-P2-001", "API-P3-001", "API-P3-002"],
+  "branch": "remediation/ps-u01-20261003-0018-main-59e12b9",
+  "commit": "e656a3b42fd0b7e5cbb312a4442479624685d7b2",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/11",
+  "prState": "draft",
+  "generated": "2026-10-03T11:42:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u01 clean LF bundle clone)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    {
+      "cmd": "npm ci",
+      "exit": 0,
+      "result": "628 packages installed"
+    },
+    {
+      "cmd": "npm run lint",
+      "exit": 0,
+      "result": "0 errors, 1 pre-existing warning in apps/web Home.tsx"
+    },
+    {
+      "cmd": "npm test",
+      "exit": 0,
+      "result": "build ok; 132 test files, 876 tests passed"
+    },
+    {
+      "cmd": "npx vitest run apps/realtime/src/__tests__/apiContract.test.ts",
+      "exit": 0,
+      "result": "1 test file, 3 tests passed (contract parity + public allowlist)"
+    },
+    {
+      "cmd": "npx vitest run apps/realtime/src/__tests__/server.integration.test.ts",
+      "exit": 0,
+      "result": "1 test file, 135 tests passed"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source apps/realtime/src/__tests__/apiContract.test.ts",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source docs/API.md",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact (full worktree)",
+      "exit": 1,
+      "result": "19 pre-existing leaks in untouched files (evidence/** and scripts/bundle-secret-gate.mjs); none in the patch diff"
+    }
+  ],
+  "artifacts": {
+    "diff.patch": {
+      "bytes": 6948,
+      "sha256": "8908e333a7b197f6bbaa556ad69839521e0dd64007062f465bd6b6c44baa9a32"
+    },
+    "verify.log": {
+      "bytes": 29371,
+      "sha256": "a9c95b42a1c1a1393a275f76bd948b2ed4af86c47174a48928c593043a513640"
+    },
+    "gitleaks-full.log": {
+      "bytes": 688
+    }
+  },
+  "filesChanged": [
+    "apps/realtime/src/__tests__/apiContract.test.ts",
+    "docs/API.md"
+  ],
+  "scopeCheck": "pass - only the new contract test and docs/API.md changed (PS-U01 declared no file list; tests/docs are in-scope)",
+  "status": "partially-fixed (draft PR open; verified-fixed only on merge)"
+}

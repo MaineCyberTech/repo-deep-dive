@@ -1,0 +1,110 @@
+diff --git a/docs/runbooks/INCIDENT.md b/docs/runbooks/INCIDENT.md
+index 9260193..5a22dc0 100644
+--- a/docs/runbooks/INCIDENT.md
++++ b/docs/runbooks/INCIDENT.md
+@@ -1,5 +1,10 @@
+ # INCIDENT
+ 
++On-call triage for the single-host certified stack. Pair this with
++[ASSURANCE.md](ASSURANCE.md) (host detection lanes),
++[KILL_SWITCHES.md](KILL_SWITCHES.md) (stabilise a bad rollout) and
++[ROLLBACK.md](ROLLBACK.md) (revert an image).
++
+ ## First five minutes
+ 
+ 1. **Assess impact**: is the site down (nginx/web), can players submit runs
+@@ -21,12 +26,55 @@
+ | Web logs | `docker compose ... logs --tail=200 web` |
+ | nginx logs | `docker compose ... logs --tail=200 nginx` |
+ | Tunnel | `/home/user/tunnel.log`, `/home/user/start_tunnel.sh` |
+-| Alerts | `/home/user/alerts/alert_log.jsonl` |
++| Alerts (ntfy delivery log) | `/home/user/alerts/alert_log.jsonl` |
+ | Assurance ledger | `/home/user/assurance/run_ledger.jsonl` |
++| Backup cron log | `/home/user/backups/backup_cron.log` |
+ | Admin dashboard | `https://$DOMAIN/admin` (metrics, rooms, submissions, errors, signals, audit) |
+ | Prometheus | `https://$DOMAIN/metrics` (admin JWT or `METRICS_TOKEN`) |
+ | Health | `https://$DOMAIN/config`, `/healthz`, `/readyz` (internal) |
+ 
++## Alerting and detection (on-call signals)
++
++Detection is the host assurance lanes in
++`scripts/assurance/assurance.sh`, driven from the host crontab
++(`*/5` quick, `17 5 * * *` daily; capacity/perf on their own cadence). Each run
++appends an immutable line to `/home/user/assurance/run_ledger.jsonl`
++(`run id, lane, due/start/end UTC, duration, exit, results, trigger, host`). A
++non-zero lane exit is an **operator alert**, not a build failure, and sends an
++ntfy notification to the `NTFY_TOPIC` in `/home/user/.env` (sole transport).
++
++| Signal | Threshold / rule | Exit | First action |
++| --- | --- | --- | --- |
++| Container health | any `snowride-*` container `unhealthy`/`Exited` | 2 | `docker compose ... ps`; logs; restart the affected service |
++| TLS certificate | leaf `fullchain.cer` < 14 days | 3 | [CERT_TLS.md](CERT_TLS.md) |
++| Disk free | auto-reclaim (`reclaim-disk.sh`) under 3 GB; alert if still < 2 GB | 12 | free space; inspect `/home/user/assurance/reclaim.log` |
++| Daily: test suite | any failing test | 4 | logs; revert the implicated switch/image |
++| Daily: backup freshness | newest `/home/user/backups/*.dump` older than 26 h | 5 | [BACKUP_RESTORE.md](BACKUP_RESTORE.md) |
++| Daily: exception drift | open exception count increased vs. last run | 6 | `evidence/closeout/EXCEPTION_REGISTER.md` |
++| Daily: a11y / OSV scan / offsite ledger / license / expiry | lane non-zero | 7–11 | see [ASSURANCE.md](ASSURANCE.md) |
++| Capacity / SLO | p95 or error-rate breach (`capacity-regression.mjs`) | 13 | `scripts/capacity-regression.mjs` |
++| Performance | frame-budget regression > 1.2x | 14 | `scripts/frame-budget.mjs` |
++| Drill | forced failure (`ASSURANCE_DRILL=1`) | 90 | expected; proves detection → delivery |
++
++Read the failing ledger line and the evidence files it references before acting
++(`tail -1 /home/user/assurance/run_ledger.jsonl`). Never edit past ledger lines —
++append the resolution.
++
++## Escalation
++
++There is **no committed on-call rotation** (see [Known gaps](#known-gaps)); the
++single operator/owner is the escalation point. Keep the handoff explicit:
++
++1. **Acknowledge** the ntfy alert and open a timeline (UTC).
++2. **Triage** per this runbook. If a rollout is implicated, stabilise first —
++   revert the switch/image before diagnosing (steps 1–2 above).
++3. **Escalate to the owner/operator** if the outage is user-visible, not
++   understood, or not mitigated within the incident window; involve the owner
++   immediately for anything involving data loss, a security boundary, or
++   leaderboard integrity.
++4. **Resolve and record**: append an evidence entry (below) and reconcile the
++   follow-up register with the incident reference.
++
+ ## Common cases
+ 
+ - **Submissions failing (5xx / hung)**: check realtime logs for
+@@ -45,6 +93,23 @@
+   `/perf-budget`; `docker stats`; restart the affected service if needed
+   (restart resets counters and process-local LiveOps overrides).
+ - **TLS expired**: `docs/runbooks/CERT_TLS.md`.
++- **Disk low (`exit 12`)**: run `scripts/assurance/reclaim-disk.sh`, then
++  confirm free space recovered; if it did not, free space manually and record
++  what consumed it.
++
++## Alert-path drill
++
++Prove detection reaches a human without waiting for a real outage:
++
++```bash
++ASSURANCE_DRILL=1 bash scripts/assurance/assurance.sh quick   # lane_exit=90 -> ntfy
++tail -1 /home/user/assurance/run_ledger.jsonl                  # due/trigger/exit=90
++tail -3 /home/user/alerts/alert_log.jsonl                      # delivery record
++```
++
++A drill emits the same `exit 90` record as a real failure and must produce an
++ntfy alert. Capture the ledger line and delivery log under `evidence/` for
++release evidence.
+ 
+ ## After
+ 
+@@ -52,3 +117,13 @@
+   follow-ups) — never rewrite an existing entry.
+ - If a switch was flipped, record both the flip and the revert.
+ - Add a regression test or a gate for anything that would have caught it.
++
++## Known gaps
++
++- The crontab schedule, thresholds and ntfy configuration live **only on the
++  host**; no committed schedule/alert-rule file exists **OBS-P1-001**. A host
++  rebuild loses alerting silently until the operator restores the crontab and
++  `NTFY_TOPIC` from their off-repo copy. This runbook documents the current
++  path so on-call can act; versioning the schedule in-repo remains open.
++- There is no committed on-call rotation artifact; escalation relies on the
++  single operator/owner.

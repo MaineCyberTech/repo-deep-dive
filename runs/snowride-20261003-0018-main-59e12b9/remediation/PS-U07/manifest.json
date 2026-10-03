@@ -1,0 +1,39 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U07",
+  "title": "Unassigned FINAL findings (catch-all)",
+  "findings": ["FINAL-P2-001"],
+  "branch": "remediation/ps-u07-20261003-0018-main-59e12b9",
+  "commit": "6fa559685cd1e9a20508f3cce4f3b345a24a0088",
+  "commitSubject": "docs: close FINAL-P2-001 [FINAL-P2-001]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/17",
+  "prState": "draft",
+  "generated": "2026-10-03T08:50:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u07 clean LF bundle clone)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    { "cmd": "relative-link existence check for the 3 changed docs", "exit": 0, "result": "linkcheck_broken=0" },
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean (generated files not committed)" },
+    { "cmd": "gitleaks detect --no-git --redact --source <3 changed files>", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing audited fixture hits under evidence/** + scripts/bundle-secret-gate.mjs; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 5391, "sha256": "85b84026a92ef1c0c6b256b62281396c15c902f8ead0ab6defab71002f38d376" },
+    "verify.log": { "bytes": 25196, "sha256": "3873ecb82648f0adb4e7b3d44ae26c1796dc3ec286c9c46bbac3ee3fe5826d57" },
+    "gitleaks.log": { "bytes": 1729, "sha256": "9b172dc3992775bbb9c61c61c726e6e118a2e23f46fe2d82840db0c14ce5f9b7" },
+    "pr_body.md": { "bytes": 6277, "sha256": "9810385ddadad4298403a50f57ebd9e56336defe28b9880f16aacd2a20f62b49" }
+  },
+  "filesChanged": [
+    "docs/runbooks/RELIABILITY_DRILLS.md",
+    "docs/runbooks/README.md",
+    "docs/runbooks/BACKUP_RESTORE.md"
+  ],
+  "scopeCheck": "pass - PS-U07 declared no file list; the diff is limited to the new reliability-drills runbook plus its runbook index and BACKUP_RESTORE references",
+  "status": "partially-fixed (draft PR open; FINAL-P2-001 becomes verified-fixed only with captured per-release drill evidence at the released commit and with the OBS-P1-001 committed schedule)"
+}

@@ -1,0 +1,320 @@
+diff --git a/docs/runbooks/OBSERVABILITY.md b/docs/runbooks/OBSERVABILITY.md
+new file mode 100644
+index 0000000..0304ae8
+--- /dev/null
++++ b/docs/runbooks/OBSERVABILITY.md
+@@ -0,0 +1,113 @@
++# OBSERVABILITY
++
++Operator reference for the three observability surfaces of the single-host
++certified stack: Prometheus metrics (`/metrics`), distributed traces (OTLP to
++the internal collector) and the service objectives that sit on top of them
++([SLO.md](SLO.md)). Pair this with [ASSURANCE.md](ASSURANCE.md) (scheduled
++detection) and [INCIDENT.md](INCIDENT.md) (triage).
++
++## Traces (OTLP collector, retained)
++
++The realtime service emits OpenTelemetry spans when `OTEL_ENABLED=1`
++(production compose sets it). Instrumentation lives in
++`apps/realtime/src/instrumentation.ts`:
++
++- export is OTLP/HTTP to `OTEL_EXPORTER_OTLP_ENDPOINT` (default
++  `http://otel:4318`);
++- sampling is parent-based at `OTEL_TRACES_SAMPLER_ARG` (production `0.1`, i.e.
++  one in ten traces);
++- exported attributes are bounded (`url.path` and friends); do not add
++  person-identifying or secret attributes.
++
++The collector (`infra/otel/collector-config.yaml`,
++`otel/opentelemetry-collector` pinned by digest) now has two trace exporters:
++
++| Exporter | Destination | Purpose |
++| --- | --- | --- |
++| `debug` | container stdout | live evidence (`docker compose ... logs otel`) |
++| `file/traces` | `/var/lib/otel/traces.json` on the `otel-traces` volume | retained, queryable OTLP-JSON |
++
++`file/traces` is a real retained sink, not just a log line. Delete the
++"retained only in debug" assumption from incident practice: an investigation
++can read spans produced while the collector was up.
++
++### Retention policy
++
++Rotation is bounded in `infra/otel/collector-config.yaml`:
++
++- `max_megabytes: 64` per file;
++- `max_backups: 5` (so at most ~6 files / ~384 MB total);
++- `max_days: 7` (older files are dropped);
++- `localtime: false` (rotate on UTC day boundaries).
++
++Traces are internal operational data, not customer records. Seven days is the
++default investigation window; raise it only with a disk-budget review (the host
++also runs the disk guard in the assurance lane).
++
++### Reading traces back
++
++The `otel` image is scratch-based and has no shell, so inspect the volume with a
++throwaway helper rather than `exec`:
++
++```bash
++# find the volume the compose project created
++vol=$(docker volume ls --format '{{.Name}}' | grep otel-traces | head -1)
++
++# print the retained batches (one OTLP-JSON object per batch)
++docker run --rm -v "$vol":/data busybox:1.38.0 \
++  sh -c 'cat /data/traces.json' | jq .
++```
++
++The file appends one OTLP-JSON object per export batch, so pipe through `jq -s`
++if a whole-document parse is needed. Prefer reading a copy so a live rotate
++cannot race the read.
++
++### Non-root write path
++
++The collector runs as uid `1001` with `read_only: true`, but a Docker-managed
++named volume is created `root:root`. The one-shot `otel-init` service in
++`infra/compose/docker-compose.yml` chowns `otel-traces` to `1001:1001` before
++`otel` starts (`depends_on: service_completed_successfully`). If the collector
++starts and immediately logs a permission error on `/var/lib/otel`, confirm
++`otel-init` ran (`docker compose ... ps -a otel-init`).
++
++## Metrics lifecycle and restart semantics
++
++`/metrics` is rendered from in-process counters in
++`apps/realtime/src/server.ts` (`renderPrometheusMetrics`, `push`/`pushFamily`;
++`service="snowride-realtime"` is the only fixed label, and every other label is
++a bounded enum). These counters are **process-local**: `_bootTotal`,
++`_authFailures`, `_classificationFailures`, `runsValidated`/`runsRejected` and
++the rest reset to zero when the realtime container restarts.
++
++Durable history comes from the metrics snapshot timer. `startMetricsTimer`
++returns early when `METRICS_SNAPSHOT_INTERVAL_MS <= 0`, so snapshots (migration
++`0053`) only accumulate when the interval is a positive value; production
++compose sets `METRICS_SNAPSHOT_INTERVAL_MS: "300000"` (every five minutes). The
++`/launch-readiness` `sloBurn` flag is derived from the in-process
++`classificationFailures` and is therefore also reset on restart.
++
++What this means when reading dashboards and writing alerts:
++
++- **Treat a restart as a new series.** Do not compare a raw counter before and
++  after a restart, and prefer `increase()`/`rate()` with reset handling
++  (`resets()`) over subtracting raw samples.
++- **Detect resets explicitly** with `snowride_realtime_boot_total` and
++  `snowride_realtime_process_uptime_seconds` (or `process_start_time_seconds`
++  where scraped) so a deploy/recycle is not misread as a drop in traffic.
++- **Use snapshots for trends that must survive a restart.** Five-minute
++  snapshots are the durable record; a reset between snapshots leaves a short
++  gap that is expected, not an incident.
++- **Gauges are instantaneous**: `snowride_realtime_validation_in_flight`,
++  `_validation_queued`, `_rating_applications_in_flight`,
++  `_xp_applications_in_flight`, `active_sockets` and room counts describe the
++  current process only.
++
++## Quick checks
++
++| Question | Command / artifact |
++| --- | --- |
++| Are spans being retained? | `docker volume ls \| grep otel-traces`; read back with the helper above |
++| Is the collector up? | `docker compose -f infra/compose/docker-compose.yml ps otel otel-init` |
++| What did the collector last log? | `docker compose ... logs --tail=200 otel` |
++| Current objectives / burn | [SLO.md](SLO.md), `/launch-readiness`, the capacity lane in [ASSURANCE.md](ASSURANCE.md) |
+diff --git a/docs/runbooks/README.md b/docs/runbooks/README.md
+index 203da87..61af4f0 100644
+--- a/docs/runbooks/README.md
++++ b/docs/runbooks/README.md
+@@ -5,6 +5,8 @@ Operational procedures for the single-host certified stack. These are current
+ 
+ | Runbook | Use it for |
+ | --- | --- |
++| [OBSERVABILITY.md](OBSERVABILITY.md) | Metrics, retained traces, restart semantics. |
++| [SLO.md](SLO.md) | Service objectives, error budgets, burn-rate alerts. |
+ | [DEPLOY.md](DEPLOY.md) | Building and shipping web + realtime images. |
+ | [ROLLBACK.md](ROLLBACK.md) | Reverting to the previous certified images. |
+ | [KILL_SWITCHES.md](KILL_SWITCHES.md) | Every runtime switch: default, effect, metric, restart. |
+diff --git a/docs/runbooks/SLO.md b/docs/runbooks/SLO.md
+new file mode 100644
+index 0000000..c9a3bee
+--- /dev/null
++++ b/docs/runbooks/SLO.md
+@@ -0,0 +1,87 @@
++# SLO
++
++Service level objectives for the single-host certified stack, with the error
++budgets and burn-rate alerts that make paging decisions reviewable. This file
++is the committed source of truth for *what good looks like*; the alert
++transport that delivers a breach is the host assurance lane described in
++[ASSURANCE.md](ASSURANCE.md) and [INCIDENT.md](INCIDENT.md). Metrics and
++lifecycle caveats are in [OBSERVABILITY.md](OBSERVABILITY.md).
++
++## Service level indicators
++
++All ratios are measured over a rolling **30-day** window unless noted. Times
++use UTC. Every series below is emitted by
++`apps/realtime/src/server.ts` (`renderPrometheusMetrics`), scraped from
++`/metrics`, with the fixed label `service="snowride-realtime"`.
++
++| # | SLI | Definition | Source series |
++| --- | --- | --- | --- |
++| S1 | Realtime availability | `1 - (5xx responses / all HTTP responses)` | `snowride_realtime_http_responses_total{status_class="5xx"}` vs the sum over `status_class` |
++| S2 | Session-authority integrity | `1 - (replay failures / replay checks)` | `session_failures_total / session_checks_total` |
++| S3 | Control-stream integrity | `1 - (stream mismatches / stream checks)` | `session_stream_failures_total / session_stream_checks_total` |
++| S4 | Event-ledger integrity | `1 - (ledger failures / ledger validations)` | `ledger_failures_total / ledger_validations_total` |
++| S5 | Run-submission durability | `1 - (submission job failures / runs validated)` | `job_failures_by_kind_total{kind="submission"} / runs_validated_total` |
++| S6 | Purchase processing | `1 - (purchase job failures / purchases)` | `job_failures_by_kind_total{kind="purchases"}` vs `snowride_realtime_purchases` |
++| S7 | Realtime latency | HTTP request p95 | capacity lane `/tmp` JSON (`scripts/capacity-regression.mjs`) |
++| S8 | Client frame budget | frame-time p95 by device class | RUM `snowride_client_frame_p95_ms` / `scripts/frame-budget.mjs` |
++| S9 | Client boot | median boot-to-canvas | RUM `snowride_client_boot_ms` (median) |
++
++S2–S4 are correctness guards: a failure is a strong signal that the server
++rejected authoritative state, so their budgets are deliberately tight.
++
++## Objectives and error budgets
++
++| # | Objective | Target | Error budget / window | Breach action |
++| --- | --- | --- | --- | --- |
++| S1 | Realtime availability | **99.5%** | 0.5% (~3h 36m) / 30d | page |
++| S2 | Session-authority integrity | **99.5%** | 0.5% / 30d | page |
++| S3 | Control-stream integrity | **99.5%** | 0.5% / 30d | page |
++| S4 | Event-ledger integrity | **99.5%** | 0.5% / 30d | page |
++| S5 | Run-submission durability | **99.0%** | 1.0% / 30d | page |
++| S6 | Purchase processing | **99.0%** | 1.0% / 30d | page |
++| S7 | Realtime latency | **p95 <= 250 ms** and error rate <= 1% | existing capacity gate (`CAP_P95_MS`, `CAP_MAX_ERROR_PCT`) | page (assurance lane exit 13) |
++| S8 | Client frame budget | **p95 <= 60 ms** desktop / **<= 18 ms** low-tier, zero console errors | existing frame gate (`P95_BUDGET_MS`, `LOW_TIER_P95_MS`) | page (assurance lane exit 14) |
++| S9 | Client boot | **median <= 2500 ms** | 5% of days over budget | review |
++
++S7 and S8 targets are not new: they restate the thresholds already enforced by
++`scripts/capacity-regression.mjs` and `scripts/frame-budget.mjs`. S9 is the
++initial proposal for the boot indicator; see Open questions.
++
++## Burn-rate alerts
++
++Alerts are derived from the error budget, not from raw thresholds. For a 30-day
++budget the fast/slow burn pair is the standard multi-window rule:
++
++| Alert | Condition (30d budget) | For | Route |
++| --- | --- | --- | --- |
++| `SLOLatencyFastBurn` | 14.4x burn (2% of budget) over 1h **and** 1/12 over 5m | 2m | page |
++| `SLOLatencySlowBurn` | 6x burn (5% of budget) over 6h **and** 1/12 over 30m | 15m | page |
++| `SLOIntegrityFailure` | any increase in `classification_failures_total`, `session_failures_total`, `session_stream_failures_total` or `ledger_failures_total` | 0m | page |
++| `SLOBudgetExhausted` | remaining budget <= 0 | — | freeze non-urgent deploys |
++
++Because counters are process-local and reset on restart (see
++[OBSERVABILITY.md](OBSERVABILITY.md)), burn-rate expressions must use
++reset-aware `increase()` over a range, never a raw counter difference across a
++restart. The `SLOIntegrityFailure` rule is intentionally any-increase: S2–S4
++have no acceptable steady-state failure rate.
++
++## Wiring and ownership
++
++The repository does not yet own the alert transport or schedule (finding
++`OBS-P1-001`, tracked separately): assurance detection runs from the host
++crontab and delivers via ntfy, and the capacity/perf lanes already encode the
++S7/S8 thresholds. When the schedule is committed in-repo, the burn-rate rules
++above should be attached to the capacity lane so a breach raises exit 13/14 and
++an ntfy alert. Until then this file is the agreed basis for paging vs.
++non-paging decisions, and the lanes remain the live mechanism.
++
++## Open questions
++
++1. **S9 boot target** (`median <= 2500 ms`) is a first proposal, not a ratified
++   product number. Confirm against the device target matrix
++   (`docs/content/DEVICES_TARGET_MATRIX.md`) and the RUM baseline before
++   treating it as a page.
++2. **RUM coverage.** S8/S9 depend on client RUM samples; if RUM is disabled or
++   sparse, fall back to the host lane's synthetic frame/boot measurements.
++3. **Alert transport** depends on `OBS-P1-001`; do not assume these rules fire
++   automatically until that schedule is committed.
+diff --git a/infra/compose/docker-compose.yml b/infra/compose/docker-compose.yml
+index d405c50..b3e85e7 100644
+--- a/infra/compose/docker-compose.yml
++++ b/infra/compose/docker-compose.yml
+@@ -159,14 +159,44 @@ services:
+       retries: 3
+       start_period: 10s
+ 
++  otel-init:
++    # OBS-P2-001: the collector drops to uid 1001 and runs read-only, but a
++    # Docker-managed named volume is created root-owned. This one-shot init
++    # chowns the retained-trace volume before the collector starts. Digest
++    # pinned (busybox 1.38.0, recorded from Docker Hub on 2026-10-03).
++    image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
++    command: ["chown", "-R", "1001:1001", "/var/lib/otel"]
++    user: "0:0"
++    volumes:
++      - otel-traces:/var/lib/otel
++    restart: "no"
++    security_opt:
++      - no-new-privileges:true
++    cap_drop:
++      - ALL
++    cap_add:
++      - CHOWN
++    networks:
++      - snowride-internal
++    logging:
++      driver: json-file
++      options:
++        max-size: "10m"
++        max-file: "5"
++
+   otel:
+     # P7-G09: self-hosted OTLP collector. Digest pinned (recorded from Docker
+     # Hub on 2026-09-09). Internal-only: no published ports; only the
+-    # realtime service can reach it on snowride-internal.
++    # realtime service can reach it on snowride-internal. Traces are retained
++    # on the otel-traces volume (OBS-P2-001).
+     image: otel/opentelemetry-collector@sha256:e495787f07dbe432ce763ebaf5bc3d113850e9eee2250ade7a3da6a882d0d69a
+     command: ["--config=/etc/otel/collector-config.yaml"]
++    depends_on:
++      otel-init:
++        condition: service_completed_successfully
+     volumes:
+       - ../otel/collector-config.yaml:/etc/otel/collector-config.yaml:ro
++      - otel-traces:/var/lib/otel
+     restart: unless-stopped
+     user: "1001:1001"
+     read_only: true
+@@ -259,3 +289,5 @@ networks:
+ volumes:
+   certbot-conf:
+   certbot-www:
++  # OBS-P2-001: retained OTel traces (rotated JSON), chowned by otel-init.
++  otel-traces:
+diff --git a/infra/otel/collector-config.yaml b/infra/otel/collector-config.yaml
+index 377dd22..9ab27f6 100644
+--- a/infra/otel/collector-config.yaml
++++ b/infra/otel/collector-config.yaml
+@@ -1,7 +1,8 @@
+ # Phase 7 P7-G09: self-hosted OTLP collector (internal network only).
+-# Receives OTLP/HTTP traces from the realtime service; debug exporter logs
+-# received spans for evidence. No published ports; reachable only on
+-# snowride-internal.
++# Receives OTLP/HTTP traces from the realtime service. Spans are logged (debug,
++# for evidence) and retained to a rotating JSON file on the `otel-traces`
++# volume so a request can be retrieved after the fact (OBS-P2-001). No
++# published ports; reachable only on snowride-internal.
+ receivers:
+   otlp:
+     protocols:
+@@ -12,9 +13,21 @@ processors:
+ exporters:
+   debug:
+     verbosity: detailed
++  # Retained trace sink: OTLP-JSON on the otel-traces volume. Rotation bounds
++  # disk use (64 MB per file, 5 backups, 7 days); see
++  # docs/runbooks/OBSERVABILITY.md for how to read it back and the redaction
++  # and sampling policy. The `otel-init` service in the compose stack chowns
++  # this volume for the non-root collector before it starts.
++  file/traces:
++    path: /var/lib/otel/traces.json
++    rotation:
++      max_megabytes: 64
++      max_days: 7
++      max_backups: 5
++      localtime: false
+ service:
+   pipelines:
+     traces:
+       receivers: [otlp]
+       processors: [batch]
+-      exporters: [debug]
++      exporters: [debug, file/traces]

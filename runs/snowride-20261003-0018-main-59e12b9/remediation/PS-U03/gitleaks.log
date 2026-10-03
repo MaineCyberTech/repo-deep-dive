@@ -1,0 +1,25 @@
+# PS-U03 pre-push gitleaks gate
+
+## changed files (no allowlist config)
+-- gitleaks --no-git --redact --source .github/workflows/ci-foundation.yml
+[90m8:07AM[0m [32mINF[0m [1mscanned ~4775 bytes (4.78 KB) in 252ms[0m
+[90m8:07AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- gitleaks --no-git --redact --source .gitleaks.toml
+[90m8:07AM[0m [32mINF[0m [1mscanned ~0 bytes (0) in 201ms[0m
+[90m8:07AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- gitleaks --no-git --redact --source scripts/repo-secret-scan.sh
+[90m8:07AM[0m [32mINF[0m [1mscanned ~1409 bytes (1.41 KB) in 231ms[0m
+[90m8:07AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+
+## full worktree with committed .gitleaks.toml allowlist
+[90m8:07AM[0m [32mINF[0m [1mscanned ~78015861 bytes (78.02 MB) in 4.3s[0m
+[90m8:07AM[0m [32mINF[0m [1mno leaks found[0m
+full_with_allowlist_exit=0
+
+## full worktree with allowlist moved aside (audited pre-existing fixtures)
+full_without_allowlist_exit=1
+findings=19
+hit files:

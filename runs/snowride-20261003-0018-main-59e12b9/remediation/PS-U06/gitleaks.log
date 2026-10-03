@@ -1,0 +1,17 @@
+# PS-U06 gitleaks gate
+commit: 97211d66cc3ccde3cfb4df0539808d0d6d833d66
+
+## gitleaks changed files (no allowlist)
+gitleaks .env.example exit=0
+gitleaks apps/realtime/src/server.ts exit=0
+gitleaks apps/realtime/src/productSurface.ts exit=0
+gitleaks apps/realtime/src/__tests__/launchReadinessDeploy.test.ts exit=0
+gitleaks docs/runbooks/KILL_SWITCHES.md exit=0
+gitleaks tests/feature-flag-drift.test.ts exit=0
+
+## gitleaks full worktree (documenting pre-existing fixture hits)
+full_worktree_exit=1
+findings=19
+hit files:
+changed-file hits in full scan:
+none

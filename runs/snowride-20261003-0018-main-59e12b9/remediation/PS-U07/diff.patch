@@ -1,0 +1,101 @@
+diff --git a/docs/runbooks/BACKUP_RESTORE.md b/docs/runbooks/BACKUP_RESTORE.md
+index dc3a909..c8a803a 100644
+--- a/docs/runbooks/BACKUP_RESTORE.md
++++ b/docs/runbooks/BACKUP_RESTORE.md
+@@ -59,6 +59,7 @@ re-check `/admin/ops` and the assurance `daily` lane.
+ - A dump carries the schema as captured; do **not** replay migrations on top of
+   a restored production dump. Use migrations only to advance the schema
+   (`docs/runbooks/MIGRATIONS.md`).
+-- There is no documented RPO/RTO yet — treat the last verified daily dump as
+-  the recovery point (≤24h) until the owner sets one.
++- Recovery targets (RPO/RTO) are defined in
++  [RELIABILITY_DRILLS.md](RELIABILITY_DRILLS.md); until a drill ratifies them,
++  treat the last verified daily dump as the recovery point (≤24h).
+ - Append an evidence entry after any real backup/restore exercise.
+diff --git a/docs/runbooks/README.md b/docs/runbooks/README.md
+index 203da87..3dab5e9 100644
+--- a/docs/runbooks/README.md
++++ b/docs/runbooks/README.md
+@@ -13,6 +13,7 @@ Operational procedures for the single-host certified stack. These are current
+ | [CERT_TLS.md](CERT_TLS.md) | TLS bootstrap and certificate renewal. |
+ | [ASSURANCE.md](ASSURANCE.md) | Host assurance lanes and their ledger. |
+ | [INCIDENT.md](INCIDENT.md) | Triage, mitigation, evidence. |
++| [RELIABILITY_DRILLS.md](RELIABILITY_DRILLS.md) | RPO/RTO, versioned controls, per-release drills. |
+ 
+ Conventions:
+ 
+diff --git a/docs/runbooks/RELIABILITY_DRILLS.md b/docs/runbooks/RELIABILITY_DRILLS.md
+new file mode 100644
+index 0000000..18211ec
+--- /dev/null
++++ b/docs/runbooks/RELIABILITY_DRILLS.md
+@@ -0,0 +1,69 @@
++# RELIABILITY_DRILLS
++
++Version-controlled record of the operational reliability controls and the
++per-release exercise of them. This closes the documentation half of
++`FINAL-P2-001` (reliability controls not versioned or exercised per release):
++the recovery point/objective and the drill procedure are now committed, and
++each release candidate must capture the drill evidence below. Runtime code and
++the host schedule are unchanged.
++
++## Recovery objectives (RPO / RTO)
++
++| Objective | Target | Basis |
++| --- | --- | --- |
++| **RPO** | ≤ 24 h | Daily `pg_dump -Fc` at 04:00 UTC, tiered S3 (DO Spaces) rotation; worst-case loss is the gap since the last verified dump. |
++| **RTO** | ≤ 4 h | Restore into a scratch project, validate, then switch production (see [BACKUP_RESTORE.md](BACKUP_RESTORE.md)). |
++
++These are the operator targets for the certified single-host stack. They are
++**targets, not measurements**: a target becomes evidence-backed only when a
++drill (below) records the observed restore time and recovery point. Until then,
++treat the last verified daily dump as the recovery point (`≤24h`).
++
++## Version-controlled controls
++
++The controls referenced by `FINAL-P2-001`/`OBS-P1-001`, with the in-repo
++artifact that carries them:
++
++| Control | Cadence / rule | In-repo source |
++| --- | --- | --- |
++| Database backup | daily 04:00 UTC; S3 tiered (Sun full 365d, daily 30d) | [BACKUP_RESTORE.md](BACKUP_RESTORE.md) |
++| Assurance quick lane | `*/5 * * * *`; container health, cert < 14d, disk < 2 GB alert | [ASSURANCE.md](ASSURANCE.md), `scripts/assurance/assurance.sh` |
++| Assurance daily lane | `17 5 * * *`; tests, backup freshness, exception drift, scans | [ASSURANCE.md](ASSURANCE.md) |
++| Alert delivery | any non-zero lane exit → ntfy (`NTFY_TOPIC`, host-only) | [INCIDENT.md](INCIDENT.md) |
++| Recovery reconciliation | per run; atomic, idempotent | `evidence/recovery/README.md` |
++| Image rollback | per deploy; retag `:previous` → `:certified` | [ROLLBACK.md](ROLLBACK.md) |
++
++The crontab schedule itself still lives only on the host — that remains
++`OBS-P1-001` (see [INCIDENT.md](INCIDENT.md#known-gaps)). This runbook makes
++the schedule and thresholds reviewable in-repo; committing the crontab/timer
++file is the follow-up for that P1.
++
++## Per-release drills
++
++Run these for every release candidate; if no release is cut for 30 days, run
++them at least monthly for bounded runtime use. A drill that is not captured as
++evidence did not happen.
++
++1. **Backup/restore drill** — restore the newest dump into a scratch database
++   and verify row counts plus one login and one `/runs` submission
++   ([BACKUP_RESTORE.md](BACKUP_RESTORE.md), "Restore"). Record the observed
++   recovery point and wall-clock restore time against the RPO/RTO above.
++2. **Alert-path drill** — force detection end-to-end:
++   `ASSURANCE_DRILL=1 bash scripts/assurance/assurance.sh quick` must exit `90`
++   and deliver an ntfy alert ([INCIDENT.md](INCIDENT.md#alert-path-drill)).
++3. **Rollback drill** — `node scripts/run-rollback-drill.mjs` (mechanics);
++   `RUN_REAL_DRILL=1` for the live variant ([ROLLBACK.md](ROLLBACK.md)).
++
++## Evidence
++
++Append, never rewrite. For each release candidate, capture under `evidence/`:
++
++- the restore transcript and validation counts (drill 1), with the observed
++  RPO/RTO next to the targets;
++- the `exit 90` assurance ledger line and the matching `alert_log.jsonl`
++  delivery record (drill 2);
++- the rollback drill output (drill 3).
++
++Record the commit and, where relevant, the migration head with the evidence
++(`docs/EVIDENCE.md`). A release represented as *attested* must have these
++drills closed; a bounded runtime use may proceed with them recorded as open.

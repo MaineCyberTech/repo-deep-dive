@@ -1,0 +1,39 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U05",
+  "title": "Unassigned EXEC findings (catch-all)",
+  "findings": ["EXEC-P2-001"],
+  "branch": "remediation/ps-u05-20261003-0018-main-59e12b9",
+  "commit": "3e9e56c273160ef9a3d63259d7052e57635e8caf",
+  "commitSubject": "docs: close EXEC-P2-001 [EXEC-P2-001]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/15",
+  "prState": "draft",
+  "generated": "2026-10-03T08:40:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u05 clean LF bundle clone)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    { "cmd": "relative-link existence check for docs/RELEASE_GATE.md + README.md", "exit": 0, "result": "linkcheck_broken=0" },
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean (generated files not committed)" },
+    { "cmd": "gitleaks detect --no-git --redact --source README.md", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source docs/RELEASE_GATE.md", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing audited fixture hits under evidence/** + scripts/bundle-secret-gate.mjs; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 9130, "sha256": "a6cb18f0bdeb797df80275b8c3477c64d4660a393ebdd0b65aeb1581ca6b1c40" },
+    "verify.log": { "bytes": 25116, "sha256": "66d0648248c4070ba1c092b44e639a7e1639208c62feda014d7d2852e47cc1cb" },
+    "gitleaks.log": { "bytes": 1538, "sha256": "d7acc89f900c08c1ad1f192a04f6660d9d9acd957113df27ad49b1ff8d791d7c" },
+    "pr_body.md": { "bytes": 5525, "sha256": "34a1ce308fb99979a5f0cadd237496208d01e554c8df3b1a2db942595ec1d453" }
+  },
+  "filesChanged": [
+    "README.md",
+    "docs/RELEASE_GATE.md"
+  ],
+  "scopeCheck": "pass - PS-U05 declared no file list; the diff is limited to the new docs/RELEASE_GATE.md release-gate record and its README documentation-map link",
+  "status": "partially-fixed (draft PR open; EXEC-P2-001 is an executive rollup that becomes verified-fixed only when its P1 dependencies close and a fresh attestation is captured at the released commit/migration head)"
+}

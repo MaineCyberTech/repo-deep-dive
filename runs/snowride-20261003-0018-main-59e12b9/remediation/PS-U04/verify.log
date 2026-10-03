@@ -1,0 +1,553 @@
+# PS-U04 verification - unassigned DATA findings (DATA-P2-001, DATA-P2-002, DATA-P3-001)
+commit: dcdceca659acd8ecfce6eed5a80d6ea58fbf8d13
+branch: remediation/ps-u04-20261003-0018-main-59e12b9
+node:   v20.20.2
+npm:    10.8.2
+gitleaks: 8.30.1
+actionlint: 1.7.12
+installed by downloading from release page
+built with go1.26.1 compiler for linux/amd64
+docker: Docker version 26.1.5+dfsg1, build a72d7cd
+
+## bash scripts/migrations-manifest.sh --check (DATA-P2-002)
+migration manifest OK (56 files)
+manifest_check_exit=0
+
+## manifest tamper: append to a migration; check must fail (DATA-P2-002)
+manifest_tamper_exit=1 (expected non-zero)
+manifest_restored_exit=0 (expected 0)
+
+## fresh Postgres 17 for the migration + SQL negative suites (DATA-P2-001)
+postgres_ready=1
+
+## bash scripts/ci-migrations-dryrun.sh (apply all migrations to fresh DB)
+psql:supabase/migrations/0001_initial_schema.sql:5: NOTICE:  extension "pgcrypto" already exists, skipping
+psql:supabase/migrations/0003_economy_and_submission.sql:49: NOTICE:  trigger "on_auth_user_created" for relation "auth.users" does not exist, skipping
+psql:supabase/migrations/0014_score_version_invariants.sql:26: NOTICE:  constraint "runs_score_version_chk" of relation "runs" does not exist, skipping
+psql:supabase/migrations/0014_score_version_invariants.sql:33: NOTICE:  constraint "run_submissions_style_version_chk" of relation "run_submissions" does not exist, skipping
+psql:supabase/migrations/0014_score_version_invariants.sql:43: NOTICE:  constraint "run_submissions_trick_block_versioned_chk" of relation "run_submissions" does not exist, skipping
+psql:supabase/migrations/0015_ratings_seasons.sql:84: NOTICE:  trigger "seasons_immutability_trigger" for relation "public.seasons" does not exist, skipping
+psql:supabase/migrations/0016_progression_retention.sql:213: NOTICE:  policy "progression_state_owner_select" for relation "public.progression_state" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:319: NOTICE:  policy "blocks_owner_select" for relation "public.blocks" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:323: NOTICE:  policy "relationship_requests_party_select" for relation "public.relationship_requests" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:329: NOTICE:  policy "relationships_party_select" for relation "public.relationships" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:335: NOTICE:  policy "presence_prefs_owner_select" for relation "public.presence_prefs" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:339: NOTICE:  policy "notif_prefs_owner_select" for relation "public.notif_prefs" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:343: NOTICE:  policy "parties_owner_select" for relation "public.parties" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:355: NOTICE:  policy "party_members_owner_select" for relation "public.party_members" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:366: NOTICE:  policy "party_invites_party_select" for relation "public.party_invites" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:372: NOTICE:  policy "reports_reporter_select" for relation "public.reports" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:376: NOTICE:  policy "moderation_actions_subject_select" for relation "public.moderation_actions" does not exist, skipping
+psql:supabase/migrations/0017_social_party_moderation.sql:380: NOTICE:  policy "appeals_appellant_select" for relation "public.appeals" does not exist, skipping
+psql:supabase/migrations/0018_live_events.sql:135: NOTICE:  trigger "live_events_immutability_trigger" for relation "public.live_events" does not exist, skipping
+psql:supabase/migrations/0019_economy_catalog.sql:614: NOTICE:  policy "purchase_idempotency_owner_select" for relation "public.purchase_idempotency" does not exist, skipping
+psql:supabase/migrations/0020_creator_courses.sql:204: NOTICE:  trigger "course_publications_immutability_trigger" for relation "public.course_publications" does not exist, skipping
+psql:supabase/migrations/0020_creator_courses.sql:228: NOTICE:  trigger "course_publications_delete_trigger" for relation "public.course_publications" does not exist, skipping
+psql:supabase/migrations/0020_creator_courses.sql:873: NOTICE:  policy "creator_courses_owner_select" for relation "public.creator_courses" does not exist, skipping
+psql:supabase/migrations/0020_creator_courses.sql:877: NOTICE:  policy "course_appeals_appellant_select" for relation "public.course_appeals" does not exist, skipping
+psql:supabase/migrations/0021_replay_object_store.sql:162: NOTICE:  trigger "replay_objects_immutability_trigger" for relation "public.replay_objects" does not exist, skipping
+psql:supabase/migrations/0021_replay_object_store.sql:187: NOTICE:  trigger "replay_objects_delete_trigger" for relation "public.replay_objects" does not exist, skipping
+psql:supabase/migrations/0021_replay_object_store.sql:472: NOTICE:  policy "replay_objects_owner_select" for relation "public.replay_objects" does not exist, skipping
+psql:supabase/migrations/0027_challenges.sql:31: NOTICE:  policy "challenges_read" for relation "public.challenges" does not exist, skipping
+psql:supabase/migrations/0027_challenges.sql:46: NOTICE:  policy "challenge_claims_owner_select" for relation "public.challenge_claims" does not exist, skipping
+psql:supabase/migrations/0029_equipment_loadouts.sql:27: NOTICE:  constraint "items_category_check" of relation "items" does not exist, skipping
+psql:supabase/migrations/0033_season_pass.sql:24: NOTICE:  policy "pass_claims_select_own" for relation "public.pass_claims" does not exist, skipping
+psql:supabase/migrations/0033_season_pass.sql:28: NOTICE:  policy "pass_claims_no_client_write" for relation "public.pass_claims" does not exist, skipping
+psql:supabase/migrations/0057_retire_consumable_category.sql:12: NOTICE:  constraint "items_category_check" of relation "items" does not exist, skipping
+migrations applied clean: 56 files
+dryrun_exit=0
+
+## bash scripts/ci-db-tests.sh (all supabase/tests/*.sql)
+== supabase/tests/0001_rls_negative_tests.sql
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+              set_config              
+--------------------------------------
+ 11111111-1111-1111-1111-111111111111
+(1 row)
+
+                              set_config                               
+-----------------------------------------------------------------------
+ {"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+ _expect_denied 
+----------------
+ 
+(1 row)
+
+== supabase/tests/0002_economy_negative_tests.sql
+== supabase/tests/0003_score_version_invariants_negative.sql
+psql:supabase/tests/0003_score_version_invariants_negative.sql:23: NOTICE:  ok: score_version 9 rejected (runs_score_version_chk)
+psql:supabase/tests/0003_score_version_invariants_negative.sql:39: NOTICE:  ok: unversioned tricks block rejected (run_submissions_trick_block_versioned_chk)
+psql:supabase/tests/0003_score_version_invariants_negative.sql:55: NOTICE:  ok: style_version 99 rejected (run_submissions_style_version_chk)
+== supabase/tests/0004_ratings_seasons_negative.sql
+psql:supabase/tests/0004_ratings_seasons_negative.sql:40: NOTICE:  ok: duplicate run_id rating event rejected (rating_events UNIQUE run_id)
+psql:supabase/tests/0004_ratings_seasons_negative.sql:55: NOTICE:  ok: activated season contract change rejected (seasons_immutability_trigger)
+psql:supabase/tests/0004_ratings_seasons_negative.sql:73: NOTICE:  ok: non-eligible run rejected by apply_rating_event (error: not_leaderboard_eligible)
+psql:supabase/tests/0004_ratings_seasons_negative.sql:98: NOTICE:  ok: rollover closed once; re-call returned duplicate with the original snapshot
+== supabase/tests/0005_progression_negative.sql
+psql:supabase/tests/0005_progression_negative.sql:100: NOTICE:  ok: duplicate run XP replay returned duplicate:true; totals added once
+psql:supabase/tests/0005_progression_negative.sql:125: NOTICE:  ok: double reward claim returned duplicate:true; single debit
+psql:supabase/tests/0005_progression_negative.sql:139: NOTICE:  ok: claim exceeding xp rejected (insufficient_xp); no debit
+psql:supabase/tests/0005_progression_negative.sql:161: NOTICE:  ok: achievement re-grant returned duplicate:true; exactly one row
+psql:supabase/tests/0005_progression_negative.sql:190: NOTICE:  ok: guest convert twice -> merged once, replay {nothing:true}
+psql:supabase/tests/0005_progression_negative.sql:207: NOTICE:  ok: practice_only run rejected by award_xp_for_run (error: not_leaderboard_eligible)
+psql:supabase/tests/0005_progression_negative.sql:215: NOTICE:  ok: RLS boundary deferred to the PostgREST client surface (session user has BYPASSRLS; SET ROLE cannot test it)
+psql:supabase/tests/0005_progression_negative.sql:246: NOTICE:  ok: conversion against existing account XP (300) with distinct guest XP (250) left BOTH sides intact (existing_state; never additive); no link; staging kept
+== supabase/tests/0006_social_negative.sql
+psql:supabase/tests/0006_social_negative.sql:143: NOTICE:  ok: self-block and self-friend denied
+psql:supabase/tests/0006_social_negative.sql:172: NOTICE:  ok: duplicate pending request returned the SAME row (idempotent)
+psql:supabase/tests/0006_social_negative.sql:201: NOTICE:  ok: block cancelled the pair pending request and tore down the pair
+psql:supabase/tests/0006_social_negative.sql:219: NOTICE:  ok: blocked pair cannot re-request (either direction)
+psql:supabase/tests/0006_social_negative.sql:238: NOTICE:  ok: party join with a wrong code denied
+psql:supabase/tests/0006_social_negative.sql:263: NOTICE:  ok: party capacity 8 enforced (9th join denied)
+psql:supabase/tests/0006_social_negative.sql:285: NOTICE:  ok: non-owner transfer denied; non-member invite denied
+psql:supabase/tests/0006_social_negative.sql:315: NOTICE:  ok: invite reuse returned already_used duplicate; single join
+psql:supabase/tests/0006_social_negative.sql:347: NOTICE:  ok: expired invite denied; replay deterministic (expired)
+psql:supabase/tests/0006_social_negative.sql:376: NOTICE:  ok: invite rate limit enforced (11th pending invite denied; corpus exactly 10)
+psql:supabase/tests/0006_social_negative.sql:394: NOTICE:  ok: report with empty evidence denied
+psql:supabase/tests/0006_social_negative.sql:420: NOTICE:  ok: identical duplicate report returned the SAME id
+psql:supabase/tests/0006_social_negative.sql:439: NOTICE:  ok: moderation_action without moderator role denied (claims absent)
+psql:supabase/tests/0006_social_negative.sql:471: NOTICE:  ok: moderation_action with moderator-role claims accepted; service_role pass-through accepted
+psql:supabase/tests/0006_social_negative.sql:503: NOTICE:  ok: appeal by non-subject denied; second open appeal returned the SAME appeal
+psql:supabase/tests/0006_social_negative.sql:565: NOTICE:  ok: presence_visible respects private default, self, public, friends, and blocks
+== supabase/tests/0007_live_events_negative.sql
+psql:supabase/tests/0007_live_events_negative.sql:72: NOTICE:  ok: activate_live_event with authenticated-role claims forbidden; claims cleared
+psql:supabase/tests/0007_live_events_negative.sql:92: NOTICE:  ok: claims-absent activation minted the event (scheduled -> activated)
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: definition
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: content_hash
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: seed
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: biome
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: spec_version
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: scheduled_start
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: scheduled_end
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: status
+psql:supabase/tests/0007_live_events_negative.sql:124: NOTICE:  ok: activated event column update denied by trigger: activated_at
+psql:supabase/tests/0007_live_events_negative.sql:140: NOTICE:  ok: identical re-activation returned duplicate:true (idempotent)
+psql:supabase/tests/0007_live_events_negative.sql:169: NOTICE:  ok: different-payload re-activation denied (content_immutable); stored content unchanged
+psql:supabase/tests/0007_live_events_negative.sql:207: NOTICE:  ok: missing keys / event_id mismatch / spec_version mismatch all denied; no row inserted
+psql:supabase/tests/0007_live_events_negative.sql:235: NOTICE:  ok: retire once, replay duplicate:true, unknown id event_not_found
+psql:supabase/tests/0007_live_events_negative.sql:248: NOTICE:  ok: retired event re-activation denied (event_retired)
+== supabase/tests/0008_economy_negative.sql
+psql:supabase/tests/0008_economy_negative.sql:165: NOTICE:  ok: exact replay returned duplicate:true with the SAME transaction_id and identical item/price/category
+psql:supabase/tests/0008_economy_negative.sql:196: NOTICE:  ok: insufficient_funds denied; balance and inventory unchanged
+psql:supabase/tests/0008_economy_negative.sql:226: NOTICE:  ok: purchase_item has no price parameter (catalog-verified signature)
+psql:supabase/tests/0008_economy_negative.sql:265: NOTICE:  ok: charge equals the market current_price recorded in the receipt (key cannot influence it)
+psql:supabase/tests/0008_economy_negative.sql:316: NOTICE:  ok: direct mutation denied; receipts SELECT-only; rule anchors present
+psql:supabase/tests/0008_economy_negative.sql:354: NOTICE:  ok: replay path never needs the profile lock (invariant: same-key replay never double-charges)
+psql:supabase/tests/0008_economy_negative.sql:450: NOTICE:  ok: refund restores exactly, double refund duplicate, cross-user forbidden, deleted item item_missing
+psql:supabase/tests/0008_economy_negative.sql:545: NOTICE:  ok: update_market_prices journaled every move (old/new) and double-cycled without error
+psql:supabase/tests/0008_economy_negative.sql:593: NOTICE:  ok: 11th purchase in the hour rate_limited; expired window self-resets
+psql:supabase/tests/0008_economy_negative.sql:639: NOTICE:  ok: gameplay modifiers and consumable category rejected; cosmetic catalog preserved
+== supabase/tests/0009_creator_negative.sql
+psql:supabase/tests/0009_creator_negative.sql:115: NOTICE:  ok: valid submit -> pending_review; 6th concurrent pending denied (rate_limited)
+psql:supabase/tests/0009_creator_negative.sql:165: NOTICE:  ok: unknown key / smuggled string / string seed / spec_version mismatch all denied; no rows inserted
+psql:supabase/tests/0009_creator_negative.sql:219: NOTICE:  ok: own draft withdraw discarded the row; foreign + decided withdraws denied
+psql:supabase/tests/0009_creator_negative.sql:275: NOTICE:  ok: no-moderator-identity decision forbidden; moderator claims minted the immutable publication
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: course_id
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: content_hash
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: definition
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: spec_version
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: biome
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: seed
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: published_at
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: published_by
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: published column update denied by trigger: retired_at
+psql:supabase/tests/0009_creator_negative.sql:321: NOTICE:  ok: direct DELETE of a published row denied by trigger
+psql:supabase/tests/0009_creator_negative.sql:356: NOTICE:  ok: retirement single-shot; post-retirement update denied; replay duplicate:true
+psql:supabase/tests/0009_creator_negative.sql:412: NOTICE:  ok: identical re-approval duplicate:true; tampered content content_immutable; publication never overwritten
+psql:supabase/tests/0009_creator_negative.sql:493: NOTICE:  ok: non-creator appeal denied; second open appeal same id; non-moderator decide forbidden; grant reopened pending_review; decided appeal not re-decidable
+psql:supabase/tests/0009_creator_negative.sql:512: NOTICE:  ok: client roles hold no INSERT/UPDATE/DELETE on course_publications and no creator_settings access
+== supabase/tests/0010_replay_objects_negative.sql
+psql:supabase/tests/0010_replay_objects_negative.sql:101: NOTICE:  ok: substituted digest (digest_mismatch) and substituted ghost_hash (ghost_hash_mismatch) both denied; no rows inserted
+psql:supabase/tests/0010_replay_objects_negative.sql:141: NOTICE:  ok: foreign-sub authenticated claims denied (cross_user); owner-sub claims linked
+psql:supabase/tests/0010_replay_objects_negative.sql:169: NOTICE:  ok: claim-less link idempotent (duplicate:true); key = <ghost_hash>/v1; owner derived from run
+psql:supabase/tests/0010_replay_objects_negative.sql:207: NOTICE:  ok: immutable column update denied by trigger: object_key
+psql:supabase/tests/0010_replay_objects_negative.sql:207: NOTICE:  ok: immutable column update denied by trigger: digest_sha256
+psql:supabase/tests/0010_replay_objects_negative.sql:207: NOTICE:  ok: immutable column update denied by trigger: size_bytes
+psql:supabase/tests/0010_replay_objects_negative.sql:207: NOTICE:  ok: immutable column update denied by trigger: run_id
+psql:supabase/tests/0010_replay_objects_negative.sql:207: NOTICE:  ok: immutable column update denied by trigger: owner
+psql:supabase/tests/0010_replay_objects_negative.sql:207: NOTICE:  ok: immutable column update denied by trigger: created_at
+psql:supabase/tests/0010_replay_objects_negative.sql:207: NOTICE:  ok: access_class is the only mutable column
+psql:supabase/tests/0010_replay_objects_negative.sql:221: NOTICE:  ok: direct DELETE denied by the delete guard
+psql:supabase/tests/0010_replay_objects_negative.sql:305: NOTICE:  ok: private/shared/public/system access classes enforced; inactive member dropped; url_ttl 300; unknown key not_found
+psql:supabase/tests/0010_replay_objects_negative.sql:332: NOTICE:  ok: replay_objects_owner_select policy exists; no client policies on ghost_object_settings
+psql:supabase/tests/0010_replay_objects_negative.sql:366: NOTICE:  ok: reconcile reports correct orphaned_in_db/missing_in_db; deterministic, idempotent, non-destructive
+psql:supabase/tests/0010_replay_objects_negative.sql:396: NOTICE:  ok: no client write grants on replay_objects; no client grants at all on ghost_object_settings
+== supabase/tests/0011_creator_cascade_delete.sql
+psql:supabase/tests/0011_creator_cascade_delete.sql:176: NOTICE:  ok: direct publication DELETE denied by immutability delete-guard
+psql:supabase/tests/0011_creator_cascade_delete.sql:176: NOTICE:  ok: creator deletion cascade removed draft+pending+pending-approved+rejected+appeal+publication; moderator refs SET NULL; moderator survived; zero orphans
+== supabase/tests/0012_replay_shared_revocation.sql
+psql:supabase/tests/0012_replay_shared_revocation.sql:120: NOTICE:  ok: [a] shared baseline - active co-member allowed, stranger denied, owner allowed, url_ttl 300
+psql:supabase/tests/0012_replay_shared_revocation.sql:144: NOTICE:  ok: [b] leave revoked shared access; owner unaffected
+psql:supabase/tests/0012_replay_shared_revocation.sql:168: NOTICE:  ok: [c] reconnect (fresh active join) restored shared access
+psql:supabase/tests/0012_replay_shared_revocation.sql:217: NOTICE:  ok: [d] block revoked shared replay access (both directions); unblock restored it
+psql:supabase/tests/0012_replay_shared_revocation.sql:245: NOTICE:  ok: [e] owner-leave/ownership-transfer revoked member access; object owner kept access
+psql:supabase/tests/0012_replay_shared_revocation.sql:286: NOTICE:  ok: [f] disband revoked former-member access
+psql:supabase/tests/0012_replay_shared_revocation.sql:326: NOTICE:  ok: [g] no kick/remove RPC exists; forced left_at tombstone revoked shared access
+psql:supabase/tests/0012_replay_shared_revocation.sql:357: NOTICE:  ok: [h] expiry-bound - fresh access re-evaluates policy; authorized verdicts carry url_ttl 300; revoked stays revoked
+== supabase/tests/0013_replay_rate_window_boundary.sql
+psql:supabase/tests/0013_replay_rate_window_boundary.sql:97: NOTICE:  ok: [a1] at exact one-hour threshold the window resets (count=1) and the fresh attempt proceeds (NOT denied)
+psql:supabase/tests/0013_replay_rate_window_boundary.sql:131: NOTICE:  ok: [a2] strictly inside the window (59m) no early reset - 12th fresh attempt rate_limited, count=12 preserved
+psql:supabase/tests/0013_replay_rate_window_boundary.sql:131: NOTICE:  ok: [a] boundary ordering proven (inclusive threshold resets; inside-window counts persist)
+psql:supabase/tests/0013_replay_rate_window_boundary.sql:192: NOTICE:  ok: [b] exact replay immediately BEFORE the reset - duplicate:true, same transaction_id + price, and the replay consumes NO quota while the 11th fresh attempt was rate_limited
+psql:supabase/tests/0013_replay_rate_window_boundary.sql:251: NOTICE:  ok: [c] exact replay immediately AFTER the reset - duplicate:true, same original transaction_id + price, quota untouched; fresh attempt re-arms count=1 window
+psql:supabase/tests/0013_replay_rate_window_boundary.sql:251: NOTICE:  ok: [d] full boundary contract: inclusive-threshold reset, inside-window denial, replay free before AND after the reset (ECONOMY_RULE_VERSION 1, 0019)
+== supabase/tests/0014_public_catalog_read.sql
+psql:supabase/tests/0014_public_catalog_read.sql:64: NOTICE:  PASS: public catalog read; client writes denied
+== supabase/tests/0015_account_self_service.sql
+psql:supabase/tests/0015_account_self_service.sql:50: NOTICE:  PASS: self-delete is authenticated-only and identity-bound
+== supabase/tests/0016_guest_detection.sql
+psql:supabase/tests/0016_guest_detection.sql:57: NOTICE:  PASS: guest detection uses auth.users.is_anonymous
+db negative suites passed: 16 files
+db_tests_exit=0
+
+
+## npm ci
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@puppeteer/browsers@3.2.2',
+npm warn EBADENGINE   required: { node: '>=22.12.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/auth-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/functions-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/postgrest-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/realtime-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/storage-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/supabase-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'puppeteer@25.10.0',
+npm warn EBADENGINE   required: { node: '>=22.12.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'puppeteer-core@25.10.0',
+npm warn EBADENGINE   required: { node: '>=22.12.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'vitest@5.0.0',
+npm warn EBADENGINE   required: { node: '^22.12.0 || ^24.0.0 || >=26.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 628 packages, and audited 634 packages in 26s
+
+178 packages are looking for funding
+  run `npm fund` for details
+
+17 vulnerabilities (2 moderate, 15 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm_ci_exit=0
+
+## npm run lint
+
+> snowride@0.1.0 lint
+> npm run lint --workspaces --if-present
+
+
+> @snowride/web@0.1.0 lint
+> eslint .
+
+
+/srv/work/snowride-ps-u04/apps/web/components/game/Home.tsx
+  844:6  warning  React Hook useEffect has a missing dependency: 'gameReady'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)
+
+lint_exit=0
+
+## npm test
+
+> snowride@0.1.0 test
+> npm run build:packages && npm run build:realtime && vitest run --exclude '**/server.integration.test.ts'
+
+
+> snowride@0.1.0 build:packages
+> npm run build -w @snowride/contracts && npm run build -w @snowride/game-core
+
+
+> @snowride/contracts@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @snowride/game-core@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> snowride@0.1.0 build:realtime
+> npm run build -w apps/realtime
+
+
+> @snowride/realtime@0.1.0 build
+> tsc -p tsconfig.json
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.0 [39m[90m/srv/work/snowride-ps-u04[39m
+
+[90mstderr[2m | apps/realtime/src/__tests__/replayStore.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m packages/game-core/src/__tests__/tricks.test.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 35[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/replayStore.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/scoring.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 141[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/economySimulation.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/prediction.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/authoritative-room.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 243[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/avalanche.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/networklab.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+[90mstderr[2m | apps/realtime/src/__tests__/metrics.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m packages/game-core/src/__tests__/ghostV2.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/metrics.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 493[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/creatorCourse.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 125[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ghostTerminal.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 139[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/authoritative.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/rating.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/social.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m apps/realtime/src/__tests__/social.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/multiplayerAdapter.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/authService.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/content.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 215[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/inputMappingGamepad.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/replayBoundaryCorpus.test.ts [2m([22m[2m43 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/networklab.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2899[2mms[22m[39m
+   [32m✓[39m P8 network lab: duplicate / stale / reorder / loss / teleport [2m(4)[22m
+     [33m[2m✓[22m[39m denies duplicate and stale frames with sequence_gap and keeps the stream consistent[33m 699[2mms[22m[39m
+     [33m[2m✓[22m[39m denies out-of-bounds, teleport and spawn-anchor jumps; anchor uses server-known spawn[33m 802[2mms[22m[39m
+     [33m[2m✓[22m[39m channel-level loss permanently desyncs the strict stream (documented duplicate semantics)[33m 486[2mms[22m[39m
+     [33m[2m✓[22m[39m reconnect after loss reconciles the stream (P21-G04 convergence)[33m 641[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/inputPrecedence.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/backpressure.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m apps/realtime/src/__tests__/backpressure.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/submissions.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 125[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/world.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 118[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/events.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/controlStream.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ghostCodec.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 233[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/adminConnection.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/sessionAuthority.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 191[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/eventLedger.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/combos.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/creatorEditor.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 71[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/socialService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/inputSettingsStore.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ghostPlayer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/contentSecurity.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 142[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/eventCapParity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/raceLifecycle.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/partyService.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/shopService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/betaRelease.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/buildWiring.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/hazards.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/biomeVelocityBound.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/schemas.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+ [32m✓[39m apps/realtime/src/__tests__/entrypoint.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 926[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/browserCapabilities.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/rideFeel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/goldenRun.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/accountData.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/noAudioOutput.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/telemetryMatrix.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/launchReadiness.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/authenticatedSocket.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/headingContract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/runBiomeContract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/bootLifecycle.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/mechanics.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/liveops.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/economyConcurrency.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/spinGhostValidity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/scoring.crossRuntime.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 143[2mms[22m[39m
+ [32m✓[39m apps/web/components/shop/__tests__/ShopPanel.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/equipment.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/components/settings/__tests__/SettingsPanel.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/challengeScheduler.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/sceneTextures.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m tests/ledger-format.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/achievements.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/HUD.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/supabaseBindingGuard.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/perfReporter.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/creatorDiscovery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/ariaLiveAnnouncer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/rateLimit.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/input.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/submissionQueue.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/browserGate.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/otel.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m apps/realtime/src/__tests__/otel.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/passService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/components/system/__tests__/BrowserGate.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/loadoutService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/rooms.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/rivalService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/challengeService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/purchaseA11y.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/notificationAnnouncer.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/useFocusTrap.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/runIntegrityFinish.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/economySimulation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/disciplines.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/difficultyBands.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/progressionService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ramps.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/pass.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/contentActivation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/perfAggregator.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/noUserText.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m apps/web/components/admin/__tests__/AdminPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/uiSystem.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/perfBudgets.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/stylePreference.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/dataExport.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/motionPreference.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/contentA11y.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/deviceMatrix.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/optimisticShop.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/perfAggregate.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/notificationService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/supabaseBindingAstGuard.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 2468[2mms[22m[39m
+   [32m✓[39m no detached supabase.rpc (AST guard, supplements regex guard) [2m(2)[22m
+     [33m[2m✓[22m[39m flags no detached supabase.rpc in production service code[33m 1487[2mms[22m[39m
+     [33m[2m✓[22m[39m self-test still catches a detached supabase.rpc[33m 970[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/perfMeasure.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 120[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/inputRemap.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/auth.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/sfx.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/sparkline.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m apps/web/components/account/__tests__/AccountPanel.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/progression.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/qualityPreference.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/gamepadInput.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/web/components/creator/__tests__/CourseEditor.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/CourseMinimap.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/i18n.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/components/privacy/__tests__/PrivacyPanel.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/LeaderboardPanel.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/GameLobby.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/components/pass/__tests__/PassPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/web/components/social/__tests__/SocialPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m apps/web/components/progress/__tests__/ProgressionPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/components/challenges/__tests__/ChallengePanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/music.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/components/party/__tests__/PartyPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m131 passed[39m[22m[90m (131)[39m
+[2m      Tests [22m [1m[32m873 passed[39m[22m[90m (873)[39m
+[2m   Start at [22m 08:23:08
+[2m   Duration [22m 28.20s[2m (environment 40%, tests 20%, import 17%, transform 15%, setup 6%, worker 2%)[22m
+
+[2m    Isolate [22m [33m131 workers spawned[39m[2m · ~368ms startup each (spawn + environment, per file)[22m
+[2m            [22m [2mat least ~15.71s faster with [22m[33misolate: false[39m[2m — reuses workers across files instead of one per file[22m
+
+test_exit=0
+
+## actionlint .github/workflows/ci-foundation.yml
+actionlint_exit=0
+
+## git status --short (generated files are not committed)
+git_status_exit=0

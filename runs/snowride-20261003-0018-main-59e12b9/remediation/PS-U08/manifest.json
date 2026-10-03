@@ -1,0 +1,49 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U08",
+  "title": "Unassigned HYG findings (catch-all)",
+  "findings": ["HYG-P2-001", "HYG-P2-002", "HYG-P2-003", "HYG-P3-001", "HYG-P3-002"],
+  "findingStatus": {
+    "HYG-P2-001": "still-open (deferred: needs a shared ESLint config + declared typescript-eslint dependency and error cleanup; effort M)",
+    "HYG-P2-002": "partially-fixed (.gitignore repomix-output*.xml recurrence fix; deletion/dedup deferred to INV-P2-001 / PS-U09)",
+    "HYG-P2-003": "verified-fixed (runbook matches scripts/assurance/assurance.sh:123,139)",
+    "HYG-P3-001": "partially-fixed (CHANGELOG.md added; per-release version bump/tag process remains open)",
+    "HYG-P3-002": "verified-fixed (.gitattributes present; git check-attr confirms)"
+  },
+  "branch": "remediation/ps-u08-20261003-0018-main-59e12b9",
+  "commit": "dcea60b19dac6a3f98c145a68ba74e13361a3526",
+  "commitSubject": "chore: close unassigned hygiene findings [HYG-P2-001/002/003]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/18",
+  "prState": "draft",
+  "generated": "2026-10-03T09:07:34Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u08 clean LF bundle clone; core.autocrlf unset)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "gitleaks": "8.30.1",
+  "commands": [
+    { "cmd": "relative-link existence check for changed docs", "exit": 0, "result": "linkcheck_broken=0" },
+    { "cmd": "git check-attr text eol binary linguist-generated (sample paths)", "exit": 0, "result": "PDF binary: set; repomix XML linguist-generated: true" },
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean (generated dist/ not committed)" },
+    { "cmd": "gitleaks detect --no-git --redact --source <4 changed files>", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing audited fixture hits under evidence/** + scripts/bundle-secret-gate.mjs; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 3547, "sha256": "75ee7a34a45458e4c07780262381fec12d6d63440b360bc92a7820ac204a0be5" },
+    "verify.log": { "bytes": 26402, "sha256": "df271d64f672dac482b66c3f624860c3e2b804ce9a357e4c986e259ec5bab918" },
+    "gitleaks.log": { "bytes": 313, "sha256": "fe80bfd83c2a3cd011155f93d8e94381c681428d45690964043a1f0260bcc180" },
+    "pr_body.md": { "bytes": 7781, "sha256": "5382daca1c0c89f126a862eb96fe5fcc9125b358e7e96db09a88f54f554b046e" }
+  },
+  "filesChanged": [
+    ".gitattributes",
+    ".gitignore",
+    "CHANGELOG.md",
+    "docs/runbooks/BACKUP_RESTORE.md"
+  ],
+  "scopeCheck": "pass - PS-U08 declared no file list; the diff is limited to the backup runbook, .gitattributes, .gitignore and the new CHANGELOG.md",
+  "status": "partially-fixed (draft PR open; HYG-P2-003 and HYG-P3-002 verified at the commit, HYG-P2-002 and HYG-P3-001 partially fixed, HYG-P2-001 deferred with a concrete follow-up)"
+}

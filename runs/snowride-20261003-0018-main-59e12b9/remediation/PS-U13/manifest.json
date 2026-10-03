@@ -1,0 +1,58 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U13",
+  "title": "Unassigned TEST findings (catch-all)",
+  "findings": ["TEST-P2-001", "TEST-P2-002", "TEST-P2-003", "TEST-P3-001", "TEST-P3-002"],
+  "findingStatus": {
+    "TEST-P2-001": "partially-fixed (vitest.config.ts declares the v8 coverage provider and ratchet thresholds pinned to the measured baseline: lines 43, statements 43, functions 45, branches 38 vs measured 44.46/44/46.75/39.9; ci-foundation foundation job runs `npm run test:coverage` and uploads coverage-<sha>; verified on the lab with exit 0 and the threshold-enforced run)",
+    "TEST-P2-002": "partially-fixed (playwright.config.ts adds firefox and webkit projects scoped to menu.mobile + shopPanel.a11y; the sprite/WebGL spec stays Chromium-only; CI installs chromium/firefox/webkit; `npx playwright test --list` shows 19 tests across 3 projects. Actual engine execution deferred to CI - the lab pass did not install browsers)",
+    "TEST-P2-003": "partially-fixed (dependency / cross-reference: the SQL negative-suite gate is DELIVERED BY PS-U04 draft PR #14 commit dcdceca, which also carries the required 0057 forward migration and auth-stub/manifest work. Not duplicated here to avoid a conflicting parallel edit of ci-foundation.yml / ci-migrations-dryrun.sh. See PR open question 1)",
+    "TEST-P3-001": "partially-fixed (test:unit now runs `npm run build:packages && npm run build:realtime && vitest run packages apps/realtime --exclude '**/server.integration.test.ts'` - real paths, >0 tests, integration excluded; the coverage run exercises the same include set)",
+    "TEST-P3-002": "partially-fixed (scripts/verify-all.sh now runs format:check and prints the documented local-vs-CI delta; AGENTS.md/README.md updated. e2e, compose validation, coverage and DB suites remain CI-only because they need browsers/docker/postgres)"
+  },
+  "branch": "remediation/ps-u13-20261003-0018-main-59e12b9",
+  "commit": "a7fb4a6270774ad588f68184fa4a21cd5d61565c",
+  "commitSubject": "test: close unassigned testing findings [TEST-P2-001/002/003]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/23",
+  "prState": "draft",
+  "generated": "2026-10-03T10:25:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u13 clean LF bundle clone; core.autocrlf false)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "gitleaks": "8.30.1",
+  "actionlint": "1.7.12",
+  "commands": [
+    { "cmd": "actionlint .github/workflows/ci-foundation.yml", "exit": 0, "result": "no findings" },
+    { "cmd": "bash -n scripts/verify-all.sh", "exit": 0, "result": "shell syntax OK" },
+    { "cmd": "npm ci", "exit": 0, "result": "640 packages installed (646 audited)" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm run test:coverage", "exit": 0, "result": "thresholds enforced; 131 files / 873 tests passed; lines 44.46% statements 44% functions 46.75% branches 39.9%" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "npx playwright test --list", "exit": 0, "result": "19 tests: 7 chromium, 6 firefox, 6 webkit across 3 files" },
+    { "cmd": "ls coverage/", "exit": 0, "result": "coverage-summary.json present (commit-bound artifact source)" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean" },
+    { "cmd": "gitleaks detect --no-git --redact --source <9 changed files>", "exit": 0, "result": "no leaks in any changed file" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing generic-api-key fixtures under evidence/**; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 18255, "sha256": "19d1b26b7421f8a0abb33838410a5c54e7ed5a89b5181a5468fb683dec212a97" },
+    "verify.log": { "bytes": 62162, "sha256": "d8b91d48eb9bdf50a4e81e2b549a410563f8626592d2f1f34304c47703e98660" },
+    "gitleaks.log": { "bytes": 620, "sha256": "f908876035ad091483342dfb6067fe1544a453eec02c7873927acb96ea0a6441" },
+    "pr_body.md": { "bytes": 9145, "sha256": "1dc1de8ae5ac6f61424b58ebb21575660444c9e1228b04cc7dd6f16a46dfaf23" }
+  },
+  "filesChanged": [
+    "package.json",
+    "package-lock.json",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    ".github/workflows/ci-foundation.yml",
+    "scripts/verify-all.sh",
+    "AGENTS.md",
+    "README.md",
+    "apps/web/e2e/shopPanel.a11y.spec.ts"
+  ],
+  "scopeCheck": "pass - PS-U13 declared no file list; the diff is limited to test configuration, the CI test steps, the local gate and the matching docs, plus the @vitest/coverage-v8 lockfile entries the coverage fix requires.",
+  "status": "partially-fixed (draft PR open; coverage/browsers/test:unit/local-gate verified at the commit with exit 0. TEST-P2-003 is dependency-blocked and cross-referenced to PS-U04 draft PR #14, not re-implemented; engine execution and CI-runtime coverage thresholds are confirmed on merge/first CI run)"
+}

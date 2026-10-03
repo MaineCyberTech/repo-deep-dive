@@ -1,0 +1,315 @@
+diff --git a/.githooks/pre-commit b/.githooks/pre-commit
+new file mode 100755
+index 0000000..632058e
+--- /dev/null
++++ b/.githooks/pre-commit
+@@ -0,0 +1,28 @@
++#!/bin/sh
++# SEC-P2-002: repository-tree secret scan at commit time.
++#
++# CI scans the whole working tree on every PR (the pinned gitleaks step in
++# .github/workflows/ci-foundation.yml). This hook adds the local pre-commit
++# half so a secret never enters a commit in the first place. It scans only the
++# staged index (`gitleaks protect --staged`), so unrelated working-tree edits
++# are not blocked, and it redacts any match before printing it.
++#
++# Enable once per clone:
++#   git config core.hooksPath .githooks
++#
++# Fail closed when gitleaks is installed. When it is not, print a notice and
++# allow the commit: CI still performs the authoritative tree scan. Install
++# gitleaks for local enforcement.
++set -eu
++
++if ! command -v gitleaks >/dev/null 2>&1; then
++  echo "pre-commit: gitleaks not found; skipping local secret scan (CI scans the tree)" >&2
++  exit 0
++fi
++
++# Nothing staged -> nothing to scan (also avoids gitleaks' empty-diff noise).
++if git diff --cached --quiet; then
++  exit 0
++fi
++
++exec gitleaks protect --staged --redact --no-banner --verbose
+diff --git a/SECURITY.md b/SECURITY.md
+index c2e26f3..7cc916a 100644
+--- a/SECURITY.md
++++ b/SECURITY.md
+@@ -28,6 +28,29 @@ fix to ship before public disclosure.
+   `docs/product/VERSION_ANALYTICS_POLICY.md`. Reports about telemetry or PII
+   are in scope.
+ 
++## Secret scanning
++
++The repository tree is scanned for secret-shaped content at two points:
++
++- **CI**: every pull request runs a pinned `gitleaks` tree scan
++  (`.github/workflows/ci-foundation.yml`, `scripts/repo-secret-scan.sh`), in
++  addition to the build-output gate (`scripts/bundle-secret-gate.mjs`).
++- **Pre-commit (local)**: `.githooks/pre-commit` runs `gitleaks protect
++  --staged` over the staged index and blocks the commit on a finding. Enable
++  it once per clone:
++
++  ```sh
++  git config core.hooksPath .githooks
++  ```
++
++  The hook redacts any match and is a no-op when `gitleaks` is not installed
++  (CI remains the authoritative gate).
++
++Historical logs and snapshots under `evidence/` are intentionally public
++fixtures; secret-shaped strings there are audited test data, not credentials.
++Never commit a real credential - host-only secrets live in
++`/home/user/.env` and are never tracked.
++
+ ## Hardening already in place
+ 
+ JWT verification against project JWKS with per-socket auth-failure
+diff --git a/apps/realtime/src/__tests__/httpOrigin.test.ts b/apps/realtime/src/__tests__/httpOrigin.test.ts
+new file mode 100644
+index 0000000..0c60948
+--- /dev/null
++++ b/apps/realtime/src/__tests__/httpOrigin.test.ts
+@@ -0,0 +1,166 @@
++import { describe, it, expect, afterEach } from "vitest";
++import { createServer } from "node:net";
++import type { AddressInfo } from "node:net";
++import { RealtimeServer } from "../server.js";
++import { RoomManager } from "../rooms.js";
++import type { RealtimeConfig } from "../config.js";
++import type { JwtVerifier } from "../auth.js";
++
++// SEC-P2-001: the anonymous, browser-facing HTTP ingest endpoints (`/perf` and
++// `/client-error`) must reject a cross-origin `Origin` that is neither
++// same-origin with the request Host nor listed in ALLOWED_ORIGINS, while
++// still accepting non-browser callers (no Origin) and the configured origin.
++
++const silentLogger = {
++  info: () => {},
++  error: () => {},
++  warn: () => {},
++  debug: () => {},
++  fatal: () => {},
++  trace: () => {},
++  child: () => ({}) as never,
++  silent: undefined as never,
++} as never;
++
++const fakeVerifier = {
++  verify: async () => {
++    throw new Error("not used in origin tests");
++  },
++} as unknown as JwtVerifier;
++
++const config: RealtimeConfig = {
++  bindHost: "127.0.0.1",
++  port: 0,
++  allowedOrigins: ["https://app.snowride.invalid"],
++  rateLimitPingPerMin: 60,
++  rateLimitMovePerSec: 30,
++  supabaseUrl: "http://127.0.0.1:54321",
++  supabaseServiceKey: "unused",
++} as unknown as RealtimeConfig;
++
++const perfSample = {
++  v: 1,
++  platform: {
++    tier: "mid",
++    cores: 4,
++    memGb: 4,
++    webgl: true,
++    touch: false,
++    dpr: 1,
++    width: 1280,
++    height: 720,
++  },
++  quality: "high",
++  biome: "snowboard",
++  length: "standard",
++  reducedMotion: false,
++  frames: 300,
++  p50Ms: 33.3,
++  p95Ms: 50,
++  maxMs: 120,
++  longFrames: 2,
++  bootMs: 1500,
++  errors: 0,
++};
++
++const clientError = {
++  v: 1,
++  fingerprint: "0123456789abcdef",
++  frame: "SnowboardScene.ts:12",
++  count: 1,
++};
++
++function freePort(): Promise<number> {
++  return new Promise((resolve, reject) => {
++    const srv = createServer();
++    srv.on("error", reject);
++    srv.listen(0, "127.0.0.1", () => {
++      const port = (srv.address() as AddressInfo).port;
++      srv.close(() => resolve(port));
++    });
++  });
++}
++
++async function startServer(): Promise<{ server: RealtimeServer; url: string }> {
++  const server = new RealtimeServer({
++    config,
++    verifier: fakeVerifier,
++    logger: silentLogger,
++    rooms: new RoomManager(64),
++    serviceClient: null,
++  });
++  const port = await freePort();
++  await server.start(port, "127.0.0.1");
++  return { server, url: `http://127.0.0.1:${port}` };
++}
++
++const servers: RealtimeServer[] = [];
++afterEach(async () => {
++  await Promise.all(servers.splice(0).map((s) => s.stop()));
++});
++
++function post(url: string, path: string, body: unknown, origin?: string) {
++  return fetch(`${url}${path}`, {
++    method: "POST",
++    headers: {
++      "content-type": "application/json",
++      ...(origin ? { origin } : {}),
++    },
++    body: JSON.stringify(body),
++  });
++}
++
++describe("SEC-P2-001 HTTP Origin allowlist", () => {
++  it("rejects a disallowed cross-origin Origin on /perf and /client-error", async () => {
++    const { server, url } = await startServer();
++    servers.push(server);
++    const evil = "https://evil.example";
++
++    const perf = await post(url, "/perf", perfSample, evil);
++    expect(perf.status).toBe(403);
++    expect(await perf.json()).toEqual({
++      ok: false,
++      error: "origin_forbidden",
++    });
++
++    const beacon = await post(url, "/client-error", clientError, evil);
++    expect(beacon.status).toBe(403);
++    expect(await beacon.json()).toEqual({
++      ok: false,
++      error: "origin_forbidden",
++    });
++  });
++
++  it("accepts the configured ALLOWED_ORIGINS origin and echoes it for CORS", async () => {
++    const { server, url } = await startServer();
++    servers.push(server);
++    const allowed = "https://app.snowride.invalid";
++
++    const perf = await post(url, "/perf", perfSample, allowed);
++    expect(perf.status).toBe(202);
++    expect(perf.headers.get("access-control-allow-origin")).toBe(allowed);
++    expect(perf.headers.get("vary")).toContain("Origin");
++
++    const beacon = await post(url, "/client-error", clientError, allowed);
++    expect(beacon.status).toBe(202);
++    expect(beacon.headers.get("access-control-allow-origin")).toBe(allowed);
++  });
++
++  it("accepts a same-origin request (Origin host equals Host)", async () => {
++    const { server, url } = await startServer();
++    servers.push(server);
++    const host = new URL(url).host;
++
++    const beacon = await post(url, "/client-error", clientError, `http://${host}`);
++    expect(beacon.status).toBe(202);
++  });
++
++  it("accepts a non-browser caller with no Origin header", async () => {
++    const { server, url } = await startServer();
++    servers.push(server);
++
++    const perf = await post(url, "/perf", perfSample);
++    expect(perf.status).toBe(202);
++    expect(perf.headers.get("access-control-allow-origin")).toBeNull();
++  });
++});
+diff --git a/apps/realtime/src/server.ts b/apps/realtime/src/server.ts
+index 5dabb7a..0098fb6 100644
+--- a/apps/realtime/src/server.ts
++++ b/apps/realtime/src/server.ts
+@@ -1030,6 +1030,8 @@ export class RealtimeServer {
+     }
+     // RUM perf: anonymous sample ingest + aggregate read.
+     if (req.method === "POST" && url.pathname === "/perf") {
++      // SEC-P2-001: reject a cross-origin browser caller before reading a body.
++      if (this.rejectDisallowedOrigin(req, res)) return;
+       this.handlePerfSample(req, res);
+       return;
+     }
+@@ -1084,6 +1086,8 @@ export class RealtimeServer {
+     }
+     // Anonymous client error beacon (bounded, rate-limited).
+     if (req.method === "POST" && url.pathname === "/client-error") {
++      // SEC-P2-001: reject a cross-origin browser caller before reading a body.
++      if (this.rejectDisallowedOrigin(req, res)) return;
+       this.handleClientError(req, res);
+       return;
+     }
+@@ -1210,6 +1214,52 @@ export class RealtimeServer {
+     res.end("Not Found");
+   }
+ 
++  /**
++   * SEC-P2-001: browser-facing anonymous endpoints must not be drivable from an
++   * arbitrary cross-origin page. A request is admissible when it carries no
++   * `Origin` (curl, server-to-server, health probes), when the `Origin` is
++   * same-origin with the request `Host`, or when it is listed in
++   * `ALLOWED_ORIGINS`. Browser `Origin` cannot be forged by page script, so an
++   * absent or same-host value is trustworthy for this purpose.
++   */
++  private originAllowed(req: http.IncomingMessage): boolean {
++    const origin = req.headers.origin;
++    if (!origin) return true;
++    if (this.deps.config.allowedOrigins.includes(origin)) return true;
++    try {
++      if (req.headers.host && new URL(origin).host === req.headers.host) {
++        return true;
++      }
++    } catch {
++      return false;
++    }
++    return false;
++  }
++
++  /**
++   * SEC-P2-001: allow an admissible `Origin` (echoing it with `Vary: Origin`
++   * so shared caches stay safe) or reject a disallowed one with 403 before the
++   * handler reads any body. Returns true when the request was already answered.
++   */
++  private rejectDisallowedOrigin(
++    req: http.IncomingMessage,
++    res: http.ServerResponse,
++  ): boolean {
++    const origin = req.headers.origin;
++    if (!origin) return false;
++    if (this.originAllowed(req)) {
++      res.setHeader("access-control-allow-origin", origin);
++      res.setHeader("vary", "Origin");
++      return false;
++    }
++    res.writeHead(403, {
++      "content-type": "application/json",
++      vary: "Origin",
++    });
++    res.end(JSON.stringify({ ok: false, error: "origin_forbidden" }));
++    return true;
++  }
++
+   /**
+    * Prometheus text exposition (Phase 7 P7-G08). Fixed cardinality only:
+    * every series uses the constant `service` label; no player, socket, run,

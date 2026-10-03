@@ -1,0 +1,80 @@
+{
+    "run":  "20261003-0018-main-59e12b9",
+    "repo":  "MaineCyberTech/snowride",
+    "base":  "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+    "patchSet":  "PS-U06",
+    "title":  "Unassigned FEAT findings (catch-all)",
+    "findings":  [
+                     "FEAT-P2-001",
+                     "FEAT-P3-001"
+                 ],
+    "branch":  "remediation/ps-u06-20261003-0018-main-59e12b9",
+    "commit":  "97211d66cc3ccde3cfb4df0539808d0d6d833d66",
+    "commitSubject":  "fix(features): close unassigned feature findings [FEAT-P2-001,FEAT-P3-001]",
+    "pr":  "https://github.com/MaineCyberTech/snowride/pull/16",
+    "prState":  "draft",
+    "generated":  "2026-10-03T08:40:04Z",
+    "runner":  "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u06 clean LF bundle clone)",
+    "node":  "v20.20.2",
+    "npm":  "10.8.2",
+    "commands":  [
+                     {
+                         "cmd":  "npm ci",
+                         "exit":  0,
+                         "result":  "628 packages installed"
+                     },
+                     {
+                         "cmd":  "npm run lint",
+                         "exit":  0,
+                         "result":  "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx"
+                     },
+                     {
+                         "cmd":  "npm test",
+                         "exit":  0,
+                         "result":  "133 test files, 877 tests passed (baseline 131/873 + 2 new test files)"
+                     },
+                     {
+                         "cmd":  "git status --short",
+                         "exit":  0,
+                         "result":  "clean (generated files not committed)"
+                     },
+                     {
+                         "cmd":  "gitleaks detect --no-git --redact --source \u003c6 changed files\u003e",
+                         "exit":  0,
+                         "result":  "no leaks in any changed file"
+                     },
+                     {
+                         "cmd":  "gitleaks detect --no-git --redact --source .",
+                         "exit":  1,
+                         "result":  "19 pre-existing audited fixture hits under evidence/** + scripts/bundle-secret-gate.mjs; none in this diff"
+                     }
+                 ],
+    "artifacts":  {
+                      "diff.patch":  {
+                                         "bytes":  22416,
+                                         "sha256":  "43739473390000aae6c4d8f10ac8382dd9ad5c8d480ef063ff6ad776ff5f7f98"
+                                     },
+                      "verify.log":  {
+                                         "bytes":  25610,
+                                         "sha256":  "d1cf51db236c3b065b41ca186f30dd9a88c18094c9194c6ba8ae3e2a0280b8ab"
+                                     },
+                      "gitleaks.log":  {
+                                           "bytes":  577,
+                                           "sha256":  "3e4e14a687b4f3aaeecdc4904fc220ffd8ce09704d9e97424b6ee6391f516946"
+                                       },
+                      "pr_body.md":  {
+                                         "bytes":  6653,
+                                         "sha256":  "fada95831af05b5b03cf5dd2ad612e305528674f2d2c6d653ebd03a8ddde3a49"
+                                     }
+                  },
+    "filesChanged":  [
+                         ".env.example",
+                         "apps/realtime/src/productSurface.ts",
+                         "apps/realtime/src/server.ts",
+                         "apps/realtime/src/__tests__/launchReadinessDeploy.test.ts",
+                         "docs/runbooks/KILL_SWITCHES.md",
+                         "tests/feature-flag-drift.test.ts"
+                     ],
+    "scopeCheck":  "pass - PS-U06 declared no file list; the diff is limited to the config/compose/server surface named by the two findings plus the docs and the two drift/derivation tests the fix requires",
+    "status":  "partially-fixed (draft PR open; FEAT-P2-001 and FEAT-P3-001 become verified-fixed on human merge)"
+}

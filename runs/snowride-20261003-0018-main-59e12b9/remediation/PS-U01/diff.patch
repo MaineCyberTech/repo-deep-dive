@@ -1,0 +1,178 @@
+diff --git a/apps/realtime/src/__tests__/apiContract.test.ts b/apps/realtime/src/__tests__/apiContract.test.ts
+new file mode 100644
+index 0000000..1dc96cf
+--- /dev/null
++++ b/apps/realtime/src/__tests__/apiContract.test.ts
+@@ -0,0 +1,129 @@
++import { readFileSync } from "node:fs";
++import { describe, expect, it } from "vitest";
++import { EVENT_SCHEMAS } from "@snowride/contracts";
++
++/**
++ * API contract drift guard (API-P2-001, API-P3-001).
++ *
++ * `docs/API.md` is hand-maintained, so this test makes it a checked artifact:
++ *  - every HTTP route referenced by `handleHttp` must be documented, and every
++ *    documented route must exist in the handler (method-independent path set);
++ *  - every `EVENT_SCHEMAS` client->server event must be documented, and vice
++ *    versa;
++ *  - the documented PUBLIC route set must equal an explicit allowlist, so a new
++ *    unauthenticated route cannot slip in without an intent change.
++ *
++ * A route/event added to code without updating the document (or a public route
++ * added without updating the allowlist) fails `npm test`.
++ */
++
++const repoRoot = new URL("../../../../", import.meta.url);
++
++function readRepoFile(relative: string): string {
++  return readFileSync(new URL(relative, repoRoot), "utf8");
++}
++
++const serverSrc = readRepoFile("apps/realtime/src/server.ts");
++const apiDoc = readRepoFile("docs/API.md");
++
++/** Slice the `handleHttp` method so route literals elsewhere are ignored. */
++function handlerSource(): string {
++  const start = serverSrc.indexOf("private async handleHttp(");
++  const end = serverSrc.indexOf("renderPrometheusMetrics(", start);
++  expect(start).toBeGreaterThanOrEqual(0);
++  expect(end).toBeGreaterThan(start);
++  return serverSrc.slice(start, end);
++}
++
++/** Paths registered in `handleHttp` (`req.url === "/x"` / `url.pathname === "/x"`). */
++function handlerRoutes(): string[] {
++  const paths = new Set<string>();
++  for (const match of handlerSource().matchAll(
++    /(?:req\.url|url\.pathname)\s*===\s*"([^"]+)"/g,
++  )) {
++    if (match[1]) paths.add(match[1]);
++  }
++  return [...paths].sort();
++}
++
++/** Paths from the `| METHOD | \`path\` |` endpoint tables (queries stripped). */
++function documentedRoutes(): string[] {
++  const paths = new Set<string>();
++  for (const line of apiDoc.split(/\r?\n/)) {
++    const row = line.match(/^\|\s*(?:GET|POST)\s*\|\s*(.+?)\s*\|/);
++    if (!row) continue;
++    for (const backtick of (row[1] ?? "").matchAll(/`([^`]+)`/g)) {
++      if (backtick[1]) paths.add(backtick[1].split("?")[0] ?? backtick[1]);
++    }
++  }
++  return [...paths].sort();
++}
++
++/** Paths from the `### Public` HTTP table only. */
++function documentedPublicRoutes(): string[] {
++  const paths = new Set<string>();
++  let inPublic = false;
++  for (const line of apiDoc.split(/\r?\n/)) {
++    if (/^###\s+Public\s*$/.test(line)) inPublic = true;
++    else if (/^###\s+/.test(line)) inPublic = false;
++    if (!inPublic) continue;
++    const row = line.match(/^\|\s*(?:GET|POST)\s*\|\s*(.+?)\s*\|/);
++    if (!row) continue;
++    for (const backtick of (row[1] ?? "").matchAll(/`([^`]+)`/g)) {
++      if (backtick[1]) paths.add(backtick[1].split("?")[0] ?? backtick[1]);
++    }
++  }
++  return [...paths].sort();
++}
++
++/** Client->server events from the `### Client` table. */
++function documentedClientEvents(): string[] {
++  const events = new Set<string>();
++  let inClientTable = false;
++  for (const line of apiDoc.split(/\r?\n/)) {
++    if (/^###\s+Client\s/.test(line)) inClientTable = true;
++    else if (/^###\s+Server\s/.test(line)) inClientTable = false;
++    if (!inClientTable) continue;
++    const row = line.match(/^\|\s*`([^`]+)`\s*\|/);
++    if (row && row[1]) events.add(row[1]);
++  }
++  return [...events].sort();
++}
++
++/**
++ * The intentionally unauthenticated public surface (API-P3-001). These expose
++ * only health, runtime modes, catalogs, deterministic views and launch-gate
++ * status - no PII, credentials or tenant data.
++ */
++const PUBLIC_ROUTES = [
++  "/challenges",
++  "/client-error",
++  "/config",
++  "/content/activation",
++  "/content/discover",
++  "/content/ramps",
++  "/economy/simulation",
++  "/equipment",
++  "/health",
++  "/healthz",
++  "/launch-readiness",
++  "/perf",
++  "/perf-budget",
++  "/readyz",
++];
++
++describe("API-P2-001: docs/API.md contract parity", () => {
++  it("documents exactly the routes registered in handleHttp", () => {
++    expect(handlerRoutes()).toEqual(documentedRoutes());
++  });
++
++  it("documents exactly the EVENT_SCHEMAS client->server events", () => {
++    expect(Object.keys(EVENT_SCHEMAS).sort()).toEqual(documentedClientEvents());
++  });
++});
++
++describe("API-P3-001: public route intent is explicit", () => {
++  it("pins the documented public set to the reviewed allowlist", () => {
++    expect(documentedPublicRoutes()).toEqual([...PUBLIC_ROUTES].sort());
++  });
++});
+diff --git a/docs/API.md b/docs/API.md
+index 1b384d4..a96a4a1 100644
+--- a/docs/API.md
++++ b/docs/API.md
+@@ -3,7 +3,10 @@
+ Source of truth: `packages/contracts/src/schemas.ts` (clientΓåÆserver event
+ schemas, `EVENT_SCHEMAS`, and the `/runs` body) and
+ `apps/realtime/src/server.ts` (routes and serverΓåÆclient events). Regenerate
+-this file by hand when those change.
++this file by hand when those change. `apps/realtime/src/__tests__/apiContract.test.ts`
++enforces parity between this document, the registered HTTP routes and
++`EVENT_SCHEMAS`, so a route or event added without updating this file fails
++`npm test` (API-P2-001).
+ 
+ ## Auth model
+ 
+@@ -20,11 +23,26 @@ this file by hand when those change.
+   socket events re-check `role === "admin"`.
+ - Rate limits are per-socket buckets (`RATE_LIMIT_*`) and per-user for `/runs`
+   (`RATE_LIMIT_SUBMIT_PER_MIN`).
++- **Cross-origin HTTP**: HTTP responses carry only `x-trace-id`; the service
++  emits no `Access-Control-Allow-*` headers. Browser HTTP calls must therefore
++  be same-origin via the nginx proxy (`NEXT_PUBLIC_SOCKET_URL=/`). Pointing
++  `NEXT_PUBLIC_SOCKET_URL` directly at the realtime origin in dev yields opaque
++  CORS failures. Socket.IO applies its own `allowedOrigins` allowlist on the
++  handshake (API-P3-002).
+ 
+ ## HTTP endpoints
+ 
++Route/event parity with `apps/realtime/src/server.ts` and `EVENT_SCHEMAS` is
++enforced by `apps/realtime/src/__tests__/apiContract.test.ts` (API-P2-001).
++
+ ### Public
+ 
++These endpoints are intentionally unauthenticated. They expose only health,
++runtime modes, catalogs, deterministic content/economy views and launch-gate
++status - no PII, credentials or tenant data. The set is pinned by
++`apiContract.test.ts`; adding a public route requires an explicit intent change
++(API-P3-001).
++
+ | Method | Path | Purpose |
+ | --- | --- | --- |
+ | GET | `/healthz`, `/health` | Liveness. |

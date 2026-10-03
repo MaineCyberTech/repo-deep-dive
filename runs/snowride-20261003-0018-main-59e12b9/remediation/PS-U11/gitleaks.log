@@ -1,0 +1,19 @@
+# PS-U11 gitleaks gate - 559170d011b0f11a6be3566760c320043e7f53e9
+# Runner: ci-runner (172.23.128.51), clean LF bundle clone /srv/work/snowride-ps-u11
+# gitleaks 8.30.1
+#
+# Working-tree scan of every changed file (no allowlist):
+gitleaks .githooks/pre-commit exit=0
+gitleaks SECURITY.md exit=0
+gitleaks apps/realtime/src/server.ts exit=0
+gitleaks apps/realtime/src/__tests__/httpOrigin.test.ts exit=0
+#
+# Full worktree scan (documenting pre-existing audited fixtures):
+full_worktree_exit=1
+findings=19
+changed-file hits in full scan: none
+#
+# The 19 hits are the pre-existing `generic-api-key` fixtures under evidence/**
+# and scripts/bundle-secret-gate.mjs already recorded by the 2026-10-03 audit
+# (report 06) and by the sibling PS-U03/PS-U04/PS-U10 runs. None are in this
+# diff. No secret value is printed.

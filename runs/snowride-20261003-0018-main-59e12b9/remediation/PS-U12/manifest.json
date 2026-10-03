@@ -1,0 +1,52 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U12",
+  "title": "Unassigned SUPPLY findings (catch-all)",
+  "findings": ["SUPPLY-P2-001", "SUPPLY-P2-002", "SUPPLY-P3-001"],
+  "findingStatus": {
+    "SUPPLY-P2-001": "partially-fixed (license allow-list is now a blocking merge gate in .github/workflows/supply-chain.yml: 173/173 production deps allowed on the current lockfile, and a planted GPL-3.0-only prod dep makes the gate exit 1; production `npm audit --omit=dev --audit-level=high` also runs per-PR but is advisory because the base carries one high advisory in @grpc/grpc-js, recorded as an open question)",
+    "SUPPLY-P2-002": "partially-fixed (docs/SUPPLY_CHAIN.md documents every allowScripts entry, the provenance-first rule and the review cadence; `npm audit signatures` is wired into the PR workflow but advisory because the registry returns no public key for @playwright/test@1.63.0's attestation (EMISSINGSIGNATUREKEY), recorded as an open question)",
+    "SUPPLY-P3-001": "partially-fixed (.github/dependabot.yml now defines `security` groups with applies-to: security-updates for both the npm and github-actions ecosystems; yq validates the structure; the prioritized-PR behaviour is only observable at the next security advisory and requires Dependabot security updates to be enabled)"
+  },
+  "branch": "remediation/ps-u12-20261003-0018-main-59e12b9",
+  "commit": "b1c0f21781607084626789ba95d587444de83b64",
+  "commitSubject": "chore(supply): close unassigned supply-chain findings [SUPPLY-P2-001/002]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/22",
+  "prState": "draft",
+  "generated": "2026-10-03T10:15:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u12 clean LF bundle clone; core.autocrlf unset)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "gitleaks": "8.30.1",
+  "actionlint": "1.7.12",
+  "yq": "v4.54.1",
+  "commands": [
+    { "cmd": "actionlint .github/workflows/supply-chain.yml", "exit": 0, "result": "no findings" },
+    { "cmd": "yq eval '.updates[] | {eco, groups}' .github/dependabot.yml", "exit": 0, "result": "npm groups production/development/security; github-actions group security" },
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed" },
+    { "cmd": "node scripts/license-assurance.mjs", "exit": 0, "result": "173 checked, 173 allowed, 0 violations" },
+    { "cmd": "license negative probe (planted GPL-3.0-only prod dep in package-lock + node_modules, then restored)", "exit": 1, "result": "violations [('ps-u12-planted','GPL-3.0-only')] - gate blocks a disallowed license" },
+    { "cmd": "npm audit --omit=dev --audit-level=high", "exit": 1, "result": "1 high in @grpc/grpc-js (GHSA-m9gg-hp2v-232j / GHSA-f596-whhp-79r4); workflow step is continue-on-error" },
+    { "cmd": "npm audit signatures", "exit": 1, "result": "EMISSINGSIGNATUREKEY @playwright/test@1.63.0; workflow step is continue-on-error" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean" },
+    { "cmd": "gitleaks detect --no-git --redact --no-banner --source <3 changed files>", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing generic-api-key fixture hits under evidence/**; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 8541, "sha256": "fe8e8f0f7bc30a0353fde13ae137a18c8abb94a0728ed4e8c3400e1f2c1848e3" },
+    "verify.log": { "bytes": 28817, "sha256": "c45ebb5a2e14919760f71cd59a15d39d359bd22226ad70914f9d6bea506b0de0" },
+    "gitleaks.log": { "bytes": 1374, "sha256": "d8f8ab77f3f96e75564d69bee8595a4b8bdb4f98a0b1a3362bffdb2920c5bdfb" },
+    "pr_body.md": { "bytes": 7930, "sha256": "4bec609952ca07fe57960f97267990446ce54e1b9071de3a1629b528422ec0fc" }
+  },
+  "filesChanged": [
+    ".github/workflows/supply-chain.yml (new)",
+    "docs/SUPPLY_CHAIN.md (new)",
+    ".github/dependabot.yml"
+  ],
+  "scopeCheck": "pass - PS-U12 declared no file list; the diff is limited to the SUPPLY fixes (a new supply-chain workflow, a new policy doc, and the Dependabot config). It does not touch ci-foundation.yml, so it cannot conflict with the P1-3 SBOM step (SUPPLY-P1-001) or the CI-P2-002 action pins.",
+  "status": "partially-fixed (draft PR open; license enforcement is merge-gating and verified at the commit with a negative probe; production audit, registry signature verification and the Dependabot behaviour are partial with recorded open questions)"
+}

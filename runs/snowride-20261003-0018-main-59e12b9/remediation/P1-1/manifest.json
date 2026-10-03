@@ -1,0 +1,69 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "P1-1",
+  "title": "Re-attest and de-hardcode release identity",
+  "findings": ["SEC-P1-001", "DATA-P1-001", "FINAL-P1-001"],
+  "branch": "remediation/p1-1-20261003-0018-main-59e12b9",
+  "commit": "5f4ee0bec7f431eec904ee112d6a136cd6c6d5ab",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/7",
+  "prState": "draft",
+  "generated": "2026-10-03T06:49:53Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-verify clean worktree)",
+  "node": "v20.20.2",
+  "commands": [
+    {
+      "cmd": "npm ci",
+      "exit": 0,
+      "result": "628 packages installed (run once in /srv/work/snowride before the clean-worktree verification)"
+    },
+    {
+      "cmd": "npm run lint",
+      "exit": 0,
+      "result": "0 errors, 1 pre-existing warning in apps/web Home.tsx"
+    },
+    {
+      "cmd": "npx prettier --check apps/realtime/src/config.ts apps/realtime/src/__tests__/launchGateAttestation.test.ts",
+      "exit": 0,
+      "result": "All matched files use Prettier code style"
+    },
+    {
+      "cmd": "npm test",
+      "exit": 0,
+      "result": "build ok; 132 test files, 878 tests passed"
+    },
+    {
+      "cmd": "npx vitest run apps/realtime/src/__tests__/launchGateAttestation.test.ts apps/realtime/src/__tests__/server.integration.test.ts",
+      "exit": 0,
+      "result": "2 test files, 140 tests passed"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source <each changed file>",
+      "exit": 0,
+      "result": "0 leaks in apps/realtime/src/config.ts, apps/realtime/src/__tests__/launchGateAttestation.test.ts, infra/compose/docker-compose.yml, docs/runbooks/DEPLOY.md"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source . (full worktree)",
+      "exit": 1,
+      "result": "19 pre-existing leaks in untouched files (evidence/** and a legacy SQL fixture); none in the patch diff"
+    }
+  ],
+  "artifacts": {
+    "diff.patch": {
+      "bytes": 13065,
+      "sha256": "933e0d3af4f58fe3305573a0a733232fbc203b18cd955baafe0c25e6b51a5c2e"
+    },
+    "verify.log": {
+      "bytes": 51264,
+      "sha256": "392db5c310a1050b58ff03e1430d26743c72b4f7c25b6e82ca6fb0f716653b74"
+    }
+  },
+  "filesChanged": [
+    "apps/realtime/src/config.ts",
+    "apps/realtime/src/__tests__/launchGateAttestation.test.ts",
+    "infra/compose/docker-compose.yml",
+    "docs/runbooks/DEPLOY.md"
+  ],
+  "status": "partially-fixed (draft PR open; verified-fixed only on merge)"
+}

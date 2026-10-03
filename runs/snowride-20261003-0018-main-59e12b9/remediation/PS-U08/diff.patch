@@ -1,0 +1,93 @@
+diff --git a/.gitattributes b/.gitattributes
+new file mode 100644
+index 0000000..39966b1
+--- /dev/null
++++ b/.gitattributes
+@@ -0,0 +1,21 @@
++# Repository text/binary policy (finding HYG-P3-002).
++#
++# Normalize text to LF in the repository so a Windows checkout and a Linux CI
++# checkout produce byte-identical files, and so review diffs do not carry
++# line-ending churn.
++* text=auto eol=lf
++
++# Binary assets: never normalize and never attempt a textual diff.
++*.png  binary
++*.jpg  binary
++*.jpeg binary
++*.gif  binary
++*.ico  binary
++*.pdf  binary
++*.zip  binary
++*.dump binary
++
++# Generated snapshots under evidence/ are inputs, not hand-edited review
++# targets: mark them generated to collapse them in review/diff tooling.
++evidence/**          linguist-generated=true
++repomix-output*.xml  linguist-generated=true
+diff --git a/.gitignore b/.gitignore
+index e4cf4d7..4d02daa 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -15,7 +15,7 @@ coverage/
+ *.log
+ npm-debug.log*
+ supabase/.temp/
+-repomix-output.xml
++repomix-output*.xml
+ 
+ # Playwright e2e artifacts
+ test-results/
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+new file mode 100644
+index 0000000..5ebd215
+--- /dev/null
++++ b/CHANGELOG.md
+@@ -0,0 +1,26 @@
++# Changelog
++
++In-repo release lineage for Snowride (finding `HYG-P3-001`). Append-only: each
++released version gets a section here, the workspace `package.json` versions are
++bumped in lockstep with the tag, and the release commit records its migration
++head. Before this file, releases were tracked only in `evidence/` closeouts,
++`GATE_LEDGER.csv` and git tags (`roundN-metadata-closure`).
++
++Per-axis compatibility versions — canonical score, ghost format, tricks,
++rating, economy, progression, event/course, replay object, social — are a
++separate, authoritative contract in
++[`docs/product/VERSION_ANALYTICS_POLICY.md`](docs/product/VERSION_ANALYTICS_POLICY.md);
++do not conflate them with the package/release version.
++
++Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
++Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
++
++## [Unreleased]
++
++## [0.1.0] - 2026-09-08
++
++Foundation rebuild baseline. All workspace `package.json` files are `0.1.0`
++(`snowride`, `@snowride/web`, `@snowride/realtime`, `@snowride/game-core`,
++`@snowride/contracts`, `@snowride/config`). The monorepo scaffold and toolchain
++pins land in `c4ec021`; the phase-by-phase history that predates this file is
++recorded in `GATE_LEDGER.csv` and `evidence/closeout/`.
+diff --git a/docs/runbooks/BACKUP_RESTORE.md b/docs/runbooks/BACKUP_RESTORE.md
+index dc3a909..4950132 100644
+--- a/docs/runbooks/BACKUP_RESTORE.md
++++ b/docs/runbooks/BACKUP_RESTORE.md
+@@ -13,10 +13,12 @@
+ - **Alerts:** any failure notifies via `NTFY_TOPIC` (same channel as the
+   assurance lane).
+ 
+-The daily assurance lane is supposed to check backup freshness
+-(`scripts/assurance/assurance.sh`); note it currently globs `*.sql`, which the
+-backup script no longer produces — treat that check as **known-broken** until
+-fixed.
++The daily assurance lane checks backup freshness in the `daily` mode of
++[`scripts/assurance/assurance.sh`](../../scripts/assurance/assurance.sh): it
++globs `/home/user/backups/*.dump` and raises exit `5` (alert) when the newest
++dump is older than 26 h. The earlier `*.sql` glob — which matched nothing and
++made the check pass silently — was fixed in the 2026-09-27 remediation
++([`evidence/audit-20260927/REMEDIATION.md`](../../evidence/audit-20260927/REMEDIATION.md)).
+ 
+ ## Create a backup now
+ 

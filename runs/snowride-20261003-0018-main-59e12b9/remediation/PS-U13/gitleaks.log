@@ -1,0 +1,20 @@
+# PS-U13 gitleaks - commit a7fb4a6270774ad588f68184fa4a21cd5d61565c
+gitleaks: 8.30.1
+
+## changed files (no allowlist; block on any finding)
+gitleaks .github/workflows/ci-foundation.yml exit=0
+gitleaks AGENTS.md exit=0
+gitleaks README.md exit=0
+gitleaks apps/web/e2e/shopPanel.a11y.spec.ts exit=0
+gitleaks package-lock.json exit=0
+gitleaks package.json exit=0
+gitleaks playwright.config.ts exit=0
+gitleaks scripts/verify-all.sh exit=0
+gitleaks vitest.config.ts exit=0
+
+## full worktree (pre-existing audited fixtures; none in this diff)
+full_worktree_exit=1
+findings=19
+changed-file hits in full scan:
+none
+GITLEAKS_DONE

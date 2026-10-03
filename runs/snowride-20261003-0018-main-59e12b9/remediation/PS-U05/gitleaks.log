@@ -1,0 +1,39 @@
+# PS-U05 pre-push gitleaks gate
+commit: 3e9e56c273160ef9a3d63259d7052e57635e8caf
+gitleaks: 8.30.1 (ci-runner)
+
+## changed files (no allowlist config)
+
+-- gitleaks detect --no-git --redact --no-banner --source README.md
+gitleaks_exit=0
+-- gitleaks detect --no-git --redact --no-banner --source docs/RELEASE_GATE.md
+gitleaks_exit=0
+
+Both changed files are clean: no leaks.
+
+## full worktree (documenting pre-existing fixture hits)
+
+gitleaks detect --no-git --redact --no-banner --source . --report-format json
+full_worktree_exit=1
+findings=19
+
+Hit files (all pre-existing, audited fixtures; none is a changed file):
+
+  1  evidence/phase2/20260908T2110Z-p2/G06-authorization/full_actor_operation_matrix.sql
+  1  evidence/production-acceptance/repomix-r71-repair/repomix-output.3.xml
+  6  evidence/production-acceptance/repomix-r71-repair/repomix-output.8.xml
+  1  evidence/production-acceptance/repomix-r71-repair/repomix-output.9.xml
+  1  evidence/production-acceptance/repomix-r71/repomix-output.3.xml
+  1  evidence/production-acceptance/repomix-r71/repomix-output.9.xml
+  1  evidence/production-acceptance/repomix-split/repomix-output.3.xml
+  6  evidence/recovery/recovery_ledger_r71.jsonl
+  1  scripts/bundle-secret-gate.mjs
+
+The 19 hits are the same audited fixtures recorded by the sibling remediation
+runs (PS-U03/PS-U04): append-only `evidence/**` exports and the bundle secret
+gate's own test data. This diff adds no secret-shaped content; the two changed
+files scan clean individually.
+
+## changed-file hits in the full scan
+
+none

@@ -1,0 +1,128 @@
+diff --git a/.github/workflows/ci-foundation.yml b/.github/workflows/ci-foundation.yml
+index aef0c30..6e5e8b5 100644
+--- a/.github/workflows/ci-foundation.yml
++++ b/.github/workflows/ci-foundation.yml
+@@ -17,14 +17,26 @@ jobs:
+     runs-on: ubuntu-latest
+     timeout-minutes: 30
+     steps:
+-      - uses: actions/checkout@v4
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (CI-P2-002)
+         with:
+           persist-credentials: false
+-      - uses: actions/setup-node@v4
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (CI-P2-002)
+         with:
+           node-version: 24
+           cache: npm
++      - name: repository secret scan (pinned gitleaks) (CI-P2-001)
++        # Runs before `npm ci` so installed dependencies are never scanned.
++        # Pinned binary + SHA-256; see scripts/repo-secret-scan.sh.
++        run: bash scripts/repo-secret-scan.sh
+       - run: npm ci
++      - name: dependency audit (production dependencies) (CI-P2-001)
++        # Advisory (non-blocking), mirroring the daily host lane's
++        # `npm audit --omit=dev`. This already surfaces one high advisory in a
++        # transitive runtime dep (@grpc/grpc-js); enforcing it as a blocking
++        # gate is a follow-up once that advisory is cleared (see PR open
++        # questions). `--audit-level=high` keeps that enforcement intent.
++        continue-on-error: true
++        run: npm audit --omit=dev --audit-level=high
+       - run: npm run typecheck
+       - run: npm run lint
+       - run: npm run format:check
+@@ -68,7 +80,7 @@ jobs:
+           --health-timeout 5s
+           --health-retries 10
+     steps:
+-      - uses: actions/checkout@v4
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (CI-P2-002)
+         with:
+           persist-credentials: false
+       - name: apply all migrations to a fresh database
+@@ -87,10 +99,10 @@ jobs:
+       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-anon-key
+       NEXT_PUBLIC_SOCKET_URL: /
+     steps:
+-      - uses: actions/checkout@v4
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (CI-P2-002)
+         with:
+           persist-credentials: false
+-      - uses: actions/setup-node@v4
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (CI-P2-002)
+         with:
+           node-version: 24
+           cache: npm
+diff --git a/.gitleaks.toml b/.gitleaks.toml
+new file mode 100644
+index 0000000..6bc5df6
+--- /dev/null
++++ b/.gitleaks.toml
+@@ -0,0 +1,22 @@
++# CI-P2-001: gitleaks config for the per-PR repository secret scan
++# (scripts/repo-secret-scan.sh).
++#
++# The full default gitleaks rule set is inherited. The global allowlist below
++# covers only secret-shaped strings that are intentional fixtures/placeholders:
++# append-only evidence exports and the bundle-secret-gate's own test data. The
++# 2026-10-03 audit (report 06/11) confirmed no live credential is present.
++title = "snowride gitleaks config"
++
++[extend]
++useDefault = true
++
++[allowlist]
++description = "Intentional secret-shaped fixtures (audited; no live secrets)."
++paths = [
++    '''evidence/phase2/20260908T2110Z-p2/G06-authorization/full_actor_operation_matrix\.sql$''',
++    '''evidence/production-acceptance/repomix-r71-repair/repomix-output\.[389]\.xml$''',
++    '''evidence/production-acceptance/repomix-r71/repomix-output\.[39]\.xml$''',
++    '''evidence/production-acceptance/repomix-split/repomix-output\.3\.xml$''',
++    '''evidence/recovery/recovery_ledger_r71\.jsonl$''',
++    '''scripts/bundle-secret-gate\.mjs$''',
++]
+diff --git a/scripts/repo-secret-scan.sh b/scripts/repo-secret-scan.sh
+new file mode 100644
+index 0000000..5628269
+--- /dev/null
++++ b/scripts/repo-secret-scan.sh
+@@ -0,0 +1,39 @@
++#!/usr/bin/env bash
++# CI-P2-001: per-PR repository-tree secret scan.
++#
++# Scans the working tree (not history, not build output - that is what
++# scripts/bundle-secret-gate.mjs covers) with gitleaks. Findings are redacted
++# before they reach the log. A gitleaks already on PATH is used as-is (the
++# self-hosted lab runner provides one); otherwise a pinned release is fetched
++# and its SHA-256 is verified before execution.
++set -euo pipefail
++
++GITLEAKS_VERSION="8.30.1"
++# SHA-256 of gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz, as published in the
++# official release checksums (https://github.com/gitleaks/gitleaks/releases).
++GITLEAKS_SHA256="551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
++
++cd "$(dirname "$0")/.."
++
++if command -v gitleaks >/dev/null 2>&1; then
++  detector="$(command -v gitleaks)"
++else
++  tmp="$(mktemp -d)"
++  trap 'rm -rf "$tmp"' EXIT
++  archive="$tmp/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
++  curl -sSfL \
++    "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
++    -o "$archive"
++  echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum -c -
++  tar -xzf "$archive" -C "$tmp" gitleaks
++  detector="$tmp/gitleaks"
++fi
++
++echo "repository secret scan: ${detector} ($("$detector" version))"
++"$detector" detect \
++  --no-git \
++  --source . \
++  --config .gitleaks.toml \
++  --redact \
++  --no-banner \
++  --verbose

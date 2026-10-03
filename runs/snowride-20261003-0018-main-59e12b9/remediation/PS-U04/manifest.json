@@ -1,0 +1,50 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U04",
+  "title": "Unassigned DATA findings (catch-all)",
+  "findings": ["DATA-P2-001", "DATA-P2-002", "DATA-P3-001"],
+  "branch": "remediation/ps-u04-20261003-0018-main-59e12b9",
+  "commit": "dcdceca659acd8ecfce6eed5a80d6ea58fbf8d13",
+  "commitSubject": "fix(data): close unassigned data findings [DATA-P2-001/002]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/14",
+  "prState": "draft",
+  "generated": "2026-10-03T12:25:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u04 clean LF bundle clone); SQL scripts ran in a postgres:17-alpine client container against a detached postgres:17-alpine server",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    { "cmd": "bash scripts/migrations-manifest.sh --check", "exit": 0, "result": "migration manifest OK (56 files)" },
+    { "cmd": "manifest tamper probe (append to 0001_initial_schema.sql)", "exit": 1, "result": "expected non-zero; restored check exits 0" },
+    { "cmd": "bash scripts/ci-migrations-dryrun.sh", "exit": 0, "result": "migrations applied clean: 56 files" },
+    { "cmd": "bash scripts/ci-db-tests.sh", "exit": 0, "result": "db negative suites passed: 16 files" },
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "actionlint .github/workflows/ci-foundation.yml", "exit": 0, "result": "no findings" },
+    { "cmd": "gitleaks detect --no-git --redact --source <changed file> (x11)", "exit": 0, "result": "no leaks in any changed file" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing fixture hits in evidence/** and scripts/bundle-secret-gate.mjs; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 40266, "sha256": "98965abcccd2b77993b2274f27174cc5b4b52e2d02e51d7dc1639182377b54d3" },
+    "verify.log": { "bytes": 48124, "sha256": "5710ff733003cfec4793b3c2539d3ea5557ffab22c9bb416dca76775402ee16e" },
+    "gitleaks.log": { "bytes": 2177, "sha256": "1ad85b2602dec4a7c6633e54ef80705327d6675802619d75a951c9acc51469f5" },
+    "pr_body.md": { "bytes": 7220, "sha256": "e49181646eb3d8e27128acc40f3bb36535cd9c4643407ae4c5299f09e2799855" }
+  },
+  "filesChanged": [
+    ".gitattributes",
+    ".github/workflows/ci-foundation.yml",
+    "AGENTS.md",
+    "docs/runbooks/MIGRATIONS.md",
+    "scripts/ci-db-fixtures.sql",
+    "scripts/ci-db-tests.sh",
+    "scripts/ci-migrations-dryrun.sh",
+    "scripts/migrations-manifest.sh",
+    "supabase/migrations/0057_retire_consumable_category.sql",
+    "supabase/migrations/MANIFEST.sha256",
+    "supabase/tests/README.md"
+  ],
+  "scopeCheck": "pass - PS-U04 declared no file list; the diff is limited to the CI workflow, the migration-integrity scripts/manifest/forward migration, and the related docs",
+  "status": "partially-fixed (draft PR open; DATA-P3-001 owner-run/read-only and the 0032 tombstone decision deferred; verified-fixed only on merge)"
+}

@@ -1,0 +1,191 @@
+## git diff --summary HEAD~1 HEAD
+ rename GATE_LEDGER.csv => docs/archive/GATE_LEDGER.csv (100%)
+ create mode 100644 docs/archive/README.md
+ rename REVIEW_PLAN_20260911.md => docs/archive/REVIEW_PLAN_20260911.md (100%)
+ rename agent_final_response.json => docs/archive/agent_final_response.json (100%)
+ rename ext_review.md => docs/archive/ext_review.md (100%)
+ rename reviewer.md => docs/archive/reviewer.md (100%)
+ delete mode 100644 evidence/production-acceptance/repomix-r71/README.md
+ delete mode 100644 evidence/production-acceptance/repomix-r71/SHA256SUMS.txt
+ delete mode 100644 evidence/production-acceptance/repomix-r71/ext_review.md
+ delete mode 100644 evidence/production-acceptance/repomix-r71/ext_review_r71_snapshot.md
+ delete mode 100644 evidence/production-acceptance/repomix-r71/ext_review_r71_snapshot.sha256
+ delete mode 100644 evidence/production-acceptance/repomix-r71/prompt.md
+ delete mode 100644 evidence/production-acceptance/repomix-r71/r71_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-r71/r71_suite_transcript.txt
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.1.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.2.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.3.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.4.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.5.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.6.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.7.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.8.xml
+ delete mode 100644 evidence/production-acceptance/repomix-r71/repomix-output.9.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/README.md
+ delete mode 100644 evidence/production-acceptance/repomix-split/SHA256SUMS.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/prompt.md
+ delete mode 100644 evidence/production-acceptance/repomix-split/r62_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/r63_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/r64_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/r65_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/r66_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/r67_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/r68_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/r69_clean_clone_verification.txt
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.1.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.2.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.3.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.4.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.5.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.6.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.7.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.8.xml
+ delete mode 100644 evidence/production-acceptance/repomix-split/repomix-output.9.xml
+ delete mode 100644 snowride_production_grade_major_phase_roadmap_20260911_050010.pdf
+
+## git diff --stat HEAD~1 HEAD
+ .gitignore                                         |      4 +
+ docs/EVIDENCE.md                                   |     25 +
+ GATE_LEDGER.csv => docs/archive/GATE_LEDGER.csv    |      0
+ docs/archive/README.md                             |     24 +
+ .../archive/REVIEW_PLAN_20260911.md                |      0
+ .../archive/agent_final_response.json              |      0
+ ext_review.md => docs/archive/ext_review.md        |      0
+ reviewer.md => docs/archive/reviewer.md            |      0
+ .../production-acceptance/repomix-r71/README.md    |     46 -
+ .../repomix-r71/SHA256SUMS.txt                     |     11 -
+ .../repomix-r71/ext_review.md                      |    333 -
+ .../repomix-r71/ext_review_r71_snapshot.md         |    333 -
+ .../repomix-r71/ext_review_r71_snapshot.sha256     |      1 -
+ .../production-acceptance/repomix-r71/prompt.md    |    171 -
+ .../repomix-r71/r71_clean_clone_verification.txt   |     46 -
+ .../repomix-r71/r71_suite_transcript.txt           |     56 -
+ .../repomix-r71/repomix-output.1.xml               |  42855 -------
+ .../repomix-r71/repomix-output.2.xml               |  16367 ---
+ .../repomix-r71/repomix-output.3.xml               |   2658 -
+ .../repomix-r71/repomix-output.4.xml               |  69944 -----------
+ .../repomix-r71/repomix-output.5.xml               |  63308 ----------
+ .../repomix-r71/repomix-output.6.xml               | 118813 ------------------
+ .../repomix-r71/repomix-output.7.xml               | 112158 -----------------
+ .../repomix-r71/repomix-output.8.xml               |  82588 ------------
+ .../repomix-r71/repomix-output.9.xml               |  43085 -------
+ .../production-acceptance/repomix-split/README.md  |     90 -
+ .../repomix-split/SHA256SUMS.txt                   |      9 -
+ .../production-acceptance/repomix-split/prompt.md  |    120 -
+ .../repomix-split/r62_clean_clone_verification.txt |     10 -
+ .../repomix-split/r63_clean_clone_verification.txt |     10 -
+ .../repomix-split/r64_clean_clone_verification.txt |     40 -
+ .../repomix-split/r65_clean_clone_verification.txt |     40 -
+ .../repomix-split/r66_clean_clone_verification.txt |     40 -
+ .../repomix-split/r67_clean_clone_verification.txt |     40 -
+ .../repomix-split/r68_clean_clone_verification.txt |     41 -
+ .../repomix-split/r69_clean_clone_verification.txt |     45 -
+ .../repomix-split/repomix-output.1.xml             |  21008 ----
+ .../repomix-split/repomix-output.2.xml             |  10671 --
+ .../repomix-split/repomix-output.3.xml             |   1993 -
+ .../repomix-split/repomix-output.4.xml             |  69385 ----------
+ .../repomix-split/repomix-output.5.xml             |  62749 ---------
+ .../repomix-split/repomix-output.6.xml             | 118254 -----------------
+ .../repomix-split/repomix-output.7.xml             | 111599 ----------------
+ .../repomix-split/repomix-output.8.xml             |  88906 -------------
+ .../repomix-split/repomix-output.9.xml             |  12473 --
+ ...n_grade_major_phase_roadmap_20260911_050010.pdf |    Bin 7215002 -> 0 bytes
+ 46 files changed, 53 insertions(+), 1050296 deletions(-)
+
+## content diff (renames/adds/modifies only; large deleted XML content omitted, see git history)
+diff --git a/.gitignore b/.gitignore
+index e4cf4d7..a72c4b0 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -20,3 +20,7 @@ repomix-output.xml
+ # Playwright e2e artifacts
+ test-results/
+ apps/web/e2e/results.json
++
++# INV-P3-001: tracked `.log` transcripts under evidence/ are intentional
++# append-only audit records, exempted from the `*.log` ignore rule above.
++!evidence/**/*.log
+diff --git a/docs/EVIDENCE.md b/docs/EVIDENCE.md
+index ce7fdbe..687d034 100644
+--- a/docs/EVIDENCE.md
++++ b/docs/EVIDENCE.md
+@@ -48,3 +48,28 @@ add to it; the binding rules are in [`AGENTS.md`](../AGENTS.md).
+ - Gates: `scripts/verify-all.sh` (local) and the `ci-foundation` workflow (CI).
+ - Assurance lanes: `docs/runbooks/ASSURANCE.md`.
+ - A recorded PASS without a raw transcript is `INSUFFICIENT_EVIDENCE`.
++
++## Archive & size policy
++
++Keeping clones fast and reviewable needs explicit budgets for tracked
++artifacts (audit inventory findings `INV-P2-001`, `INV-P2-002`):
++
++- **Generated source snapshots are not committed.** Full-repository `repomix`
++  exports are reproducible on demand and are excluded by `.repomixignore`
++  (`**/repomix-output*.xml`, the `repomix-*/` package directories). At most one
++  historical package may be retained as an archived snapshot; older duplicate
++  packages are removed from the tip and stay recoverable from git history.
++- **Large generated reports are not committed.** Report PDFs and similar bulk
++  binaries belong in release artifacts or off-repo storage, not the tree.
++- **Evidence transcripts are intentional.** Tracked `.log` transcripts under
++  `evidence/` are append-only audit records, explicitly exempted from the
++  `.gitignore` `*.log` rule (`!evidence/**/*.log`).
++- **Budget.** Keep the largest tracked file under ~2 MB (allowlisted binary
++  evidence may exceed this until relocated) and do not let the tracked worktree
++  grow without a documented reason.
++- **Current state.** The active-state pointer is
++  [`evidence/CURRENT_STATE.json`](../evidence/CURRENT_STATE.json) (schema:
++  [`docs/product/CURRENT_STATE_SCHEMA.md`](product/CURRENT_STATE_SCHEMA.md)).
++- **Historical root artifacts** live under [`docs/archive/`](archive/) with a
++  pointer; the authoritative gate ledger remains
++  `evidence/closeout/GATE_LEDGER.csv`.
+diff --git a/GATE_LEDGER.csv b/docs/archive/GATE_LEDGER.csv
+similarity index 100%
+rename from GATE_LEDGER.csv
+rename to docs/archive/GATE_LEDGER.csv
+diff --git a/docs/archive/README.md b/docs/archive/README.md
+new file mode 100644
+index 0000000..cb2e47e
+--- /dev/null
++++ b/docs/archive/README.md
+@@ -0,0 +1,24 @@
++# Archived repository artifacts
++
++These files were one-off review and roadmap artifacts that lived at the
++repository root and competed with the build configuration for attention
++(audit inventory finding `INV-P3-002`). They are historical records, not current
++documentation. The authoritative sources are:
++
++- Program/gate state: `evidence/PROGRAM_ACCEPTANCE_LEDGER.md` and the
++  authoritative gate ledger `evidence/closeout/GATE_LEDGER.csv`.
++- Active state: `evidence/CURRENT_STATE.json`.
++- Product definition and roadmap: `docs/product/`.
++
++| File | What it is |
++| --- | --- |
++| `agent_final_response.json` | Phase-1 publication response (review reconciliation rounds). |
++| `ext_review.md` | External review / production-grade roadmap (superseded by `docs/product/`). |
++| `reviewer.md` | Independent-review checklist. |
++| `GATE_LEDGER.csv` | Historical round-3 gate note (the authoritative ledger is `evidence/closeout/GATE_LEDGER.csv`). |
++| `REVIEW_PLAN_20260911.md` | 2026-09-11 review plan. |
++
++The historical roadmap PDF
++`snowride_production_grade_major_phase_roadmap_20260911_050010.pdf` was removed
++from the tree to meet the artifact size budget; it remains recoverable from git
++history.
+diff --git a/REVIEW_PLAN_20260911.md b/docs/archive/REVIEW_PLAN_20260911.md
+similarity index 100%
+rename from REVIEW_PLAN_20260911.md
+rename to docs/archive/REVIEW_PLAN_20260911.md
+diff --git a/agent_final_response.json b/docs/archive/agent_final_response.json
+similarity index 100%
+rename from agent_final_response.json
+rename to docs/archive/agent_final_response.json
+diff --git a/ext_review.md b/docs/archive/ext_review.md
+similarity index 100%
+rename from ext_review.md
+rename to docs/archive/ext_review.md
+diff --git a/reviewer.md b/docs/archive/reviewer.md
+similarity index 100%
+rename from reviewer.md
+rename to docs/archive/reviewer.md

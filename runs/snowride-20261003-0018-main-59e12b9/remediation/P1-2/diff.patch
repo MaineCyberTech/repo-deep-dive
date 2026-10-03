@@ -1,0 +1,396 @@
+diff --git a/.github/branch-protection.json b/.github/branch-protection.json
+new file mode 100644
+index 0000000..4f80c97
+--- /dev/null
++++ b/.github/branch-protection.json
+@@ -0,0 +1,16 @@
++{
++  "branch": "main",
++  "requiredStatusChecks": {
++    "strict": true,
++    "contexts": ["foundation", "migrations", "e2e"]
++  },
++  "requiredPullRequestReviews": {
++    "requiredApprovingReviewCount": 1,
++    "requireCodeOwnerReviews": true,
++    "dismissStaleReviews": true
++  },
++  "requiredConversationResolution": true,
++  "enforceAdmins": true,
++  "allowForcePushes": false,
++  "allowDeletions": false
++}
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+index 3c46b4f..0bc022a 100644
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -20,6 +20,14 @@ human-facing checklist.
+    in `packages/contracts`.
+ 6. Run `npm run format` if `format:check` complains.
+ 
++## Main branch protection
++
++`main` requires a pull request with a CODEOWNERS review and the
++`foundation`, `migrations` and `e2e` status checks. The policy is declared in
++[`.github/branch-protection.json`](.github/branch-protection.json); the
++operator steps and evidence requirements are in
++[`docs/runbooks/BRANCH_PROTECTION.md`](docs/runbooks/BRANCH_PROTECTION.md).
++
+ ## Doctrine reminders
+ 
+ - Evidence is append-only: add a new entry under `evidence/`, never rewrite.
+diff --git a/docs/runbooks/BRANCH_PROTECTION.md b/docs/runbooks/BRANCH_PROTECTION.md
+new file mode 100644
+index 0000000..aa0a54f
+--- /dev/null
++++ b/docs/runbooks/BRANCH_PROTECTION.md
+@@ -0,0 +1,51 @@
++# Branch protection for `main`
++
++CI finding: **CI-P1-001** — nothing in the repository proved that `main`
++rejects un-reviewed or red-CI merges. The `ci-foundation` workflow
++(`.github/workflows/ci-foundation.yml`) is advisory until branch protection
++requires it. The declared policy lives in
++[`.github/branch-protection.json`](../../.github/branch-protection.json); this
++runbook is the operator half of the fix.
++
++## Required settings
++
++- Require a pull request before merging: **≥ 1 approval**, CODEOWNERS review
++  (`.github/CODEOWNERS` owns `*`).
++- Require status checks to pass: **`foundation`, `migrations`, `e2e`** — the
++  three jobs in `ci-foundation.yml`.
++- Require branches to be up to date before merging.
++- Require conversation resolution.
++- Disallow force pushes and deletions.
++
++`tests/branch-protection.test.ts` fails if the declared checks drift from the
++workflow's job names, and `foundation` runs that suite, so a merged change
++cannot silently weaken the policy.
++
++## Apply it
++
++UI: **Settings → Branches → Add branch protection rule** for `main`, then set
++the options above.
++
++API (classic protection; needs a token with `administration:write`):
++
++```bash
++gh api -X PUT repos/$ORG/$REPO/branches/main/protection \
++  --input <(node scripts/verify-branch-protection.mjs --print-expected)
++```
++
++## Capture evidence
++
++```bash
++GITHUB_TOKEN=... GITHUB_REPOSITORY=MaineCyberTech/snowride \
++  node scripts/verify-branch-protection.mjs
++```
++
++The command exits non-zero until the live setting matches the policy and
++prints `PASS live branch protection matches policy`. Store the raw output (or
++a settings export/screenshot) under `evidence/`. The token is never printed.
++
++## Drill
++
++Open a throwaway PR that intentionally fails `foundation`; confirm the merge
++button stays blocked and the required checks are listed. Record the PR and the
++blocked state as evidence, then close the PR.
+diff --git a/scripts/verify-branch-protection.mjs b/scripts/verify-branch-protection.mjs
+new file mode 100644
+index 0000000..4d8266f
+--- /dev/null
++++ b/scripts/verify-branch-protection.mjs
+@@ -0,0 +1,215 @@
++#!/usr/bin/env node
++// Branch protection as code (audit finding CI-P1-001).
++//
++// `main` must not accept a merge without a human review and the ci-foundation
++// checks (`foundation`, `migrations`, `e2e`). GitHub enforces that server-side;
++// this file keeps the declared policy (.github/branch-protection.json) honest,
++// proves its required checks match the workflow's real job names, and
++// audits/exports the live setting for evidence.
++//
++// Usage:
++//   node scripts/verify-branch-protection.mjs --self-test
++//   node scripts/verify-branch-protection.mjs --print-expected
++//   GITHUB_TOKEN=... GITHUB_REPOSITORY=owner/repo \
++//     node scripts/verify-branch-protection.mjs
++import { readFileSync } from "node:fs";
++import { dirname, resolve } from "node:path";
++import { fileURLToPath, pathToFileURL } from "node:url";
++
++const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
++const POLICY_PATH = resolve(ROOT, ".github/branch-protection.json");
++const WORKFLOW_PATH = resolve(ROOT, ".github/workflows/ci-foundation.yml");
++const API = "https://api.github.com";
++
++export function loadPolicy(path = POLICY_PATH) {
++  return JSON.parse(readFileSync(path, "utf8"));
++}
++
++// Job ids are the two-space-indented keys directly under the workflow's
++// top-level `jobs:` block; `steps` and deeper keys are indented further.
++export function workflowJobNames(path = WORKFLOW_PATH) {
++  const jobs = [];
++  let inJobs = false;
++  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
++    if (/^jobs:\s*$/.test(line)) {
++      inJobs = true;
++      continue;
++    }
++    if (!inJobs) continue;
++    if (/^\S/.test(line)) break; // next top-level key
++    const job = /^ {2}([A-Za-z0-9_-]+):\s*$/.exec(line);
++    if (job) jobs.push(job[1]);
++  }
++  return jobs;
++}
++
++export function validatePolicy(policy, jobNames) {
++  const errors = [];
++  if (!policy || typeof policy !== "object") return ["policy is not an object"];
++  if (!policy.branch) errors.push("branch is required");
++
++  const checks = policy.requiredStatusChecks;
++  if (
++    !checks ||
++    !Array.isArray(checks.contexts) ||
++    checks.contexts.length === 0
++  ) {
++    errors.push("requiredStatusChecks.contexts must list at least one check");
++  } else {
++    if (checks.strict !== true) {
++      errors.push(
++        "requiredStatusChecks.strict must be true (branches up to date)",
++      );
++    }
++    if (jobNames) {
++      const missing = checks.contexts.filter((c) => !jobNames.includes(c));
++      if (missing.length) {
++        errors.push(
++          `required checks missing from workflow jobs: ${missing.join(", ")}`,
++        );
++      }
++    }
++  }
++
++  const review = policy.requiredPullRequestReviews;
++  if (!review || !(review.requiredApprovingReviewCount >= 1)) {
++    errors.push(
++      "requiredPullRequestReviews.requiredApprovingReviewCount must be >= 1",
++    );
++  }
++  if (policy.requiredConversationResolution !== true) {
++    errors.push("requiredConversationResolution must be true");
++  }
++  if (policy.allowForcePushes !== false)
++    errors.push("allowForcePushes must be false");
++  if (policy.allowDeletions !== false)
++    errors.push("allowDeletions must be false");
++  return errors;
++}
++
++// Map the declared policy to GitHub's classic branch-protection payload.
++export function expectedProtection(policy) {
++  return {
++    required_status_checks: {
++      strict: policy.requiredStatusChecks.strict,
++      contexts: policy.requiredStatusChecks.contexts,
++    },
++    enforce_admins: Boolean(policy.enforceAdmins),
++    required_pull_request_reviews: {
++      dismiss_stale_reviews: Boolean(
++        policy.requiredPullRequestReviews.dismissStaleReviews,
++      ),
++      require_code_owner_reviews: Boolean(
++        policy.requiredPullRequestReviews.requireCodeOwnerReviews,
++      ),
++      required_approving_review_count:
++        policy.requiredPullRequestReviews.requiredApprovingReviewCount,
++    },
++    required_conversation_resolution: Boolean(
++      policy.requiredConversationResolution,
++    ),
++    allow_force_pushes: Boolean(policy.allowForcePushes),
++    allow_deletions: Boolean(policy.allowDeletions),
++  };
++}
++
++// Audit a GitHub branch-protection API response against the declared policy.
++export function auditLiveProtection(live, policy) {
++  if (!live || typeof live !== "object") {
++    return ["no branch protection is configured"];
++  }
++  const errors = [];
++  const want = policy.requiredStatusChecks.contexts;
++  const contexts = live.required_status_checks?.contexts ?? [];
++  const missing = want.filter((c) => !contexts.includes(c));
++  if (missing.length) {
++    errors.push(`live required checks missing: ${missing.join(", ")}`);
++  }
++  if (live.required_status_checks?.strict !== true) {
++    errors.push(
++      "live required checks are not strict (branches may be out of date)",
++    );
++  }
++  const count =
++    live.required_pull_request_reviews?.required_approving_review_count ?? 0;
++  if (count < policy.requiredPullRequestReviews.requiredApprovingReviewCount) {
++    errors.push("live PR review requirement is weaker than declared");
++  }
++  if (live.required_conversation_resolution?.enabled !== true) {
++    errors.push("live conversation resolution is not required");
++  }
++  if (live.allow_force_pushes?.enabled !== false) {
++    errors.push("live force pushes are allowed");
++  }
++  if (live.allow_deletions?.enabled !== false) {
++    errors.push("live deletions are allowed");
++  }
++  return errors;
++}
++
++async function fetchLiveProtection(token, repo, branch) {
++  const res = await fetch(
++    `${API}/repos/${repo}/branches/${branch}/protection`,
++    {
++      headers: {
++        authorization: `Bearer ${token}`,
++        accept: "application/vnd.github+json",
++        "x-github-api-version": "2022-11-28",
++      },
++    },
++  );
++  if (res.status === 404) return null;
++  if (!res.ok) throw new Error(`GitHub API ${res.status} ${res.statusText}`);
++  return res.json();
++}
++
++async function main(argv) {
++  const policy = loadPolicy();
++  if (argv.includes("--print-expected")) {
++    console.log(JSON.stringify(expectedProtection(policy), null, 2));
++    return 0;
++  }
++
++  const jobNames = workflowJobNames();
++  const errors = validatePolicy(policy, jobNames);
++  console.log(
++    `branch-protection policy: branch=${policy.branch} ` +
++      `checks=${policy.requiredStatusChecks.contexts.join(",")} ` +
++      `workflow_jobs=${jobNames.join(",")}`,
++  );
++  if (errors.length) {
++    for (const e of errors) console.error(`FAIL ${e}`);
++  } else {
++    console.log("PASS policy is complete and matches ci-foundation jobs");
++  }
++
++  const token = process.env.GITHUB_TOKEN;
++  const repo = process.env.GITHUB_REPOSITORY;
++  if (argv.includes("--self-test") || !token || !repo) {
++    if (!argv.includes("--self-test")) {
++      console.log(
++        "no GITHUB_TOKEN/GITHUB_REPOSITORY: skipped live audit (self-test only)",
++      );
++    }
++    return errors.length ? 1 : 0;
++  }
++
++  const live = await fetchLiveProtection(token, repo, policy.branch);
++  const liveErrors = auditLiveProtection(live, policy);
++  for (const e of liveErrors) console.error(`FAIL live ${e}`);
++  console.log(
++    liveErrors.length
++      ? "FAIL live branch protection does not match policy"
++      : "PASS live branch protection matches policy",
++  );
++  return errors.length || liveErrors.length ? 1 : 0;
++}
++
++if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
++  main(process.argv.slice(2))
++    .then((code) => process.exit(code))
++    .catch((err) => {
++      console.error(`error: ${err.message}`);
++      process.exit(1);
++    });
++}
+diff --git a/tests/branch-protection.test.ts b/tests/branch-protection.test.ts
+new file mode 100644
+index 0000000..45e200e
+--- /dev/null
++++ b/tests/branch-protection.test.ts
+@@ -0,0 +1,71 @@
++import { describe, expect, it } from "vitest";
++import {
++  auditLiveProtection,
++  expectedProtection,
++  loadPolicy,
++  validatePolicy,
++  workflowJobNames,
++} from "../scripts/verify-branch-protection.mjs";
++
++/**
++ * CI-P1-001: branch protection must be declared as code and stay consistent
++ * with the ci-foundation jobs that GitHub is asked to require on `main`.
++ * `foundation` runs this suite, so a change cannot silently weaken the policy.
++ */
++describe("branch protection policy", () => {
++  const policy = loadPolicy();
++  const jobs = workflowJobNames();
++
++  it("declares a review and the ci-foundation checks and passes validation", () => {
++    expect(validatePolicy(policy, jobs)).toEqual([]);
++    expect(policy.requiredStatusChecks.contexts).toEqual(
++      expect.arrayContaining(["foundation", "migrations", "e2e"]),
++    );
++  });
++
++  it("requires exactly the jobs that ci-foundation defines", () => {
++    expect([...policy.requiredStatusChecks.contexts].sort()).toEqual(
++      [...jobs].sort(),
++    );
++  });
++
++  it("rejects a policy whose required check is not a workflow job", () => {
++    const tampered = structuredClone(policy);
++    tampered.requiredStatusChecks.contexts = ["foundation", "not-a-job"];
++    expect(validatePolicy(tampered, jobs).join(" ")).toContain("not-a-job");
++  });
++
++  it("rejects a policy that drops the review requirement", () => {
++    const tampered = structuredClone(policy);
++    tampered.requiredPullRequestReviews.requiredApprovingReviewCount = 0;
++    expect(validatePolicy(tampered, jobs).length).toBeGreaterThan(0);
++  });
++
++  it("maps the declared policy to GitHub's protection payload", () => {
++    const payload = expectedProtection(policy);
++    expect(payload.required_status_checks.strict).toBe(true);
++    expect(payload.required_status_checks.contexts).toEqual(
++      policy.requiredStatusChecks.contexts,
++    );
++    expect(payload.allow_force_pushes).toBe(false);
++  });
++
++  it("audits the live setting: pass when compliant, fail closed when missing", () => {
++    const live = {
++      required_status_checks: { strict: true, contexts: [...jobs] },
++      required_pull_request_reviews: { required_approving_review_count: 1 },
++      required_conversation_resolution: { enabled: true },
++      allow_force_pushes: { enabled: false },
++      allow_deletions: { enabled: false },
++    };
++    expect(auditLiveProtection(live, policy)).toEqual([]);
++    expect(auditLiveProtection(null, policy)).toEqual([
++      "no branch protection is configured",
++    ]);
++
++    const weak = structuredClone(live);
++    weak.allow_force_pushes.enabled = true;
++    weak.required_pull_request_reviews.required_approving_review_count = 0;
++    expect(auditLiveProtection(weak, policy).length).toBeGreaterThanOrEqual(2);
++  });
++});

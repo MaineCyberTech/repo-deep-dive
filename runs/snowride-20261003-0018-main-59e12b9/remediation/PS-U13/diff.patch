@@ -1,0 +1,444 @@
+diff --git a/.github/workflows/ci-foundation.yml b/.github/workflows/ci-foundation.yml
+index aef0c30..ecbf086 100644
+--- a/.github/workflows/ci-foundation.yml
++++ b/.github/workflows/ci-foundation.yml
+@@ -28,7 +28,18 @@ jobs:
+       - run: npm run typecheck
+       - run: npm run lint
+       - run: npm run format:check
+-      - run: npm test
++      - name: unit tests + coverage (TEST-P2-001)
++        # Coverage runs (and enforces vitest.config.ts thresholds) as part of
++        # the unit gate; the JSON summary is uploaded as a commit-bound
++        # artifact below so coverage is observable per commit.
++        run: npm run test:coverage
++      - name: upload coverage summary (TEST-P2-001)
++        if: always()
++        uses: actions/upload-artifact@v4
++        with:
++          name: coverage-${{ github.sha }}
++          path: coverage/
++          retention-days: 30
+       - name: realtime integration suite
+         # The 110-test integration suite is intentionally excluded from
+         # `npm test` (it binds sockets/timers); it runs here explicitly.
+@@ -95,7 +106,7 @@ jobs:
+           node-version: 24
+           cache: npm
+       - run: npm ci
+-      - name: install chromium
+-        run: npx playwright install --with-deps chromium
++      - name: install browsers (chromium, firefox, webkit) — TEST-P2-002
++        run: npx playwright install --with-deps chromium firefox webkit
+       - name: run e2e journeys
+         run: npm run test:e2e
+diff --git a/AGENTS.md b/AGENTS.md
+index ad2a259..959afd3 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -52,9 +52,11 @@ scripts/db.sh -f supabase/migrations/<n>.sql
+ ```
+ 
+ `scripts/verify-all.sh` runs: preflight-disk -> build -> typecheck -> lint ->
+-test -> test:integration -> bundle secret scan. CI (`.github/workflows/
+-ci-foundation.yml`) additionally runs `format:check`, the e2e job, compose
+-config validation, and a fresh-DB migration dry-run.
++format:check -> test -> test:integration -> bundle secret scan. CI
++(`.github/workflows/ci-foundation.yml`) additionally runs coverage
++(`npm run test:coverage`, thresholds enforced with an uploaded commit-bound
++summary), the multi-engine (chromium/firefox/webkit) e2e job, compose config
++validation, and a fresh-DB migration dry-run.
+ 
+ **Tooling caveat:** `tsc` runs incrementally and can miss errors that
+ vitest/esbuild or `next build` catch (this has happened). If a change touches
+diff --git a/README.md b/README.md
+index 579b455..d0181c0 100644
+--- a/README.md
++++ b/README.md
+@@ -40,15 +40,19 @@ binding working rules.
+ ## Engineering gates (run locally)
+ 
+ ```bash
+-bash scripts/verify-all.sh   # preflight-disk -> build -> typecheck -> lint -> test -> test:integration -> secret-gate
++bash scripts/verify-all.sh   # preflight-disk -> build -> typecheck -> lint -> format:check -> test -> test:integration -> secret-gate
+ ```
+ 
+-CI additionally runs `format:check`, the Playwright e2e job, compose config
+-validation and a fresh-DB migration dry-run (`.github/workflows/ci-foundation.yml`).
++CI additionally runs coverage (`npm run test:coverage`; thresholds are enforced
++and the JSON summary is uploaded as a commit-bound artifact), the multi-engine
++Playwright e2e job, compose config validation and a fresh-DB migration dry-run
++(`.github/workflows/ci-foundation.yml`).
+ 
+ **Validation scope (bounded claim):** browser and touch behaviour is validated
+-in emulated viewports (Playwright/headless Chromium), including a 390×700
+-phone and a 844×390 landscape phone. No physical device matrix is claimed; see
++in emulated viewports, including a 390×700 phone and a 844×390 landscape phone.
++The mobile-layout and accessibility journeys run in Chromium, Firefox and
++WebKit; the sprite/WebGL rendering journey stays Chromium-only. No physical
++device matrix is claimed; see
+ [`docs/content/DEVICES_TARGET_MATRIX.md`](docs/content/DEVICES_TARGET_MATRIX.md).
+ 
+ ## Local development
+diff --git a/apps/web/e2e/shopPanel.a11y.spec.ts b/apps/web/e2e/shopPanel.a11y.spec.ts
+index 3e61020..d577d96 100644
+--- a/apps/web/e2e/shopPanel.a11y.spec.ts
++++ b/apps/web/e2e/shopPanel.a11y.spec.ts
+@@ -1,8 +1,10 @@
+ /**
+  * P14-G16 ShopPanel browser journey (r59/r60 D6 / External Review directives).
+  *
+- * Executes the P14-G16 shop accessibility surface in a REAL Chromium DOM via
+- * Playwright. The Supabase backend is fully stubbed with route interception
++ * Executes the P14-G16 shop accessibility surface in a real browser DOM via
++ * Playwright (this journey runs in Chromium, Firefox and WebKit per
++ * playwright.config.ts / TEST-P2-002). The Supabase backend is fully stubbed
++ * with route interception
+  * (no network, no credentials): the catalog GET, inventories GET, auth/user,
+  * and the purchase_item RPC are fulfilled locally so the client
+  * focus/announcement/busy semantics can be exercised end to end.
+@@ -28,7 +30,7 @@
+  *
+  * Run: npx playwright test apps/web/e2e/shopPanel.a11y.spec.ts
+  * (webServer in playwright.config.ts starts `npm run dev:web` on :3000;
+- *  chromium must be installed: npx playwright install chromium)
++ *  install the engines: npx playwright install chromium firefox webkit)
+  */
+ import { test, expect, type Page, type Route } from "@playwright/test";
+ 
+diff --git a/package-lock.json b/package-lock.json
+index 9a6d37e..a0e369f 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -14,6 +14,7 @@
+       "devDependencies": {
+         "@cyclonedx/cyclonedx-npm": "^6.0.1",
+         "@playwright/test": "^1.63.0",
++        "@vitest/coverage-v8": "^5.0.0",
+         "axe-core": "^4.10.3",
+         "prettier": "3.5.3",
+         "puppeteer": "^25.10.0",
+@@ -106,6 +107,66 @@
+         "lru-cache": "^10.4.3"
+       }
+     },
++    "node_modules/@babel/helper-string-parser": {
++      "version": "7.29.7",
++      "resolved": "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz",
++      "integrity": "sha512-Pb5ijPrZ89GDH8223L4UP8i6QApWxs04RbPQJTeWDV0/keR2E36MeKnyr6LYmUUvqRRI+Iv87SuF1W6ErINzYw==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=6.9.0"
++      }
++    },
++    "node_modules/@babel/helper-validator-identifier": {
++      "version": "7.29.7",
++      "resolved": "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz",
++      "integrity": "sha512-qehxGkRj55h/ff8EMaJ+cYhyaKlHIxqYDn682wQD7RNp9UujOQsHog2uS0r2vzr4pW+sXf90NeeayjcNaX3fFg==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=6.9.0"
++      }
++    },
++    "node_modules/@babel/parser": {
++      "version": "7.29.9",
++      "resolved": "https://registry.npmjs.org/@babel/parser/-/parser-7.29.9.tgz",
++      "integrity": "sha512-CjXrNHTnvqBVqHgdBysY3vk2T8tpJHb5/RMeHJBTyVa9xgugCB0CJTx/3oO8RV2QRQP391RWpB7D6hLjm8V9uA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@babel/types": "^7.29.8"
++      },
++      "bin": {
++        "parser": "bin/babel-parser.js"
++      },
++      "engines": {
++        "node": ">=6.0.0"
++      }
++    },
++    "node_modules/@babel/types": {
++      "version": "7.29.8",
++      "resolved": "https://registry.npmjs.org/@babel/types/-/types-7.29.8.tgz",
++      "integrity": "sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@babel/helper-string-parser": "^7.29.7",
++        "@babel/helper-validator-identifier": "^7.29.7"
++      },
++      "engines": {
++        "node": ">=6.9.0"
++      }
++    },
++    "node_modules/@bcoe/v8-coverage": {
++      "version": "1.0.2",
++      "resolved": "https://registry.npmjs.org/@bcoe/v8-coverage/-/v8-coverage-1.0.2.tgz",
++      "integrity": "sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/@csstools/color-helpers": {
+       "version": "5.1.0",
+       "dev": true,
+@@ -3400,6 +3461,58 @@
+         "linux"
+       ]
+     },
++    "node_modules/@vitest/coverage-v8": {
++      "version": "5.0.0",
++      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-5.0.0.tgz",
++      "integrity": "sha512-toMg6PZGCIa/lQNCDoASrfb1ly4hsUKXFtFYC9kD4t78o5Y6LyNJU7AENt8eHPr3quYdxaxK7hj2mnbFfUk9NA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@bcoe/v8-coverage": "^1.0.2",
++        "@vitest/istanbul-lib-coverage": "^1.0.0",
++        "@vitest/istanbul-lib-report": "^1.0.0",
++        "ast-v8-to-istanbul": "^1.0.5",
++        "magicast": "^0.5.4",
++        "obug": "^2.1.4",
++        "std-env": "^4.2.0",
++        "tinyrainbow": "^3.1.1"
++      },
++      "funding": {
++        "url": "https://opencollective.com/vitest"
++      },
++      "peerDependencies": {
++        "@vitest/browser": "5.0.0",
++        "vitest": "5.0.0"
++      },
++      "peerDependenciesMeta": {
++        "@vitest/browser": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/@vitest/istanbul-lib-coverage": {
++      "version": "1.0.2",
++      "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-coverage/-/istanbul-lib-coverage-1.0.2.tgz",
++      "integrity": "sha512-9J/JMwOf9AoJhAywhrn7ScKTL38hsWQP/qPG60OtaAFcQ5OXPwKsxZFlbnuCKmZ61m8/lGgHYnFpdyQZUvG/iA==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=22"
++      }
++    },
++    "node_modules/@vitest/istanbul-lib-report": {
++      "version": "1.0.2",
++      "resolved": "https://registry.npmjs.org/@vitest/istanbul-lib-report/-/istanbul-lib-report-1.0.2.tgz",
++      "integrity": "sha512-gUsfXZJbzPamoIY5TvHFiMMoXESBrUMo+xqaj+rYrWI69+EnvRlYBlP96ZnHPY4vX8kyUpgAnFUCg5wZG/HkDQ==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@vitest/istanbul-lib-coverage": "1.0.2"
++      },
++      "engines": {
++        "node": ">=22"
++      }
++    },
+     "node_modules/@vitest/mocker": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/@vitest/mocker/-/mocker-5.0.0.tgz",
+@@ -3805,6 +3918,25 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/ast-v8-to-istanbul": {
++      "version": "1.0.7",
++      "resolved": "https://registry.npmjs.org/ast-v8-to-istanbul/-/ast-v8-to-istanbul-1.0.7.tgz",
++      "integrity": "sha512-kFL68AG6ajd8fg248zwM9GQrUWEp79gsmjum34OEXjs4yHuUMZfYKwOLW9GMmB4oNvVrj+EAGxsP7ye2UR9UlA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@jridgewell/trace-mapping": "^0.3.31",
++        "estree-walker": "^3.0.3",
++        "js-tokens": "^10.0.0"
++      }
++    },
++    "node_modules/ast-v8-to-istanbul/node_modules/js-tokens": {
++      "version": "10.0.0",
++      "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-10.0.0.tgz",
++      "integrity": "sha512-lM/UBzQmfJRo9ABXbPWemivdCW8V2G8FHaHdypQaIy523snUjog0W71ayWXTjiR+ixeMyVHN2XcpnTd/liPg/Q==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/async-function": {
+       "version": "1.0.0",
+       "dev": true,
+@@ -6932,6 +7064,18 @@
+         "lz-string": "bin/bin.js"
+       }
+     },
++    "node_modules/magicast": {
++      "version": "0.5.5",
++      "resolved": "https://registry.npmjs.org/magicast/-/magicast-0.5.5.tgz",
++      "integrity": "sha512-UicdXN8zQ3JHlxVq+28afMXPr1z7WNY6+7EJnzTdQWkTAlMLF5fNCCKxJHBQwGaNGR11581EiQmQzx73+MvszA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "@babel/parser": "^7.29.7",
++        "@babel/types": "^7.29.7",
++        "source-map-js": "^1.2.1"
++      }
++    },
+     "node_modules/make-fetch-happen": {
+       "version": "14.0.3",
+       "resolved": "https://registry.npmjs.org/make-fetch-happen/-/make-fetch-happen-14.0.3.tgz",
+@@ -9137,6 +9281,13 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/std-env": {
++      "version": "4.3.0",
++      "resolved": "https://registry.npmjs.org/std-env/-/std-env-4.3.0.tgz",
++      "integrity": "sha512-OtU/EgQ1kIm5KwqQpBC6ZEMXrZRui11w8zgfTWp8cdO9B8OaPsbA8bTHO2P+HNo1VlUTGMVBwPhydu6poeXiag==",
++      "dev": true,
++      "license": "MIT"
++    },
+     "node_modules/stop-iteration-iterator": {
+       "version": "1.1.0",
+       "dev": true,
+@@ -9641,6 +9792,16 @@
+         "url": "https://github.com/sponsors/SuperchupuDev"
+       }
+     },
++    "node_modules/tinyrainbow": {
++      "version": "3.2.0",
++      "resolved": "https://registry.npmjs.org/tinyrainbow/-/tinyrainbow-3.2.0.tgz",
++      "integrity": "sha512-LgO3D9yZJjApUiuUfl9iFAwrtaX4+lok3wJIqttGoKCHlWUqHqbQpnxCf82L8FjgKsh4iGo78hqJwgL8F6To2A==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=14.0.0"
++      }
++    },
+     "node_modules/tldts": {
+       "version": "6.1.86",
+       "dev": true,
+@@ -10639,13 +10800,6 @@
+         "@jridgewell/sourcemap-codec": "^1.5.5"
+       }
+     },
+-    "node_modules/vitest/node_modules/std-env": {
+-      "version": "4.2.0",
+-      "resolved": "https://registry.npmjs.org/std-env/-/std-env-4.2.0.tgz",
+-      "integrity": "sha512-oCUKSupKTHX53EyjDtuZQ64pjLJ6yYCtpmEw0goYxtjG9KpbRe8KAsl2tBUGU9DyMcJ0RwJ8GqJAFzMXcXW1Rw==",
+-      "dev": true,
+-      "license": "MIT"
+-    },
+     "node_modules/vitest/node_modules/tinybench": {
+       "version": "6.1.4",
+       "resolved": "https://registry.npmjs.org/tinybench/-/tinybench-6.1.4.tgz",
+diff --git a/package.json b/package.json
+index 31b9fa9..c8ee7a3 100644
+--- a/package.json
++++ b/package.json
+@@ -19,7 +19,8 @@
+     "lint": "npm run lint --workspaces --if-present",
+     "typecheck": "npm run build:packages && npm run typecheck --workspaces --if-present",
+     "test": "npm run build:packages && npm run build:realtime && vitest run --exclude '**/server.integration.test.ts'",
+-    "test:unit": "npm run build:packages && vitest run packages/*/src/apps",
++    "test:coverage": "npm run build:packages && npm run build:realtime && vitest run --coverage --exclude '**/server.integration.test.ts'",
++    "test:unit": "npm run build:packages && npm run build:realtime && vitest run packages apps/realtime --exclude '**/server.integration.test.ts'",
+     "test:integration": "npm run build:packages && npm run build:realtime && vitest run apps/realtime/src/__tests__/server.integration.test.ts",
+     "test:e2e": "playwright test",
+     "compose:validate": "docker compose -f infra/compose/docker-compose.yml config --quiet",
+@@ -35,6 +36,7 @@
+   "devDependencies": {
+     "@cyclonedx/cyclonedx-npm": "^6.0.1",
+     "@playwright/test": "^1.63.0",
++    "@vitest/coverage-v8": "^5.0.0",
+     "axe-core": "^4.10.3",
+     "prettier": "3.5.3",
+     "puppeteer": "^25.10.0",
+diff --git a/playwright.config.ts b/playwright.config.ts
+index 7f7cef4..b5b7534 100644
+--- a/playwright.config.ts
++++ b/playwright.config.ts
+@@ -53,6 +53,20 @@ export default defineConfig({
+       name: "chromium",
+       use: { ...devices["Desktop Chrome"] },
+     },
++    // TEST-P2-002: the multi-browser product claim is exercised beyond
++    // Chromium for the mobile-layout and accessibility journeys. The
++    // sprite/WebGL spec stays Chromium-only (engine-specific rendering), which
++    // matches the bounded claim documented in README.md.
++    {
++      name: "firefox",
++      testMatch: [/.*\.mobile\.spec\.ts$/, /.*\.a11y\.spec\.ts$/],
++      use: { ...devices["Desktop Firefox"] },
++    },
++    {
++      name: "webkit",
++      testMatch: [/.*\.mobile\.spec\.ts$/, /.*\.a11y\.spec\.ts$/],
++      use: { ...devices["Desktop Safari"] },
++    },
+   ],
+   webServer: {
+     command: "npm run dev:web",
+diff --git a/scripts/verify-all.sh b/scripts/verify-all.sh
+index 2f3b7a8..d3e73fd 100644
+--- a/scripts/verify-all.sh
++++ b/scripts/verify-all.sh
+@@ -8,6 +8,9 @@ cd "$(dirname "$0")/.."
+ npm run build
+ npm run typecheck
+ npm run lint
++# TEST-P3-002: format:check was CI-only; run it locally too so the local gate
++# is not weaker than the foundation job on formatting.
++npm run format:check
+ npm test
+ # P-STAGE2-TASK2: heavy realtime integration suite runs as its own sequential
+ # step (not under full-file parallelism) so it cannot race the unit suite for
+@@ -15,4 +18,10 @@ npm test
+ npm run test:integration
+ # P7-G04: publication-blocking secret scan over built bundles.
+ node scripts/bundle-secret-gate.mjs apps/web/.next/static apps/realtime/dist
++# TEST-P3-002: local-vs-CI delta (documented, not silently weaker). The
++# foundation job additionally runs the e2e browser journeys, compose config
++# validation and (now) coverage; the migrations job runs the fresh-DB dry run
++# and the SQL negative suites. Those need browsers/docker/postgres, so they stay
++# CI-only; this script is the fastest gate that needs neither.
++echo "local gate: e2e, compose validation, coverage and DB suites are CI-only"
+ echo "ALL_FOUNDATION_GATES_LOCAL_PASS"
+\ No newline at end of file
+diff --git a/vitest.config.ts b/vitest.config.ts
+index c16a688..357a571 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -16,7 +16,30 @@ export default defineConfig({
+     include: ["{apps,packages,tests}/**/*.test.{ts,tsx}"],
+     exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**"],
+     coverage: {
++      // TEST-P2-001: coverage is measured and enforced in CI. The v8 provider
++      // writes a machine-readable summary that the workflow uploads as a
++      // commit-bound artifact; the thresholds below are a ratchet floor pinned
++      // to the measured baseline, not an aspirational target.
++      provider: "v8",
+       reporter: ["text", "json-summary"],
++      // Exclude generated/build output and test scaffolding from the denominator.
++      exclude: [
++        "**/node_modules/**",
++        "**/.next/**",
++        "**/dist/**",
++        "**/*.test.{ts,tsx}",
++        "**/*.spec.{ts,tsx}",
++        "**/e2e/**",
++      ],
++      // Ratchet floor = measured baseline at this commit (lines 44.46%,
++      // statements 44%, functions 46.75%, branches 39.9%) rounded down with a
++      // small margin for engine/environment variance. Raise as coverage grows.
++      thresholds: {
++        lines: 43,
++        functions: 45,
++        branches: 38,
++        statements: 43,
++      },
+     },
+   },
+ });

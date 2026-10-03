@@ -1,0 +1,61 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U09",
+  "title": "Unassigned INV findings (catch-all)",
+  "findings": ["INV-P2-001", "INV-P2-002", "INV-P3-001", "INV-P3-002"],
+  "findingStatus": {
+    "INV-P2-001": "partially-fixed (two superseded repomix packages deleted; latest retained; recurrence excluded by .repomixignore; policy documented)",
+    "INV-P2-002": "partially-fixed (archive & size policy documented; worktree reduced ~95 MB -> 53 MB; full archive/index restructure deferred)",
+    "INV-P3-001": "verified-fixed (.gitignore allowlist !evidence/**/*.log; all 94 tracked logs under evidence/; non_evidence_logs=0)",
+    "INV-P3-002": "verified-fixed (root review artifacts moved to docs/archive/ with pointer; roadmap PDF removed; root_review_artifacts_remaining=0)"
+  },
+  "branch": "remediation/ps-u09-20261003-0018-main-59e12b9",
+  "commit": "8f369a62f019bf8a0527908e9e61307f931fa6e9",
+  "commitSubject": "chore(inv): close unassigned inventory findings [INV-P2-001/002,INV-P3-001/002]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/19",
+  "prState": "draft",
+  "generated": "2026-10-03T09:30:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u09 clean LF bundle clone; core.autocrlf unset)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "gitleaks": "8.30.1",
+  "commands": [
+    { "cmd": "relative-link existence check for changed docs", "exit": 0, "result": "linkcheck_broken=0" },
+    { "cmd": "tracked repomix packages at HEAD", "exit": 0, "result": "one package remains: evidence/production-acceptance/repomix-r71-repair; repomix_file_count=16" },
+    { "cmd": "tracked .log + .gitignore exemption", "exit": 0, "result": "tracked_log_count=94; non_evidence_logs=0; !evidence/**/*.log matches new evidence logs" },
+    { "cmd": "root review artifacts remaining", "exit": 0, "result": "root_review_artifacts_remaining=0; archived_files under docs/archive/" },
+    { "cmd": "worktree/clone size", "exit": 0, "result": "worktree_MB=53 (was ~95); gitdir_MB=37" },
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean" },
+    { "cmd": "gitleaks detect --no-git --redact --no-banner --source <3 changed files>", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "16 pre-existing generic-api-key fixture hits under evidence/** + scripts/bundle-secret-gate.mjs; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 11402, "sha256": "e7b483434c0a6fe5e79fa8a2b8ee1f5a944a2f1d2eb46edbe8039428495f6e6f" },
+    "verify.log": { "bytes": 30390, "sha256": "a4eb5c29725e19438e4a0ab3d690e0345522f629006d0d67fec6abc33db785f0" },
+    "gitleaks.log": { "bytes": 704, "sha256": "ecfcf6f6a62e004e88067e52336670d7b838cf80e6f6ac5dac6c828c55622d6c" },
+    "pr_body.md": { "bytes": 8150, "sha256": "2a4df7c8cc581ea16b4141c7799247501dfa7487f63f997b20092856aeb5ece7" }
+  },
+  "filesChanged": {
+    "deleted": [
+      "evidence/production-acceptance/repomix-split/** (20 files)",
+      "evidence/production-acceptance/repomix-r71/** (17 files)",
+      "snowride_production_grade_major_phase_roadmap_20260911_050010.pdf"
+    ],
+    "renamed": [
+      "ext_review.md -> docs/archive/ext_review.md",
+      "reviewer.md -> docs/archive/reviewer.md",
+      "agent_final_response.json -> docs/archive/agent_final_response.json",
+      "GATE_LEDGER.csv -> docs/archive/GATE_LEDGER.csv",
+      "REVIEW_PLAN_20260911.md -> docs/archive/REVIEW_PLAN_20260911.md"
+    ],
+    "modified": [".gitignore", "docs/EVIDENCE.md"],
+    "added": ["docs/archive/README.md"]
+  },
+  "scopeCheck": "pass - PS-U09 declared no file list; the diff is limited to INV inventory artifacts (repomix-*, roadmap PDF, .gitignore, docs/EVIDENCE.md, docs/archive/**)",
+  "status": "partially-fixed (draft PR open; INV-P3-001 and INV-P3-002 verified at the commit, INV-P2-001 and INV-P2-002 partially fixed with documented follow-ups)"
+}

@@ -1,0 +1,48 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U11",
+  "title": "Unassigned SEC findings (catch-all)",
+  "findings": ["SEC-P2-001", "SEC-P2-002", "SEC-P3-001", "SEC-P3-002"],
+  "findingStatus": {
+    "SEC-P2-001": "verified-fixed (POST /perf and POST /client-error now reject a disallowed cross-origin Origin with 403 origin_forbidden before reading a body; allowed/same-origin/no-Origin callers pass and an allowed Origin is echoed with Access-Control-Allow-Origin + Vary; httpOrigin.test.ts 4/4 passes at the commit)",
+    "SEC-P2-002": "partially-fixed (pre-commit gitleaks hook .githooks/pre-commit added and documented; functional probe blocks a staged secret (exit 1) and passes a clean index (exit 0); the CI tree-scan half is sibling PS-U03 draft #13, pending merge)",
+    "SEC-P3-001": "still-open (deferred: current_user inside SECURITY DEFINER is the function owner, not the caller, so the literal check would deny the trusted psql path; fix needs the correct invoker signal plus a negative SQL suite outside the npm gate)",
+    "SEC-P3-002": "still-open (deferred: moving RM_SUPABASE_SERVICE_ROLE_KEY to a Docker secret requires a realtime boot read-order change and an operator deploy rehearsal)"
+  },
+  "branch": "remediation/ps-u11-20261003-0018-main-59e12b9",
+  "commit": "559170d011b0f11a6be3566760c320043e7f53e9",
+  "commitSubject": "fix(sec): close unassigned security findings [SEC-P2-001/002]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/21",
+  "prState": "draft",
+  "generated": "2026-10-03T10:05:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u11 clean LF bundle clone; core.autocrlf unset)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "gitleaks": "8.30.1",
+  "commands": [
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npx vitest run apps/realtime/src/__tests__/httpOrigin.test.ts", "exit": 0, "result": "1 file, 4 tests passed" },
+    { "cmd": "npm test", "exit": 0, "result": "132 test files, 877 tests passed (baseline 131/873 + new origin suite)" },
+    { "cmd": "pre-commit hook probe: stage a synthetic token and run .githooks/pre-commit", "exit": 1, "result": "leaks found; staged secret blocked (clean-index rerun exit 0)" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean" },
+    { "cmd": "gitleaks detect --no-git --redact --no-banner --source <4 changed files>", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing generic-api-key fixture hits under evidence/** + scripts/bundle-secret-gate.mjs; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 10546, "sha256": "732f5b4ae776101823c865346de088629a5420e4f07e679d2d5148cb621c175d" },
+    "verify.log": { "bytes": 27254, "sha256": "5735cdee2332e0de3981a3362e72f5a66e6c8d8ccf29b2041615ad4b55b3bfc2" },
+    "gitleaks.log": { "bytes": 812, "sha256": "4df53967984c16832294621a7387404aa08ab13a301a507d60bc2672641cdede" },
+    "pr_body.md": { "bytes": 8399, "sha256": "60f40d0d6a9359942e0034e6376fbf6372d7964b2972af17e7c760db94263c1c" }
+  },
+  "filesChanged": [
+    ".githooks/pre-commit (new, mode 100755)",
+    "SECURITY.md",
+    "apps/realtime/src/__tests__/httpOrigin.test.ts (new)",
+    "apps/realtime/src/server.ts"
+  ],
+  "scopeCheck": "pass - PS-U11 declared no file list; the diff is limited to the SEC P2 fixes (realtime HTTP Origin enforcement + its test) and the pre-commit secret-scan hook + security doc. SEC-P3-001/002 deferred with open questions.",
+  "status": "partially-fixed (draft PR open; SEC-P2-001 verified at the commit, SEC-P2-002 pre-commit half verified with the CI half pending PS-U03, SEC-P3-001 and SEC-P3-002 deferred with recorded open questions)"
+}

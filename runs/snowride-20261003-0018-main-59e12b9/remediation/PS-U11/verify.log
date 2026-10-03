@@ -1,0 +1,346 @@
+# PS-U11 verification - unassigned SEC findings (SEC-P2-001/002/003)
+commit: 559170d011b0f11a6be3566760c320043e7f53e9
+branch: remediation/ps-u11-20261003-0018-main-59e12b9
+node:   v20.20.2
+npm:    10.8.2
+gitleaks: 8.30.1
+core.autocrlf: unset
+
+## changed files (branch commit vs its base)
+A	.githooks/pre-commit
+M	SECURITY.md
+A	apps/realtime/src/__tests__/httpOrigin.test.ts
+M	apps/realtime/src/server.ts
+base: 59e12b9b2259ab21ae56113b214160dd1150c5ba
+
+## file(1) on changed/new files (LF check)
+.githooks/pre-commit: POSIX shell script, ASCII text executable
+SECURITY.md: ASCII text
+apps/realtime/src/server.ts: JavaScript source, ASCII text
+apps/realtime/src/__tests__/httpOrigin.test.ts: JavaScript source, ASCII text
+hook mode in git index: 100755 632058e5f31217b9eba876550648c59a9353db98 0	.githooks/pre-commit
+
+## npm ci
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@puppeteer/browsers@3.2.2',
+npm warn EBADENGINE   required: { node: '>=22.12.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/auth-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/functions-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/postgrest-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/realtime-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/storage-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: '@supabase/supabase-js@2.116.0',
+npm warn EBADENGINE   required: { node: '>=22.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'puppeteer@25.10.0',
+npm warn EBADENGINE   required: { node: '>=22.12.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'puppeteer-core@25.10.0',
+npm warn EBADENGINE   required: { node: '>=22.12.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'vitest@5.0.0',
+npm warn EBADENGINE   required: { node: '^22.12.0 || ^24.0.0 || >=26.0.0' },
+npm warn EBADENGINE   current: { node: 'v20.20.2', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn deprecated prebuild-install@7.1.3: No longer maintained. Please contact the author of the relevant native addon; alternatives are available.
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+
+added 628 packages, and audited 634 packages in 28s
+
+178 packages are looking for funding
+  run `npm fund` for details
+
+17 vulnerabilities (2 moderate, 15 high)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+npm_ci_exit=0
+
+## npm run lint
+
+> snowride@0.1.0 lint
+> npm run lint --workspaces --if-present
+
+
+> @snowride/web@0.1.0 lint
+> eslint .
+
+
+/srv/work/snowride-ps-u11/apps/web/components/game/Home.tsx
+  844:6  warning  React Hook useEffect has a missing dependency: 'gameReady'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)
+
+lint_exit=0
+
+## SEC-P2-001 focused test: apps/realtime/src/__tests__/httpOrigin.test.ts
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.0 [39m[90m/srv/work/snowride-ps-u11[39m
+
+[90mstderr[2m | apps/realtime/src/__tests__/httpOrigin.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m apps/realtime/src/__tests__/httpOrigin.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 299[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m   Start at [22m 09:51:56
+[2m   Duration [22m 1.58s[2m (transform 57%, tests 21%, import 19%, setup 3%)[22m
+
+origin_test_exit=0
+
+## npm test (profile gate)
+
+> snowride@0.1.0 test
+> npm run build:packages && npm run build:realtime && vitest run --exclude '**/server.integration.test.ts'
+
+
+> snowride@0.1.0 build:packages
+> npm run build -w @snowride/contracts && npm run build -w @snowride/game-core
+
+
+> @snowride/contracts@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @snowride/game-core@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> snowride@0.1.0 build:realtime
+> npm run build -w apps/realtime
+
+
+> @snowride/realtime@0.1.0 build
+> tsc -p tsconfig.json
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.0 [39m[90m/srv/work/snowride-ps-u11[39m
+
+[90mstderr[2m | apps/realtime/src/__tests__/replayStore.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m packages/game-core/src/__tests__/scoring.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 71[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/replayStore.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 62[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/tricks.test.ts [2m([22m[2m38 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/economySimulation.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/prediction.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/authoritative-room.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 270[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/networklab.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m packages/game-core/src/__tests__/avalanche.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/metrics.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m packages/game-core/src/__tests__/ghostV2.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/metrics.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 395[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/creatorCourse.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ghostTerminal.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 117[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/authoritative.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 54[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/rating.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/social.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m apps/realtime/src/__tests__/social.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/multiplayerAdapter.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/authService.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/content.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 175[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/replayBoundaryCorpus.test.ts [2m([22m[2m43 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/inputMappingGamepad.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/inputPrecedence.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/networklab.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2823[2mms[22m[39m
+   [32m✓[39m P8 network lab: duplicate / stale / reorder / loss / teleport [2m(4)[22m
+     [33m[2m✓[22m[39m denies duplicate and stale frames with sequence_gap and keeps the stream consistent[33m 694[2mms[22m[39m
+     [33m[2m✓[22m[39m denies out-of-bounds, teleport and spawn-anchor jumps; anchor uses server-known spawn[33m 745[2mms[22m[39m
+     [33m[2m✓[22m[39m channel-level loss permanently desyncs the strict stream (documented duplicate semantics)[33m 471[2mms[22m[39m
+     [33m[2m✓[22m[39m reconnect after loss reconciles the stream (P21-G04 convergence)[33m 640[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/submissions.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/backpressure.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m packages/game-core/src/__tests__/world.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 115[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/backpressure.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/controlStream.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/events.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ghostCodec.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 163[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/adminConnection.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/sessionAuthority.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 125[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/httpOrigin.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m apps/web/lib/__tests__/inputSettingsStore.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/creatorEditor.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/httpOrigin.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 324[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/eventLedger.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/combos.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/socialService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ghostPlayer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/contentSecurity.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 95[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/eventCapParity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/raceLifecycle.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/partyService.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/shopService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/betaRelease.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/buildWiring.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/biomeVelocityBound.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/hazards.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/schemas.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+ [32m✓[39m apps/realtime/src/__tests__/entrypoint.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 676[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/browserCapabilities.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/rideFeel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/goldenRun.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/accountData.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/noAudioOutput.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/telemetryMatrix.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/launchReadiness.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/headingContract.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/authenticatedSocket.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/runBiomeContract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/mechanics.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/bootLifecycle.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/economyConcurrency.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/liveops.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/spinGhostValidity.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m apps/web/components/shop/__tests__/ShopPanel.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/scoring.crossRuntime.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 169[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/equipment.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/challengeScheduler.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/web/components/settings/__tests__/SettingsPanel.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/sceneTextures.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/ledger-format.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/achievements.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/HUD.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/supabaseBindingGuard.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/perfReporter.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/creatorDiscovery.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/ariaLiveAnnouncer.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/rateLimit.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/input.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/submissionQueue.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/browserGate.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+[90mstderr[2m | apps/realtime/src/__tests__/otel.test.ts
+[22m[39m⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+ [32m✓[39m apps/realtime/src/__tests__/otel.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/web/components/system/__tests__/BrowserGate.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/passService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/loadoutService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/rooms.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/rivalService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/purchaseA11y.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/challengeService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/useFocusTrap.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 87[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/notificationAnnouncer.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/runIntegrityFinish.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/disciplines.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/economySimulation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/difficultyBands.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/progressionService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/ramps.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/pass.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/contentActivation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/perfAggregator.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m packages/contracts/src/__tests__/noUserText.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m apps/web/components/admin/__tests__/AdminPage.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/uiSystem.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/perfBudgets.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/stylePreference.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/dataExport.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/motionPreference.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/contentA11y.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/optimisticShop.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/notificationService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/deviceMatrix.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/supabaseBindingAstGuard.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 2304[2mms[22m[39m
+   [32m✓[39m no detached supabase.rpc (AST guard, supplements regex guard) [2m(2)[22m
+     [33m[2m✓[22m[39m flags no detached supabase.rpc in production service code[33m 1411[2mms[22m[39m
+     [33m[2m✓[22m[39m self-test still catches a detached supabase.rpc[33m 888[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/perfAggregate.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/perfMeasure.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 123[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/inputRemap.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/realtime/src/__tests__/auth.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 23[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/sfx.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/sparkline.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/web/components/account/__tests__/AccountPanel.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/qualityPreference.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/progression.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m packages/game-core/src/__tests__/gamepadInput.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/web/components/creator/__tests__/CourseEditor.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/CourseMinimap.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/i18n.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/web/components/privacy/__tests__/PrivacyPanel.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/GameLobby.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m apps/web/components/game/__tests__/LeaderboardPanel.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m apps/web/components/pass/__tests__/PassPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m apps/web/components/social/__tests__/SocialPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32m✓[39m apps/web/components/progress/__tests__/ProgressionPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m apps/web/components/challenges/__tests__/ChallengePanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m apps/web/lib/__tests__/music.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m apps/web/components/party/__tests__/PartyPanel.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 11[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m132 passed[39m[22m[90m (132)[39m
+[2m      Tests [22m [1m[32m877 passed[39m[22m[90m (877)[39m
+[2m   Start at [22m 09:52:13
+[2m   Duration [22m 26.14s[2m (environment 38%, tests 19%, import 16%, transform 13%, setup 11%, worker 2%)[22m
+
+[2m    Isolate [22m [33m132 workers spawned[39m[2m · ~326ms startup each (spawn + environment, per file)[22m
+[2m            [22m [2mat least ~14.02s faster with [22m[33misolate: false[39m[2m — reuses workers across files instead of one per file[22m
+
+test_exit=0
+
+## SEC-P2-002 functional pre-commit hook probe
+hook_dirty_exit=1 (1 expected: staged secret blocked)
+leaks found
+hook_clean_exit=0 (0 expected: clean index passes)
+
+## git status --short (generated files are not committed)
+git_status_exit=0
+
+## gitleaks changed files (no allowlist)
+gitleaks .githooks/pre-commit exit=0
+gitleaks SECURITY.md exit=0
+gitleaks apps/realtime/src/server.ts exit=0
+gitleaks apps/realtime/src/__tests__/httpOrigin.test.ts exit=0
+
+## gitleaks full worktree (documenting pre-existing fixture hits)
+full_worktree_exit=1
+findings=19
+changed-file hits in full scan:
+none
+ALL_DONE

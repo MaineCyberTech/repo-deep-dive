@@ -1,0 +1,11 @@
+## gitleaks changed files (no allowlist)
+gitleaks .gitattributes exit=0
+gitleaks .gitignore exit=0
+gitleaks CHANGELOG.md exit=0
+gitleaks docs/runbooks/BACKUP_RESTORE.md exit=0
+
+## gitleaks full worktree (documenting pre-existing fixture hits)
+full_worktree_exit=1
+findings=19
+changed-file hits in full scan:
+none

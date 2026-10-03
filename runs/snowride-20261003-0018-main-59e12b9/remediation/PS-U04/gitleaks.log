@@ -1,0 +1,54 @@
+# PS-U04 pre-push gitleaks gate
+commit: dcdceca659acd8ecfce6eed5a80d6ea58fbf8d13
+gitleaks: 8.30.1
+
+## changed files (no allowlist config)
+-- .gitattributes
+[90m8:23AM[0m [32mINF[0m [1mscanned ~293 bytes (293 bytes) in 198ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- .github/workflows/ci-foundation.yml
+[90m8:23AM[0m [32mINF[0m [1mscanned ~3999 bytes (4 KB) in 263ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- AGENTS.md
+[90m8:23AM[0m [32mINF[0m [1mscanned ~5290 bytes (5.29 KB) in 211ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- docs/runbooks/MIGRATIONS.md
+[90m8:23AM[0m [32mINF[0m [1mscanned ~2827 bytes (2.83 KB) in 251ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- scripts/ci-db-fixtures.sql
+[90m8:23AM[0m [32mINF[0m [1mscanned ~890 bytes (890 bytes) in 218ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- scripts/ci-db-tests.sh
+[90m8:23AM[0m [32mINF[0m [1mscanned ~978 bytes (978 bytes) in 204ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- scripts/ci-migrations-dryrun.sh
+[90m8:23AM[0m [32mINF[0m [1mscanned ~2549 bytes (2.55 KB) in 277ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- scripts/migrations-manifest.sh
+[90m8:23AM[0m [32mINF[0m [1mscanned ~1445 bytes (1.45 KB) in 201ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- supabase/migrations/0057_retire_consumable_category.sql
+[90m8:23AM[0m [32mINF[0m [1mscanned ~850 bytes (850 bytes) in 226ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- supabase/migrations/MANIFEST.sha256
+[90m8:23AM[0m [32mINF[0m [1mscanned ~5297 bytes (5.30 KB) in 242ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+-- supabase/tests/README.md
+[90m8:23AM[0m [32mINF[0m [1mscanned ~6523 bytes (6.52 KB) in 255ms[0m
+[90m8:23AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_exit=0
+
+## full worktree (no committed allowlist on this branch)
+full_worktree_exit=1
+findings=19
+hit files:

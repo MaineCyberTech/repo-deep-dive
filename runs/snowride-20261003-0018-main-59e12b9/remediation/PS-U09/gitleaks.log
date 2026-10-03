@@ -1,0 +1,17 @@
+## gitleaks on changed files (--no-git --redact --no-banner)
+gitleaks .gitignore exit=0
+gitleaks docs/EVIDENCE.md exit=0
+gitleaks docs/archive/README.md exit=0
+
+## gitleaks full worktree (pre-existing fixtures)
+full_worktree_exit=1
+finding_count=16
+hit files:
+      1 evidence/phase2/20260908T2110Z-p2/G06-authorization/full_actor_operation_matrix.sql
+      1 evidence/production-acceptance/repomix-r71-repair/repomix-output.3.xml
+      6 evidence/production-acceptance/repomix-r71-repair/repomix-output.8.xml
+      1 evidence/production-acceptance/repomix-r71-repair/repomix-output.9.xml
+      6 evidence/recovery/recovery_ledger_r71.jsonl
+      1 scripts/bundle-secret-gate.mjs
+changed-file hits:
+none

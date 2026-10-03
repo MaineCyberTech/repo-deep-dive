@@ -1,0 +1,71 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "P1-3",
+  "title": "SBOM in CI",
+  "findings": ["SUPPLY-P1-001", "CI-P3-001"],
+  "branch": "remediation/p1-3-20261003-0018-main-59e12b9",
+  "commit": "d61c968a1a5166b65204abbe6bf62559bcd9cd1c",
+  "commitSubject": "ci: supply-chain harden foundation workflow [SUPPLY-P1-001,CI-P3-001]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/9",
+  "prState": "draft",
+  "generated": "2026-10-03T07:16:15Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-p1-3 clean LF git clone from git bundle at d61c968)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    {
+      "cmd": "npm ci",
+      "exit": 0,
+      "result": "clean LF worktree installed"
+    },
+    {
+      "cmd": "npx --no-install @cyclonedx/cyclonedx-npm --output-file sbom.json",
+      "exit": 0,
+      "result": "CycloneDX SBOM generated from the lockfile-pinned devDependency"
+    },
+    {
+      "cmd": "node -e <validate sbom.json>",
+      "exit": 0,
+      "result": "SBOM OK bomFormat=CycloneDX specVersion=1.6 components=573"
+    },
+    {
+      "cmd": "npm run lint",
+      "exit": 0,
+      "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx"
+    },
+    {
+      "cmd": "npm test",
+      "exit": 0,
+      "result": "131 test files, 873 tests passed"
+    },
+    {
+      "cmd": "actionlint .github/workflows/ci-foundation.yml",
+      "exit": 0,
+      "result": "no findings"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source <P1-3 diff.patch>",
+      "exit": 0,
+      "result": "no leaks found (2882 bytes scanned)"
+    }
+  ],
+  "artifacts": {
+    "diff.patch": {
+      "bytes": 2882,
+      "sha256": "8170c7f28e5aeeb313a6c39abab66d5b724880b107e5d8411f7a0665049e6b10"
+    },
+    "verify.log": {
+      "bytes": 25088,
+      "sha256": "3f68fcff00c91adf467e28c8998db6057a6c3b7e2daefc46122fd15996bab102"
+    },
+    "gitleaks.log": {
+      "bytes": 230,
+      "sha256": "356cf89aeed4eccd56235ef755975153b84160d065ccd7a76b446d835e184bdd"
+    }
+  },
+  "filesChanged": [".github/workflows/ci-foundation.yml"],
+  "environmentNote": "lab-sync tars the Windows working tree with CRLF; tests/ledger-format.test.ts fails to transform under vitest in that copy. The git blob has LF and the clean LF worktree passes (5/5; full suite 873/873). Verification was run at the commit in a clean LF worktree, matching a normal CI checkout.",
+  "status": "partially-fixed (draft PR open; SBOM generation and commit-bound artifact upload added; verified-fixed only once a post-merge foundation run exposes the uploaded artifact)"
+}

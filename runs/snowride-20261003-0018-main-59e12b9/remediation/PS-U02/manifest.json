@@ -1,0 +1,42 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U02",
+  "title": "Unassigned ARCH findings (catch-all)",
+  "findings": ["ARCH-P2-001", "ARCH-P2-002", "ARCH-P2-003"],
+  "branch": "remediation/ps-u02-20261003-0018-main-59e12b9",
+  "commit": "4360dbfe2b23eb95dcfa789181573997d76141a7",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/12",
+  "prState": "draft",
+  "generated": "2026-10-03T08:05:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u02 clean LF bundle clone)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed; 17 pre-existing vulnerabilities (untouched)" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "build ok; 133 test files, 881 tests passed" },
+    { "cmd": "npx vitest run apps/realtime/src/__tests__/readiness.test.ts", "exit": 0, "result": "1 test file, 4 tests passed (ARCH-P2-002)" },
+    { "cmd": "npx vitest run apps/realtime/src/__tests__/liveopsPersistence.test.ts", "exit": 0, "result": "1 test file, 4 tests passed (ARCH-P2-003)" },
+    { "cmd": "docker compose -f infra/compose/docker-compose.yml config", "exit": 0, "result": "resolved cpus/mem_limit/pids_limit for web, realtime, otel, nginx; stderr only unset-env warnings" },
+    { "cmd": "gitleaks detect --no-git --redact --source <changed files>", "exit": 0, "result": "no leaks found in any of the 7 changed files" },
+    { "cmd": "gitleaks detect --no-git --redact (full worktree)", "exit": 1, "result": "19 pre-existing leaks in untouched files (evidence/** and scripts/bundle-secret-gate.mjs); none in the patch diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 41770, "sha256": "e9752bdb886655f402d2851ea3b06cbf7cfe1f7ce76e2910715fb549afa40b8e" },
+    "verify.log": { "bytes": 29619, "sha256": "6b98b1bd1466556eb7ecc9471e27730135c33353d8821e4f55292974ccd07a3b" },
+    "gitleaks-full.log": { "bytes": 742, "sha256": "f3acd90d0836ad89b286aae960c2312f4d253617c0e05676b9f0cfb59da9e093" }
+  },
+  "filesChanged": [
+    "apps/realtime/src/__tests__/liveopsPersistence.test.ts",
+    "apps/realtime/src/__tests__/readiness.test.ts",
+    "apps/realtime/src/server.ts",
+    "apps/realtime/src/services/supabase.ts",
+    "docs/runbooks/INCIDENT.md",
+    "docs/runbooks/KILL_SWITCHES.md",
+    "infra/compose/docker-compose.yml"
+  ],
+  "scopeCheck": "pass - PS-U02 declared no file list; the diff is limited to the compose file, the realtime server/service, two new tests, and two runbooks",
+  "status": "partially-fixed (draft PR open; verified-fixed only on merge)"
+}

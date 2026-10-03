@@ -1,0 +1,45 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U03",
+  "title": "Unassigned CI findings (catch-all)",
+  "findings": ["CI-P2-001", "CI-P2-002"],
+  "branch": "remediation/ps-u03-20261003-0018-main-59e12b9",
+  "commit": "cfd5d00adc9f3c01db21640c891edf7256a12f5a",
+  "commitSubject": "ci: close unassigned CI findings [CI-P2-001/002]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/13",
+  "prState": "draft",
+  "generated": "2026-10-03T08:10:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u03 clean LF bundle clone)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    { "cmd": "actionlint .github/workflows/ci-foundation.yml", "exit": 0, "result": "no findings" },
+    { "cmd": "bash scripts/repo-secret-scan.sh", "exit": 0, "result": "gitleaks 8.30.1; ~78 MB tree scanned; no leaks found" },
+    { "cmd": "npm ci", "exit": 0, "result": "628 packages installed; 17 vulnerabilities (2 moderate, 15 high) incl. dev deps" },
+    { "cmd": "npm audit --omit=dev --audit-level=high", "exit": 1, "result": "advisory in CI (continue-on-error); 1 high in @grpc/grpc-js; no lockfile change" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "gitleaks detect --no-git --redact --source <changed file> (x3)", "exit": 0, "result": "no leaks in any changed file" },
+    { "cmd": "gitleaks detect --no-git --redact --source . --config .gitleaks.toml", "exit": 0, "result": "full worktree clean under the committed allowlist" },
+    { "cmd": "gitleaks detect --no-git --redact --source . (allowlist moved aside)", "exit": 1, "result": "19 pre-existing fixture hits (audited; none in this diff)" }
+  ],
+  "actionPins": {
+    "actions/checkout@v4.4.0": "11d5960a326750d5838078e36cf38b85af677262",
+    "actions/setup-node@v4.4.0": "49933ea5288caeca8642d1e84afbd3f7d6820020",
+    "gitleaks v8.30.1 linux_x64 tarball sha256": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+  },
+  "artifacts": {
+    "diff.patch": { "bytes": 5256, "sha256": "3949ea3de0d68f680438b779e2bfbe3b362dd6dc50bd38c5ecccc9a0fa14a213" },
+    "verify.log": { "bytes": 25848, "sha256": "4594f636bde41db5f3c9fa5626c660b0ac240473f1c87172d606a511d3650398" },
+    "gitleaks.log": { "bytes": 1038, "sha256": "097e88de43f35a1f0ed082074c0a1df7a6a4fa0ae3bd69985e0f9efe3fc8a92c" }
+  },
+  "filesChanged": [
+    ".github/workflows/ci-foundation.yml",
+    ".gitleaks.toml",
+    "scripts/repo-secret-scan.sh"
+  ],
+  "scopeCheck": "pass - PS-U03 declared no file list; the diff is limited to the CI workflow plus the new scan script and its gitleaks config",
+  "status": "partially-fixed (draft PR open; blocking audit enforcement and history/pre-commit scan deferred to the recorded open questions; verified-fixed only on merge)"
+}

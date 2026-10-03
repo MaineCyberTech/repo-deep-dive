@@ -1,0 +1,29 @@
+# PS-U12 gitleaks - commit b1c0f21781607084626789ba95d587444de83b64
+gitleaks: 8.30.1
+
+## changed files (no allowlist; block on any finding)
+gitleaks .github/workflows/supply-chain.yml exit=0
+gitleaks docs/SUPPLY_CHAIN.md exit=0
+gitleaks .github/dependabot.yml exit=0
+
+## full worktree (pre-existing audited fixtures; none in this diff)
+full_worktree_exit=1
+findings=19
+changed-file hits in full scan:
+none
+GITLEAKS_DONE
+[exit=0 duration=6.3s cwd=/srv/work/snowride-ps-u12]
+python : [90m10:07AM[0m [32mINF[0m [1mscanned ~2894 bytes (2.89 KB) in 195ms[0m
+At line:1 char:299
++ ... NG='utf-8'; python tools\lab_runner.py --url http://172.23.128.51:872 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90m10:07AM[0...B) in 195ms[0m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[90m10:07AM[0m [32mINF[0m [1mno leaks found[0m
+[90m10:07AM[0m [32mINF[0m [1mscanned ~4289 bytes (4.29 KB) in 210ms[0m
+[90m10:07AM[0m [32mINF[0m [1mno leaks found[0m
+[90m10:07AM[0m [32mINF[0m [1mscanned ~863 bytes (863 bytes) in 225ms[0m
+[90m10:07AM[0m [32mINF[0m [1mno leaks found[0m
+[90m10:07AM[0m [32mINF[0m [1mscanned ~85445157 bytes (85.45 MB) in 3.39s[0m
+[90m10:07AM[0m [33mWRN[0m [1mleaks found: 19[0m

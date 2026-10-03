@@ -1,7 +1,7 @@
 {
   "run": "20261003-0018-main-59e12b9",
   "repo": "",
-  "generated": "2026-10-03T05:22:52Z",
+  "generated": "2026-10-03T06:51:02Z",
   "patchSets": [
     {
       "id": "P1-1",
@@ -76,47 +76,230 @@
       ],
       "severity": "P1",
       "branch": "remediation/P1-4-20261003-0018-main-59e12b9"
+    },
+    {
+      "id": "PS-U01",
+      "title": "Unassigned API findings (catch-all)",
+      "findings": [
+        "API-P2-001",
+        "API-P3-001",
+        "API-P3-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U01-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U02",
+      "title": "Unassigned ARCH findings (catch-all)",
+      "findings": [
+        "ARCH-P2-001",
+        "ARCH-P2-002",
+        "ARCH-P2-003"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U02-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U03",
+      "title": "Unassigned CI findings (catch-all)",
+      "findings": [
+        "CI-P2-001",
+        "CI-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U03-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U04",
+      "title": "Unassigned DATA findings (catch-all)",
+      "findings": [
+        "DATA-P2-001",
+        "DATA-P2-002",
+        "DATA-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U04-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U05",
+      "title": "Unassigned EXEC findings (catch-all)",
+      "findings": [
+        "EXEC-P2-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U05-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U06",
+      "title": "Unassigned FEAT findings (catch-all)",
+      "findings": [
+        "FEAT-P2-001",
+        "FEAT-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U06-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U07",
+      "title": "Unassigned FINAL findings (catch-all)",
+      "findings": [
+        "FINAL-P2-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U07-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U08",
+      "title": "Unassigned HYG findings (catch-all)",
+      "findings": [
+        "HYG-P2-001",
+        "HYG-P2-002",
+        "HYG-P2-003",
+        "HYG-P3-001",
+        "HYG-P3-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U08-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U09",
+      "title": "Unassigned INV findings (catch-all)",
+      "findings": [
+        "INV-P2-001",
+        "INV-P2-002",
+        "INV-P3-001",
+        "INV-P3-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U09-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U10",
+      "title": "Unassigned OBS findings (catch-all)",
+      "findings": [
+        "OBS-P2-001",
+        "OBS-P2-002",
+        "OBS-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U10-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U11",
+      "title": "Unassigned SEC findings (catch-all)",
+      "findings": [
+        "SEC-P2-001",
+        "SEC-P2-002",
+        "SEC-P3-001",
+        "SEC-P3-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U11-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U12",
+      "title": "Unassigned SUPPLY findings (catch-all)",
+      "findings": [
+        "SUPPLY-P2-001",
+        "SUPPLY-P2-002",
+        "SUPPLY-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U12-20261003-0018-main-59e12b9",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U13",
+      "title": "Unassigned TEST findings (catch-all)",
+      "findings": [
+        "TEST-P2-001",
+        "TEST-P2-002",
+        "TEST-P2-003",
+        "TEST-P3-001",
+        "TEST-P3-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U13-20261003-0018-main-59e12b9",
+      "catchAll": true
     }
   ],
-  "unassignedFindings": [
-    "API-P2-001",
-    "API-P3-001",
-    "API-P3-002",
-    "ARCH-P2-001",
-    "ARCH-P2-002",
-    "ARCH-P2-003",
-    "CI-P2-001",
-    "CI-P2-002",
-    "DATA-P2-001",
-    "DATA-P2-002",
-    "DATA-P3-001",
-    "EXEC-P2-001",
-    "FEAT-P2-001",
-    "FEAT-P3-001",
-    "FINAL-P2-001",
-    "HYG-P2-001",
-    "HYG-P2-002",
-    "HYG-P2-003",
-    "HYG-P3-001",
-    "HYG-P3-002",
-    "INV-P2-001",
-    "INV-P2-002",
-    "INV-P3-001",
-    "INV-P3-002",
-    "OBS-P2-001",
-    "OBS-P2-002",
-    "OBS-P3-001",
-    "SEC-P2-001",
-    "SEC-P2-002",
-    "SEC-P3-001",
-    "SEC-P3-002",
-    "SUPPLY-P2-001",
-    "SUPPLY-P2-002",
-    "SUPPLY-P3-001",
-    "TEST-P2-001",
-    "TEST-P2-002",
-    "TEST-P2-003",
-    "TEST-P3-001",
-    "TEST-P3-002"
+  "unassignedFindings": [],
+  "catchAllSets": [
+    "PS-U01",
+    "PS-U02",
+    "PS-U03",
+    "PS-U04",
+    "PS-U05",
+    "PS-U06",
+    "PS-U07",
+    "PS-U08",
+    "PS-U09",
+    "PS-U10",
+    "PS-U11",
+    "PS-U12",
+    "PS-U13"
   ]
 }

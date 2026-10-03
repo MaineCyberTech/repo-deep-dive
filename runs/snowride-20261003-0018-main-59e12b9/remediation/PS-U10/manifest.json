@@ -1,0 +1,52 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "PS-U10",
+  "title": "Unassigned OBS findings (catch-all)",
+  "findings": ["OBS-P2-001", "OBS-P2-002", "OBS-P3-001"],
+  "findingStatus": {
+    "OBS-P2-001": "partially-fixed (collector now retains OTLP-JSON to a rotating otel-traces volume via file/traces; functional probe proves read-back; dependency OBS-P1-001 untouched, pending merge)",
+    "OBS-P2-002": "partially-fixed (SLIs/SLOs/error budgets/burn-rate alerts committed in docs/runbooks/SLO.md against real /metrics series; alert transport still OBS-P1-001, pending merge)",
+    "OBS-P3-001": "verified-fixed (metric restart/reset semantics and snapshot durability documented in docs/runbooks/OBSERVABILITY.md at the commit)"
+  },
+  "branch": "remediation/ps-u10-20261003-0018-main-59e12b9",
+  "commit": "7c61d27cea59c1b5e5004fb1f14172d1e76e8e32",
+  "commitSubject": "obs: close unassigned observability findings [OBS-P2-001/002]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/20",
+  "prState": "draft",
+  "generated": "2026-10-03T09:45:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-ps-u10 clean LF bundle clone; core.autocrlf unset)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "gitleaks": "8.30.1",
+  "docker": "26.1.5+dfsg1",
+  "compose": "2.26.1-4",
+  "commands": [
+    { "cmd": "relative-link existence check for changed docs", "exit": 0, "result": "linkcheck_broken=0" },
+    { "cmd": "otelcol validate --config=infra/otel/collector-config.yaml (pinned image)", "exit": 0, "result": "config accepted" },
+    { "cmd": "docker compose -f infra/compose/docker-compose.yml config --quiet", "exit": 0, "result": "compose valid" },
+    { "cmd": "functional retention probe (compose up otel-init+otel, POST known span, read volume)", "exit": 0, "result": "otel_init_state=exited exit=0; otlp_post_http_code=200; grep -c ps-u10-retention-probe traces.json = 1" },
+    { "cmd": "npm ci", "exit": 0, "result": "packages installed" },
+    { "cmd": "npm run lint", "exit": 0, "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx" },
+    { "cmd": "npm test", "exit": 0, "result": "131 test files, 873 tests passed" },
+    { "cmd": "git status --short", "exit": 0, "result": "clean" },
+    { "cmd": "gitleaks detect --no-git --redact --no-banner --source <5 changed files>", "exit": 0, "result": "no leaks" },
+    { "cmd": "gitleaks detect --no-git --redact --source .", "exit": 1, "result": "19 pre-existing generic-api-key fixture hits under evidence/** + scripts/bundle-secret-gate.mjs; none in this diff" }
+  ],
+  "artifacts": {
+    "diff.patch": { "bytes": 15540, "sha256": "9b55cbfeb7f6c48c2dd7317745fab3060f3de0225a23fed9068125383e92e985" },
+    "verify.log": { "bytes": 27308, "sha256": "41411a94f1df97eed8486fe6d4e5991f5b0d170d7465fa2853abf09075ee266d" },
+    "gitleaks.log": { "bytes": 1565, "sha256": "7fefc4f3cba53c69b6ce3e73c7047854fdecc93fecc56eb16487831716cc8fba" },
+    "pr_body.md": { "bytes": 7656, "sha256": "dcf33f7079928e9fc66f389c72d1e03d4a472ea0a019590110dbd96b239c0a65" }
+  },
+  "filesChanged": [
+    "docs/runbooks/OBSERVABILITY.md (new)",
+    "docs/runbooks/SLO.md (new)",
+    "docs/runbooks/README.md",
+    "infra/compose/docker-compose.yml",
+    "infra/otel/collector-config.yaml"
+  ],
+  "scopeCheck": "pass - PS-U10 declared no file list; the diff is limited to OBS observability config (collector + compose) and observability runbook docs",
+  "status": "partially-fixed (draft PR open; OBS-P3-001 verified at the commit; OBS-P2-001 and OBS-P2-002 partially fixed with documented follow-ups and the OBS-P1-001 dependency)"
+}

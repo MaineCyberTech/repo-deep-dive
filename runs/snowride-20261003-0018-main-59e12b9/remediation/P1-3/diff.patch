@@ -1,0 +1,64 @@
+diff --git a/.github/workflows/ci-foundation.yml b/.github/workflows/ci-foundation.yml
+index aef0c30..8c16bfb 100644
+--- a/.github/workflows/ci-foundation.yml
++++ b/.github/workflows/ci-foundation.yml
+@@ -17,14 +17,19 @@ jobs:
+     runs-on: ubuntu-latest
+     timeout-minutes: 30
+     steps:
+-      - uses: actions/checkout@v4
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (pin: CI-P2-002)
+         with:
+           persist-credentials: false
+-      - uses: actions/setup-node@v4
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (pin: CI-P2-002)
+         with:
+           node-version: 24
+           cache: npm
+       - run: npm ci
++      - name: generate CycloneDX SBOM (SUPPLY-P1-001)
++        # Bind a component inventory to the commit. Uses the lockfile-pinned
++        # @cyclonedx/cyclonedx-npm devDependency installed by `npm ci`; --no-install
++        # guarantees no unpinned tool is fetched from the registry.
++        run: npx --no-install @cyclonedx/cyclonedx-npm --output-file sbom.json
+       - run: npm run typecheck
+       - run: npm run lint
+       - run: npm run format:check
+@@ -50,6 +55,15 @@ jobs:
+         # Mirror of verify-all.sh: scan the actual build output, not just the
+         # gate's fixtures. The self-test alone never inspected a bundle.
+         run: node scripts/bundle-secret-gate.mjs apps/web/.next/static apps/realtime/dist
++      - name: upload SBOM evidence (bound to commit) (CI-P3-001)
++        # Durable, commit-bound artifact so release confidence and vulnerability
++        # response can be sampled after the fact. Name includes the full SHA.
++        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
++        with:
++          name: sbom-${{ github.sha }}
++          path: sbom.json
++          if-no-files-found: error
++          retention-days: 90
+ 
+   migrations:
+     runs-on: ubuntu-latest
+@@ -68,7 +82,7 @@ jobs:
+           --health-timeout 5s
+           --health-retries 10
+     steps:
+-      - uses: actions/checkout@v4
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (pin: CI-P2-002)
+         with:
+           persist-credentials: false
+       - name: apply all migrations to a fresh database
+@@ -87,10 +101,10 @@ jobs:
+       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder-anon-key
+       NEXT_PUBLIC_SOCKET_URL: /
+     steps:
+-      - uses: actions/checkout@v4
++      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0 (pin: CI-P2-002)
+         with:
+           persist-credentials: false
+-      - uses: actions/setup-node@v4
++      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 (pin: CI-P2-002)
+         with:
+           node-version: 24
+           cache: npm

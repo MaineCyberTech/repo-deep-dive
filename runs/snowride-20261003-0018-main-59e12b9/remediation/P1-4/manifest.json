@@ -1,0 +1,81 @@
+{
+  "run": "20261003-0018-main-59e12b9",
+  "repo": "MaineCyberTech/snowride",
+  "base": "59e12b9b2259ab21ae56113b214160dd1150c5ba",
+  "patchSet": "P1-4",
+  "title": "Alerting as code",
+  "findings": ["OBS-P1-001"],
+  "branch": "remediation/p1-4-20261003-0018-main-59e12b9",
+  "commit": "030d22511a87af1345ca39089d244c4e85ae1d30",
+  "commitSubject": "docs: incident readiness runbook [OBS-P1-001]",
+  "pr": "https://github.com/MaineCyberTech/snowride/pull/10",
+  "prState": "draft",
+  "generated": "2026-10-03T07:26:00Z",
+  "runner": "ci-runner 172.23.128.51 (/srv/work/snowride-p1-4 clean LF git clone from git bundle at 030d225; dirty count 0; docs/runbooks/INCIDENT.md i/lf w/lf)",
+  "node": "v20.20.2",
+  "npm": "10.8.2",
+  "commands": [
+    {
+      "cmd": "git clone -b remediation/p1-4-20261003-0018-main-59e12b9 /srv/work/p1-4.bundle /srv/work/snowride-p1-4",
+      "exit": 0,
+      "result": "clean LF worktree at 030d225, dirty count 0"
+    },
+    {
+      "cmd": "node -e <relative links in docs/runbooks/INCIDENT.md resolve>",
+      "exit": 0,
+      "result": "relative links checked=6 missing=0"
+    },
+    {
+      "cmd": "node -e <cited thresholds/exit codes match scripts/assurance/assurance.sh>",
+      "exit": 0,
+      "result": "all assurance claims ok; cited exit codes 2-14,90 present in assurance.sh"
+    },
+    {
+      "cmd": "node -e <referenced repo paths exist>",
+      "exit": 0,
+      "result": "paths checked=10 missing=0"
+    },
+    {
+      "cmd": "npm ci",
+      "exit": 0,
+      "result": "clean LF worktree installed"
+    },
+    {
+      "cmd": "npm run lint",
+      "exit": 0,
+      "result": "0 errors, 1 pre-existing warning in apps/web/components/game/Home.tsx"
+    },
+    {
+      "cmd": "npm test",
+      "exit": 0,
+      "result": "131 test files, 873 tests passed"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source /srv/work/p1-4-diff.patch",
+      "exit": 0,
+      "result": "no leaks found (5695 bytes scanned)"
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact --source docs/runbooks/INCIDENT.md",
+      "exit": 0,
+      "result": "no leaks found (6799 bytes scanned)"
+    }
+  ],
+  "artifacts": {
+    "diff.patch": {
+      "bytes": 5695,
+      "sha256": "d07144b57ae27e18764dc7103c27a0751b58008597198f49a363b41166a5bf26"
+    },
+    "verify.log": {
+      "bytes": 26295,
+      "sha256": "fa1f3625d6de27bd5551e9fa03bf34e4ed3a607a9339305c654eb877ff202c3f"
+    },
+    "gitleaks.log": {
+      "bytes": 575,
+      "sha256": "05916ed8ffa3bd2a8855a20afa28b9948d473a7a9d3200e5e6faedee613ef9ab"
+    }
+  },
+  "filesChanged": ["docs/runbooks/INCIDENT.md"],
+  "environmentNote": "Docs-only patch. Verification ran in a clean LF git clone at the commit (dirty count 0, i/lf w/lf), matching a normal CI checkout; the lab-sync tar copy is avoided because it carries Windows CRLF. No repo docs-consistency gate exists, so equivalent checks were run and recorded in verify.log.",
+  "status": "partially-fixed (draft PR open; on-call signals/thresholds/escalation/rollback/drill documented. The committed crontab/systemd schedule and alert-rule files required to fully close OBS-P1-001 are out of this docs-only patch set's scope and remain open; verified-fixed only once a forced-failure ntfy alert and the committed schedule are evidenced post-merge.)"
+}
