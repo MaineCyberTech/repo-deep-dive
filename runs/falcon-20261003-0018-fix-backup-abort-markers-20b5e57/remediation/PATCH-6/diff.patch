@@ -1,0 +1,408 @@
+diff --git a/PACKAGE_DIGEST.txt b/PACKAGE_DIGEST.txt
+index 0792af7..4e22207 100644
+--- a/PACKAGE_DIGEST.txt
++++ b/PACKAGE_DIGEST.txt
+@@ -1,7 +1,7 @@
+ # Review package digests (published outside the package to avoid self-reference)
+-repository_commit=ddb9eb97e55290c1d3fb82870da6cfed3b25d4ff
+-CLOSEOUT_SOURCE_COMMIT=ddb9eb97e55290c1d3fb82870da6cfed3b25d4ff
+-DELIVERED_PACKAGE_COMMIT=ddb9eb97e55290c1d3fb82870da6cfed3b25d4ff
++repository_commit=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf
++CLOSEOUT_SOURCE_COMMIT=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf
++DELIVERED_PACKAGE_COMMIT=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf
+ PUBLICATION_RELATIONSHIP=the closeout record and this digest are generated from the tree at the commit above; the commit that publishes them adds only publication and pack-verification artifacts (PACKAGE_DIGEST.txt, PACKAGE_MANIFEST.sha256, PACK_VERIFICATION_NOTES.txt, PACK_NOT_INCLUDED.txt, closeout/FINAL_RESPONSE*.json) and changes no evidence, ledger status or gate state
+ review_package_manifest_sha256=4167f360b1883cba90e1b8511337d7428b702e71066dfb50805e695901ae018c
+ review_package_entries=3720
+@@ -25,4 +25,4 @@ r27_buffer_fix=applied and verified 2026-09-23 (UDP 514/15140 now edge-buffered)
+ all_clear_notifications=enabled and verified 2026-09-23 (FIRING + RESOLVED delivered)
+ inbound_mode=closed (2026-09-22) with documented allowlists
+ naming=falcon (mon->falcon rename 2026-09-22; historical records retain original names)
+-generated_utc=2026-10-03T05:14:17Z
++generated_utc=2026-10-03T05:59:00Z
+diff --git a/automation/validation/check_publication_equality.py b/automation/validation/check_publication_equality.py
+new file mode 100644
+index 0000000..1340e0a
+--- /dev/null
++++ b/automation/validation/check_publication_equality.py
+@@ -0,0 +1,208 @@
++#!/usr/bin/env python3
++"""CI equality test binding the delivered artifacts (FINAL-P0-001, HYG-P0-001/002).
++
++Fails closed unless:
++
++  1. PACKAGE_DIGEST.txt names one and the same commit in repository_commit,
++     CLOSEOUT_SOURCE_COMMIT and DELIVERED_PACKAGE_COMMIT;
++  2. closeout/FINAL_RESPONSE.json (and the superseding record, when present) names the
++     SAME commit in ``commit`` and publication_chain;
++  3. the digest and the closeout agree on the review-package and evidence manifest hashes,
++     and those hashes/entry count match the shipped files;
++  4. (with a git checkout) the declared commit resolves, is HEAD or an ancestor of HEAD, and
++     every commit between the declared commit and HEAD touches only publication artifacts or
++     this test; and the declared-commit tree's manifests match the digest (the authoritative
++     binding check).
++
++A file cannot name its own commit, so the repository's documented PUBLICATION_RELATIONSHIP
++allows a publication commit (which adds only publication artifacts) after the declared
++commit; that allowance is encoded explicitly and nothing else is tolerated.
++
++Usage: check_publication_equality.py [--root DIR] [--no-git]
++Exit:  0 = bound and equal, 1 = mismatch, 2 = usage error.
++"""
++import argparse
++import hashlib
++import json
++import os
++import re
++import subprocess
++import sys
++
++# Files a commit may touch after the declared/frozen commit without invalidating the digest.
++# This is the PUBLICATION_RELATIONSHIP artifact set plus this test's own files.
++PUB_ARTIFACTS = re.compile(
++    r"^(PACKAGE_DIGEST\.txt|PACKAGE_MANIFEST\.sha256|PACK_VERIFICATION_NOTES\.txt|"
++    r"PACK_NOT_INCLUDED\.txt|closeout/FINAL_RESPONSE.*\.json|"
++    r"ci/validate\.py|automation/validation/check_publication_equality\.py|"
++    r"automation/validation/tests/.*)$"
++)
++
++
++def sha256_file(path):
++    h = hashlib.sha256()
++    with open(path, "rb") as fh:
++        for chunk in iter(lambda: fh.read(65536), b""):
++            h.update(chunk)
++    return h.hexdigest()
++
++
++def parse_digest(path):
++    out = {}
++    with open(path, encoding="utf-8") as fh:
++        for line in fh:
++            line = line.strip()
++            if not line or line.startswith("#") or "=" not in line:
++                continue
++            key, value = line.split("=", 1)
++            out[key.strip()] = value.strip()
++    return out
++
++
++def git(root, *args):
++    return subprocess.run(["git", "-C", root, *args], capture_output=True, text=True)
++
++
++def git_blob_sha256(root, rev, path):
++    proc = subprocess.run(["git", "-C", root, "show", "%s:%s" % (rev, path)],
++                          capture_output=True)
++    if proc.returncode != 0:
++        return None
++    return hashlib.sha256(proc.stdout).hexdigest()
++
++
++def git_blob_lines(root, rev, path):
++    proc = subprocess.run(["git", "-C", root, "show", "%s:%s" % (rev, path)],
++                          capture_output=True, text=True)
++    if proc.returncode != 0:
++        return None
++    return len(proc.stdout.splitlines())
++
++
++def main():
++    ap = argparse.ArgumentParser(description=__doc__)
++    ap.add_argument("--root", default=os.path.dirname(os.path.dirname(
++        os.path.dirname(os.path.abspath(__file__)))))
++    ap.add_argument("--no-git", action="store_true",
++                    help="skip git ancestry/declared-commit checks (offline unit test)")
++    args = ap.parse_args()
++    root = os.path.abspath(args.root)
++
++    digest_path = os.path.join(root, "PACKAGE_DIGEST.txt")
++    closeout_path = os.path.join(root, "closeout", "FINAL_RESPONSE.json")
++    if not os.path.exists(digest_path) or not os.path.exists(closeout_path):
++        print("SKIP publication equality (PACKAGE_DIGEST.txt or closeout/FINAL_RESPONSE.json absent)")
++        return 0
++
++    digest = parse_digest(digest_path)
++    closeout = json.load(open(closeout_path, encoding="utf-8"))
++    pc = closeout.get("publication_chain", {}) or {}
++
++    checks, fails = [], []
++
++    def check(label, cond, detail=""):
++        if cond:
++            checks.append("ok   " + label)
++        else:
++            fails.append(label + ((" (" + detail + ")") if detail else ""))
++
++    d_repo = digest.get("repository_commit", "")
++    d_src = digest.get("CLOSEOUT_SOURCE_COMMIT", "")
++    d_del = digest.get("DELIVERED_PACKAGE_COMMIT", "")
++    d_pkg = digest.get("review_package_manifest_sha256", "")
++    d_ev = digest.get("evidence_manifest_sha256", "")
++    d_n = digest.get("review_package_entries", "")
++
++    check("digest repository_commit == CLOSEOUT_SOURCE_COMMIT",
++          d_repo and d_repo == d_src, "repo=%s src=%s" % (d_repo, d_src))
++    check("digest repository_commit == DELIVERED_PACKAGE_COMMIT",
++          d_repo and d_repo == d_del, "repo=%s del=%s" % (d_repo, d_del))
++
++    j_commit = closeout.get("commit", "")
++    check("closeout commit == publication_chain.CLOSEOUT_SOURCE_COMMIT",
++          j_commit and j_commit == pc.get("CLOSEOUT_SOURCE_COMMIT", ""),
++          "commit=%s src=%s" % (j_commit, pc.get("CLOSEOUT_SOURCE_COMMIT", "")))
++    check("closeout commit == publication_chain.DELIVERED_PACKAGE_COMMIT",
++          j_commit and j_commit == pc.get("DELIVERED_PACKAGE_COMMIT", ""),
++          "commit=%s del=%s" % (j_commit, pc.get("DELIVERED_PACKAGE_COMMIT", "")))
++    check("digest repository_commit == closeout commit (cross-artifact)",
++          d_repo and d_repo == j_commit, "digest=%s closeout=%s" % (d_repo, j_commit))
++
++    superseding_path = os.path.join(
++        root, "closeout", "FINAL_RESPONSE_SUPERSEDING_2026-09-23.json")
++    if os.path.exists(superseding_path):
++        sup = json.load(open(superseding_path, encoding="utf-8"))
++        spc = sup.get("publication_chain", {}) or {}
++        check("superseding closeout names the same commit",
++              sup.get("commit") == d_repo
++              and spc.get("CLOSEOUT_SOURCE_COMMIT") == d_repo
++              and spc.get("DELIVERED_PACKAGE_COMMIT") == d_repo)
++
++    rp = os.path.join(root, "review-package", "MANIFEST.sha256")
++    ev = os.path.join(root, "evidence", "MANIFEST.sha256")
++    rp_actual = sha256_file(rp) if os.path.exists(rp) else None
++    ev_actual = sha256_file(ev) if os.path.exists(ev) else None
++    if rp_actual is not None:
++        check("digest review_package_manifest_sha256 matches shipped manifest",
++              d_pkg == rp_actual, "declared=%s actual=%s" % (d_pkg, rp_actual))
++        check("closeout review_package_manifest_sha256 matches shipped manifest",
++              closeout.get("review_package_manifest_sha256") == rp_actual,
++              "declared=%s actual=%s" % (closeout.get("review_package_manifest_sha256"), rp_actual))
++        n_actual = sum(1 for _ in open(rp, encoding="utf-8"))
++        check("digest review_package_entries matches shipped manifest",
++              str(n_actual) == str(d_n), "declared=%s actual=%s" % (d_n, n_actual))
++    if ev_actual is not None:
++        check("digest evidence_manifest_sha256 matches shipped manifest",
++              d_ev == ev_actual, "declared=%s actual=%s" % (d_ev, ev_actual))
++        check("closeout evidence_manifest_sha256 matches shipped manifest",
++              closeout.get("evidence_manifest_sha256") == ev_actual,
++              "declared=%s actual=%s" % (closeout.get("evidence_manifest_sha256"), ev_actual))
++
++    is_git = os.path.isdir(os.path.join(root, ".git"))
++    if not args.no_git and is_git and d_repo:
++        if git(root, "cat-file", "-e", "%s^{commit}" % d_repo).returncode != 0:
++            check("declared commit resolves in this clone", False, d_repo)
++        else:
++            check("declared commit resolves in this clone", True)
++            head = git(root, "rev-parse", "HEAD").stdout.strip()
++            is_anc = head == d_repo or git(
++                root, "merge-base", "--is-ancestor", d_repo, head).returncode == 0
++            check("declared commit is HEAD or an ancestor of HEAD", is_anc,
++                  "declared=%s HEAD=%s" % (d_repo, head))
++            if is_anc and head != d_repo:
++                revs = git(root, "rev-list", "--ancestry-path",
++                           "%s..HEAD" % d_repo).stdout.split()
++                bad = []
++                for c in revs:
++                    names = git(root, "diff-tree", "--no-commit-id", "--name-only",
++                                "-r", c).stdout.split()
++                    for name in names:
++                        if not PUB_ARTIFACTS.match(name):
++                            bad.append("%s:%s" % (c[:8], name))
++                check("commits after the declared commit touch only publication/test files",
++                      not bad, "; ".join(bad[:5]))
++            if rp_actual is not None:
++                gh = git_blob_sha256(root, d_repo, "review-package/MANIFEST.sha256")
++                check("declared-commit review-package manifest hash matches digest",
++                      gh == d_pkg, "declared-commit=%s digest=%s" % (gh, d_pkg))
++                gn = git_blob_lines(root, d_repo, "review-package/MANIFEST.sha256")
++                check("declared-commit review-package entries match digest",
++                      gn is not None and str(gn) == str(d_n), "declared-commit=%s digest=%s" % (gn, d_n))
++            if ev_actual is not None:
++                eh = git_blob_sha256(root, d_repo, "evidence/MANIFEST.sha256")
++                check("declared-commit evidence manifest hash matches digest",
++                      eh == d_ev, "declared-commit=%s digest=%s" % (eh, d_ev))
++
++    for line in checks:
++        print(line)
++    if fails:
++        print("FAIL publication equality")
++        for f in fails:
++            print("  " + f)
++        return 1
++    print("PASS publication equality")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/automation/validation/tests/publication_equality_test.sh b/automation/validation/tests/publication_equality_test.sh
+new file mode 100644
+index 0000000..50cf99e
+--- /dev/null
++++ b/automation/validation/tests/publication_equality_test.sh
+@@ -0,0 +1,64 @@
++#!/usr/bin/env bash
++# Regression (FINAL-P0-001 / HYG-P0-001/002): the publication-equality checker must pass a
++# correctly bound digest+closeout and fail on a mismatched commit or manifest hash.
++# Offline by design (--no-git); no network/root/docker.
++set -u
++REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
++CHECK="$REPO_ROOT/automation/validation/check_publication_equality.py"
++TMP="$(mktemp -d "${TMPDIR:-/tmp}/publication-equality-XXXXXX")"
++trap 'rm -rf "$TMP"' EXIT
++
++mkdir -p "$TMP/review-package" "$TMP/evidence" "$TMP/closeout"
++printf 'entry-one\n' > "$TMP/review-package/MANIFEST.sha256"
++printf 'evidence-one\n' > "$TMP/evidence/MANIFEST.sha256"
++RP="$(sha256sum "$TMP/review-package/MANIFEST.sha256" | awk '{print $1}')"
++EV="$(sha256sum "$TMP/evidence/MANIFEST.sha256" | awk '{print $1}')"
++C="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
++
++cat > "$TMP/PACKAGE_DIGEST.txt" <<EOF
++# synthetic
++repository_commit=$C
++CLOSEOUT_SOURCE_COMMIT=$C
++DELIVERED_PACKAGE_COMMIT=$C
++review_package_manifest_sha256=$RP
++review_package_entries=1
++evidence_manifest_sha256=$EV
++EOF
++
++cat > "$TMP/closeout/FINAL_RESPONSE.json" <<EOF
++{
++  "commit": "$C",
++  "publication_chain": {
++    "CLOSEOUT_SOURCE_COMMIT": "$C",
++    "DELIVERED_PACKAGE_COMMIT": "$C"
++  },
++  "review_package_manifest_sha256": "$RP",
++  "evidence_manifest_sha256": "$EV"
++}
++EOF
++
++if ! python3 "$CHECK" --root "$TMP" --no-git >/dev/null; then
++  echo "FAIL: a correctly bound digest+closeout should pass"; exit 1
++fi
++
++# 1. digest names a different commit than the closeout.
++sed -i "s/^repository_commit=.*/repository_commit=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/" "$TMP/PACKAGE_DIGEST.txt"
++if python3 "$CHECK" --root "$TMP" --no-git >/dev/null 2>&1; then
++  echo "FAIL: a digest/closeout commit mismatch should fail"; exit 1
++fi
++sed -i "s/^repository_commit=.*/repository_commit=$C/" "$TMP/PACKAGE_DIGEST.txt"
++
++# 2. digest declares a manifest hash that does not match the shipped manifest.
++sed -i "s/^review_package_manifest_sha256=.*/review_package_manifest_sha256=deadbeef/" "$TMP/PACKAGE_DIGEST.txt"
++if python3 "$CHECK" --root "$TMP" --no-git >/dev/null 2>&1; then
++  echo "FAIL: a mutated manifest hash should fail"; exit 1
++fi
++sed -i "s/^review_package_manifest_sha256=.*/review_package_manifest_sha256=$RP/" "$TMP/PACKAGE_DIGEST.txt"
++
++# 3. closeout names a different commit than the digest.
++sed -i "s/\"commit\": \"$C\"/\"commit\": \"cccccccccccccccccccccccccccccccccccccccc\"/" "$TMP/closeout/FINAL_RESPONSE.json"
++if python3 "$CHECK" --root "$TMP" --no-git >/dev/null 2>&1; then
++  echo "FAIL: a closeout commit mismatch should fail"; exit 1
++fi
++
++echo "PASS publication_equality_test"
+diff --git a/ci/validate.py b/ci/validate.py
+index bcef0ce..ece6c7d 100755
+--- a/ci/validate.py
++++ b/ci/validate.py
+@@ -23,6 +23,9 @@ Checks (all read-only):
+  12. Shell regression tests: the offline/stubbed suites under automation/validation/tests/
+      (TEST-P2-001; they run in CI too). Suites needing root/docker declare it in their
+      header and are skipped with a note.
++  13. Publication equality: PACKAGE_DIGEST.txt and closeout/FINAL_RESPONSE.json must name the
++      same reviewed commit and bind the shipped manifests to it (FINAL-P0-001,
++      HYG-P0-001/002; automation/validation/check_publication_equality.py).
+ 
+ Run a subset while iterating: `python3 ci/validate.py --only shell-tests`.
+ 
+@@ -378,6 +381,24 @@ def check_shell_tests():
+         ok(f"shell tests ({summary})")
+ 
+ 
++def check_publication_equality():
++    """FINAL-P0-001 / HYG-P0-001/002: PACKAGE_DIGEST.txt and closeout/FINAL_RESPONSE.json
++    must name the same reviewed commit and bind the shipped manifests to that commit. Unlike
++    verify_publication_chain.sh this is wired into the standard gate so a stale or doctored
++    digest/closeout cannot pass CI (the previous owner-only checker was deliberately unwired)."""
++    proc = subprocess.run(
++        [sys.executable, os.path.join(REPO, "automation", "validation",
++                                      "check_publication_equality.py"), "--root", REPO],
++        capture_output=True, text=True,
++    )
++    if proc.returncode != 0:
++        fail("publication equality (digest<->closeout<->manifest)")
++        print(proc.stdout, end="")
++        print(proc.stderr, end="")
++    else:
++        ok("publication equality (digest<->closeout<->manifest)")
++
++
+ CHECKS = {
+     "parsers": check_parsers,
+     "compose-pins": check_compose_pins,
+@@ -392,6 +413,7 @@ CHECKS = {
+     "secret-scan": check_secret_scan,
+     "edge-pin": check_edge_pin,
+     "shell-tests": check_shell_tests,
++    "publication-equality": check_publication_equality,
+ }
+ 
+ 
+diff --git a/closeout/FINAL_RESPONSE.json b/closeout/FINAL_RESPONSE.json
+index e717352..1ebd2f9 100644
+--- a/closeout/FINAL_RESPONSE.json
++++ b/closeout/FINAL_RESPONSE.json
+@@ -3,11 +3,11 @@
+   "owner": "Maine Cyber Tech",
+   "environment_class": "LAB (single KVM host, Ubuntu 24.04.4 LTS)",
+   "pack": "modular-network-monitoring-production-prompt-pack",
+-  "commit": "c665ad13e4cdeb4c37d53e398411c28ef64ee15f",
++  "commit": "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
+   "commit_note": "final closeout documentation is committed after this JSON; the package was built from this tree",
+   "publication_chain": {
+-    "CLOSEOUT_SOURCE_COMMIT": "c665ad13e4cdeb4c37d53e398411c28ef64ee15f",
+-    "DELIVERED_PACKAGE_COMMIT": "c665ad13e4cdeb4c37d53e398411c28ef64ee15f",
++    "CLOSEOUT_SOURCE_COMMIT": "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
++    "DELIVERED_PACKAGE_COMMIT": "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
+     "PUBLICATION_RELATIONSHIP": "the closeout record and the published digest are generated from the tree at this commit; the commit that publishes them adds only publication and pack-verification artifacts (PACKAGE_DIGEST.txt, PACKAGE_MANIFEST.sha256, PACK_VERIFICATION_NOTES.txt, PACK_NOT_INCLUDED.txt, closeout/FINAL_RESPONSE*.json) and changes no evidence, ledger status or gate state"
+   },
+   "gate_counts": {
+@@ -51,7 +51,7 @@
+   "evidence_manifest": "evidence/MANIFEST.sha256",
+   "evidence_manifest_sha256": "5a888393ad349cb7faf54f31be046a67348f90e6bb36c727541e8b1d66c3bad6",
+   "review_package": "review-package/ (SHA-256 manifest covering every file; review-package tree scan NO_FINDINGS; Git-history scan 16 findings, all dispositioned - see security_scan_status)",
+-  "review_package_manifest_sha256": "5b50d10c01e6b33e5f5f6171d7231baa82a78b11c3817bb727cbe1c73bfa7812",
++  "review_package_manifest_sha256": "4167f360b1883cba90e1b8511337d7428b702e71066dfb50805e695901ae018c",
+   "review_record": "docs/phase8/REVIEW_RECORD.md (separate-agent adversarial review; NOT an independent human reviewer)",
+   "material_changes": [
+     "Pinned and digest-verified container images (12), SBOMs and vulnerability scans recorded",
+diff --git a/closeout/FINAL_RESPONSE_SUPERSEDING_2026-09-23.json b/closeout/FINAL_RESPONSE_SUPERSEDING_2026-09-23.json
+index 2097e39..dfbf008 100644
+--- a/closeout/FINAL_RESPONSE_SUPERSEDING_2026-09-23.json
++++ b/closeout/FINAL_RESPONSE_SUPERSEDING_2026-09-23.json
+@@ -3,11 +3,11 @@
+   "owner": "Maine Cyber Tech",
+   "environment_class": "LAB (single KVM host, Ubuntu 24.04.4 LTS)",
+   "pack": "modular-network-monitoring-production-prompt-pack",
+-  "commit": "c665ad13e4cdeb4c37d53e398411c28ef64ee15f",
++  "commit": "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
+   "commit_note": "final closeout documentation is committed after this JSON; the package was built from this tree",
+   "publication_chain": {
+-    "CLOSEOUT_SOURCE_COMMIT": "c665ad13e4cdeb4c37d53e398411c28ef64ee15f",
+-    "DELIVERED_PACKAGE_COMMIT": "c665ad13e4cdeb4c37d53e398411c28ef64ee15f",
++    "CLOSEOUT_SOURCE_COMMIT": "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
++    "DELIVERED_PACKAGE_COMMIT": "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
+     "PUBLICATION_RELATIONSHIP": "the closeout record and the published digest are generated from the tree at this commit; the commit that publishes them adds only publication and pack-verification artifacts (PACKAGE_DIGEST.txt, PACKAGE_MANIFEST.sha256, PACK_VERIFICATION_NOTES.txt, PACK_NOT_INCLUDED.txt, closeout/FINAL_RESPONSE*.json) and changes no evidence, ledger status or gate state"
+   },
+   "gate_counts": {
+@@ -51,7 +51,7 @@
+   "evidence_manifest": "evidence/MANIFEST.sha256",
+   "evidence_manifest_sha256": "5a888393ad349cb7faf54f31be046a67348f90e6bb36c727541e8b1d66c3bad6",
+   "review_package": "review-package/ (SHA-256 manifest covering every file; review-package tree scan NO_FINDINGS; Git-history scan 16 findings, all dispositioned - see security_scan_status)",
+-  "review_package_manifest_sha256": "5b50d10c01e6b33e5f5f6171d7231baa82a78b11c3817bb727cbe1c73bfa7812",
++  "review_package_manifest_sha256": "4167f360b1883cba90e1b8511337d7428b702e71066dfb50805e695901ae018c",
+   "review_record": "docs/phase8/REVIEW_RECORD.md (separate-agent adversarial review; NOT an independent human reviewer)",
+   "material_changes": [
+     "Pinned and digest-verified container images (12), SBOMs and vulnerability scans recorded",

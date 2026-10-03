@@ -1,0 +1,113 @@
+== PATCH-2 verification (ARCH-P2-005) ==
+host:   ci-runner
+branch: remediation/patch-02-20261003-0018-fix-backup-abort-markers-20b5e57
+head:   38c18ef
+dirty:  0 path(s)
+
+$ FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (600 scripts)
+PASS  shellcheck (172 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.9s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (2.0s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.6s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.6s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.5s)
+PASS  shell tests (30 suite(s))
+
+validation_failures=0
+VALIDATE_EXIT=0
+
+$ bash automation/validation/tests/abort_marker_test.sh
+2026-10-03T12:12:53Z [bootstrap] source: falcon-build@38c18ef dirty=0
+2026-10-03T12:12:53Z [bootstrap] aborted; wrote marker /tmp/abort-marker-hWuMyW/regression.aborted (next run will re-verify)
+2026-10-03T12:12:53Z [bootstrap] source: falcon-build@38c18ef dirty=0
+PASS abort_marker
+ABORT_TEST_EXIT=0
+
+$ bash automation/validation/tests/offsite_backup_reuse_test.sh
+== case 1: reuse newest SUCCESS snapshot + newest config archive ==
+== case 2: re-run does not duplicate inventories ==
+== case 3: no SUCCESS snapshot -> fail loudly, create nothing ==
+== case 4: snapshot exists but no config archive -> fail loudly ==
+== case 5: a successful run clears the dead-letter marker ==
+offsite_backup_reuse_test_checks=32 offsite_backup_reuse_test_failures=0
+OFFSITE_REUSE_EXIT=0
+
+$ bash automation/validation/tests/offsite_upload_delta_test.sh
+2026-10-03T12:12:55Z [bootstrap] source: falcon-build@38c18ef dirty=0
+== case 1: fresh state -> all files uploaded via --files-from, paths preserved ==
+== case 2: unchanged files are skipped ==
+== case 3: mtime change uploads only that file ==
+== case 4: size change with unchanged mtime uploads ==
+== case 5: new file uploads ==
+== case 6: seed mode records state without uploading ==
+== case 6b: seed skips files changed after the last successful upload ==
+== case 6c: seed refuses without a last-success stamp ==
+== case 7: full mode uploads everything and refreshes state ==
+== case 7b: refreshed state -> normal run is a no-op ==
+== case 7c: full mode re-uploads a remote object that went missing ==
+== case 8: failed upload leaves state unchanged and retries the same set ==
+== case 9: presence check requires a real file object (IsDir-aware) ==
+== case 10: a change during the upload is picked up by the next pass ==
+== case 11: a transient upload failure is retried in-run (RES-P0-002) ==
+offsite_upload_delta_test_checks=65 offsite_upload_delta_test_failures=0
+OFFSITE_DELTA_EXIT=0
+
+$ bash automation/validation/tests/wazuh_indexer_backup_test.sh
+== case 1: snapshot + retention + freshness ==
+== case 2: repository missing -> register idempotently ==
+== case 3: non-fs repository refused ==
+== case 4: dry run mutates nothing ==
+wazuh_indexer_backup_test_checks=20 wazuh_indexer_backup_test_failures=0
+WAZUH_TEST_EXIT=0
+
+$ shellcheck --severity=warning automation/validation/r2_cold_copy.sh automation/validation/wazuh_indexer_backup.sh automation/validation/tests/abort_marker_test.sh automation/validation/tests/wazuh_indexer_backup_test.sh
+SHELLCHECK_EXIT=0
+
+$ gitleaks detect --no-git --redact --source .
+System.Management.Automation.RemoteException
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+System.Management.Automation.RemoteException
+[90m12:12PM[0m [32mINF[0m [1mscanned ~4682856 bytes (4.68 MB) in 645ms[0m
+[90m12:12PM[0m [32mINF[0m [1mno leaks found[0m
+GITLEAKS_EXIT=0
+bash: line 47: $'\r': command not found

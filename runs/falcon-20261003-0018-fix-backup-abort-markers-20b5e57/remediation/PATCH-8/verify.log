@@ -1,0 +1,90 @@
+# PATCH-8 verification
+date_utc=2026-10-03T06:25:01Z
+runner=Ubuntu 24.04.5 LTS 6.18.40.1-microsoft-standard-WSL2
+
+## 0. clean LF worktree
+git fetch exit=0
+git worktree add exit=0
+commit=7bb6187a212c61d626fadd7e681a13929d287306
+crlf_check (expect 0 for each edited file):
+  config/nftables/falcon.nft crlf=0
+  compose/mct/docker-compose.opencanary.yml crlf=0
+  bootstrap/32-inbound-mode.sh crlf=0
+  docs/architecture/PORT_PROTOCOL_MATRIX.md crlf=0
+  automation/validation/tests/exposure_edges_test.sh crlf=0
+
+## 1. bash -n on changed scripts
+bash -n bootstrap/32-inbound-mode.sh exit=0
+bash -n automation/validation/tests/exposure_edges_test.sh exit=0
+
+## 2. nft syntax check (nft -c -f config/nftables/falcon.nft)
+nft -c exit=0
+
+## 3. exposure_edges_test.sh
+PASS exposure_edges
+exposure_edges_test exit=0
+
+## 4. ci/validate.py (FALCON_EVIDENCE_OPTIONAL=1)
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (601 scripts)
+PASS  shellcheck (skipped: not installed)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.8s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (1.1s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (2.3s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (1.0s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.9s)
+PASS  shell tests: automation/validation/tests/exposure_edges_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.9s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.1s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (1.3s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (1.2s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (3.2s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (2.7s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (1.0s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.9s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.6s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.8s)
+PASS  shell tests (31 suite(s))
+
+validation_failures=0
+ci_validate exit=0
+
+## 5. gitleaks
+/root/p8-cache/gitleaks.tgz: OK
+8.30.1
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m2:25AM[0m [32mINF[0m [1mscanned ~4659629 bytes (4.66 MB) in 1.33s[0m
+[90m2:25AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks exit=0
+
+done.

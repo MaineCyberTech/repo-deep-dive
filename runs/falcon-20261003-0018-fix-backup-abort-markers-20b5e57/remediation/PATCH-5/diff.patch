@@ -1,0 +1,597 @@
+diff --git a/.github/workflows/validate.yml b/.github/workflows/validate.yml
+index c1d7da8..6a0b4b0 100644
+--- a/.github/workflows/validate.yml
++++ b/.github/workflows/validate.yml
+@@ -93,9 +93,9 @@ jobs:
+           echo "- ci/validate.py duration: ${dur}s (exit ${rc})" >> "$GITHUB_STEP_SUMMARY"
+           exit "$rc"
+ 
+-      - name: SBOM coverage + provenance manifest (SBOM-P2-002/004)
++      - name: SBOM coverage, vulnerability gate + provenance manifest (SBOM-P2-002/004, SUPPLY-P1-002)
+         run: |
+-          bash automation/validation/sbom_coverage_check.sh
++          bash automation/validation/sbom_coverage_check.sh --require-vuln --vuln-waivers pins/supply-chain-waivers.json
+           bash automation/validation/sbom_hashes.sh verify
+ 
+       - name: publication chain + digest consistency (drift gate, AI-P2-005)
+diff --git a/automation/validation/check_compose_digests.py b/automation/validation/check_compose_digests.py
+index 50e965e..41e4087 100755
+--- a/automation/validation/check_compose_digests.py
++++ b/automation/validation/check_compose_digests.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/env python3
+-"""Compose image digest cross-check against pins/images.lock (SC-P3-001, audit 20260930-0701).
++"""Compose image digest cross-check against pins/images.lock (SC-P3-001, audit 20260930-0701;
++scope + fail-closed waivers, SUPPLY-P1-001/002, audit 20261003-0018).
+ 
+ `ci/validate.py` accepts any `repo@sha256:<digest>` whose repo name appears in the lock;
+ it never compares the digest, so a compose digest that disagrees with the lock (and with
+@@ -9,11 +10,23 @@ lock membership). It is intentionally a separate script so it can be wired into
+ ci/validate.py (exact lines in docs/security/CI_SECRET_GATE.md) without editing the gate
+ in the same change.
+ 
++Scope (SUPPLY-P1-001). The gate must cover the full compose image set, not only
++`compose/**`. `--compose-dir` is repeatable; `ci/validate.py` passes `compose/`,
++`mct/compose/` and `automation/wazuh/`. A declared root that does not exist is a usage
++error (exit 2, fail closed): a missing root must never silently drop coverage.
++
++Waivers (SUPPLY-P1-001/002). Known, owner-visible exceptions live in a waiver file
++(`--waivers FILE`) instead of being skipped. Each waiver matches a compose root plus an
++image-ref glob (and an optional path glob) and carries a reason, owner and review-by date.
++A finding matching a waiver is reported as WAIVED and does not fail; an unwaived finding
++fails; a malformed, unreadable or expired waiver fails closed (exit 2). Nothing is silently
++skipped.
++
+ `--max-lock-age-days N` additionally fails when pins/images.lock's `generated_utc` is
+ older than N days (lock freshness; off by default). The age is always printed.
+ 
+-Usage: check_compose_digests.py [--repo DIR] [--lock FILE] [--compose-dir DIR]
+-                                [--max-lock-age-days N]
++Usage: check_compose_digests.py [--repo DIR] [--lock FILE] [--compose-dir DIR]...
++                                [--waivers FILE] [--max-lock-age-days N]
+ Exit: 0 = pass, 1 = findings, 2 = usage or unreadable input (fail closed).
+ """
+ 
+@@ -21,6 +34,7 @@ from __future__ import annotations
+ 
+ import argparse
+ import datetime as dt
++import fnmatch
+ import glob
+ import json
+ import os
+@@ -51,51 +65,115 @@ def lock_age_days(generated_utc: str | None) -> int | None:
+     return (dt.datetime.now(dt.timezone.utc) - then).days
+ 
+ 
+-def check(repo: str, lock_path: str, compose_dir: str, max_age_days: int | None) -> int:
++def load_waivers(path: str, today: dt.date) -> list[dict[str, str]]:
++    """Load and validate the compose-digest waiver set (fail closed on any defect)."""
++    with open(path, encoding="utf-8") as fh:
++        data = json.load(fh)
++    entries = data.get("compose_digest", [])
++    if not isinstance(entries, list):
++        raise ValueError("'compose_digest' must be a list")
++    out: list[dict[str, str]] = []
++    for i, entry in enumerate(entries):
++        if not isinstance(entry, dict):
++            raise ValueError(f"compose_digest[{i}] must be an object")
++        root = entry.get("root")
++        ref = entry.get("ref") or "*"
++        reason = entry.get("reason")
++        owner = entry.get("owner")
++        review_by = entry.get("review_by")
++        for field, value in (("root", root), ("reason", reason),
++                             ("owner", owner), ("review_by", review_by)):
++            if not value:
++                raise ValueError(f"compose_digest[{i}] missing {field}")
++        try:
++            expiry = dt.date.fromisoformat(review_by)
++        except ValueError as exc:
++            raise ValueError(
++                f"compose_digest[{i}] review_by is not YYYY-MM-DD: {review_by}") from exc
++        if expiry < today:
++            raise ValueError(
++                f"compose_digest[{i}] waiver expired {review_by} ({owner}); re-review required")
++        out.append({"root": root, "ref": ref, "path": entry.get("path") or "",
++                    "reason": reason, "owner": owner, "review_by": review_by})
++    return out
++
++
++def match_waiver(waivers: list[dict[str, str]], root: str, rel_path: str,
++                 ref: str) -> dict[str, str] | None:
++    for w in waivers:
++        if w["root"] != root:
++            continue
++        if w["path"] and not fnmatch.fnmatch(rel_path, w["path"]):
++            continue
++        if not fnmatch.fnmatch(ref, w["ref"]):
++            continue
++        return w
++    return None
++
++
++def check(repo: str, lock_path: str, compose_dirs: list[str],
++          waivers: list[dict[str, str]], max_age_days: int | None) -> int:
+     lock, generated_utc = load_lock(lock_path)
+     findings: list[str] = []
+-    compose_files = sorted(
+-        glob.glob(os.path.join(compose_dir, "**", "*.yml"), recursive=True)
+-        + glob.glob(os.path.join(compose_dir, "**", "*.yaml"), recursive=True)
+-    )
++    waived_hits: list[tuple[str, dict[str, str]]] = []
++    roots = [(os.path.relpath(os.path.abspath(d), repo), os.path.abspath(d))
++             for d in compose_dirs]
+     refs = 0
+-    for path in compose_files:
+-        rel = os.path.relpath(path, repo)
+-        with open(path, encoding="utf-8") as fh:
+-            text = fh.read()
+-        for ref in IMAGE_RE.findall(text):
+-            refs += 1
+-            if "@sha256:" in ref:
+-                repo_name, _, digest = ref.partition("@")
+-                entry = lock.get(repo_name)
+-                if entry is None:
+-                    findings.append(f"{rel}: image not in pins/images.lock: {ref}")
+-                elif entry.get("digest") and digest != entry["digest"]:
+-                    findings.append(
+-                        f"{rel}: digest disagrees with pins/images.lock: {ref} "
+-                        f"(lock {entry['digest']})")
+-                continue
+-            if ":" not in ref.split("/")[-1]:
+-                findings.append(f"{rel}: image unpinned: {ref}")
+-                continue
+-            tag = ref.rsplit(":", 1)[1]
+-            if tag in FLOATING_TAGS:
+-                findings.append(f"{rel}: floating tag: {ref}")
+-            elif ref not in lock:
+-                findings.append(f"{rel}: image missing from pins/images.lock: {ref}")
++    compose_files_total = 0
++    for root_rel, root_abs in roots:
++        compose_files = sorted(
++            glob.glob(os.path.join(root_abs, "**", "*.yml"), recursive=True)
++            + glob.glob(os.path.join(root_abs, "**", "*.yaml"), recursive=True)
++        )
++        compose_files_total += len(compose_files)
++        for path in compose_files:
++            rel = os.path.relpath(path, repo)
++            with open(path, encoding="utf-8") as fh:
++                text = fh.read()
++            for ref in IMAGE_RE.findall(text):
++                refs += 1
++                message: str | None = None
++                if "@sha256:" in ref:
++                    repo_name, _, digest = ref.partition("@")
++                    entry = lock.get(repo_name)
++                    if entry is None:
++                        message = f"{rel}: image not in pins/images.lock: {ref}"
++                    elif entry.get("digest") and digest != entry["digest"]:
++                        message = (f"{rel}: digest disagrees with pins/images.lock: {ref} "
++                                   f"(lock {entry['digest']})")
++                elif ":" not in ref.split("/")[-1]:
++                    message = f"{rel}: image unpinned: {ref}"
++                else:
++                    tag = ref.rsplit(":", 1)[1]
++                    if tag in FLOATING_TAGS:
++                        message = f"{rel}: floating tag: {ref}"
++                    elif ref not in lock:
++                        message = f"{rel}: image missing from pins/images.lock: {ref}"
++                if message is None:
++                    continue
++                waiver = match_waiver(waivers, root_rel, rel, ref)
++                if waiver is not None:
++                    waived_hits.append((message, waiver))
++                else:
++                    findings.append(message)
+ 
+     age = lock_age_days(generated_utc)
++    print(f"compose_roots={','.join(r for r, _ in roots)}")
+     print(f"lock_file={lock_path}")
+     print(f"lock_generated_utc={generated_utc or 'unknown'}")
+     print(f"lock_age_days={age if age is not None else 'unknown'}")
+-    print(f"compose_files={len(compose_files)} image_refs={refs}")
++    print(f"compose_files={compose_files_total} image_refs={refs}")
+     if age is not None and max_age_days is not None and age > max_age_days:
+         findings.append(
+             f"pins/images.lock is {age} days old (limit {max_age_days}); "
+             f"refresh with pins/pull-and-record.sh and re-run pins/verify-digests.sh")
+     for line in findings:
+         print(f"FINDING {line}")
++    for message, waiver in waived_hits:
++        print(f"WAIVED {message} [{waiver['root']}; {waiver['owner']}; "
++              f"review_by {waiver['review_by']}; {waiver['reason']}]")
+     print(f"compose_digest_findings={len(findings)}")
++    print(f"compose_digest_waived={len(waived_hits)}")
+     return 1 if findings else 0
+ 
+ 
+@@ -105,18 +183,34 @@ def main(argv: list[str] | None = None) -> int:
+     default_repo = os.path.dirname(os.path.dirname(here))
+     parser.add_argument("--repo", default=default_repo)
+     parser.add_argument("--lock", default=None)
+-    parser.add_argument("--compose-dir", default=None)
++    parser.add_argument("--compose-dir", action="append", default=None,
++                        help="compose root to scan; repeatable")
++    parser.add_argument("--waivers", default=None,
++                        help="JSON waiver file (compose_digest list); fail closed if bad/expired")
+     parser.add_argument("--max-lock-age-days", type=int, default=None)
+     args = parser.parse_args(argv)
+ 
+     repo = os.path.abspath(args.repo)
+     lock_path = args.lock or os.path.join(repo, "pins", "images.lock")
+-    compose_dir = args.compose_dir or os.path.join(repo, "compose")
+-    for path in (lock_path, compose_dir):
++    compose_dirs = args.compose_dir or [os.path.join(repo, "compose")]
++    paths = [lock_path] + [os.path.abspath(d) for d in compose_dirs]
++    for path in paths:
+         if not os.path.exists(path):
+             print(f"ERROR: not found: {path}", file=sys.stderr)
+             return 2
+-    return check(repo, lock_path, compose_dir, args.max_lock_age_days)
++
++    waivers: list[dict[str, str]] = []
++    if args.waivers:
++        if not os.path.exists(args.waivers):
++            print(f"ERROR: waivers file not found: {args.waivers}", file=sys.stderr)
++            return 2
++        try:
++            waivers = load_waivers(args.waivers, dt.date.today())
++        except (OSError, ValueError, json.JSONDecodeError) as exc:
++            print(f"ERROR: bad waivers file {args.waivers}: {exc}", file=sys.stderr)
++            return 2
++
++    return check(repo, lock_path, compose_dirs, waivers, args.max_lock_age_days)
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/automation/validation/sbom_coverage_check.sh b/automation/validation/sbom_coverage_check.sh
+index 7e2597d..d84a644 100755
+--- a/automation/validation/sbom_coverage_check.sh
++++ b/automation/validation/sbom_coverage_check.sh
+@@ -14,13 +14,20 @@
+ # 2 = usage or environment error (fail closed). Read-only: file checks only, no network,
+ # no docker. The vulnerability column is informational unless --require-vuln is given.
+ #
+-# Usage: sbom_coverage_check.sh [--lock FILE] [--sbom-dir DIR] [--require-vuln] [--quiet]
++# SUPPLY-P1-002: with --require-vuln every pinned image must have a vulnerability scan, or
++# be listed explicitly in --vuln-waivers FILE (an owner-visible, review-by dated pending
++# list). A missing/ malformed / expired waiver file, or an image that is neither scanned
++# nor waived, fails closed (exit 2 / 1). Nothing is silently skipped.
++#
++# Usage: sbom_coverage_check.sh [--lock FILE] [--sbom-dir DIR] [--require-vuln]
++#                               [--vuln-waivers FILE] [--quiet]
+ set -u
+ 
+ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ LOCK="$REPO_ROOT/pins/images.lock"
+ SBOM_DIR="$REPO_ROOT/sbom"
+ REQUIRE_VULN=0
++VULN_WAIVERS=""
+ QUIET=0
+ 
+ while [ $# -gt 0 ]; do
+@@ -28,9 +35,10 @@ while [ $# -gt 0 ]; do
+     --lock) LOCK="${2:-}"; shift 2 ;;
+     --sbom-dir) SBOM_DIR="${2:-}"; shift 2 ;;
+     --require-vuln) REQUIRE_VULN=1; shift ;;
++    --vuln-waivers) VULN_WAIVERS="${2:-}"; shift 2 ;;
+     --quiet) QUIET=1; shift ;;
+     -h|--help)
+-      sed -n '2,18p' "$0" | sed 's/^# \{0,1\}//'
++      sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+       exit 0 ;;
+     *) echo "sbom_coverage_check: unknown argument: $1" >&2; exit 2 ;;
+   esac
+@@ -41,6 +49,23 @@ command -v jq >/dev/null 2>&1 || { echo "sbom_coverage_check: jq is required" >&
+ jq -e '.images | type == "array"' "$LOCK" >/dev/null 2>&1 \
+   || { echo "sbom_coverage_check: lock is not valid JSON with an images array: $LOCK" >&2; exit 2; }
+ 
++if [ -n "$VULN_WAIVERS" ]; then
++  [ -r "$VULN_WAIVERS" ] \
++    || { echo "sbom_coverage_check: vuln waivers not readable: $VULN_WAIVERS" >&2; exit 2; }
++  jq -e '.vuln_scan_pending | type == "array"' "$VULN_WAIVERS" >/dev/null 2>&1 \
++    || { echo "sbom_coverage_check: vuln waivers is not valid JSON with a vuln_scan_pending array: $VULN_WAIVERS" >&2; exit 2; }
++  if [ "$REQUIRE_VULN" -eq 1 ]; then
++    expired="$(jq -r --arg today "$(date -u +%Y-%m-%d)" \
++      '.vuln_scan_pending[]? | select((.review_by // "") != "" and (.review_by // "") < $today) | "\(.image) review_by=\(.review_by)"' \
++      "$VULN_WAIVERS")"
++    if [ -n "$expired" ]; then
++      echo "sbom_coverage_check: expired vuln-scan waiver(s); re-review required:" >&2
++      printf '%s\n' "$expired" >&2
++      exit 2
++    fi
++  fi
++fi
++
+ PINS=0
+ COVERED=0
+ MISSING=0
+@@ -48,6 +73,7 @@ MISMATCH=0
+ LEGACY=0
+ VULN_OK=0
+ VULN_MISSING=0
++VULN_PENDING=0
+ 
+ printf '%-44s %-14s %-46s %-9s %-7s %s\n' \
+   "IMAGE" "DIGEST" "SBOM FILE" "BINDING" "LICENSE" "VULN"
+@@ -101,6 +127,12 @@ while IFS=$'\t' read -r img dig; do
+       esac
+     done
+   fi
++  if [ "$vuln" = "no" ] && [ -n "$VULN_WAIVERS" ] && [ "$REQUIRE_VULN" -eq 1 ]; then
++    if jq -e --arg img "$img" '.vuln_scan_pending[]? | select(.image == $img)' \
++        "$VULN_WAIVERS" >/dev/null 2>&1; then
++      vuln="pending"
++    fi
++  fi
+ 
+   case "$binding" in
+     CANONICAL) COVERED=$((COVERED + 1)) ;;
+@@ -110,6 +142,8 @@ while IFS=$'\t' read -r img dig; do
+   esac
+   if [ "$vuln" = "yes" ] || [ "$vuln" = "legacy" ]; then
+     VULN_OK=$((VULN_OK + 1))
++  elif [ "$vuln" = "pending" ]; then
++    VULN_PENDING=$((VULN_PENDING + 1))
+   else
+     VULN_MISSING=$((VULN_MISSING + 1))
+   fi
+@@ -122,7 +156,7 @@ while IFS=$'\t' read -r img dig; do
+   fi
+ done < <(jq -r '.images[] | [.image, .digest] | @tsv' "$LOCK")
+ 
+-echo "sbom_coverage: pinned=$PINS covered=$COVERED missing=$MISSING mismatched=$MISMATCH legacy=$LEGACY vuln_scans=$VULN_OK vuln_missing=$VULN_MISSING"
++echo "sbom_coverage: pinned=$PINS covered=$COVERED missing=$MISSING mismatched=$MISMATCH legacy=$LEGACY vuln_scans=$VULN_OK vuln_pending=$VULN_PENDING vuln_missing=$VULN_MISSING"
+ if [ "$MISSING" -gt 0 ] || [ "$MISMATCH" -gt 0 ]; then
+   echo "sbom_coverage: FAIL (a pinned image has no digest-bound SBOM; SBOM-P2-002)" >&2
+   exit 1
+diff --git a/automation/validation/tests/compose_digest_check_test.sh b/automation/validation/tests/compose_digest_check_test.sh
+index 08a32dc..1630acf 100755
+--- a/automation/validation/tests/compose_digest_check_test.sh
++++ b/automation/validation/tests/compose_digest_check_test.sh
+@@ -111,6 +111,63 @@ check_true "stale lock is named" grep -q 'pins/images.lock is .* days old' <<<"$
+ out="$(python3 "$CHECK" --repo "$WORK/ok")"; rc=$?
+ check "stale lock without limit passes" "0" "$rc"
+ 
++echo "== multi-root scope and explicit waivers (SUPPLY-P1-001) =="
++mkdir -p "$WORK/multi/compose" "$WORK/multi/mct/compose" "$WORK/multi/automation/wazuh"
++cat > "$WORK/multi/pins.lock" <<EOF
++{"generated_utc": "2026-09-20T23:06:36Z", "images": [
++  {"image": "example/service:1.2.3", "digest": "$DIGEST_A", "role": "fixture"},
++  {"image": "example/wazuh:4.14.7", "digest": "$DIGEST_A", "role": "fixture"}
++]}
++EOF
++cat > "$WORK/multi/compose/docker-compose.yml" <<EOF
++services:
++  app:
++    image: example/service:1.2.3@$DIGEST_A
++EOF
++cat > "$WORK/multi/mct/compose/docker-compose.yml" <<EOF
++services:
++  vendored:
++    image: example/vendored:latest
++EOF
++cat > "$WORK/multi/automation/wazuh/docker-compose.yml" <<EOF
++services:
++  wazuh:
++    image: example/wazuh:4.14.7@$DIGEST_B
++EOF
++MULTI=(--compose-dir "$WORK/multi/compose" --compose-dir "$WORK/multi/mct/compose" \
++       --compose-dir "$WORK/multi/automation/wazuh")
++out="$(python3 "$CHECK" --repo "$WORK/multi" --lock "$WORK/multi/pins.lock" "${MULTI[@]}")"; rc=$?
++check "multi-root unwaived drift exits 1" "1" "$rc"
++check_true "wazuh root digest drift is named" grep -q 'automation/wazuh/docker-compose.yml: digest disagrees' <<<"$out"
++check_true "vendored root floating tag is named" grep -q 'mct/compose/docker-compose.yml: floating tag' <<<"$out"
++
++cat > "$WORK/multi/waivers.json" <<EOF
++{"compose_digest": [
++  {"root": "mct/compose", "ref": "*", "reason": "fixture vendored tree", "owner": "supply-chain", "review_by": "2099-01-01"},
++  {"root": "automation/wazuh", "ref": "example/wazuh:*", "reason": "fixture pending pin", "owner": "supply-chain", "review_by": "2099-01-01"}
++]}
++EOF
++out="$(python3 "$CHECK" --repo "$WORK/multi" --lock "$WORK/multi/pins.lock" "${MULTI[@]}" --waivers "$WORK/multi/waivers.json")"; rc=$?
++check "waived multi-root drift exits 0" "0" "$rc"
++check_true "waived count reported" grep -q 'compose_digest_waived=2' <<<"$out"
++check_true "no unwaived findings remain" grep -q 'compose_digest_findings=0' <<<"$out"
++
++cat > "$WORK/multi/expired.json" <<EOF
++{"compose_digest": [{"root": "mct/compose", "ref": "*", "reason": "x", "owner": "supply-chain", "review_by": "2020-01-01"}]}
++EOF
++python3 "$CHECK" --repo "$WORK/multi" --lock "$WORK/multi/pins.lock" "${MULTI[@]}" \
++  --waivers "$WORK/multi/expired.json" >/dev/null 2>&1
++check "expired waiver exits 2" "2" "$?"
++
++printf '{oops' > "$WORK/multi/bad.json"
++python3 "$CHECK" --repo "$WORK/multi" --lock "$WORK/multi/pins.lock" "${MULTI[@]}" \
++  --waivers "$WORK/multi/bad.json" >/dev/null 2>&1
++check "malformed waivers exits 2" "2" "$?"
++
++python3 "$CHECK" --repo "$WORK/multi" --lock "$WORK/multi/pins.lock" \
++  --compose-dir "$WORK/multi/does-not-exist" >/dev/null 2>&1
++check "missing declared root exits 2" "2" "$?"
++
+ echo "compose_digest_check_test: $((CHECKS - FAILS))/$CHECKS checks passed"
+ [ "$FAILS" -eq 0 ] || exit 1
+ exit 0
+diff --git a/automation/validation/tests/sbom_coverage_and_hashes_test.sh b/automation/validation/tests/sbom_coverage_and_hashes_test.sh
+index 308aa82..8be869f 100755
+--- a/automation/validation/tests/sbom_coverage_and_hashes_test.sh
++++ b/automation/validation/tests/sbom_coverage_and_hashes_test.sh
+@@ -76,6 +76,39 @@ cat > "$WORK/sbom/reg.example_a_1.cdx.json" <<EOF
+ {"bomFormat":"CycloneDX","metadata":{"component":{"name":"reg.example/a:1","purl":"pkg:oci/a@${DIG_A}","properties":[]}},"components":[{"licenses":[{"license":{"id":"MIT"}}]}]}
+ EOF
+ 
++# 3b. Vulnerability gate (SUPPLY-P1-002): a pinned image without a scan fails unless it is
++# explicitly waived; a malformed/expired waiver fails closed.
++cat > "$WORK/vuln-waivers.json" <<EOF
++{"vuln_scan_pending":[
++ {"image":"reg.example/a:1","reason":"fixture scan pending","owner":"security","review_by":"2099-01-01"},
++ {"image":"reg.example/b","reason":"fixture scan pending","owner":"security","review_by":"2099-01-01"}
++]}
++EOF
++out="$(bash "$COVERAGE" --lock "$WORK/lock2.json" --sbom-dir "$WORK/sbom" \
++  --require-vuln --vuln-waivers "$WORK/vuln-waivers.json" 2>&1)"; rc=$?
++check "waived vuln coverage exits 0" "0" "$rc"
++contains "pending vuln counted" "vuln_pending=2" "$out"
++contains "no unwaived vuln missing" "vuln_missing=0" "$out"
++
++bash "$COVERAGE" --lock "$WORK/lock2.json" --sbom-dir "$WORK/sbom" --require-vuln >/dev/null 2>&1
++check "unwaived missing vuln scan exits 1" "1" "$?"
++
++cat > "$WORK/vuln-expired.json" <<EOF
++{"vuln_scan_pending":[{"image":"reg.example/a:1","reason":"x","owner":"security","review_by":"2020-01-01"}]}
++EOF
++bash "$COVERAGE" --lock "$WORK/lock2.json" --sbom-dir "$WORK/sbom" \
++  --require-vuln --vuln-waivers "$WORK/vuln-expired.json" >/dev/null 2>&1
++check "expired vuln waiver exits 2" "2" "$?"
++
++printf '{oops' > "$WORK/vuln-bad.json"
++bash "$COVERAGE" --lock "$WORK/lock2.json" --sbom-dir "$WORK/sbom" \
++  --require-vuln --vuln-waivers "$WORK/vuln-bad.json" >/dev/null 2>&1
++check "malformed vuln waivers exits 2" "2" "$?"
++
++bash "$COVERAGE" --lock "$WORK/lock2.json" --sbom-dir "$WORK/sbom" \
++  --require-vuln --vuln-waivers "$WORK/does-not-exist.json" >/dev/null 2>&1
++check "missing vuln waivers exits 2" "2" "$?"
++
+ # 4. Unparsable lock: environment error, exit 2.
+ printf 'not-json\n' > "$WORK/bad-lock.json"
+ bash "$COVERAGE" --lock "$WORK/bad-lock.json" --sbom-dir "$WORK/sbom" >/dev/null 2>&1
+diff --git a/ci/validate.py b/ci/validate.py
+index bcef0ce..d605187 100755
+--- a/ci/validate.py
++++ b/ci/validate.py
+@@ -124,12 +124,16 @@ def check_compose_pins():
+ 
+ 
+ def check_compose_digests():
+-    """SC-P3-001: full repo@digest comparison against pins/images.lock."""
+-    proc = subprocess.run(
+-        [sys.executable, os.path.join(REPO, "automation", "validation",
+-                                      "check_compose_digests.py")],
+-        capture_output=True, text=True,
+-    )
++    """SC-P3-001 / SUPPLY-P1-001: full repo@digest comparison against pins/images.lock
++    over every declared compose root, with explicit owner waivers (no silent skips)."""
++    cmd = [sys.executable, os.path.join(REPO, "automation", "validation",
++                                        "check_compose_digests.py")]
++    for root in ("compose", "mct/compose", "automation/wazuh"):
++        cmd += ["--compose-dir", os.path.join(REPO, root)]
++    waivers = os.path.join(REPO, "pins", "supply-chain-waivers.json")
++    if os.path.exists(waivers):
++        cmd += ["--waivers", waivers]
++    proc = subprocess.run(cmd, capture_output=True, text=True)
+     if proc.returncode != 0:
+         fail("compose digest cross-check")
+         print(proc.stdout, end="")
+@@ -138,6 +142,22 @@ def check_compose_digests():
+         ok("compose digest cross-check")
+ 
+ 
++def check_sbom_vuln():
++    """SUPPLY-P1-002: every pinned image must have a vulnerability scan for the gate to
++    pass; images awaiting the next scanner refresh are listed in the supply-chain waiver
++    file (explicit, owner-owned, review-by dated). Fails closed on a missing/expired waiver."""
++    script = os.path.join(REPO, "automation", "validation", "sbom_coverage_check.sh")
++    waivers = os.path.join(REPO, "pins", "supply-chain-waivers.json")
++    proc = subprocess.run(["bash", script, "--require-vuln", "--vuln-waivers", waivers],
++                          capture_output=True, text=True)
++    if proc.returncode != 0:
++        fail("sbom vulnerability coverage")
++        print(proc.stdout, end="")
++        print(proc.stderr, end="")
++    else:
++        ok("sbom vulnerability coverage")
++
++
+ def check_gate_ledger():
+     path = os.path.join(REPO, "ledgers", "gate_ledger.csv")
+     if not os.path.exists(path):
+@@ -382,6 +402,7 @@ CHECKS = {
+     "parsers": check_parsers,
+     "compose-pins": check_compose_pins,
+     "compose-digests": check_compose_digests,
++    "sbom-vuln": check_sbom_vuln,
+     "shell-syntax": check_shell_syntax,
+     "shellcheck": check_shellcheck,
+     "credential-sourcing": check_credential_sourcing,
+diff --git a/pins/README.md b/pins/README.md
+index 00114ab..a80ce2a 100644
+--- a/pins/README.md
++++ b/pins/README.md
+@@ -12,6 +12,21 @@ this deployment. Rules:
+    enforces this.
+ 5. Changing a pin requires a new lock entry plus evidence of the new digest.
+ 
++## Supply-chain waivers
++
++`pins/supply-chain-waivers.json` is the explicit, owner-visible exception list for the two
++supply-chain gates (`SUPPLY-P1-001`/`002`):
++
++- `compose_digest`: findings the digest cross-check may report without failing (each entry
++  names a compose root, an image-ref glob, a reason, an owner and a `review_by` date).
++- `vuln_scan_pending`: pinned images still awaiting a Trivy vulnerability scan under
++  `--require-vuln` (see `docs/phase7/IMAGE_SCAN_DISPOSITION.md`, `SBOM-P2-003`).
++
++Both gates fail closed: an unwaived finding, a missing/malformed waiver file, or a waiver
++past its `review_by` date fails the check. Waiving is an owner decision recorded alongside
++`ledgers/exception_register.md`.
++
++
+ Format:
+ 
+ ```json
+diff --git a/pins/supply-chain-waivers.json b/pins/supply-chain-waivers.json
+new file mode 100644
+index 0000000..7163f16
+--- /dev/null
++++ b/pins/supply-chain-waivers.json
+@@ -0,0 +1,47 @@
++{
++  "_comment": "Owner-visible, expiring waivers for the supply-chain gates (SUPPLY-P1-001/002). The gates fail closed on any finding not listed here, on a missing malformed file, or on an expired review_by. Recorded alongside the exception register (ledgers/exception_register.md); changing a waiver is an owner decision.",
++  "compose_digest": [
++    {
++      "root": "mct/compose",
++      "ref": "*",
++      "reason": "TB-8: the vendored MCT compose tree is imported and not deployed; digests/pin/SBOM coverage are tracked separately by ARCH-P2-002 and FEAT-P2-001.",
++      "owner": "supply-chain",
++      "review_by": "2026-12-31"
++    },
++    {
++      "root": "automation/wazuh",
++      "ref": "elastiflow/flow-collector*",
++      "reason": "Digest-pinned flow-collector profile image is not yet recorded in pins/images.lock and its SBOM/vuln artifacts are pending (ARCH-P2-002).",
++      "owner": "supply-chain",
++      "review_by": "2026-12-31"
++    },
++    {
++      "root": "automation/wazuh",
++      "ref": "python:3-alpine@*",
++      "reason": "Digest-pinned helper image uses a different tag from the locked python:3.12-alpine; recording it is tracked by ARCH-P2-002.",
++      "owner": "supply-chain",
++      "review_by": "2026-12-31"
++    },
++    {
++      "root": "automation/wazuh",
++      "ref": "wazuh/wazuh-certs-generator:*",
++      "reason": "Generation-only helper image, not long-running; lock/SBOM coverage tracked by ARCH-P2-002.",
++      "owner": "supply-chain",
++      "review_by": "2026-12-31"
++    }
++  ],
++  "vuln_scan_pending": [
++    {"image": "falcon-opensearch-s3:2.19.6", "reason": "local build; scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "ghcr.io/dfir-iris/iriswebapp_db", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "ghcr.io/dfir-iris/iriswebapp_app", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "ghcr.io/dfir-iris/iriswebapp_nginx", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "rabbitmq:3-management-alpine", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "thinkst/opencanary", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "wazuh/wazuh-manager:4.14.7", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "wazuh/wazuh-indexer:4.14.7", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "wazuh/wazuh-dashboard:4.14.7", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "cloudflare/cloudflared:latest", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "python:3.12-alpine", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"},
++    {"image": "nginx:stable", "reason": "scan pending next trivy refresh (SBOM-P2-003 / IMAGE_SCAN_DISPOSITION.md)", "owner": "security", "review_by": "2026-12-31"}
++  ]
++}

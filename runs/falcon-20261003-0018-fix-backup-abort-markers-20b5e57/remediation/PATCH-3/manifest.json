@@ -1,0 +1,37 @@
+{
+    "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+    "patchSet": "PATCH-3",
+    "title": "Offsite retry/backoff + dead-letter (FEAT-P2-002)",
+    "repo": "MaineCyberTech/falcon",
+    "base": "main",
+    "baseSha": "430da82274af4c0821542627fdb9e6ab74afa826",
+    "branch": "remediation/patch-03-20261003-0018-fix-backup-abort-markers-20b5e57",
+    "commit": "2e049a94d5af532c67f452176e88f0f4c90a34ff",
+    "pr": "https://github.com/MaineCyberTech/falcon/pull/20",
+    "prMode": "draft",
+    "findings": [
+        "FEAT-P2-002"
+    ],
+    "filesChanged": [
+        "automation/validation/export_monitor_metrics.sh",
+        "automation/validation/tests/remediation_guards_test.sh",
+        "bootstrap/90-alerting.sh"
+    ],
+    "verification": [
+        "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py -> exit 0 (validation_failures=0, 30/30 shell suites)",
+        "bash automation/validation/tests/offsite_backup_reuse_test.sh -> exit 0 (checks=32 failures=0)",
+        "bash automation/validation/tests/offsite_upload_delta_test.sh -> exit 0 (checks=65 failures=0)",
+        "bash automation/validation/tests/remediation_guards_test.sh -> exit 0 (PASS remediation_guards)",
+        "shellcheck --severity=warning automation/validation/export_monitor_metrics.sh bootstrap/90-alerting.sh automation/validation/tests/remediation_guards_test.sh -> exit 0",
+        "gitleaks detect --no-git --redact --source . -> exit 0 (no leaks found)"
+    ],
+    "verifyLog": {
+        "sha256": "80ec0566f9383584e7ef4f5a873c3ebebf2f3c8231859eff22082f8d3204a2f8",
+        "path": "remediation/PATCH-3/verify.log"
+    },
+    "diffPatch": {
+        "sha256": "ae6f72dd0d1289b5c07a24f969f8b10a1fc37192652fc8c6fc8b1851000e0575",
+        "path": "remediation/PATCH-3/diff.patch"
+    },
+    "generated": "2026-10-03T12:30:00Z"
+}

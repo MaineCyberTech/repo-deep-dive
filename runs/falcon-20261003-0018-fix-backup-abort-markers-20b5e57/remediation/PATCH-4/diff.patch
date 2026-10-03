@@ -1,0 +1,119 @@
+diff --git a/automation/validation/heartbeat.sh b/automation/validation/heartbeat.sh
+index ca75c38..827d206 100755
+--- a/automation/validation/heartbeat.sh
++++ b/automation/validation/heartbeat.sh
+@@ -2,10 +2,38 @@
+ # Dead-man heartbeat (Phase 9 WS6 prototype): publish a low-priority liveness message to the
+ # alert topic. If the heartbeat stops, the absence is visible to the subscriber. In production
+ # the publisher must run outside the monitored central stack (P9-G07 is owner-gated on that).
++#
++# OBS-P0-001 (2026-10-03): the heartbeat is the liveness signal the independent watcher
++# (automation/alerting/do_watcher/watch.sh) uses to detect lab death. It must not depend on
++# the node-exporter textfile collector, and it publishes to the independent ntfy failure
++# domain as well as the lab topic so a monitoring/relay death does not silence the dead-man.
++# Paths/URLs are overridable for the offline regression test; secrets are never printed.
+ set -u
+-SEC=/srv/falcon/secrets
++SEC="${FALCON_SECRETS_DIR:-/srv/falcon/secrets}"
+ USER="$(cat "$SEC/ntfy_relay_user" 2>/dev/null || echo falcon-relay)"
+-PW="$(cat "$SEC/ntfy_relay_pw")"
++PW="$(cat "$SEC/ntfy_relay_pw" 2>/dev/null || true)"
++LAB_URL="${MON_HEARTBEAT_LAB_URL:-http://127.0.0.1:2586/falcon-alerts}"
++ALT_URL="${MON_HEARTBEAT_ALT_URL:-${MON_RELAY_ALT_URL:-https://ntfy.mainecybertech.us/falcon-alerts}}"
++MSG="falcon lab alive $(date -u +%FT%TZ)"
++
++# Primary: the lab topic (read by the lab's own subscribers).
+ curl -s -o /dev/null -w "heartbeat_publish=%{http_code}\n" \
+   -u "$USER:$PW" -H "Title: falcon heartbeat" -H "Priority: low" -H "Tags: heartbeat" \
+-  -d "falcon lab alive $(date -u +%FT%TZ)" "http://127.0.0.1:2586/falcon-alerts"
++  -d "$MSG" "$LAB_URL"
++rc=$?
++
++# Independent: the external failure domain, exact credentials/user-agent the relay uses.
++# Best effort - a missing independent credential must not make the lab publish fail, and a
++# failed independent publish must not mask the primary result (OBS-P0-001).
++ALT_USER="$(cat "$SEC/ntfy_alt_user" 2>/dev/null || true)"
++ALT_PW="$(cat "$SEC/ntfy_alt_pw" 2>/dev/null || true)"
++if [ -n "$ALT_USER" ] && [ -n "$ALT_PW" ]; then
++  curl -s -o /dev/null -w "heartbeat_publish_independent=%{http_code}\n" \
++    -A "Falcon-Alert-Relay/1.0" -u "$ALT_USER:$ALT_PW" \
++    -H "Title: falcon heartbeat" -H "Priority: low" -H "Tags: heartbeat" \
++    -d "$MSG" "$ALT_URL" || true
++else
++  echo "heartbeat_publish_independent=skipped (no independent credentials)"
++fi
++
++exit "$rc"
+diff --git a/automation/validation/tests/heartbeat_independence_test.sh b/automation/validation/tests/heartbeat_independence_test.sh
+new file mode 100644
+index 0000000..1da5405
+--- /dev/null
++++ b/automation/validation/tests/heartbeat_independence_test.sh
+@@ -0,0 +1,46 @@
++#!/usr/bin/env bash
++# Regression (OBS-P0-001): heartbeat.sh is the monitoring-death liveness signal. It must
++# publish to the independent ntfy failure domain in addition to the lab topic, with the same
++# user agent the relay uses, and it must not depend on the node-exporter textfile exporter.
++# Offline by design: curl is stubbed and no network/root/docker is used.
++set -u
++REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
++HB="$REPO_ROOT/automation/validation/heartbeat.sh"
++TMP="$(mktemp -d "${TMPDIR:-/tmp}/heartbeat-independence-XXXXXX")"
++trap 'rm -rf "$TMP"' EXIT
++
++mkdir -p "$TMP/bin" "$TMP/secrets"
++printf 'relay-user\n' > "$TMP/secrets/ntfy_relay_user"
++printf 'relay-pass\n' > "$TMP/secrets/ntfy_relay_pw"
++printf 'alt-user\n'   > "$TMP/secrets/ntfy_alt_user"
++printf 'alt-pass\n'   > "$TMP/secrets/ntfy_alt_pw"
++cat > "$TMP/bin/curl" <<'EOF'
++#!/usr/bin/env bash
++printf '%s\n' "$*" >> "$CURL_LOG"
++printf '200'
++EOF
++chmod +x "$TMP/bin/curl"
++
++export CURL_LOG="$TMP/curl.log"
++export PATH="$TMP/bin:$PATH"
++export FALCON_SECRETS_DIR="$TMP/secrets"
++export MON_HEARTBEAT_LAB_URL="http://lab.invalid/falcon-alerts"
++export MON_HEARTBEAT_ALT_URL="https://independent.invalid/falcon-alerts"
++
++if ! bash "$HB" > "$TMP/out" 2>&1; then
++  echo "FAIL: heartbeat.sh exited non-zero"; cat "$TMP/out"; exit 1
++fi
++
++grep -q "http://lab.invalid/falcon-alerts" "$CURL_LOG" \
++  || { echo "FAIL: lab publish missing"; exit 1; }
++grep -q "https://independent.invalid/falcon-alerts" "$CURL_LOG" \
++  || { echo "FAIL: independent publish missing"; exit 1; }
++grep -q -- "-A Falcon-Alert-Relay/1.0" "$CURL_LOG" \
++  || { echo "FAIL: independent publish user-agent missing"; exit 1; }
++
++# Static guard: the dead-man must not read the node-exporter textfile path.
++if grep -nE '/srv/falcon/textfile|textfile/' "$HB" >/dev/null; then
++  echo "FAIL: heartbeat.sh references the textfile exporter"; exit 1
++fi
++
++echo "PASS heartbeat_independence_test"
+diff --git a/bootstrap/90-alerting.sh b/bootstrap/90-alerting.sh
+index af9c011..0ee044a 100755
+--- a/bootstrap/90-alerting.sh
++++ b/bootstrap/90-alerting.sh
+@@ -595,6 +595,16 @@ write_rule "falcon-mom-series-absent" \
+   "Monitoring self-heartbeat missing" 'absent(falcon_metrics_last_run_timestamp_seconds) or absent(falcon_service_probe_last_run_timestamp_seconds) or absent(falcon_disk_guard_last_run_timestamp_seconds) or absent(falcon_edge_control_plane_scrape_timestamp) or absent(falcon_pair_check_last_run_timestamp_seconds) or absent(falcon_container_drift_last_run_timestamp_seconds) or absent(falcon_pipeline_e2e_last_success_timestamp_seconds) or absent(falcon_site_watcher_last_run_timestamp_seconds{site="do-server"})' "15m" "critical" \
+   "A monitoring self-timestamp is absent from Prometheus; the monitoring-of-monitoring path is blind (OBS-P1-003)."
+ 
++# OBS-P0-001 (2026-10-03): monitoring-death independence. The rules above read falcon_*
++# series that the node-exporter textfile collector manufactures; if an entire critical
++# scrape job disappears (a config regression or a scrape-path loss) no stale textfile value
++# exists for a threshold rule to catch. This rule alerts on the scraped `up` series itself
++# (not the textfile) when any critical monitoring job is absent from the target set, so
++# monitoring death is visible without depending on the same textfile path.
++write_rule "falcon-monitoring-scrape-absent" \
++  "Critical monitoring scrape job absent" 'absent(up{job="prometheus"}) or absent(up{job="node"}) or absent(up{job="vector-aggregator"}) or absent(up{job="grafana"})' "5m" "critical" \
++  "A critical monitoring scrape job (prometheus/node/vector-aggregator/grafana) is absent from Prometheus; monitoring-death detection must not depend solely on the node-exporter textfile collector (OBS-P0-001)."
++
+ log "provisioned rules:"
+ api GET "/api/v1/provisioning/alert-rules" | jq -r '.[].uid' 2>/dev/null || true
+ log "contact points:"

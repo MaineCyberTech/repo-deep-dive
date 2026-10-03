@@ -1,0 +1,35 @@
+{
+    "run":  "20261003-0018-fix-backup-abort-markers-20b5e57",
+    "patchSet":  "PATCH-1",
+    "title":  "Abort-marker contract (ARCH-P1-002)",
+    "repo":  "MaineCyberTech/falcon",
+    "base":  "main",
+    "baseSha":  "430da82274af4c0821542627fdb9e6ab74afa826",
+    "branch":  "remediation/patch-01-20261003-0018-fix-backup-abort-markers-20b5e57",
+    "commit":  "7a67d906de819e80a49f890dce693ecd595f8920",
+    "pr":  "https://github.com/MaineCyberTech/falcon/pull/18",
+    "prMode":  "draft",
+    "findings":  [
+                     "ARCH-P1-002"
+                 ],
+    "filesChanged":  [
+                         "automation/validation/tests/abort_marker_test.sh",
+                         "bootstrap/85-backup-job.sh",
+                         "bootstrap/lib.sh"
+                     ],
+    "verification":  [
+                         "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py -> exit 0 (validation_failures=0, 30/30 shell suites)",
+                         "bash automation/validation/tests/abort_marker_test.sh -> PASS abort_marker, exit 0",
+                         "shellcheck --severity=warning bootstrap/lib.sh bootstrap/85-backup-job.sh automation/validation/tests/abort_marker_test.sh -> exit 0",
+                         "gitleaks detect --no-git --redact --source . -> exit 0 (no leaks found)"
+                     ],
+    "verifyLog":  {
+                      "sha256":  "90722dff05941e8c0d6dd72a374a8ede4457a5ce55b597656b88066eccdc0000",
+                      "path":  "remediation/PATCH-1/verify.log"
+                  },
+    "diffPatch":  {
+                      "sha256":  "1a872e85dbc4afd9b502a3bc82eb960ec8e5c3b536f99a32b8b3f03f2ce11af0",
+                      "path":  "remediation/PATCH-1/diff.patch"
+                  },
+    "generated":  "2026-10-03T11:58:00Z"
+}

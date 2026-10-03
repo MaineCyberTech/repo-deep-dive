@@ -1,0 +1,31 @@
+{
+  "patchSet": "PATCH-6",
+  "findingIds": ["FINAL-P0-001", "HYG-P0-001", "HYG-P0-002"],
+  "findingIdsMappedByPlan": ["FINAL-P0-001", "HYG-P0-001"],
+  "branch": "remediation/PATCH-6-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "base": "main",
+  "baseSha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "commits": [
+    "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
+    "c8c86d14fd016959125a0dc0835b68a06b1f1a79"
+  ],
+  "headCommit": "c8c86d14fd016959125a0dc0835b68a06b1f1a79",
+  "declaredCommit": "8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf",
+  "pr": "https://github.com/MaineCyberTech/falcon/pull/15",
+  "generatedUtc": "2026-10-03T06:00:00Z",
+  "diffSha256": "75e45b7cf9721867415b21f053be2cb40e49409a553d9deb85a56b777e439566",
+  "runner": "WSL Ubuntu-24.04, clean LF git worktree /root/falcon-p6",
+  "commands": [
+    {"cmd": "python3 automation/validation/check_publication_equality.py --root .", "exit": 0, "note": "PASS"},
+    {"cmd": "bash automation/validation/tests/publication_equality_test.sh", "exit": 0, "note": "PASS (fails on mutated digest/commit)"},
+    {"cmd": "bash automation/validation/tests/digest_binding_check_test.sh", "exit": 0},
+    {"cmd": "bash automation/validation/tests/digest_verdict_consistency_test.sh", "exit": 0},
+    {"cmd": "FALCON_SIGNED_GUARD_OPTIONAL=1 bash automation/validation/verify_publication_chain.sh", "exit": 0, "note": "publication_chain_failures=0"},
+    {"cmd": "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py", "exit": 0, "note": "validation_failures=0; new publication-equality gate PASS"},
+    {"cmd": "gitleaks detect --no-git --source . --redact --config .gitleaks.toml", "exit": 0, "note": "gitleaks v8.30.1 pinned sha256; no leaks found"}
+  ],
+  "notRun": [
+    {"cmd": "signed delivery archive hash checks", "reason": "archives absent on the remediation host; SKIP under FALCON_SIGNED_GUARD_OPTIONAL=1 and GITHUB_ACTIONS=true in CI"}
+  ],
+  "notes": "Two commits: the CI equality gate first (frozen commit 8e4c20c), then a publication-only rebind (c8c86d1) naming it. Digest and closeout now agree; verify_publication_chain.sh exits 0. Review-package rebuild (HYG-P1-001) is out of scope. Draft PR; never auto-merged."
+}

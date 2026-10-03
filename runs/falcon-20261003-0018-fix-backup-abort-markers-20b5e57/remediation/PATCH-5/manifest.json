@@ -1,0 +1,40 @@
+{
+    "run":  "20261003-0018-fix-backup-abort-markers-20b5e57",
+    "patchSet":  "PATCH-5",
+    "title":  "Supply-chain gate scope + vuln gate",
+    "repo":  "MaineCyberTech/falcon",
+    "base":  "main",
+    "baseSha":  "430da82274af4c0821542627fdb9e6ab74afa826",
+    "branch":  "remediation/patch-05-20261003-0018-fix-backup-abort-markers-20b5e57",
+    "commit":  "5c6c537857a6d0de7ec2b58a26356c72dad0d284",
+    "pr":  "https://github.com/MaineCyberTech/falcon/pull/17",
+    "prMode":  "draft",
+    "findings":  [
+                     "SUPPLY-P1-001",
+                     "SUPPLY-P1-002"
+                 ],
+    "filesChanged":  [
+                         ".github/workflows/validate.yml",
+                         "automation/validation/check_compose_digests.py",
+                         "automation/validation/sbom_coverage_check.sh",
+                         "automation/validation/tests/compose_digest_check_test.sh",
+                         "automation/validation/tests/sbom_coverage_and_hashes_test.sh",
+                         "ci/validate.py",
+                         "pins/README.md",
+                         "pins/supply-chain-waivers.json"
+                     ],
+    "verification":  [
+                         "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py -\u003e exit 0 (validation_failures=0)",
+                         "bash automation/validation/tests/compose_digest_check_test.sh -\u003e 25/25 passed",
+                         "bash automation/validation/tests/sbom_coverage_and_hashes_test.sh -\u003e 25/25 passed"
+                     ],
+    "verifyLog":  {
+                      "sha256":  "0e33882b6827b9c13225126e5adb710bd1a0c79b39a65cb1cae5e051d21b0a3f",
+                      "path":  "remediation/PATCH-5/verify.log"
+                  },
+    "diffPatch":  {
+                      "sha256":  "10fff27b775e362293eea87c9ae935fefbf2d72ad5eb4d2dcfdf20f0046f2bdb",
+                      "path":  "remediation/PATCH-5/diff.patch"
+                  },
+    "generated":  "2026-10-03T07:45:35.9382264-04:00"
+}

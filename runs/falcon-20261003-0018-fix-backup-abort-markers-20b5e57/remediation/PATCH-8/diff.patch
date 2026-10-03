@@ -1,0 +1,273 @@
+diff --git a/automation/validation/tests/exposure_edges_test.sh b/automation/validation/tests/exposure_edges_test.sh
+new file mode 100644
+index 0000000..0d9044e
+--- /dev/null
++++ b/automation/validation/tests/exposure_edges_test.sh
+@@ -0,0 +1,57 @@
++#!/usr/bin/env bash
++# Regression guards for the exposure-edge fixes (SEC-P1-001/002/003).
++#
++# Cheap static checks over the files the fix touched. Offline by design (no root,
++# docker, network or /srv); runs in ci/validate.py's shell-test suite.
++# Exit 0 = all guards present.
++set -u
++REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
++fail=0
++
++check() {  # <relative-path> <extended-regex> <description>
++  local file="$1" pat="$2" desc="$3"
++  if [ ! -f "$REPO_ROOT/$file" ]; then
++    echo "FAIL: $file missing"; fail=1; return
++  fi
++  if ! grep -qE "$pat" "$REPO_ROOT/$file"; then
++    echo "FAIL: $file: $desc"; fail=1
++  fi
++}
++
++check_absent() {  # <relative-path> <extended-regex> <description>
++  local file="$1" pat="$2" desc="$3"
++  if [ ! -f "$REPO_ROOT/$file" ]; then
++    echo "FAIL: $file missing"; fail=1; return
++  fi
++  if grep -qE "$pat" "$REPO_ROOT/$file"; then
++    echo "FAIL: $file still matches: $desc"; fail=1
++  fi
++}
++
++NFT=config/nftables/falcon.nft
++OC=compose/mct/docker-compose.opencanary.yml
++INB=bootstrap/32-inbound-mode.sh
++DOC=docs/architecture/PORT_PROTOCOL_MATRIX.md
++
++# SEC-P1-002: the blanket wg0 accept is gone; explicit per-port tunnel allows replace it.
++check_absent "$NFT" 'iifname "wg0" accept[[:space:]]+comment' "blanket wg0 accept"
++check "$NFT" 'iifname "wg0" tcp dport 9443 accept' "wg0 9443 allow"
++check "$NFT" 'iifname "wg0" tcp dport \{ 15140, 15141 \} accept' "wg0 Wazuh proxy allow"
++check "$NFT" 'iifname "wg0" udp dport \{ 514, 2055 \} accept' "wg0 syslog/NetFlow allow"
++
++# SEC-P1-001: decoy ports must carry an explicit host bind, not a bare all-interface map.
++check_absent "$OC" '^[[:space:]]*- "21:21"' "bare opencanary port bind"
++check "$OC" '\$\{OPENCANARY_BIND_ADDR:-[0-9.]+\}:21:21' "opencanary 21 bind address"
++check "$OC" '\$\{OPENCANARY_BIND_ADDR:-[0-9.]+\}:9100:9100' "opencanary 9100 bind address"
++
++# SEC-P1-003: the runtime state file is authoritative and every toggle is recorded.
++check "$INB" 'inbound-mode-ledger\.md' "runtime inbound ledger"
++check "$INB" 'record_toggle' "toggle recorder"
++check "$INB" 'DRIFT: recorded' "status drift check"
++check "$DOC" 'authoritative' "matrix authority note"
++
++if [ "$fail" -eq 0 ]; then
++  echo "PASS exposure_edges"
++else
++  exit 1
++fi
+diff --git a/bootstrap/32-inbound-mode.sh b/bootstrap/32-inbound-mode.sh
+index 41c1419..46de75f 100755
+--- a/bootstrap/32-inbound-mode.sh
++++ b/bootstrap/32-inbound-mode.sh
+@@ -11,7 +11,20 @@ source "$(dirname "$0")/lib.sh"
+ require_root
+ 
+ MODE="${1:-status}"
+-STATE="/srv/falcon/compose-state/inbound-mode"
++STATE_DIR="/srv/falcon/compose-state"
++# The runtime state file is authoritative (SEC-P1-003). Every toggle is appended to the
++# runtime ledger below so the host's actual exposure is auditable without reading ledgers
++# that can drift; `status` reconciles the file against the live nft policy and fails closed
++# on unknown or mismatched state.
++STATE="$STATE_DIR/inbound-mode"
++LEDGER="$STATE_DIR/inbound-mode-ledger.md"
++
++record_toggle() {  # <mode> [source]
++  mkdir -p "$STATE_DIR"
++  printf '%s\n' "$1" > "$STATE"
++  [ -f "$LEDGER" ] || printf '# Inbound-mode ledger (append-only)\n\n| When (UTC) | Mode | Source |\n|---|---|---|\n' >> "$LEDGER"
++  printf '| %s | %s | %s |\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" "${2:-32-inbound-mode.sh}" >> "$LEDGER"
++}
+ 
+ case "$MODE" in
+   open)
+@@ -21,7 +34,7 @@ case "$MODE" in
+     nft -f /etc/nftables.conf
+     iptables -F DOCKER-USER
+     iptables -A DOCKER-USER -m comment --comment "falcon-lab: temporary open inbound" -j RETURN
+-    echo open > "$STATE"
++    record_toggle open
+     log "inbound mode is now: open (all sources accepted; SSH new connections rate-limited)"
+     ;;
+   closed)
+@@ -29,7 +42,7 @@ case "$MODE" in
+     # Record the mode before applying the DOCKER-USER rules: 31-docker-user-firewall.sh
+     # reads the state file to decide between the allowlist and allow-all, so writing it
+     # afterwards left the forwarded path open (finding C-30).
+-    echo closed > "$STATE"
++    record_toggle closed
+     install -m 0644 "$REPO_ROOT/config/nftables/falcon.nft" /etc/nftables.conf
+     nft -c -f /etc/nftables.conf
+     nft -f /etc/nftables.conf
+@@ -37,10 +50,22 @@ case "$MODE" in
+     log "inbound mode is now: closed (default-deny with allowlists)"
+     ;;
+   status)
+-    if [ -f "$STATE" ]; then
+-      log "recorded mode: $(cat "$STATE")"
+-    else
+-      log "no state file; recorded mode: unknown"
++    recorded="unknown"
++    [ -f "$STATE" ] && recorded="$(cat "$STATE" 2>/dev/null || echo unknown)"
++    live="unknown"
++    pol="$(nft list chain inet falcon_filter input 2>/dev/null \
++      | sed -n 's/.*policy \([a-z]*\).*/\1/p' | head -1)"
++    case "$pol" in accept) live="open" ;; drop) live="closed" ;; esac
++    log "recorded mode: $recorded (authoritative state file: $STATE)"
++    log "live input policy: ${pol:-unknown} -> mode ${live}"
++    [ -f "$LEDGER" ] && { log "recent toggles:"; tail -n 5 "$LEDGER"; }
++    if [ "$recorded" = "unknown" ]; then
++      log "no recorded state; cannot confirm exposure (fail closed)"
++      exit 1
++    fi
++    if [ "$recorded" != "$live" ]; then
++      log "DRIFT: recorded '$recorded' != live '$live'; reconcile before trusting records"
++      exit 1
+     fi
+     nft list chain inet falcon_filter input | head -4
+     iptables -S DOCKER-USER
+diff --git a/compose/mct/docker-compose.opencanary.yml b/compose/mct/docker-compose.opencanary.yml
+index 18b07aa..b41dd09 100644
+--- a/compose/mct/docker-compose.opencanary.yml
++++ b/compose/mct/docker-compose.opencanary.yml
+@@ -24,13 +24,16 @@ services:
+     restart: unless-stopped
+     environment:
+       OPENCANARY_SYSLOG_ADDRESS: ${OPENCANARY_SYSLOG_TARGET:-multi-node-wazuh.master-1:514}
++    # SEC-P1-001: bind the decoy ports to the management interface instead of 0.0.0.0,
++    # so exposure no longer depends solely on the host firewall/DOCKER-USER allowlist.
++    # Override OPENCANARY_BIND_ADDR for a different management address.
+     ports:
+-      - "21:21"
+-      - "23:23"
+-      - "3306:3306"
+-      - "1433:1433"
+-      - "9100:9100"
+-      - "8008:8008"
++      - "${OPENCANARY_BIND_ADDR:-192.168.222.228}:21:21"
++      - "${OPENCANARY_BIND_ADDR:-192.168.222.228}:23:23"
++      - "${OPENCANARY_BIND_ADDR:-192.168.222.228}:3306:3306"
++      - "${OPENCANARY_BIND_ADDR:-192.168.222.228}:1433:1433"
++      - "${OPENCANARY_BIND_ADDR:-192.168.222.228}:9100:9100"
++      - "${OPENCANARY_BIND_ADDR:-192.168.222.228}:8008:8008"
+     volumes:
+       - /opt/mct-security-stack/data/opencanary/opencanary.conf:/root/.opencanary.conf:ro
+       - opencanary-logs:/var/log/opencanary
+diff --git a/config/nftables/falcon.nft b/config/nftables/falcon.nft
+index 16ac021..0a6619d 100644
+--- a/config/nftables/falcon.nft
++++ b/config/nftables/falcon.nft
+@@ -21,7 +21,16 @@ table inet falcon_filter {
+     udp sport 67 udp dport 68 accept comment "DHCP client replies"
+ 
+     udp dport 5182 accept comment "WireGuard telemetry VPN endpoint (site peers)"
+-    iifname "wg0" accept comment "authenticated WireGuard tunnel traffic (probe telemetry)"
++    # SEC-P1-002: narrow the former blanket `iifname "wg0" accept`, which let every
++    # authenticated peer reach every host service and become a broad foothold. The set
++    # below is the documented tunnel trust set (PORT_PROTOCOL_MATRIX.md N-24 addendum):
++    # edge control-plane ingest, Wazuh tunnel proxies, and the tunnel syslog/flow paths.
++    # Verify this set against the live tunnel listeners before deploying; rollback is
++    # re-applying this file (the only change is this single chain).
++    iifname "wg0" tcp dport 9443 accept comment "edge control plane mTLS (sensor ingest)"
++    iifname "wg0" tcp dport { 15140, 15141 } accept comment "Wazuh tunnel proxies (agent + enrollment)"
++    iifname "wg0" tcp dport { 514, 1514, 1515 } accept comment "tunnel syslog paths"
++    iifname "wg0" udp dport { 514, 2055 } accept comment "tunnel syslog/NetFlow paths"
+ 
+     tcp dport 22 ip saddr 192.168.222.0/24 accept comment "SSH from management subnet"
+     tcp dport 22 ip saddr 192.168.111.0/24 accept comment "SSH from admin subnet (owner access preservation)"
+diff --git a/docs/architecture/PORT_PROTOCOL_MATRIX.md b/docs/architecture/PORT_PROTOCOL_MATRIX.md
+index d323deb..18b72aa 100644
+--- a/docs/architecture/PORT_PROTOCOL_MATRIX.md
++++ b/docs/architecture/PORT_PROTOCOL_MATRIX.md
+@@ -1,11 +1,14 @@
+ # Port and Protocol Matrix — Lab Baseline (Phase 0)
+ 
+-> **CLOSED (2026-09-22):** the owner directed closing the temporary open inbound access; default-deny with the documented allowlists is active again. Historical note: the owner directed temporary open inbound access
+-> ("allow external public everything for now till we figure out"). While this is in force the
+-> host input policy is `accept` for all sources and DOCKER-USER allows all forwarded ports;
+-> the default-deny baseline and allowlists described below are suspended. SSH new connections
+-> are rate-limited and fail2ban is active. Revert with `bootstrap/32-inbound-mode.sh closed`
+-> and re-run the negative tests above. Recorded as EX-13 / R-16.
++> **Inbound mode: CLOSED** (owner-directed window opened 2026-09-21, closed 2026-09-22);
++> default-deny with the documented allowlists is active. The **authoritative** source of truth
++> is the host runtime state file `/srv/falcon/compose-state/inbound-mode`, with every toggle
++> appended to `/srv/falcon/compose-state/inbound-mode-ledger.md`; `bootstrap/32-inbound-mode.sh
++> status` reconciles the state file against the live `nft` input policy and exits non-zero on
++> `unknown` or drift (SEC-P1-003). Historical (2026-09-21 to 2026-09-22): the temporary window
++> set the host input policy to `accept` for all sources and DOCKER-USER allowed all forwarded
++> ports, suspending the baseline and allowlists below; SSH new connections were rate-limited
++> and fail2ban active. Recorded as EX-13 / R-16.
+ 
+ No port is opened merely because it appeared in planning notes. Every row has a purpose, an
+ exposure class, and a negative test. Lab entries marked `PRIVATE` are reachable only from the
+@@ -57,16 +60,18 @@ Corrections:
+ - **N-07**: host `9100` is the OpenCanary decoy (N-22), not the node-exporter; the
+   Prometheus exporters (9100/8080/9187) are container-internal only.
+ - **N-20**: the live WireGuard endpoint is **UDP 5182** (the matrix said 51820).
+-- **N-24** (2026-10-01, ARCH-P2-001): the live input chain's blanket `iifname "wg0" accept`
+-  covers `0.0.0.0:9443`, so every WireGuard peer can reach the control plane directly; no
+-  per-port `dport 9443` rule exists, while LAN/internet remain default-dropped. See the N-24
+-  addendum at the end of this file for the verified evidence and the decision.
++- **N-24** (2026-10-01, ARCH-P2-001): at capture time the live input chain's blanket
++  `iifname "wg0" accept` covered `0.0.0.0:9443`, so every WireGuard peer could reach the
++  control plane directly; no per-port `dport 9443` rule existed, while LAN/internet remained
++  default-dropped. **Remediated (SEC-P1-002):** the blanket rule is replaced by explicit
++  per-port wg0 allows (see the N-24 addendum at the end of this file for the verified evidence
++  and the applied set).
+ 
+ Reconciled live binds:
+ 
+ | ID | Source | Destination | Proto/Port | Bind | Purpose | Enforcement | Exposure | Negative test |
+ |---|---|---|---|---|---|---|---|---|
+-| N-22 | mgmt + admin subnets | falcon:21/23/3306/1433/8008/9100 | TCP | 0.0.0.0 (opencanary) | OpenCanary honeypot decoys (intentional; no real services) | DOCKER-USER (mgmt/admin RETURN; default DROP) | PRIVATE (allowlist) | non-allowlisted sources hit the DOCKER-USER default DROP |
++| N-22 | mgmt + admin subnets | falcon:21/23/3306/1433/8008/9100 | TCP | 192.168.222.228 (opencanary, management interface; override `OPENCANARY_BIND_ADDR`) | OpenCanary honeypot decoys (intentional; no real services) | host bind to the management interface (SEC-P1-001) + DOCKER-USER (mgmt/admin RETURN; default DROP) | PRIVATE (management interface + allowlist) | decoys are not bound on 0.0.0.0; non-allowlisted sources hit the DOCKER-USER default DROP |
+ | N-23 | agent fleet (VPN/LAN only) | falcon:1516 -> worker:1514, 1517 -> master:1515, 1518 -> master:15140 | TCP; 1518 also UDP | 0.0.0.0 (DNAT) | Wazuh agent, enrollment and agent-syslog paths | DOCKER-USER: no 1516/1517 rule (the final DROP applies; closed 2026-10-01, SEC-P2-005); 1518 covered by the mgmt/admin RETURN; agents use the VPN proxies 15140/15141 | PRIVATE for 1516/1517 (host-level closed); PRIVATE for 1518 | 1516/1517 dropped for all sources (rollback in `bootstrap/31-docker-user-firewall.sh`); the UDM Pro gateway forward was paused by the owner 2026-10-02 (permanent removal optional) |
+ | N-24 | operator (Traefik front / loopback) | falcon:9443 | TCP | 0.0.0.0 (python falcon_control) | edge control plane API | no host-firewall allow rule (default DROP from external sources); operator path via the Traefik front (8443 DNAT -> CP) | PRIVATE (default-deny + Traefik) | direct probe from a non-loopback source dropped |
+ | N-25 | Traefik (docker bridges) | falcon:8791 | TCP | 0.0.0.0 (python enroll-service) | client VPN peer enrollment (public path via Cloudflare -> Traefik) | host nftables (br-*/docker0 allow only) | PRIVATE (bridge-only) | LAN/internet sources dropped |
+@@ -99,25 +104,23 @@ listener capture (`evidence/raw/ARCH-P2-001/20261001T190937Z_ss-listeners-9443.o
+   rule (default DROP from external sources)" wording is accurate for LAN/internet but
+   incomplete for the tunnel.
+ 
+-**Decision (recommended): keep the intended wg0 trust set — sensor ingest needs `wg0 -> 9443`
+-— correct the N-24 wording, and do not add a redundant `iifname "wg0" tcp dport 9443 accept`
+-rule while the blanket wg0 accept stands.** The defense-in-depth residual (every peer, not
+-only the sensor, can reach the CP; mTLS is the only application gate) stays recorded for the
+-owner. The meaningful hardening is to narrow the blanket tunnel accept to explicit per-port
+-allows; that is a runtime-mutating firewall change and is **prepared but NOT applied** (needs
+-a rollback note + owner awareness, per `AGENTS.md` rule 6).
++**Decision: keep the intended wg0 trust set — sensor ingest needs `wg0 -> 9443` — and narrow
++the blanket tunnel accept to explicit per-port allows (SEC-P1-002).** The defense-in-depth
++residual (every peer, not only the sensor, could reach the CP; mTLS is the only application
++gate) is resolved at the config level by the per-port rules below; `config/nftables/falcon.nft`
++no longer contains the blanket `iifname "wg0" accept`.
+ 
+-Prepared narrowing (not applied; derive/verify the exact set from this matrix and the live
+-tunnel listeners before applying):
++Applied narrowing (`config/nftables/falcon.nft`; SEC-P1-002). Verify this set against the live
++tunnel listeners before the next deploy, since the syslog/NetFlow paths are marked `(verify)`:
+ 
+ ```
+-- iifname "wg0" accept comment "authenticated WireGuard tunnel traffic (probe telemetry)"
+-+ iifname "wg0" tcp dport 9443 accept comment "edge control plane mTLS (sensor ingest)"
+-+ iifname "wg0" tcp dport { 15140, 15141 } accept comment "Wazuh tunnel proxies (agent + enrollment)"
+-+ iifname "wg0" tcp dport { 514, 1514, 1515 } accept comment "tunnel syslog paths (verify)"
+-+ iifname "wg0" udp dport { 514, 2055 } accept comment "tunnel syslog/NetFlow paths (verify)"
++iifname "wg0" tcp dport 9443 accept comment "edge control plane mTLS (sensor ingest)"
++iifname "wg0" tcp dport { 15140, 15141 } accept comment "Wazuh tunnel proxies (agent + enrollment)"
++iifname "wg0" tcp dport { 514, 1514, 1515 } accept comment "tunnel syslog paths"
++iifname "wg0" udp dport { 514, 2055 } accept comment "tunnel syslog/NetFlow paths"
+ ```
+ 
+-Rollback: re-apply `config/nftables/falcon.nft` via `bootstrap/30-firewall.sh` (or restore the
+-previous `/etc/nftables.conf`); the change is a single-chain edit and the current ruleset is
+-captured in the evidence above.
++Rollback: the change is a single-chain edit; restore the previous file
++(`git revert <commit>`) and re-apply `config/nftables/falcon.nft` via
++`bootstrap/30-firewall.sh` (or restore the previous `/etc/nftables.conf`); the pre-change
++ruleset is captured in the evidence above.

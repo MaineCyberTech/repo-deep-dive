@@ -1,7 +1,7 @@
 {
   "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
   "repo": "",
-  "generated": "2026-10-03T05:22:52Z",
+  "generated": "2026-10-03T06:04:47Z",
   "patchSets": [
     {
       "id": "PATCH-1",
@@ -111,7 +111,8 @@
       "title": "Release rebind + CI equality test (FINAL-P0-001, HYG-P0-001/002)",
       "findings": [
         "FINAL-P0-001",
-        "HYG-P0-001"
+        "HYG-P0-001",
+        "HYG-P0-002"
       ],
       "files": [
         "closeout/FINAL_RESPONSE.json",
@@ -153,7 +154,9 @@
       "id": "PATCH-8",
       "title": "Exposure edges (SEC-P1-001/002/003)",
       "findings": [
-        "SEC-P1-001"
+        "SEC-P1-001",
+        "SEC-P1-002",
+        "SEC-P1-003"
       ],
       "files": [
         "config/nftables/falcon.nft",
@@ -188,7 +191,6 @@
     "EXEC-P1-001",
     "FEAT-P2-001",
     "FINAL-P1-001",
-    "HYG-P0-002",
     "HYG-P1-001",
     "HYG-P1-002",
     "HYG-P2-001",
@@ -197,8 +199,6 @@
     "OBS-P1-001",
     "OBS-P1-002",
     "OBS-P1-003",
-    "SEC-P1-002",
-    "SEC-P1-003",
     "SEC-P2-001",
     "SEC-P2-002",
     "SEC-P3-001",

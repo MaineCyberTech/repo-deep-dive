@@ -1,0 +1,39 @@
+{
+    "run":  "20261003-0018-fix-backup-abort-markers-20b5e57",
+    "patchSet":  "PATCH-2",
+    "title":  "Extend the abort trap to all long-running jobs (ARCH-P2-005)",
+    "repo":  "MaineCyberTech/falcon",
+    "base":  "main",
+    "baseSha":  "430da82274af4c0821542627fdb9e6ab74afa826",
+    "branch":  "remediation/patch-02-20261003-0018-fix-backup-abort-markers-20b5e57",
+    "commit":  "38c18ef75ab115a5e6bce550bec49f2bb11bfa47",
+    "pr":  "https://github.com/MaineCyberTech/falcon/pull/19",
+    "prMode":  "draft",
+    "findings":  [
+                     "ARCH-P2-005"
+                 ],
+    "filesChanged":  [
+                         "automation/validation/r2_cold_copy.sh",
+                         "automation/validation/tests/abort_marker_test.sh",
+                         "automation/validation/tests/wazuh_indexer_backup_test.sh",
+                         "automation/validation/wazuh_indexer_backup.sh"
+                     ],
+    "verification":  [
+                         "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py -> exit 0 (validation_failures=0)",
+                         "bash automation/validation/tests/abort_marker_test.sh -> PASS abort_marker, exit 0",
+                         "bash automation/validation/tests/offsite_backup_reuse_test.sh -> exit 0 (checks=32 failures=0)",
+                         "bash automation/validation/tests/offsite_upload_delta_test.sh -> exit 0 (checks=65 failures=0)",
+                         "bash automation/validation/tests/wazuh_indexer_backup_test.sh -> exit 0 (checks=20 failures=0)",
+                         "shellcheck --severity=warning <changed shell files> -> exit 0",
+                         "gitleaks detect --no-git --redact --source . -> exit 0 (no leaks found)"
+                     ],
+    "verifyLog":  {
+                      "sha256":  "7a7f8e8e642c279d4e2dea31410bea483680069d4142cc789897fd6727dac746",
+                      "path":  "remediation/PATCH-2/verify.log"
+                  },
+    "diffPatch":  {
+                      "sha256":  "5a07ef40efae0f52520c5021d2e8373a6d9b4eb79d3e7c32906c2981493c3fb1",
+                      "path":  "remediation/PATCH-2/diff.patch"
+                  },
+    "generated":  "2026-10-03T12:15:00Z"
+}

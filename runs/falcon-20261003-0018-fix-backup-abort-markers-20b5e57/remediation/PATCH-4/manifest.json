@@ -1,0 +1,25 @@
+{
+  "patchSet": "PATCH-4",
+  "findingIds": ["OBS-P0-001"],
+  "branch": "remediation/PATCH-4-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "base": "main",
+  "baseSha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "commit": "ee883646a6cb9b08b14d24bbcb72f185150de959",
+  "pr": "https://github.com/MaineCyberTech/falcon/pull/14",
+  "generatedUtc": "2026-10-03T05:55:00Z",
+  "diffSha256": "b9e56cdb2517174374978adc686e0c1b6551d68d6aa3f20c1c71c98f1f0abfcf",
+  "runner": "WSL Ubuntu-24.04, clean LF git worktree /root/falcon-p4",
+  "commands": [
+    {"cmd": "bash -n automation/validation/heartbeat.sh", "exit": 0},
+    {"cmd": "bash -n bootstrap/90-alerting.sh", "exit": 0},
+    {"cmd": "bash -n automation/validation/tests/heartbeat_independence_test.sh", "exit": 0},
+    {"cmd": "bash automation/validation/tests/heartbeat_independence_test.sh", "exit": 0},
+    {"cmd": "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py --only parsers,shell-syntax,shell-tests", "exit": 0, "note": "31/31 shell suites pass"},
+    {"cmd": "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py", "exit": 0, "note": "validation_failures=0"},
+    {"cmd": "gitleaks detect --no-git --source . --redact --config .gitleaks.toml", "exit": 0, "note": "gitleaks v8.30.1 pinned sha256; no leaks found"}
+  ],
+  "notRun": [
+    {"cmd": "live staleness/absence firing drill against Prometheus/Grafana", "reason": "no live monitoring stack on the remediation host"}
+  ],
+  "notes": "Direct scrape additions for OBS-P0-001 were already present on main (65e18f1). This branch adds the remaining dead-man independence and scrape-absence rule. PR opened as draft; never auto-merged."
+}

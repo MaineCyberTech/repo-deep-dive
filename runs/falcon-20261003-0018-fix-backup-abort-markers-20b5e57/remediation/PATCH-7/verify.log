@@ -1,0 +1,63 @@
+# PATCH-7 (finding DATA-P1-001) - remediation attempt log
+run: 20261003-0018-fix-backup-abort-markers-20b5e57
+repo: MaineCyberTech/falcon  base: origin/main  captured: 2026-10-03T08:03:17.9014047-04:00
+outcome: BLOCKED - no code change, no commit, no PR (owner policy decision required; guardrail: do not guess)
+
+## 1. origin/main state
+$ git -C repo fetch origin
+430da82274af4c0821542627fdb9e6ab74afa826 2026-10-03 05:14:35 +0000 publication: pack-verified package manifest (ddb9eb9)
+
+## 2. No Wazuh/IRIS retention exists on origin/main
+$ git grep -i wazuh origin/main -- config/opensearch/
+origin/main:config/opensearch/README.md:the mixed EVE/syslog/Wazuh feeds add fields across versions and a rejected document is a lost
+origin/main:config/opensearch/falcon-eve-template.json:        "wazuh_agent_name": {
+origin/main:config/opensearch/falcon-eve-template.json:        "wazuh_manager": {
+origin/main:config/opensearch/falcon-eve-template.json:        "wazuh_rule_description": {
+origin/main:config/opensearch/falcon-eve-template.json:        "wazuh_rule_id": {
+origin/main:config/opensearch/falcon-eve-template.json:        "wazuh_rule_level": {
+wazuh_grep_exit=0
+$ git grep -i iris origin/main -- config/opensearch/
+
+iris_grep_exit=1
+$ git ls-tree origin/main config/opensearch/  (filtered to ism-policy)
+100644 blob cc257352fb8888055001a9af41f98e01cbfb2937	config/opensearch/falcon-auditlog-ism-policy.json
+100644 blob c6ef73ef7e984e38bc91eade708dd771190dcc83	config/opensearch/falcon-eve-ism-policy.json
+100644 blob 996d69f6794c9c5f0e6c2e51a2cf0e791c45adc4	config/opensearch/falcon-ism-history-ism-policy.json
+100644 blob 5c4d0c4c1cc845b95f18efb607051b5539bc7ec2	config/opensearch/falcon-test-cleanup-ism-policy.json
+100644 blob 3a8b1e50d8cdd6215c3dafe3e5bb569ab1f9fa64	config/opensearch/falcon-topqueries-ism-policy.json
+-> 5 policy files (eve, auditlog, topqueries, ism-history, test-cleanup); none for wazuh-* or IRIS
+
+## 3. Repo documents the gaps as owner-decision-gated
+$ git show origin/main:docs/runbooks/RETENTION_MATRIX.md | Select-String "GAP|Owner decision needed"
+| Wazuh alerts/archives/inventory/statistics | `wazuh-*`, `wazuh-monitoring-*` | **none configured (GAP)** | no ISM 
+policy exists on the Wazuh indexer cluster; the indices grow unbounded (audit PRIV-P2-002 residual) |
+Owner decision needed: the Wazuh estate retention (suggested: alerts 90 d, statistics 30 d, via an
+| IRIS case DB / downloads | **no retention (GAP)** | manual; owner decision for case-data lifecycle |
+
+$ git show origin/main:docs/phase9/OWNER_ACTIONS.md | Select-String "Wazuh-estate . IRIS retention"
+| C1 | **Wazuh-estate + IRIS retention** GÇö PRIV-P2-002, DR-P2-001 | Decide retention for the Wazuh indexer estate 
+(suggested: alerts 90 d, statistics 30 d via an ISM policy on the indexer cluster) and the IRIS case-data lifecycle 
+(retention + backup) | Suggested values are **suggestions only GÇö owner must confirm**; **no default for IRIS** | 
+Wazuh indices grow unbounded; IRIS case data has no retention/backup lifecycle | `docs/runbooks/RETENTION_MATRIX.md`; 
+`RESTORE.md` coverage matrix; `DATA_GOVERNANCE.md` |
+
+$ git show origin/main:docs/OWNER_DECISION_PACKAGE_2026-10-02.md | Select-String "Owner name"
+Owner name: ______________________  Signature: ______________________  UTC date: ____________
+(E-3 IRIS retention sign-off table is empty - undecided)
+
+$ git show origin/main:docs/audits/AUDIT_REMEDIATION_HANDOFF.md | Select-String "Wazuh/IRIS retention"
+- **Wazuh/IRIS retention** GÇö owner policy; the Wazuh indices live in a separate indexer.
+
+## 4. Why no patch fits the listed files
+- Wazuh indices live in a SEPARATE 3-node indexer cluster (multi-node-wazuh*.indexer-1, 127.0.0.1:9200), not the central falcon-central-opensearch-1 that bootstrap/61-search-policies.sh and ism_retention_metrics.sh manage. A config/opensearch/falcon-wazuh-ism-policy.json + POLICIES row would not reach that cluster (os_api execs in the central container only).
+- IRIS is a PostgreSQL case-management DB (compose/mct/iris-web), not an OpenSearch index; an ISM policy does not apply.
+- The retention WINDOW is explicitly an owner policy decision with NO default (RETENTION_MATRIX.md; OWNER_ACTIONS.md C1; OWNER_DECISION_PACKAGE E-3). Guessing violates the guardrail (stop and record an open question instead of guessing).
+- No prior fix on origin/main or any local remediation branch.
+
+## 5. Verification commands
+$ FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py   -> NOT RUN (no code change; baseline green at origin/main per AUDIT_REMEDIATION_HANDOFF.md, validation_failures=0)
+$ bash automation/validation/tests/ism_retention_metrics_test.sh -> NOT RUN (test only covers metric formatting/staleness; it does not assert retention coverage and there is no change to verify)
+
+## 6. Open question (owner input required before this can be fixed)
+- Wazuh indexer: confirm retention window (suggested alerts 90 d / statistics 30 d) and who applies ISM on the separate indexer cluster.
+- IRIS: confirm case-data retention/RPO and whether attachments/volumes are in scope (no default).

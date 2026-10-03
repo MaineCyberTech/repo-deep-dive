@@ -1,0 +1,157 @@
+diff --git a/automation/validation/tests/abort_marker_test.sh b/automation/validation/tests/abort_marker_test.sh
+index 6ef9768..a970547 100644
+--- a/automation/validation/tests/abort_marker_test.sh
++++ b/automation/validation/tests/abort_marker_test.sh
+@@ -1,6 +1,7 @@
+ #!/usr/bin/env bash
+-# Interrupt-safety regression test (audit RES-P0-001): the backup flow's abort trap must
+-# write a durable marker on SIGTERM and the job must clear it on clean completion.
++# Interrupt-safety regression test (audit RES-P0-001 / ARCH-P1-002): the backup flow's abort
++# trap must write a durable marker on SIGTERM, a normal failure exit must also leave a marker,
++# a stale marker must not be cleared at startup, and only a genuine clean completion clears it.
+ set -u
+ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+ TMP="$(mktemp -d "${TMPDIR:-/tmp}/abort-marker-XXXXXX")"
+@@ -34,15 +35,67 @@ FALCON_ABORT_DIR="$TMP" REPO_ROOT="$REPO_ROOT" bash -c '
+   exit 0
+ ' || { echo "FAIL abort_marker: clear path failed"; exit 1; }
+ 
+-# 3) the backup job installs the trap and clears the marker.
+-if ! grep -q 'install_abort_trap "falcon-backup"' "$REPO_ROOT/bootstrap/85-backup-job.sh"; then
++# 3) ARCH-P1-002: a normal failure exit (no signal) must also leave a marker, so a failed
++#    snapshot/error is not mistaken for a clean state on the next run.
++FALCON_ABORT_DIR="$TMP" REPO_ROOT="$REPO_ROOT" bash -c '
++  set -u
++  export REPO_ROOT FALCON_ABORT_DIR
++  # shellcheck source=/dev/null
++  . "$REPO_ROOT/bootstrap/lib.sh"
++  install_abort_trap "failure-exit"
++  install_failure_trap "failure-exit"
++  exit 1
++' || rc=$?
++if [ "${rc:-0}" -ne 1 ]; then
++  echo "FAIL abort_marker: failure-exit path changed status to ${rc:-0}"; exit 1
++fi
++if [ ! -f "$TMP/failure-exit.aborted" ]; then
++  echo "FAIL abort_marker: marker not written on a non-clean exit"; exit 1
++fi
++
++# 4) only an explicit clean completion (clear + mark_clean_exit) leaves no marker.
++FALCON_ABORT_DIR="$TMP" REPO_ROOT="$REPO_ROOT" bash -c '
++  set -u
++  export REPO_ROOT FALCON_ABORT_DIR
++  # shellcheck source=/dev/null
++  . "$REPO_ROOT/bootstrap/lib.sh"
++  install_abort_trap "clean-exit"
++  install_failure_trap "clean-exit"
++  clear_abort_marker "clean-exit"
++  mark_clean_exit "clean-exit"
++  exit 0
++' || { echo "FAIL abort_marker: clean completion path failed"; exit 1; }
++if [ -f "$TMP/clean-exit.aborted" ]; then
++  echo "FAIL abort_marker: clean completion left a marker"; exit 1
++fi
++
++# 5) a stale marker is surfaced at startup but not cleared early (ARCH-P1-002): the job must
++#    reference abort_marker_present, and clear_abort_marker must appear exactly once - as the
++#    final successful action - so the early-clear regression cannot return.
++JOB="$REPO_ROOT/bootstrap/85-backup-job.sh"
++if ! grep -q 'abort_marker_present "falcon-backup"' "$JOB"; then
++  echo "FAIL abort_marker: 85-backup-job.sh does not surface a stale marker"; exit 1
++fi
++clears="$(grep -c 'clear_abort_marker "falcon-backup"' "$JOB")"
++if [ "$clears" -ne 1 ]; then
++  echo "FAIL abort_marker: expected exactly one clear_abort_marker in 85-backup-job.sh, found $clears"; exit 1
++fi
++if ! grep -q 'mark_clean_exit "falcon-backup"' "$JOB"; then
++  echo "FAIL abort_marker: 85-backup-job.sh does not mark a clean exit"; exit 1
++fi
++if ! awk '/clear_abort_marker "falcon-backup"/{c=NR} /mark_clean_exit "falcon-backup"/{m=NR} END{exit !(m>c)}' "$JOB"; then
++  echo "FAIL abort_marker: mark_clean_exit must follow clear_abort_marker"; exit 1
++fi
++
++# 6) the backup job installs the traps.
++if ! grep -q 'install_abort_trap "falcon-backup"' "$JOB"; then
+   echo "FAIL abort_marker: 85-backup-job.sh does not install the trap"; exit 1
+ fi
+-if ! grep -q 'clear_abort_marker "falcon-backup"' "$REPO_ROOT/bootstrap/85-backup-job.sh"; then
+-  echo "FAIL abort_marker: 85-backup-job.sh does not clear the marker"; exit 1
++if ! grep -q 'install_failure_trap "falcon-backup"' "$JOB"; then
++  echo "FAIL abort_marker: 85-backup-job.sh does not install the failure trap"; exit 1
+ fi
+ 
+-# 4) the remaining long-running scripts install the trap (RES-P0-001 follow-up).
++# 7) the remaining long-running scripts install the trap (RES-P0-001 follow-up).
+ for f in bootstrap/80-offsite-backup.sh automation/validation/restore_rehearsal.sh automation/validation/disk_guard.sh; do
+   if ! grep -q 'install_abort_trap "' "$REPO_ROOT/$f"; then
+     echo "FAIL abort_marker: $f does not install the trap"; exit 1
+diff --git a/bootstrap/85-backup-job.sh b/bootstrap/85-backup-job.sh
+index 3f6916b..eadf983 100755
+--- a/bootstrap/85-backup-job.sh
++++ b/bootstrap/85-backup-job.sh
+@@ -9,14 +9,15 @@ SEC="/srv/falcon/secrets"
+ STATE="/srv/falcon/backups/.last_backup_epoch"
+ snap="snap-$(date -u +%Y%m%d-%H%M%S)"
+ 
+-# RES-P0-001: a prior run that was interrupted leaves a marker; surface it before doing
+-# any new work so a half-finished offsite upload is not compounded. The run still proceeds
+-# (the offsite uploader re-verifies every object), but the marker is cleared only at a
+-# clean completion.
++# RES-P0-001 / ARCH-P1-002: a prior run that did not complete cleanly leaves a marker;
++# surface it before doing any new work so a half-finished offsite upload is not compounded.
++# The run still proceeds (the offsite uploader re-verifies every object), but the stale
++# marker is *not* cleared here - it is cleared only on a genuine clean completion below, and
++# install_failure_trap re-writes it on any non-clean exit (failed snapshot, error, signal).
+ install_abort_trap "falcon-backup"
++install_failure_trap "falcon-backup"
+ if abort_marker_present "falcon-backup"; then
+-  log "WARN: a previous backup run aborted (marker present); re-verifying and continuing"
+-  clear_abort_marker "falcon-backup"
++  log "WARN: a previous backup run did not complete cleanly (marker present); re-verifying and continuing"
+ fi
+ 
+ os_api() {
+@@ -70,3 +71,4 @@ fi
+ 
+ log "backup job complete: $snap"
+ clear_abort_marker "falcon-backup"
++mark_clean_exit "falcon-backup"
+diff --git a/bootstrap/lib.sh b/bootstrap/lib.sh
+index 8992372..ba53c12 100755
+--- a/bootstrap/lib.sh
++++ b/bootstrap/lib.sh
+@@ -67,3 +67,34 @@ backup_file_once() {
+ # not source this file (disk_guard.sh, restore_rehearsal.sh) use the same implementation.
+ # shellcheck source=../automation/validation/lib/abort.sh
+ . "$REPO_ROOT/automation/validation/lib/abort.sh"
++
++# ARCH-P1-002: the signal trap above only covers SIGTERM/SIGINT. A run that fails via a
++# normal non-zero exit (a failed snapshot, an uncaught error) previously wrote no marker,
++# so the next run could not tell it apart from a clean state. `install_failure_trap` adds an
++# EXIT trap that writes the marker on *any* exit that was not explicitly marked clean;
++# `mark_clean_exit` is the only way to suppress it. A job that installs this trap must call
++# `clear_abort_marker "<job>"` and then `mark_clean_exit "<job>"` as its final actions.
++install_failure_trap() {
++  local name="$1"
++  FALCON_ABORT_JOB="$name"
++  FALCON_ABORT_COMPLETE=0
++  # shellcheck disable=SC2064
++  trap '_on_unclean_exit' EXIT
++}
++
++mark_clean_exit() {
++  FALCON_ABORT_COMPLETE=1
++}
++
++_on_unclean_exit() {
++  local rc=$?
++  local marker
++  if [ "${FALCON_ABORT_COMPLETE:-0}" != "1" ]; then
++    marker="$(abort_marker_path "${FALCON_ABORT_JOB:-job}")"
++    mkdir -p "$FALCON_ABORT_DIR" 2>/dev/null || true
++    printf 'incomplete_utc=%s job=%s pid=%s rc=%s\n' \
++      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${FALCON_ABORT_JOB:-job}" "$$" "$rc" > "$marker" 2>/dev/null || true
++    _abort_log "incomplete run (rc=$rc); wrote marker $marker (next run will re-verify)"
++  fi
++  return "$rc"
++}

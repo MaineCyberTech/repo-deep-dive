@@ -1,0 +1,84 @@
+diff --git a/automation/validation/export_monitor_metrics.sh b/automation/validation/export_monitor_metrics.sh
+index 44403aa..ac25b4c 100755
+--- a/automation/validation/export_monitor_metrics.sh
++++ b/automation/validation/export_monitor_metrics.sh
+@@ -11,6 +11,7 @@ OUT="$OUT_DIR/falcon_metrics.prom"
+ TMP="$(mktemp /tmp/opencode/falcon-metrics-XXXXXX)"
+ STATE_BACKUP="/srv/falcon/backups/.last_backup_epoch"
+ STATE_OFFSITE="/srv/falcon/backups/.offsite-last-success"
++STATE_OFFSITE_DLQ="${FALCON_OFFSITE_DLQ:-/srv/falcon/backups/.offsite-dead-letter}"
+ STATE_NEWSERVICES="/srv/falcon/backups/.newservices-last-success"
+ 
+ mkdir -p "$OUT_DIR"
+@@ -205,6 +206,19 @@ if [ -s "$STATE_OFFSITE" ]; then
+ else
+   offsite_epoch=0
+ fi
++# FEAT-P2-002: the offsite retry/backoff path (80-offsite-backup.sh, RES-P0-002) leaves a
++# persistent dead-letter marker when every attempt is exhausted and removes it on the next
++# fully successful run. Surface it so exhausted retries are alertable immediately instead
++# of only after the 36 h freshness rule; a successful run clears both the marker and this.
++offsite_dlq=0
++offsite_dlq_age=-1
++if [ -s "$STATE_OFFSITE_DLQ" ]; then
++  offsite_dlq=1
++  offsite_dlq_mtime="$(date -u -r "$STATE_OFFSITE_DLQ" +%s 2>/dev/null || echo 0)"
++  if [ "${offsite_dlq_mtime:-0}" -gt 0 ]; then
++    offsite_dlq_age=$(( $(date +%s) - offsite_dlq_mtime ))
++  fi
++fi
+ if [ -s "$STATE_NEWSERVICES" ]; then
+   newservices_epoch="$(cat "$STATE_NEWSERVICES")"
+ else
+@@ -544,6 +558,12 @@ echo "falcon_wazuh_agents_disconnected ${wazuh_agents_disconnected:-0}"
+   echo "# HELP falcon_backup_offsite_last_success_timestamp_seconds Unix time of the last fully successful offsite backup run."
+   echo "# TYPE falcon_backup_offsite_last_success_timestamp_seconds gauge"
+   echo "falcon_backup_offsite_last_success_timestamp_seconds $offsite_epoch"
++  echo "# HELP falcon_backup_offsite_dlq 1 when the persistent offsite dead-letter marker is present (all retry/backoff attempts exhausted; FEAT-P2-002)."
++  echo "# TYPE falcon_backup_offsite_dlq gauge"
++  echo "falcon_backup_offsite_dlq $offsite_dlq"
++  echo "# HELP falcon_backup_offsite_dlq_age_seconds Age of the offsite dead-letter marker in seconds (-1 = no marker; FEAT-P2-002)."
++  echo "# TYPE falcon_backup_offsite_dlq_age_seconds gauge"
++  echo "falcon_backup_offsite_dlq_age_seconds $offsite_dlq_age"
+   echo "# HELP falcon_backup_newservices_last_success_timestamp_seconds Unix time of the last successful new-services backup."
+   echo "# TYPE falcon_backup_newservices_last_success_timestamp_seconds gauge"
+   echo "falcon_backup_newservices_last_success_timestamp_seconds $newservices_epoch"
+@@ -689,4 +709,4 @@ bash "$(dirname "$0")/edge_spool_metrics.sh" >/dev/null 2>&1 || true
+ python3 "$(dirname "$0")/mapping_drift_check.py" >/dev/null 2>&1 || true
+ 
+ echo "metrics_written=$OUT"
+-grep -E "^falcon_(wazuh_agent_up|wazuh_agents_disconnected|eve_last_event_age_seconds|pipeline_dlq_lines|pipeline_sink_http_errors_total|pipeline_sink_buffer_events|pipeline_sink_received_events_total|pipeline_sink_sent_events_total|pipeline_sink_errors_total|pipeline_sink_discarded_events_total|pipeline_duplicate_ratio|pipeline_duplicate_sampled_events|port_matrix_undocumented|runtime_source_dirty|runtime_source_commit_age_seconds|runtime_source_behind_remote|probe_buffer_bytes|backup_last_success|backup_offsite_last_success|backup_newservices_last_success|host_memory_available_percent|host_swap_used_percent|backup_offsite_last_duration|backup_offsite_last_upload|backup_offsite_last_uploaded|metrics_last_run|syslog_link_down_5m|syslog_errors_5m|syslog_errors_suppressed_5m|syslog_errors_hosts_5m|feed_last_event_age|feed_required_fields|feed_device_timestamp|syslog_514_5m|syslog_tls_5m|syslog_15140_5m|netflow_5m|flows_5m|opensearch_cluster_status|opensearch_unassigned_shards|unhealthy_containers|suricata_restarts_total|tls_cert_expiry_days|syslog_514_1h|syslog_tls_1h|netflow_1h|flows_1h|syslog_15140_1h|suricata_alerts_5m|suricata_kernel_drops_total|suricata_uptime_seconds|opensearch_docs_total|opensearch_index_bytes|wg_peers_total|wg_handshake_age_seconds|wg_rx_bytes_total|wg_tx_bytes_total|container_cpu_percent|container_mem_bytes|site_up|site_load1|site_memory_available_percent|site_filesystem_used_percent|site_watcher_last_run|site_container_up)" "$OUT" | head -55
++grep -E "^falcon_(wazuh_agent_up|wazuh_agents_disconnected|eve_last_event_age_seconds|pipeline_dlq_lines|pipeline_sink_http_errors_total|pipeline_sink_buffer_events|pipeline_sink_received_events_total|pipeline_sink_sent_events_total|pipeline_sink_errors_total|pipeline_sink_discarded_events_total|pipeline_duplicate_ratio|pipeline_duplicate_sampled_events|port_matrix_undocumented|runtime_source_dirty|runtime_source_commit_age_seconds|runtime_source_behind_remote|probe_buffer_bytes|backup_last_success|backup_offsite_last_success|backup_newservices_last_success|host_memory_available_percent|host_swap_used_percent|backup_offsite_last_duration|backup_offsite_last_upload|backup_offsite_last_uploaded|backup_offsite_dlq|metrics_last_run|syslog_link_down_5m|syslog_errors_5m|syslog_errors_suppressed_5m|syslog_errors_hosts_5m|feed_last_event_age|feed_required_fields|feed_device_timestamp|syslog_514_5m|syslog_tls_5m|syslog_15140_5m|netflow_5m|flows_5m|opensearch_cluster_status|opensearch_unassigned_shards|unhealthy_containers|suricata_restarts_total|tls_cert_expiry_days|syslog_514_1h|syslog_tls_1h|netflow_1h|flows_1h|syslog_15140_1h|suricata_alerts_5m|suricata_kernel_drops_total|suricata_uptime_seconds|opensearch_docs_total|opensearch_index_bytes|wg_peers_total|wg_handshake_age_seconds|wg_rx_bytes_total|wg_tx_bytes_total|container_cpu_percent|container_mem_bytes|site_up|site_load1|site_memory_available_percent|site_filesystem_used_percent|site_watcher_last_run|site_container_up)" "$OUT" | head -55
+diff --git a/automation/validation/tests/remediation_guards_test.sh b/automation/validation/tests/remediation_guards_test.sh
+index c462e59..2b7be27 100644
+--- a/automation/validation/tests/remediation_guards_test.sh
++++ b/automation/validation/tests/remediation_guards_test.sh
+@@ -47,6 +47,10 @@ check_contains .github/workflows/validate.yml 'curl -sL --fail'
+ [ -f "$REPO_ROOT/config/systemd/falcon-container-drift.timer" ] || { echo "FAIL: container-drift timer missing"; fail=1; }
+ check_contains bootstrap/90-alerting.sh 'falcon-container-drift.timer'
+ 
++# FEAT-P2-002: exhausted offsite retries are surfaced as a dead-letter metric + rule.
++check_contains automation/validation/export_monitor_metrics.sh 'echo "falcon_backup_offsite_dlq \$offsite_dlq"'
++check_contains bootstrap/90-alerting.sh 'write_rule "falcon-backup-offsite-dlq"'
++
+ if [ "$fail" -eq 0 ]; then
+   echo "PASS remediation_guards"
+ else
+diff --git a/bootstrap/90-alerting.sh b/bootstrap/90-alerting.sh
+index af9c011..0271c76 100755
+--- a/bootstrap/90-alerting.sh
++++ b/bootstrap/90-alerting.sh
+@@ -461,6 +461,13 @@ write_rule "falcon-backup-offsite-stale" \
+   "Offsite backup stale" '(time() - falcon_backup_offsite_last_success_timestamp_seconds) > 129600' "10m" "warning" \
+   "No successful offsite backup recorded within 36 hours (the Spaces/R2 sync may be failing silently)."
+ 
++# FEAT-P2-002: the offsite job retries with exponential backoff and writes a persistent
++# dead-letter marker only when every attempt is exhausted; fire as soon as the marker
++# exists rather than waiting for the 36 h freshness window to lapse.
++write_rule "falcon-backup-offsite-dlq" \
++  "Offsite backup retries exhausted (dead-letter)" 'falcon_backup_offsite_dlq > 0' "1m" "critical" \
++  "The offsite backup exhausted its retry/backoff attempts and left a dead-letter marker; the Spaces/R2 copy is missing until a later run succeeds."
++
+ write_rule "falcon-backup-newservices-stale" \
+   "New-services backup stale" '(time() - falcon_backup_newservices_last_success_timestamp_seconds) > 129600' "10m" "warning" \
+   "No successful new-services archive within 36 hours (WireGuard keys / Wazuh registry / IRIS / enrollment may be unprotected)."

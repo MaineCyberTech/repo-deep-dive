@@ -1,0 +1,67 @@
+== PATCH-5 verification (SUPPLY-P1-001/002) ==
+content: remediation/patch-05 branch commit 5c6c537 (snapshot 0a1d6a0 on ci-runner, LF)
+lab: ci-runner 172.23.128.51
+
+$ FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  sbom vulnerability coverage
+PASS  shell syntax (600 scripts)
+PASS  shellcheck (172 scripts)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (0.8s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.7s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (2.5s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (1.7s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.3s)
+PASS  shell tests (30 suite(s))
+
+validation_failures=0
+VALIDATE_EXIT=0
+
+$ bash automation/validation/tests/compose_digest_check_test.sh
+== real repository tree agrees with the lock ==
+== matching fixture passes ==
+== mutated compose digest fails ==
+== unknown repo fails ==
+== floating tag and unpinned refs fail ==
+== lock freshness ==
+== multi-root scope and explicit waivers (SUPPLY-P1-001) ==
+compose_digest_check_test: 25/25 checks passed
+COMPOSE_TEST_EXIT=0
+
+$ bash automation/validation/tests/sbom_coverage_and_hashes_test.sh
+sbom_coverage_and_hashes_test: 25/25 checks passed
+SBOM_TEST_EXIT=0

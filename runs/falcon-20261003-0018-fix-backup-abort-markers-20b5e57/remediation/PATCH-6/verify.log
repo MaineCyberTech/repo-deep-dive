@@ -1,0 +1,115 @@
+# PATCH-6 verification
+date_utc=2026-10-03T05:56:39Z
+worktree=/root/falcon-p6 (clean git worktree, LF line endings)
+commit=c8c86d14fd016959125a0dc0835b68a06b1f1a79
+declared_commit=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf
+
+## 1. publication equality checker (full git mode)
+ok   digest repository_commit == CLOSEOUT_SOURCE_COMMIT
+ok   digest repository_commit == DELIVERED_PACKAGE_COMMIT
+ok   closeout commit == publication_chain.CLOSEOUT_SOURCE_COMMIT
+ok   closeout commit == publication_chain.DELIVERED_PACKAGE_COMMIT
+ok   digest repository_commit == closeout commit (cross-artifact)
+ok   superseding closeout names the same commit
+ok   digest review_package_manifest_sha256 matches shipped manifest
+ok   closeout review_package_manifest_sha256 matches shipped manifest
+ok   digest review_package_entries matches shipped manifest
+ok   digest evidence_manifest_sha256 matches shipped manifest
+ok   closeout evidence_manifest_sha256 matches shipped manifest
+PASS publication equality
+check_publication_equality exit=0
+
+## 2. publication equality offline regression
+PASS publication_equality_test
+publication_equality_test exit=0
+
+## 3. existing digest tests
+PASS digest_binding_check
+digest_binding_check_test exit=0
+ok   verdict agrees (digest='APPROVED (controlled verdict 2026-09-29; docs/phase9/review/PRODUCTION_VERDICT.md)' json='APPROVED (controlled verdict 2026-09-29; docs/phase9/review/PRODUCTION_VERDICT.md)')
+ok   production_readiness agrees
+ok   open_gates agrees (digest='none' json='none')
+PASS digest_verdict_consistency
+digest_verdict_consistency_test exit=0
+
+## 4. verify_publication_chain.sh (signed archive guard optional in this runner)
+=== 1. commit fields exist ===
+OK  repository_commit=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf exists
+OK  CLOSEOUT_SOURCE_COMMIT=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf exists
+OK  DELIVERED_PACKAGE_COMMIT=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf exists
+=== 2. the publication path changes only allowed artifacts ===
+OK  intermediate commits (none) touch only review-package/**
+OK  publishing commit c8c86d14fd016959125a0dc0835b68a06b1f1a79 changes only publication/pack-verification artifacts
+=== 3. digests and aggregate match the working tree and the declared commit ===
+OK  review-package manifest digest (working tree) matches
+OK  evidence manifest digest (working tree) matches
+OK  gate aggregate (working tree) matches
+OK  review-package manifest digest at DELIVERED_PACKAGE_COMMIT=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf matches
+OK  evidence manifest digest at DELIVERED_PACKAGE_COMMIT=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf matches
+OK  review-package entries at DELIVERED_PACKAGE_COMMIT=8e4c20ccc49b23f8ffe497c2eaaaea25fc68fccf matches
+publication_chain_failures=0
+SKIP signed archive not present in this environment (falcon-review-delivery-2026-09-29-reviewed.tar.gz)
+SKIP signed archive not present in this environment (falcon-review-delivery-2026-09-29-closure.tar.gz)
+verify_publication_chain exit=0
+
+## 5. full ci/validate.py (evidence optional)
+PASS  yaml/json parse
+PASS  compose image pinning
+PASS  compose digest cross-check
+PASS  shell syntax (601 scripts)
+PASS  shellcheck (skipped: not installed)
+PASS  credential sourcing (no script sources the owner .env)
+PASS  gate ledger (102 gates)
+PASS  evidence integrity (0 captures, 1127 external skipped in CI)
+PASS  evidence index cross-check
+PASS  license gate
+PASS  secret scan
+PASS  edge pin (skipped: edge delivery not present)
+PASS  shell tests: automation/validation/tests/abort_marker_test.sh (1.1s)
+PASS  shell tests: automation/validation/tests/alert_canary_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/alert_expression_bool_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/audit_run_lifecycle_test.sh (3.0s)
+PASS  shell tests: automation/validation/tests/audit_run_scanner_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_cap_drop_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/compose_digest_check_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/digest_binding_check_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/digest_verdict_consistency_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_cleanup_pinned_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/edge_spool_metrics_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/env_secret_isolation_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/evidence_index_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/feed_rate_deviation_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/grafana_state_regression.sh (0.0s)
+PASS  shell tests: automation/validation/tests/ism_retention_metrics_test.sh (0.2s)
+PASS  shell tests: automation/validation/tests/mapping_drift_check_test.sh (0.4s)
+PASS  shell tests: automation/validation/tests/offsite_backup_reuse_test.sh (4.3s)
+PASS  shell tests: automation/validation/tests/offsite_upload_delta_test.sh (2.5s)
+PASS  shell tests: automation/validation/tests/owner_env_validator_test.sh (0.6s)
+PASS  shell tests: automation/validation/tests/pair_state_check_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/publication_equality_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/publish_digest_aggregate_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/r2_cold_tier_setup_test.sh (0.5s)
+PASS  shell tests: automation/validation/tests/readme_ledger_drift_test.sh (0.1s)
+PASS  shell tests: automation/validation/tests/remediation_guards_test.sh (0.0s)
+PASS  shell tests: automation/validation/tests/rotation_status_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/sbom_coverage_and_hashes_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/secret_scan_test.sh (0.6s)
+PASS  shell tests: automation/validation/tests/validate_gate_test.sh (0.3s)
+PASS  shell tests: automation/validation/tests/wazuh_indexer_backup_test.sh (0.4s)
+PASS  shell tests (31 suite(s))
+PASS  publication equality (digest<->closeout<->manifest)
+
+validation_failures=0
+ci_validate_full exit=0
+
+## 6. gitleaks
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m1:57AM[0m [32mINF[0m [1mscanned ~4667969 bytes (4.67 MB) in 847ms[0m
+[90m1:57AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks exit=0

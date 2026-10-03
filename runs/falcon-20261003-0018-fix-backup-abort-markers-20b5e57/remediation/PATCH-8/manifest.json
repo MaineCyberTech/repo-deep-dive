@@ -1,0 +1,27 @@
+{
+  "patchSet": "PATCH-8",
+  "findingIds": ["SEC-P1-001", "SEC-P1-002", "SEC-P1-003"],
+  "branch": "remediation/patch-08-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "base": "main",
+  "baseSha": "430da82274af4c0821542627fdb9e6ab74afa826",
+  "commit": "7bb6187a212c61d626fadd7e681a13929d287306",
+  "pr": "https://github.com/MaineCyberTech/falcon/pull/16",
+  "generatedUtc": "2026-10-03T06:30:00Z",
+  "diffSha256": "e83a0652c371b4063b313aef53acb05485f2070247d604ff27453f9931c06c27",
+  "runner": "WSL Ubuntu-24.04, clean LF git worktree /root/falcon-p8",
+  "commands": [
+    {"cmd": "bash -n bootstrap/32-inbound-mode.sh", "exit": 0},
+    {"cmd": "bash -n automation/validation/tests/exposure_edges_test.sh", "exit": 0},
+    {"cmd": "nft -c -f config/nftables/falcon.nft", "exit": 0},
+    {"cmd": "bash automation/validation/tests/exposure_edges_test.sh", "exit": 0, "note": "PASS exposure_edges"},
+    {"cmd": "FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py", "exit": 0, "note": "validation_failures=0, 31/31 shell suites (incl. exposure_edges_test.sh)"},
+    {"cmd": "gitleaks detect --no-git --source . --redact --config .gitleaks.toml", "exit": 0, "note": "gitleaks v8.30.1 pinned sha256 verified; no leaks found"}
+  ],
+  "notRun": [
+    {"cmd": "live nft negative test from a non-allowlisted source", "reason": "no live falcon host/firewall on the remediation runner"},
+    {"cmd": "ss -ltn decoy-port fencing check", "reason": "no live host / OpenCanary stack on the remediation runner"},
+    {"cmd": "bootstrap/32-inbound-mode.sh status captured at each toggle", "reason": "requires root on the live host"},
+    {"cmd": "re-verify the wg0 per-port set against live tunnel listeners before deploy", "reason": "runtime/peer-inventory check; the config set follows PORT_PROTOCOL_MATRIX.md N-24 addendum"}
+  ],
+  "notes": "Config-only exposure hardening: OpenCanary decoy ports bound to the management interface; blanket wg0 accept replaced by explicit per-port allows; inbound-mode runtime state made authoritative with a per-toggle ledger and fail-closed status. PR opened as draft; never auto-merged."
+}
