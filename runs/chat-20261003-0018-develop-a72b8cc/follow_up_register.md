@@ -1,6 +1,6 @@
 # Follow-up register
 
-Auto-created by tools/remediation_status.py. Owner/Target/Status columns drive tools/collect_findings.py enrichment.
+Owner/Target/Status columns drive tools/collect_findings.py enrichment.
 
 | ID | Severity | Title | Owner | Target | Status | Post-audit note |
 |---|---|---|---|---|---|---|
@@ -8,6 +8,7 @@ Auto-created by tools/remediation_status.py. Owner/Target/Status columns drive t
 | API-P1-001 | P1 | `/metrics` is readable by any authenticated user |  |  | open |  |
 | ARCH-P1-001 | P1 | Webhook service uses the anonymous Supabase client, so RLS denies all operations |  |  | open |  |
 | ARCH-P1-002 | P1 | Socket.io authorization and presence use the anonymous client; membership checks fail/bypass |  |  | open |  |
+| BLD-P1-001 | P1 | Web build fails prerendering /install (navigator is not defined) |  |  | open |  |
 | CI-P1-001 | P1 | Production auto-deploys on push to `main` without a required review gate in-repo |  |  | open |  |
 | CI-P1-002 | P1 | Deploy workflow mutates production schema and data from CI |  |  | partially-fixed | Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows. |
 | CI-P1-003 | P1 | Security scans are non-blocking |  |  | open |  |

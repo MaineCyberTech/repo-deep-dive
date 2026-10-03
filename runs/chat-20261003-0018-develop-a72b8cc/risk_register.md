@@ -38,3 +38,72 @@ Scoring: Likelihood (L) and Impact (I) low/med/high. Severity per shared model.
 
 - R-01/R-02 are the same automated mechanism (deploy-time SQL) manifesting as security and data risks.
 - Severity totals: P0 1, P1 24, P2 31, P3 7 (63 findings).
+
+## Finding index
+
+| ID | Severity | Title |
+|---|---|---|
+| SEC-P0-001 | P0 | Production deploy creates `users_select USING (true)`, exposing all users' PII to any authenticated user |
+| API-P1-001 | P1 | `/metrics` is readable by any authenticated user |
+| ARCH-P1-001 | P1 | Webhook service uses the anonymous Supabase client, so RLS denies all operations |
+| ARCH-P1-002 | P1 | Socket.io authorization and presence use the anonymous client; membership checks fail/bypass |
+| BLD-P1-001 | P1 | Web build fails prerendering /install (navigator is not defined) |
+| CI-P1-001 | P1 | Production auto-deploys on push to `main` without a required review gate in-repo |
+| CI-P1-002 | P1 | Deploy workflow mutates production schema and data from CI |
+| CI-P1-003 | P1 | Security scans are non-blocking |
+| CI-P1-004 | P1 | Deploy prunes all Docker volumes (data loss) |
+| DATA-P1-001 | P1 | Deploy workflows seed production with test users and a hardcoded password |
+| DATA-P1-002 | P1 | Deploy runs `docker system prune -af --volumes`, destroying the Redis named volume |
+| EXEC-P1-001 | P1 | Release gate must be conditional on P0/P1 remediation |
+| FEAT-P1-001 | P1 | `/v1/auth/magic-link` does not send a magic link |
+| FEAT-P1-002 | P1 | Webhook retries are in-process `setTimeout`, not durable |
+| FINAL-P1-001 | P1 | Systemic Supabase client/role mismatch |
+| FINAL-P1-002 | P1 | Deploy pipeline mutates schema/policies/data outside migrations |
+| OBS-P1-001 | P1 | No alerting is wired despite metrics and a TODO |
+| SEC-P1-002 | P1 | Tracked credential file `test-signin.json` |
+| SEC-P1-003 | P1 | Admin `/v1/admin/users` returns all platform users (including email) to any workspace admin |
+| SEC-P1-004 | P1 | Admin `/v1/admin/audit-logs` leaks other tenants' logs when `workspaceId` omitted |
+| SEC-P1-005 | P1 | Admin compliance exports are not tenant-scoped on list/download |
+| SEC-P1-006 | P1 | Bulk import endpoints operate globally with only "admin of anything" authorization |
+| SEC-P1-007 | P1 | SSH is open to the internet by default |
+| SEC-P1-008 | P1 | Webhook secrets are optional and signature can be omitted |
+| SUPPLY-P1-001 | P1 | Credential committed to the repository |
+| TEST-P1-001 | P1 | E2E tests skip without `test-signin.json` and are non-blocking |
+| API-P2-002 | P2 | Inconsistent error response shapes in parts of the API |
+| API-P2-003 | P2 | User input interpolated into PostgREST filters (`.or(...)`) |
+| API-P2-004 | P2 | `PATCH /v1/auth/status` accepts unvalidated `customStatus` |
+| ARCH-P2-003 | P2 | Single-node, no-high-availability topology |
+| ARCH-P2-004 | P2 | Worker `/metrics` and health endpoints are unauthenticated |
+| CI-P2-005 | P2 | Migration validation and order checks are non-blocking |
+| CI-P2-006 | P2 | `build-push` pushes images on pull requests |
+| CI-P2-007 | P2 | Branch-protection check cannot fail the build and uses an outdated API shape |
+| DATA-P2-003 | P2 | Duplicate `add_user_groups` migrations |
+| DATA-P2-004 | P2 | Rollback scripts are only proven to exist, never executed |
+| DATA-P2-005 | P2 | `gdpr_delete_user` is a hard multi-table delete with partial coverage and coupled auth deletion |
+| EXEC-P2-002 | P2 | Documentation materially overstates readiness |
+| FEAT-P2-003 | P2 | Webhook idempotency key is regenerated per attempt |
+| FEAT-P2-004 | P2 | Naive input sanitizer blocks legitimate content |
+| FINAL-P2-003 | P2 | Release confidence limited by advisory gates |
+| HYG-P2-001 | P2 | Generated outputs and audit artifacts committed |
+| HYG-P2-002 | P2 | One-off remediation scripts and duplicated logic/schema remain |
+| INV-P2-001 | P2 | Committed audit/generated artifacts bloat the repository |
+| INV-P2-002 | P2 | Credential file `test-signin.json` is tracked |
+| INV-P2-003 | P2 | Documentation self-contradicts repository state |
+| OBS-P2-002 | P2 | `/metrics` authorization is weak and label cardinality is risky |
+| OBS-P2-003 | P2 | Error tracking is optional and admin log buffer is in-memory only |
+| OBS-P2-004 | P2 | No distributed tracing / correlation to a collector |
+| SEC-P2-009 | P2 | `timingSafeEqual` can throw on length mismatch (unhandled 500) in CSRF middleware |
+| SEC-P2-010 | P2 | Socket typing/leave events can be sent to arbitrary channel rooms |
+| SUPPLY-P2-002 | P2 | GitHub Actions are not pinned to commit SHAs |
+| SUPPLY-P2-003 | P2 | Dependency vulnerability scanning is advisory-only |
+| SUPPLY-P2-004 | P2 | SBOM is generated only for develop and not for production artifacts |
+| TEST-P2-002 | P2 | Low coverage thresholds and non-blocking diff coverage |
+| TEST-P2-003 | P2 | No real-database/RLS integration test tier |
+| TEST-P2-004 | P2 | Migration rollback is validated by file existence only |
+| API-P3-005 | P3 | OpenAPI spec coverage/consistency needs verification |
+| ARCH-P3-005 | P3 | Duplicated `requireAdmin` implementations |
+| HYG-P3-003 | P3 | Unresolved TODO in operational metrics |
+| HYG-P3-004 | P3 | Encoding artifacts and inconsistent comments |
+| INV-P3-001 | P3 | Character-encoding (mojibake) artifacts in docs and config |
+| INV-P3-002 | P3 | Overlapping and inconsistent environment example files |
+| SUPPLY-P3-005 | P3 | Large binary archives committed to the repo |

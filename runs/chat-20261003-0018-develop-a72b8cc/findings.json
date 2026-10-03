@@ -1,6 +1,6 @@
 {
   "run": "20261003-0018-develop-a72b8cc",
-  "generated": "2026-10-03T05:50:31Z",
+  "generated": "2026-10-03T05:53:42Z",
   "sourceReports": [
     "01_repository_inventory.md",
     "02_architecture_runtime_topology.md",
@@ -95,7 +95,7 @@
       "line": 40,
       "owner": "",
       "target": "",
-      "status": "",
+      "status": "open",
       "note": ""
     },
     {

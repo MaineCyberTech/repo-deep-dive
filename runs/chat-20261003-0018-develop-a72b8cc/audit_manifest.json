@@ -73,33 +73,48 @@
       "22_final_risk_register_roadmap.md",
       "23_executive_summary_release_gate.md"
     ],
-    "areas": ["INV", "ARCH", "FEAT", "SEC", "DATA", "API", "TEST", "CI", "SUPPLY", "OBS", "HYG", "FINAL", "EXEC"],
+    "areas": [
+      "INV",
+      "ARCH",
+      "FEAT",
+      "SEC",
+      "DATA",
+      "API",
+      "TEST",
+      "CI",
+      "SUPPLY",
+      "OBS",
+      "HYG",
+      "FINAL",
+      "EXEC"
+    ],
     "readOnly": true,
     "secretsRedacted": true,
     "releaseGate": "GO WITH CONDITIONS"
   },
   "findings": {
-    "total": 63,
     "bySeverity": {
       "P0": 1,
-      "P1": 24,
+      "P1": 25,
       "P2": 31,
       "P3": 7
     },
     "byArea": {
-      "INV": 5,
-      "ARCH": 5,
-      "FEAT": 4,
-      "SEC": 10,
-      "DATA": 5,
       "API": 5,
-      "TEST": 4,
+      "ARCH": 5,
+      "BLD": 1,
       "CI": 7,
-      "SUPPLY": 5,
-      "OBS": 4,
-      "HYG": 4,
+      "DATA": 5,
+      "EXEC": 2,
+      "FEAT": 4,
       "FINAL": 3,
-      "EXEC": 2
-    }
+      "HYG": 4,
+      "INV": 5,
+      "OBS": 4,
+      "SEC": 10,
+      "SUPPLY": 5,
+      "TEST": 4
+    },
+    "total": 64
   }
 }
