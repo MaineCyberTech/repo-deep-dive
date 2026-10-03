@@ -50,7 +50,7 @@ def main():
         data = {
             "run": run.name,
             "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "sourceReports": [p.name for p in reports],
+            "sourceReports": len(reports),
             "counts": c,
             "findings": findings,
         }

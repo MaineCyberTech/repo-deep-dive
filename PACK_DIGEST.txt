@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T02:08:25Z
+# generated: 2026-10-04T02:48:38Z
 # files: 1026
 # format: sha256  path
 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
@@ -17,7 +17,7 @@ a16e75422c0d38c633f8be539f46d9124516a2419c0df4e3f7ba2cbb339fef1e  ./README.md
 f84e53ffca7c30b5c91f892e0136e9173ea795781d337b3df6ef254c85ac5008  ./ci/audit.yml
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
-b09c03125010bd86df4ce1f98b27cb85f53f2d97defc266a2eee7e2714a6cbcd  ./examples/audit_manifest.example.json
+875320501d09dc55c55f29e7e6089fd8c43ee1b4f2f59b16d20d079ca784b4fa  ./examples/audit_manifest.example.json
 f7c083bfcdb7a78f637b03cae9da64f17326f9260bc1ba11a90a1cf63513d2e1  ./examples/audit_manifest.falcon-lab.example.json
 b54e2c8db738d91ddebed89b9ab10504f1ef6e3f29722c4d0c53d2a383dd8abe  ./lenses/README.md
 65b8cff17fba67c4644fd2802584d5418752b68eafaff5a5d510aaeeeb1d96f4  ./lenses/independent_reviewer.md
@@ -986,7 +986,7 @@ a080adadf8b1e1d3cad9d20258890fff064fe4a4cae3e70a7e7e32e8b4486ecc  ./runs/snowrid
 da83096d14b3d4c09ce82a05f5d5bbb5eff101f2e4b4d4cd7076eb7097d242ac  ./runs/snowride-20261003-0018-main-59e12b9/sbom_license_policy_recommendation.md
 0d52c5371d8958d1465927e74ee4ebfb971f2ae1d25867ea819adb7f7d5022b7  ./runs/snowride-20261003-0018-main-59e12b9/secret_rotation_runbook.md
 0df932803b4521605bce749e0afe4a251dfce94ef87377203cd5f0e7824742df  ./runs/snowride-20261003-0018-main-59e12b9/verification_log.md
-018508891138f2d2617e60724af9e4e2880e76c78460af6c26cad4a1ba0f62ff  ./schemas/findings.schema.json
+262b651ed7d2f7bbd5126f772928897942bcd6f6cfb547697f8451860316589a  ./schemas/findings.schema.json
 075c12d78d2ec45f70766b667b963721590f949c338639badf1a2d82432b6bf4  ./templates/audit_report_template.falcon.md
 0489aa34431a2bb958b181a4426d01d0a810b80365a0998628b5e270cb622d75  ./templates/audit_report_template.md
 424f1bcb63c4778a3fa13ccfa67d35150700e3104f1663a330cec7d960d018e9  ./templates/claim_sample_template.md
@@ -1006,7 +1006,7 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 595248ecceebf3703836e06f36c65aadb4cac7f1fae9267a65cb3a184c50bd3e  ./templates/verification_log_template.md
 4b77ad57ba5a912dc55bd0a3a93fd10327b4856a39088bb91c81fe60280fb477  ./tools/aggregate_findings.py
 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
-bf4038838de857e8eafaba5714ea915b08b08cb16a8e3d3fdcf34e3fd0c4ae30  ./tools/collect_findings.py
+7c1063d82bd5c02a079d71badb63006968454aa33038d9da32bf9f393ab02c3e  ./tools/collect_findings.py
 63a3f145b0e8beeea8c4bcbc42856a4c267677ffdf14a0c1002e984f4b5296ff  ./tools/deterministic_checks.py
 a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
@@ -1014,7 +1014,7 @@ afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findin
 add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_findings.py
 99451c2ca60a4c82411e6112d188d3379082783f3c73b9ee148529180480a4a0  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
-81050470d1d8a4bf5a988512ae4a787b3f1321f4b2052d94059bd706b47c3ff8  ./tools/new_run.py
+a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
 e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_digest.sh
 2933ab79d102c16969ef99dd3c02fcf0fa9291cdad9447fcc23666442f49924b  ./tools/remediation_plan.py
@@ -1025,6 +1025,6 @@ f17648cfd68e4108add83223190dc485ed40d00cf639f881ca454c4000e1d66b  ./tools/repo_i
 f8e835fce3153791f01f6eb3dbcf20732323c58112b3f7c5e53df50f4544c236  ./tools/review_index.py
 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
 6844a691f52f73a7ebca8f0cabc19670d12df785c3d779d863dd7f9ac4160338  ./tools/run_toolchain.py
-f1bef7b3443feafabbbd7335167da8f05044d706302afd439137819c63edbaf1  ./tools/self_test.sh
+101b10c67a604792be29c9c69c57ecb0225cc1666e81dd588e80f60de8d5a10f  ./tools/self_test.sh
 94b75cad96cd3c97734134f4ef60fd1c916843b08a3185c60d3f8d4c0087254d  ./wiring/REPO_WIRING.md
 b0ed61e5a481f2c949a10a7870a1acf1f75c2003d9f2db4840c66d06a6280280  ./wiring/SUGGESTED_TOOLING.md
