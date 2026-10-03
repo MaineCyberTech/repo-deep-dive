@@ -1,0 +1,52 @@
+{
+  "patchSet": "PATCH-004",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/patch-004-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "commit": "fda6aef53a1087e6ad39d8de69a05879683e640b",
+  "findings": [
+    "CI-P1-001"
+  ],
+  "files": [
+    ".github/workflows/deploy-do.yml",
+    "docs/RELEASE.md",
+    "docs/CI.md"
+  ],
+  "diffSha256": "8ef4ff5681ae0774a52f51f865e51908a5c5f494c77c65b56cfe0140b5ace7ee",
+  "commands": [
+    {
+      "cmd": "actionlint -shellcheck= .github/workflows/deploy-do.yml (Proxmox ci-runner)",
+      "note": "no output; exit 0",
+      "exit": 0
+    },
+    {
+      "cmd": "actionlint .github/workflows/deploy-do.yml vs base (shellcheck enabled, Proxmox ci-runner)",
+      "note": "output identical to base; only pre-existing SC2086/SC2129 notes at lines 67/125; no new findings",
+      "exit": 1
+    },
+    {
+      "cmd": "yq '.jobs.deploy.if' + fail-closed assertions (Proxmox ci-runner)",
+      "note": "always() absent; validate and verify-attestations success required",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-counts.mjs (Proxmox ci-runner)",
+      "note": "docs counts OK",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-links.mjs (Proxmox ci-runner)",
+      "note": "docs links OK",
+      "exit": 0
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact (3 changed files, Proxmox ci-runner)",
+      "note": "no leaks found",
+      "exit": 0
+    }
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/54"
+}

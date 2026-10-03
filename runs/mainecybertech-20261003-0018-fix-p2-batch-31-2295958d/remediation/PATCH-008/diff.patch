@@ -1,0 +1,256 @@
+diff --git a/supabase/migrations/5302119_demo_test_data.sql b/supabase/migrations/5302119_demo_test_data.sql
+index d8584cde..1b3ced45 100644
+--- a/supabase/migrations/5302119_demo_test_data.sql
++++ b/supabase/migrations/5302119_demo_test_data.sql
+@@ -6,21 +6,24 @@
+ -- present in HOSTED databases (seeds only run for local reset
+ -- and E2E; migrations run everywhere via supabase db push).
+ --
+--- SAFETY GUARD: the whole block is skipped when the database
+--- already contains production-like tenants (any organization
+--- with a real domain, i.e. not *.example / *.local). Demo
+--- accounts all use the password: 1 (dev only).
++-- SAFETY GUARD: the whole block is opt-in and skipped unless the
++-- database explicitly enables it with
++--   alter database postgres set app.seed_demo = 'true';
++-- It therefore never runs on a fresh (or existing) production
++-- database. Local/E2E use supabase/seeds/ instead. Demo accounts
++-- all use the password: 1 (dev only).
+ -- =========================================================
+ 
+ do $$
+ begin
+-  if exists (
+-    select 1 from public.organizations
+-    where primary_domain is not null
+-      and primary_domain not like '%.example'
+-      and primary_domain not like '%.local'
+-  ) then
+-    raise notice '5302119: production-like organization domains detected - skipping demo data';
++  -- Demo/test data is opt-in only and MUST NOT load by default (e.g. on a fresh
++  -- production database where no real tenant exists yet). Enable it explicitly
++  -- on a disposable dev database:
++  --   alter database postgres set app.seed_demo = 'true';
++  -- Local `supabase db reset` populates demo data from supabase/seeds/ after
++  -- migrations, so no flag is needed for local/E2E.
++  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
++    raise notice '5302119: app.seed_demo is not ''true'' - skipping demo data';
+     return;
+   end if;
+ 
+diff --git a/supabase/migrations/5302120_demo_module_data.sql b/supabase/migrations/5302120_demo_module_data.sql
+index 8469674d..4b5e0105 100644
+--- a/supabase/migrations/5302120_demo_module_data.sql
++++ b/supabase/migrations/5302120_demo_module_data.sql
+@@ -8,21 +8,24 @@
+ -- demo users (password: 1) covering role/permission edge cases
+ -- plus rows across ALL 5 tenants for the ~60 module tables.
+ --
+--- SAFETY GUARD: the whole block is skipped when the database
+--- already contains production-like tenants (any organization
+--- with a real domain, i.e. not *.example / *.local). Demo
+--- accounts all use the password: 1 (dev only).
++-- SAFETY GUARD: the whole block is opt-in and skipped unless the
++-- database explicitly enables it with
++--   alter database postgres set app.seed_demo = 'true';
++-- It therefore never runs on a fresh (or existing) production
++-- database. Local/E2E use supabase/seeds/ instead. Demo accounts
++-- all use the password: 1 (dev only).
+ -- =========================================================
+ 
+ do $$
+ begin
+-  if exists (
+-    select 1 from public.organizations
+-    where primary_domain is not null
+-      and primary_domain not like '%.example'
+-      and primary_domain not like '%.local'
+-  ) then
+-    raise notice '5302120: production-like organization domains detected - skipping demo module data';
++  -- Demo/test data is opt-in only and MUST NOT load by default (e.g. on a fresh
++  -- production database where no real tenant exists yet). Enable it explicitly
++  -- on a disposable dev database:
++  --   alter database postgres set app.seed_demo = 'true';
++  -- Local `supabase db reset` populates demo data from supabase/seeds/ after
++  -- migrations, so no flag is needed for local/E2E.
++  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
++    raise notice '5302120: app.seed_demo is not ''true'' - skipping demo module data';
+     return;
+   end if;
+ 
+diff --git a/supabase/migrations/5302121_demo_permission_edge_cases.sql b/supabase/migrations/5302121_demo_permission_edge_cases.sql
+index 84d81cba..e093bc7f 100644
+--- a/supabase/migrations/5302121_demo_permission_edge_cases.sql
++++ b/supabase/migrations/5302121_demo_permission_edge_cases.sql
+@@ -7,21 +7,24 @@
+ -- (seeds only run for local reset and E2E; migrations run
+ -- everywhere via supabase db push).
+ --
+--- SAFETY GUARD: the whole block is skipped when the database
+--- already contains production-like tenants (any organization
+--- with a real domain, i.e. not *.example / *.local). Demo
+--- accounts all use the password: 1 (dev only).
++-- SAFETY GUARD: the whole block is opt-in and skipped unless the
++-- database explicitly enables it with
++--   alter database postgres set app.seed_demo = 'true';
++-- It therefore never runs on a fresh (or existing) production
++-- database. Local/E2E use supabase/seeds/ instead. Demo accounts
++-- all use the password: 1 (dev only).
+ -- =========================================================
+ 
+ do $$
+ begin
+-  if exists (
+-    select 1 from public.organizations
+-    where primary_domain is not null
+-      and primary_domain not like '%.example'
+-      and primary_domain not like '%.local'
+-  ) then
+-    raise notice '5302121: production-like organization domains detected - skipping demo permission data';
++  -- Demo/test data is opt-in only and MUST NOT load by default (e.g. on a fresh
++  -- production database where no real tenant exists yet). Enable it explicitly
++  -- on a disposable dev database:
++  --   alter database postgres set app.seed_demo = 'true';
++  -- Local `supabase db reset` populates demo data from supabase/seeds/ after
++  -- migrations, so no flag is needed for local/E2E.
++  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
++    raise notice '5302121: app.seed_demo is not ''true'' - skipping demo permission data';
+     return;
+   end if;
+ 
+diff --git a/supabase/migrations/5302123_demo_expanded_test_data.sql b/supabase/migrations/5302123_demo_expanded_test_data.sql
+index e81a99ec..d5f5c5f8 100644
+--- a/supabase/migrations/5302123_demo_expanded_test_data.sql
++++ b/supabase/migrations/5302123_demo_expanded_test_data.sql
+@@ -13,20 +13,23 @@
+ -- Acme (11111111) and Northwind (22222222) - the two thinnest
+ -- tenants - and extras for Harborview/Brightline/Summit.
+ --
+--- SAFETY GUARD: the whole block is skipped when the database
+--- already contains production-like tenants (any organization
+--- with a real domain, i.e. not *.example / *.local).
++-- SAFETY GUARD: the whole block is opt-in and skipped unless the
++-- database explicitly enables it with
++--   alter database postgres set app.seed_demo = 'true';
++-- It therefore never runs on a fresh (or existing) production
++-- database. Local/E2E use supabase/seeds/ instead.
+ -- =========================================================
+ 
+ do $$
+ begin
+-  if exists (
+-    select 1 from public.organizations
+-    where primary_domain is not null
+-      and primary_domain not like '%.example'
+-      and primary_domain not like '%.local'
+-  ) then
+-    raise notice '5302123: production-like organization domains detected - skipping expanded demo data';
++  -- Demo/test data is opt-in only and MUST NOT load by default (e.g. on a fresh
++  -- production database where no real tenant exists yet). Enable it explicitly
++  -- on a disposable dev database:
++  --   alter database postgres set app.seed_demo = 'true';
++  -- Local `supabase db reset` populates demo data from supabase/seeds/ after
++  -- migrations, so no flag is needed for local/E2E.
++  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
++    raise notice '5302123: app.seed_demo is not ''true'' - skipping expanded demo data';
+     return;
+   end if;
+ 
+diff --git a/supabase/migrations/5302126_demo_worker_admin_coverage.sql b/supabase/migrations/5302126_demo_worker_admin_coverage.sql
+index 2a8c13c7..7e646c68 100644
+--- a/supabase/migrations/5302126_demo_worker_admin_coverage.sql
++++ b/supabase/migrations/5302126_demo_worker_admin_coverage.sql
+@@ -12,19 +12,23 @@
+ --
+ -- Runs AFTER 5302124/5302125 so dmarc_analyses.status exists.
+ --
+--- SAFETY GUARD: skipped when the database already contains
+--- production-like tenants (real domains, not *.example / *.local).
++-- SAFETY GUARD: opt-in and skipped unless the database explicitly
++-- enables it with
++--   alter database postgres set app.seed_demo = 'true';
++-- It therefore never runs on a fresh (or existing) production
++-- database. Local/E2E use supabase/seeds/ instead.
+ -- =========================================================
+ 
+ do $$
+ begin
+-  if exists (
+-    select 1 from public.organizations
+-    where primary_domain is not null
+-      and primary_domain not like '%.example'
+-      and primary_domain not like '%.local'
+-  ) then
+-    raise notice '5302126: production-like organization domains detected - skipping demo additions';
++  -- Demo/test data is opt-in only and MUST NOT load by default (e.g. on a fresh
++  -- production database where no real tenant exists yet). Enable it explicitly
++  -- on a disposable dev database:
++  --   alter database postgres set app.seed_demo = 'true';
++  -- Local `supabase db reset` populates demo data from supabase/seeds/ after
++  -- migrations, so no flag is needed for local/E2E.
++  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
++    raise notice '5302126: app.seed_demo is not ''true'' - skipping demo additions';
+     return;
+   end if;
+ 
+diff --git a/supabase/migrations/5302128_role_catalog_expansion.sql b/supabase/migrations/5302128_role_catalog_expansion.sql
+index fa7dce5d..16f7b569 100644
+--- a/supabase/migrations/5302128_role_catalog_expansion.sql
++++ b/supabase/migrations/5302128_role_catalog_expansion.sql
+@@ -21,7 +21,7 @@
+ --
+ -- The roles + permission assignments are REAL configuration (unguarded,
+ -- needed in every environment). The demo user accounts at the bottom are
+--- dev-only and guarded by the production-domain check like 5302119.
++-- dev-only and opt-in, guarded by the same app.seed_demo flag as 5302119.
+ -- =========================================================
+ 
+ -- ---------------------------------------------------------
+@@ -289,13 +289,13 @@ on conflict (role_id, permission_id) do nothing;
+ -- ---------------------------------------------------------
+ do $$
+ begin
+-  if exists (
+-    select 1 from public.organizations
+-    where primary_domain is not null
+-      and primary_domain not like '%.example'
+-      and primary_domain not like '%.local'
+-  ) then
+-    raise notice '5302128: production-like organization domains detected - skipping demo users';
++  -- Demo users are opt-in only and MUST NOT load by default (e.g. on a fresh
++  -- production database). Enable explicitly on a disposable dev database:
++  --   alter database postgres set app.seed_demo = 'true';
++  -- Local `supabase db reset` populates demo users from supabase/seeds/ after
++  -- migrations, so no flag is needed for local/E2E.
++  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
++    raise notice '5302128: app.seed_demo is not ''true'' - skipping demo users';
+     return;
+   end if;
+ 
+diff --git a/supabase/migrations/5302406_device_profiles.sql b/supabase/migrations/5302406_device_profiles.sql
+index da912141..a882f2c1 100644
+--- a/supabase/migrations/5302406_device_profiles.sql
++++ b/supabase/migrations/5302406_device_profiles.sql
+@@ -51,11 +51,19 @@ create policy "device_profiles_delete" on public.device_profiles
+     )
+   );
+ 
+--- Demo data for the Device Profile Library.
+-insert into public.device_profiles (id, organization_id, name, type, manufacturer, model, specs) values
++-- Demo data for the Device Profile Library (opt-in only; see 5302119).
++do $$
++begin
++  if coalesce(current_setting('app.seed_demo', true), '') <> 'true' then
++    raise notice '5302406: app.seed_demo is not ''true'' - skipping demo device profiles';
++    return;
++  end if;
++
++  insert into public.device_profiles (id, organization_id, name, type, manufacturer, model, specs) values
+   ('82010000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Clinical Workstation Standard', 'workstation', 'Dell', 'OptiPlex 7020', jsonb_build_object('bitlocker', true, 'edr', true, 'local_admin', false)),
+   ('82010000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'POS Terminal Standard', 'pos_terminal', 'NCR', 'POS-X', jsonb_build_object('pos_lockdown', true, 'edr', true)),
+   ('82010000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Advisor Laptop Standard', 'laptop', 'Lenovo', 'ThinkPad X1', jsonb_build_object('bitlocker', true, 'edr', true, 'mdm', true)),
+   ('82010000-0000-0000-0000-000000000004'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Warehouse Standard', 'workstation', 'HP', 'EliteDesk 800', jsonb_build_object('screen_lock_minutes', 5)),
+   ('82010000-0000-0000-0000-000000000005'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Archive Standard', 'workstation', 'Dell', 'OptiPlex 5000', jsonb_build_object('usb_write_blocked', true))
+-on conflict (id) do nothing;
++  on conflict (id) do nothing;
++end $$;

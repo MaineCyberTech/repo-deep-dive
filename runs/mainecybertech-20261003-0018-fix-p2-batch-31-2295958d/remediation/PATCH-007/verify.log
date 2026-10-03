@@ -1,0 +1,135 @@
+=== PATCH-007 (CI-P2-001) verification - branch protection hardening ===
+date: 2026-10-03T04:17:29.1122589-04:00
+host: Windows local + Proxmox ci-runner LXC 200 (172.23.128.51)
+
+=== 1) base commit ===
+11746adcbea50d313162cea6eb42a59358a17d29
+origin/fix/p2-batch-31 = 11746adcbea50d313162cea6eb42a59358a17d29
+audited (stale) commit = 2295958d
+
+=== 2) prior fix commit 8b02f91a is an ancestor of the base? ===
+exit=0 (0 = ancestor/merged into base)
+
+=== 3) base .github/branch-protection/main.json @ origin/fix/p2-batch-31 ===
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "Test / test (20.x)",
+      "Lint / lint (20.x)",
+      "TypeCheck / typecheck",
+      "E2E / e2e (20.x)",
+      "Dependency Review / review"
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": true,
+    "required_approving_review_count": 1
+  },
+  "restrictions": null,
+  "required_conversation_resolution": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+
+=== 4) audited (stale) .github/branch-protection/main.json @ 2295958d ===
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["test (20.x)", "lint (20.x)", "typecheck", "e2e (20.x)", "Dependency Review"]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 1
+  },
+  "restrictions": null,
+  "required_conversation_resolution": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+
+=== 5) diff main.json: audited 2295958d -> base origin/fix/p2-batch-31 ===
+diff --git a/.github/branch-protection/main.json b/.github/branch-protection/main.json
+index 262027b6..62a7e31f 100644
+--- a/.github/branch-protection/main.json
++++ b/.github/branch-protection/main.json
+@@ -1,12 +1,18 @@
+ {
+   "required_status_checks": {
+     "strict": true,
+-    "contexts": ["test (20.x)", "lint (20.x)", "typecheck", "e2e (20.x)", "Dependency Review"]
++    "contexts": [
++      "Test / test (20.x)",
++      "Lint / lint (20.x)",
++      "TypeCheck / typecheck",
++      "E2E / e2e (20.x)",
++      "Dependency Review / review"
++    ]
+   },
+-  "enforce_admins": false,
++  "enforce_admins": true,
+   "required_pull_request_reviews": {
+     "dismiss_stale_reviews": true,
+-    "require_code_owner_reviews": false,
++    "require_code_owner_reviews": true,
+     "required_approving_review_count": 1
+   },
+   "restrictions": null,
+
+=== 6) base .github/branch-protection/develop.json ===
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "Test / test (20.x)",
+      "Lint / lint (20.x)",
+      "TypeCheck / typecheck"
+    ]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": true,
+    "required_approving_review_count": 1
+  },
+  "restrictions": null,
+  "required_conversation_resolution": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false
+}
+
+=== 7) lab: guard + Node (ci-runner) ===
+v20.20.2
+  OK      develop: "Test / test (20.x)" <- test.yml
+  OK      develop: "Lint / lint (20.x)" <- lint.yml
+  OK      develop: "TypeCheck / typecheck" <- typecheck.yml
+  OK      main: "Test / test (20.x)" <- test.yml
+  OK      main: "Lint / lint (20.x)" <- lint.yml
+  OK      main: "TypeCheck / typecheck" <- typecheck.yml
+  OK      main: "E2E / e2e (20.x)" <- e2e.yml
+  OK      main: "Dependency Review / review" <- dependency-review.yml
+
+checked 2 branch-protection file(s) against 41 check-run name(s)
+PASS: all required checks match a workflow job.
+GUARD_EXIT=0
+
+=== 8) why CodeQL / SBOM / Validate are NOT added as required contexts ===
+- .github/workflows/validate.yml trigger: 'on: workflow_call' only -> emits no PR check-run.
+  callers: deploy-do.yml (push main/develop | dispatch) and terraform-do.yml (dispatch) -> never on a PR.
+  Requiring 'Validate' would leave required checks perpetually pending (the CI-P1-002 failure mode).
+- AGENTS.md:63: 'CodeQL remains red on the pre-existing high-severity CSRF alert ... and not a required check.'
+  Requiring a currently-red CodeQL check would block every merge to main.
+- docs/CI.md:27: SBOM is 'Artifact-only (not a gate)' by design.
+- docs/CI.md:20 lists CodeQL but docs/RELEASING.md:8 only asks for it to be green, not required.
+
+=== 9) gitleaks ===
+not run - no diff produced; nothing to scan or push (no-op / already-fixed).
+
+=== SUMMARY ===
+enforce_admins=true (fixed), require_code_owner_reviews=true (fixed) at base
+required contexts normalised to real check-runs; guard PASS exit=0
+no change required; no branch/commit/PR created

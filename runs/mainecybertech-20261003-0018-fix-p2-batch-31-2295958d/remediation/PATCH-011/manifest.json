@@ -1,0 +1,43 @@
+{
+  "patchSet": "PATCH-011",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/patch-011-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "commit": "a7776f3fc9748752346cd705fcd188ba500947d3",
+  "findings": [
+    "SEC-P2-003",
+    "API-P3-001"
+  ],
+  "files": [
+    "apps/api/src/routes/health.ts",
+    "apps/api/src/app.ts",
+    "apps/api/src/__tests__/health.test.ts"
+  ],
+  "diffSha256": "fa6f48244329b4e2ad51742bf99e77ec8af13efa3fa14305e18cf65b844fc75c",
+  "commands": [
+    {
+      "cmd": "corepack pnpm install --frozen-lockfile (Proxmox ci-runner)",
+      "note": "lockfile up to date; workspace deps restored from store",
+      "exit": 0
+    },
+    {
+      "cmd": "corepack pnpm --filter api typecheck (Proxmox ci-runner)",
+      "note": "tsc --noEmit clean",
+      "exit": 0
+    },
+    {
+      "cmd": "corepack pnpm --filter api test (Proxmox ci-runner)",
+      "note": "122 suites passed, 1412 tests passed",
+      "exit": 0
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact (docker, changed files)",
+      "note": "no leaks found",
+      "exit": 0
+    }
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/58"
+}

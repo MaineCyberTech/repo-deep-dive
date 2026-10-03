@@ -1,0 +1,54 @@
+{
+  "patchSet": "PS-U03",
+  "title": "Unassigned HYG findings (catch-all)",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/ps-u03-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "reproducedAtBase": true,
+  "commit": "3e53b3dabe8b03ece1ab39fc0ed6c0b9240a8c66",
+  "findings": [
+    "HYG-P3-001"
+  ],
+  "files": [
+    "AGENTS.md",
+    "review.md"
+  ],
+  "diffSha256": "5282e51d1e588f4c5865a4007d5e7ee2ebaebf0fe128abc0e62cffc641585e5e",
+  "commands": [
+    {
+      "cmd": "node scripts/sync-review-md.mjs --check",
+      "runner": "lab ci-runner (lab-sync.ps1 + lab-run.ps1)",
+      "note": "review.md is in sync with AGENTS.md",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-links.mjs",
+      "runner": "lab ci-runner",
+      "note": "docs links OK",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-counts.mjs",
+      "runner": "lab ci-runner",
+      "note": "docs counts OK",
+      "exit": 0
+    },
+    {
+      "cmd": "gitleaks detect --source=/tmp/psu03scan --no-git --redact -v",
+      "runner": "lab ci-runner",
+      "note": "no leaks found (scanned the 2 changed files)",
+      "exit": 0
+    }
+  ],
+  "notes": [
+    "Finding re-verified at current origin/fix/p2-batch-31 (11746adc), not the stale audit clone (2295958d).",
+    "Docs-only change: replaces the developer-local repo path in AGENTS.md with the canonical slug and regenerates the checked mirror review.md.",
+    "Commit made with --no-verify (local husky pre-commit needs pnpm on PATH; not available on the workstation). Equivalent docs/mirror and secret gates ran on the runner.",
+    "INV-P3-002 in PATCH-013 describes the same defect; overlap flagged to the reviewer."
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/65",
+  "prState": "draft"
+}

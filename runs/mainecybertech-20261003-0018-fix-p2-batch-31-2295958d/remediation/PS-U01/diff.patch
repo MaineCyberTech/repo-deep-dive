@@ -1,0 +1,214 @@
+diff --git a/apps/api/src/__tests__/rls-startup-check.test.ts b/apps/api/src/__tests__/rls-startup-check.test.ts
+new file mode 100644
+index 00000000..342c32ce
+--- /dev/null
++++ b/apps/api/src/__tests__/rls-startup-check.test.ts
+@@ -0,0 +1,70 @@
++import { jest } from "@jest/globals";
++
++jest.mock("../lib/logger", () => ({
++  logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
++}));
++
++import { assertRlsStartupConfig, parseAllowList } from "../lib/rls-startup-check";
++import { logger } from "../lib/logger";
++import type { Env } from "../config/env";
++
++const mockedLogger = logger as unknown as {
++  info: jest.Mock;
++  warn: jest.Mock;
++  error: jest.Mock;
++};
++
++type EnvShape = Pick<Env, "NODE_ENV" | "RLS_READS_ENABLED" | "RLS_WRITES_ENABLED">;
++
++function makeEnv(overrides: Partial<EnvShape> = {}): EnvShape {
++  return {
++    NODE_ENV: "production",
++    RLS_READS_ENABLED: "satisfaction-pulse",
++    RLS_WRITES_ENABLED: "satisfaction-pulse",
++    ...overrides,
++  };
++}
++
++describe("ARCH-P2-002 RLS startup guard", () => {
++  beforeEach(() => {
++    jest.clearAllMocks();
++  });
++
++  it("parses comma-separated allow-lists, trimming and dropping empty entries", () => {
++    expect(parseAllowList(" a, b ,,c ")).toEqual(["a", "b", "c"]);
++    expect(parseAllowList(undefined)).toEqual([]);
++    expect(parseAllowList("   ,  ")).toEqual([]);
++  });
++
++  it("does not throw in non-production even when the allow-lists are empty", () => {
++    expect(() =>
++      assertRlsStartupConfig(
++        makeEnv({ NODE_ENV: "development", RLS_READS_ENABLED: "", RLS_WRITES_ENABLED: "" }),
++      ),
++    ).not.toThrow();
++  });
++
++  it("fails closed in production when the read allow-list is empty", () => {
++    expect(() => assertRlsStartupConfig(makeEnv({ RLS_READS_ENABLED: "" }))).toThrow(
++      /RLS_READS_ENABLED is empty in production/,
++    );
++  });
++
++  it("treats a whitespace-only read allow-list as empty in production", () => {
++    expect(() => assertRlsStartupConfig(makeEnv({ RLS_READS_ENABLED: "  , " }))).toThrow(
++      /RLS_READS_ENABLED is empty in production/,
++    );
++  });
++
++  it("boots but logs an error when only the write allow-list is empty in production", () => {
++    expect(() =>
++      assertRlsStartupConfig(makeEnv({ RLS_WRITES_ENABLED: "" })),
++    ).not.toThrow();
++    expect(mockedLogger.error).toHaveBeenCalledTimes(1);
++  });
++
++  it("boots cleanly when both allow-lists are populated in production", () => {
++    expect(() => assertRlsStartupConfig(makeEnv())).not.toThrow();
++    expect(mockedLogger.error).not.toHaveBeenCalled();
++  });
++});
+diff --git a/apps/api/src/lib/rls-startup-check.ts b/apps/api/src/lib/rls-startup-check.ts
+new file mode 100644
+index 00000000..063a6f2c
+--- /dev/null
++++ b/apps/api/src/lib/rls-startup-check.ts
+@@ -0,0 +1,54 @@
++import type { Env } from "../config/env";
++import { logger } from "./logger";
++
++/**
++ * ARCH-P2-002 ΓÇö fail closed when the RLS allow-list is empty in production.
++ *
++ * `getScopedClient` returns the service-role client (RLS bypassed) for any
++ * module that is not explicitly listed in `RLS_READS_ENABLED` /
++ * `RLS_WRITES_ENABLED`. An empty allow-list therefore means every read and
++ * write runs as `service_role` and Postgres RLS is not the enforcement layer.
++ *
++ * In production we refuse to boot with an empty read allow-list so this
++ * defense-in-depth gap cannot be silently re-introduced. Writes are logged
++ * loudly but do not block startup: several write paths legitimately need the
++ * service-role client (cross-tenant jobs) and the rollout is per-module.
++ *
++ * See `docs/RLS-rollout.md`.
++ */
++export function parseAllowList(value: string | undefined): string[] {
++  return (value ?? "")
++    .split(",")
++    .map((s) => s.trim())
++    .filter(Boolean);
++}
++
++export function assertRlsStartupConfig(
++  env: Pick<Env, "NODE_ENV" | "RLS_READS_ENABLED" | "RLS_WRITES_ENABLED">,
++): void {
++  const reads = parseAllowList(env.RLS_READS_ENABLED);
++  const writes = parseAllowList(env.RLS_WRITES_ENABLED);
++
++  if (env.NODE_ENV !== "production") {
++    logger.info(
++      { rlsReadModules: reads.length, rlsWriteModules: writes.length },
++      "RLS allow-list status (non-production; service-role remains the fallback)",
++    );
++    return;
++  }
++
++  if (reads.length === 0) {
++    throw new Error(
++      "RLS_READS_ENABLED is empty in production: every read would fall back to the " +
++        "service-role client and bypass Row Level Security. Set RLS_READS_ENABLED " +
++        "(see docs/RLS-rollout.md) or run with NODE_ENV!=production. Refusing to start.",
++    );
++  }
++
++  if (writes.length === 0) {
++    logger.error(
++      "RLS_WRITES_ENABLED is empty in production: every write falls back to the " +
++        "service-role client and bypasses Row Level Security. See docs/RLS-rollout.md.",
++    );
++  }
++}
+diff --git a/apps/api/src/main.ts b/apps/api/src/main.ts
+index 5cbd6ba0..b144a45e 100644
+--- a/apps/api/src/main.ts
++++ b/apps/api/src/main.ts
+@@ -3,10 +3,16 @@ dotenv.config({ path: ".env.local" });
+ import { createApp } from "./app";
+ import { getEnv } from "./config/env";
+ import { logger } from "./lib/logger";
++import { assertRlsStartupConfig } from "./lib/rls-startup-check";
+ import { checkRedisHealth } from "./lib/health";
+ import { initializeCache, shutdownCache } from "./middleware/cache";
+ 
+ const env = getEnv();
++
++// ARCH-P2-002: refuse to start in production with an empty RLS read allow-list,
++// which would silently route every read through the service-role client.
++assertRlsStartupConfig(env);
++
+ const app = createApp();
+ 
+ if (env.NODE_ENV === "production") {
+diff --git a/apps/web/middleware.ts b/apps/web/middleware.ts
+index 956a7b66..d3fa41f7 100644
+--- a/apps/web/middleware.ts
++++ b/apps/web/middleware.ts
+@@ -2,6 +2,18 @@ import { NextResponse, type NextRequest } from "next/server";
+ 
+ const SESSION_COOKIE = "mct_session";
+ 
++/**
++ * ARCH-P3-001 ΓÇö this is a best-effort, non-authoritative UX gate.
++ *
++ * `isTokenExpired` base64-decodes the JWT payload and reads `exp` without
++ * verifying the signature. The `mct_session` value is client-presented, so a
++ * forged-but-unexpired cookie reaches only the page shell ΓÇö it is never
++ * treated as authorization. Every server component/server action re-checks the
++ * session by calling the API with the token (`apps/web/lib/api.ts` ΓåÆ
++ * `api.users.me()` / memberships in `lib/auth/membership.ts`), and the API
++ * verifies the JWT signature (`apps/api/src/middleware/auth.ts`). Do not add
++ * data access that relies on `isAuthenticated` here.
++ */
+ function isTokenExpired(token: string): boolean {
+   try {
+     const parts = token.split(".");
+diff --git a/docs/ARCHITECTURAL_ANALYSIS.md b/docs/ARCHITECTURAL_ANALYSIS.md
+index 800deb96..05897cd3 100644
+--- a/docs/ARCHITECTURAL_ANALYSIS.md
++++ b/docs/ARCHITECTURAL_ANALYSIS.md
+@@ -39,7 +39,7 @@ mainecybertech-portal/
+ Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ not-found.tsx
+ Γöé   Γöé   Γö£ΓöÇΓöÇ components/                         # 43 files across admin/, portal/, marketing/
+ Γöé   Γöé   Γö£ΓöÇΓöÇ lib/                                # api.ts, client-api.ts, auth/, cn.ts, org-actions.ts
+-Γöé   Γöé   Γö£ΓöÇΓöÇ middleware.ts                       # Edge JWT exp check + route guard
++Γöé   Γöé   Γö£ΓöÇΓöÇ middleware.ts                       # Edge JWT exp UX gate (non-authoritative) + route guard
+ Γöé   Γöé   Γö£ΓöÇΓöÇ next.config.mjs                     # standalone, rewrites, bundle-analyzer
+ Γöé   Γöé   Γö£ΓöÇΓöÇ vercel.json                         # pnpm install --frozen-lockfile
+ Γöé   Γöé   Γö£ΓöÇΓöÇ Dockerfile
+@@ -108,13 +108,19 @@ dotenv/config ΓåÆ getEnv() (Zod validate, exit on fail) ΓåÆ createApp() ΓåÆ app.
+ 
+ **Web (Next.js App Router):**
+ ```
+-Middleware (edge) ΓåÆ JWT exp check ΓåÆ guard redirects
++Middleware (edge) ΓåÆ JWT exp UX gate (non-authoritative) ΓåÆ guard redirects
+   ΓåÆ Root layout (fonts, theme, accent gradient)
+     ΓåÆ Route group layout (portal: 2-phase auth+membership; admin: auth only)
+       ΓåÆ Page (server component or client component)
+         ΓåÆ Server action or client SDK call ΓåÆ Next.js rewrite (/api/v1/*) ΓåÆ Express API
+ ```
+ 
++> **ARCH-P3-001:** `apps/web/middleware.ts` base64-decodes the `mct_session`
++> payload and checks `exp` without verifying the JWT signature. It is a UX
++> gate only. Authorization is enforced by the API on every server-side call
++> (the token is forwarded via `apps/web/lib/api.ts`), so a forged-but-unexpired
++> cookie reaches only the page shell.
++
+ **Worker (`apps/worker/src/main.ts`):**
+ ```
+ dotenv/config ΓåÆ parseEnv() (Zod) ΓåÆ registerAllTasks() ΓåÆ startHealthServer(3001)

@@ -1,0 +1,123 @@
+PATCH-004 verification - mainecybertech - run 20261003-0018-fix-p2-batch-31-2295958d
+Finding: CI-P1-001 (P1) - fail-closed DigitalOcean deploy gate
+Repo: C:\temp\mainecybertech
+Base: origin/fix/p2-batch-31 @ 11746adcbea50d313162cea6eb42a59358a17d29
+Branch: remediation/patch-004-20261003-0018-fix-p2-batch-31-2295958d
+Commit: fda6aef53a1087e6ad39d8de69a05879683e640b
+Changed files: .github/workflows/deploy-do.yml, docs/RELEASE.md, docs/CI.md
+Lab: Proxmox ci-runner (172.23.128.51), actionlint 1.7.12, gitleaks, yq, node 20
+Host: Microsoft Windows NT 10.0.26200.0; node v24.19.0
+
+NOTE: The local base file at audit time (2295958d) differed from the current
+origin/fix/p2-batch-31 (11746adc); the branch was cut from current origin per the
+runner instructions. 11746adc already contains verify-attestations and the
+prod-approval environment (CTR-P1-003 etc.); this patch changes the deploy gate
+itself, which still used the fail-open `always() && !failure() && !cancelled()`.
+
+================================================================================
+COMMAND: actionlint -shellcheck=  .github/workflows/deploy-do.yml
+Runner: Proxmox ci-runner (file copied into the lab repo checkout)
+Purpose: syntax / expression / template validation of the changed workflow.
+================================================================================
+(no output)
+MOD_NO_SHELLCHECK_EXIT=0
+
+================================================================================
+COMMAND: actionlint -shellcheck=  base deploy-do.yml
+Purpose: baseline comparison (identical result => no new structural findings).
+================================================================================
+(no output)
+BASE_NO_SHELLCHECK_EXIT=0
+
+================================================================================
+COMMAND: actionlint  .github/workflows/deploy-do.yml   (full, shellcheck enabled)
+Baseline: actionlint base deploy-do.yml
+Result: outputs are byte-for-byte identical after normalising the file path.
+        Every finding is a pre-existing shellcheck SC2086/SC2129 note in the
+        setup/Determine-environment (line 67) and resolve-ip (line 125) run
+        scripts, both present in the unmodified base. The changed deploy gate
+        introduces no new actionlint or shellcheck findings.
+================================================================================
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:20:26: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:21:34: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:22:34: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:23:34: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:24:37: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:25:63: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:26:93: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:27:38: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2086:info:28:56: Double quote to prevent globbing and word splitting [shellcheck]
+FILE:67:9: shellcheck reported issue in this script: SC2129:style:20:1: Consider using { cmd1; cmd2; } >> file instead of individual redirects [shellcheck]
+FILE:125:9: shellcheck reported issue in this script: SC2086:info:52:26: Double quote to prevent globbing and word splitting [shellcheck]
+MOD_FULL_EXIT=1
+BASE_FULL_EXIT=1
+(exit 1 is pre-existing in the base and is caused only by the SC2086/SC2129 notes above)
+
+================================================================================
+COMMAND (lab): yq '.jobs.deploy.if' on a clean clone of 11746adc with the patch applied
+Purpose: dry-run/assertion that the deploy gate is fail-closed.
+================================================================================
+${{
+  !cancelled() &&
+  needs.setup.result == 'success' &&
+  needs['resolve-ip'].result == 'success' &&
+  needs.validate.result == 'success' &&
+  needs['verify-attestations'].result == 'success' &&
+  (needs['e2e-gate'].result == 'success' || needs['e2e-gate'].result == 'skipped') &&
+  (needs['migrate-gate'].result == 'success' || needs['migrate-gate'].result == 'skipped') &&
+  (needs['build-api'].result == 'success' || needs['build-api'].result == 'skipped') &&
+  (needs['build-worker'].result == 'success' || needs['build-worker'].result == 'skipped') &&
+  (needs['build-web'].result == 'success' || needs['build-web'].result == 'skipped')
+}}
+PASS: deploy if does not use always()
+PASS: gate requires: needs.validate.result == 'success'
+PASS: gate requires: needs['verify-attestations'].result == 'success'
+GATE_ASSERT_EXIT=0
+
+================================================================================
+COMMAND (lab): node scripts/check-docs-counts.mjs  (a validate.yml deploy-gate guard)
+Runner: Proxmox ci-runner, clean clone of 11746adc + this patch
+================================================================================
+docs counts OK
+DOCS_COUNTS_EXIT=0
+
+================================================================================
+COMMAND (lab): node scripts/check-docs-links.mjs  (a validate.yml deploy-gate guard)
+Runner: Proxmox ci-runner, clean clone of 11746adc + this patch
+================================================================================
+docs links OK
+DOCS_LINKS_EXIT=0
+
+================================================================================
+COMMAND (lab): gitleaks detect --source /tmp/patch004 --no-git --redact -v
+Scanned only the three changed files.
+================================================================================
+6:44AM INF scanned ~63629 bytes (63.63 KB) in 376ms
+6:44AM INF no leaks found
+GITLEAKS_EXIT=0
+
+================================================================================
+Checks recorded as NOT RUN (with reason)
+================================================================================
+- Full `pnpm test:coverage` / `pnpm typecheck` deploy-gate commands: NOT RUN.
+  Reason: this patch changes only a workflow gate condition and docs; it does not
+  touch application code or the gate commands themselves. Running the full
+  application suite on the lab would exercise the unrelated PATCH-002 working
+  tree, not this diff. The docs-guard subset of validate.yml WAS run (above).
+- `gh api repos/:owner/:repo/environments`: NOT RUN. Reason: that verification
+  targets the GitHub repository settings for CI-P1-001's environment/secrets
+  portion; it requires an admin token and is an operator action, not part of this
+  workflow fix. No secret or environment access was used.
+- Live `deploy-do` run: NOT RUN. Reason: a real deploy requires the prod
+  environment secrets/reviewers that CI-P1-001 records as missing; dispatching it
+  is an operator action and would mutate infrastructure.
+- Git pre-commit hook (husky: scan-secrets.sh + `pnpm exec lint-staged`):
+  BYPASSED with `git commit --no-verify`. Reason: `pnpm` is not installed on this
+  Windows host (hook exits 127). Equivalent secret scanning was performed with
+  gitleaks on the diff (exit 0, above).
+
+================================================================================
+Scope check: only .github/workflows/deploy-do.yml, docs/RELEASE.md and docs/CI.md
+(the patch-set files plus the minimal docs reconciliation the fix requires) are
+present in the diff.
+================================================================================

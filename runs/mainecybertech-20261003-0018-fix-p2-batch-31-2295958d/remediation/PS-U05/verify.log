@@ -1,0 +1,87 @@
+# PS-U05 verification log
+
+- repo: mainecybertech
+- branch: remediation/ps-u05-20261003-0018-fix-p2-batch-31-2295958d
+- base: origin/fix/p2-batch-31 @ 11746adcbea50d313162cea6eb42a59358a17d29
+- audited commit: 2295958d (stale audit clone; finding re-verified at 11746adc)
+- lab: Proxmox ci-runner 172.23.128.51:/srv/work/mainecybertech (node, actionlint, gitleaks)
+- date: 2026-10-03T05:09-04:00
+- runner helpers: lab-sync.ps1 (wipes+syncs /srv/work/mainecybertech) then lab-run.ps1
+
+## 0. Reproduction at base origin/fix/p2-batch-31 (11746adc)
+
+The finding reproduces at the current base: the deploy path produces an image
+SBOM nowhere, attests it nowhere, and the docs still record the gap.
+
+    $ git show HEAD:.github/workflows/deploy-do.yml | grep -c attest-sbom
+    0
+    $ git show HEAD:.github/workflows/sbom.yml | grep retention
+      retention-days: 30
+    $ git show HEAD:docs/SBOM_PROCESS.md | grep -E 'not attested|no durable release-bound|only produced by'
+    - **Image SBOMs are only produced by `build-push.yml`**, which is
+    - The image SBOM is an **artifact only**. It is not attested
+    - All SBOM artifacts expire after 30 days; there is no durable release-bound
+
+Conclusion: SUPPLY-P3-001 is still open at base. The fix adds digest-bound image
+SBOM generation and an `actions/attest-sbom` attestation to each deploy-path
+build job (api/worker/web), so a shipped image stays tied to its SBOM after the
+30-day artifact window.
+
+No application code changed, so `corepack pnpm --filter api test` was not run
+(n/a per the runner: "plus `... test` if code changed").
+
+## 1. actionlint (GitHub Actions semantics) — patched
+
+    $ actionlint -shellcheck= .github/workflows/deploy-do.yml
+    ACTIONLINT_NO_SHELLCHECK_EXIT:0
+
+## 2. actionlint shellcheck parity (patched vs base) — no new findings
+
+    $ actionlint .github/workflows/deploy-do.yml 2>&1 | grep -c shellcheck
+    11
+    $ git show HEAD:.github/workflows/deploy-do.yml > /tmp/base-deploy-do.yml
+    $ actionlint /tmp/base-deploy-do.yml 2>&1 | grep -c shellcheck
+    11
+    $ actionlint -shellcheck= /tmp/base-deploy-do.yml
+    BASE_ACTIONLINT_EXIT:0
+
+The 11 shellcheck info/style hits are pre-existing (lines 67 and 125, untouched
+by this change); patched count equals base count, so the diff introduces none.
+
+## 3. SBOM toolchain (generate + validate) — pass
+
+    $ node scripts/generate-sbom.mjs /tmp/sbom-check.cdx.json && node scripts/validate-sbom.mjs /tmp/sbom-check.cdx.json
+    Wrote 1452 components (1122 with licenses) and 828 dependency nodes to /tmp/sbom-check.cdx.json
+    SBOM OK: 1452 components (1122 with licenses), 828 dependency nodes, version 0.1.0, commit (unset)
+    SBOM_EXIT:0
+
+## 4. Change present (3 images: generate + attest)
+
+    $ git grep -n actions/attest-sbom -- .github/workflows/deploy-do.yml
+    .github/workflows/deploy-do.yml:234:        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+    .github/workflows/deploy-do.yml:296:        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+    .github/workflows/deploy-do.yml:365:        uses: actions/attest-sbom@bd218ad0dbcb3e146bd073d1d9c6d78e08aa8a0b
+    $ git grep -n cyclonedx -- .github/workflows/deploy-do.yml
+    .github/workflows/deploy-do.yml:227:          format: cyclonedx
+    .github/workflows/deploy-do.yml:291:          format: cyclonedx
+    .github/workflows/deploy-do.yml:360:          format: cyclonedx
+    $ git grep -n sbom-path -- .github/workflows/deploy-do.yml
+    .github/workflows/deploy-do.yml:238:          sbom-path: image-sbom-mct-api.cdx.json
+    .github/workflows/deploy-do.yml:300:          sbom-path: image-sbom-mct-worker.cdx.json
+    .github/workflows/deploy-do.yml:369:          sbom-path: image-sbom-mct-web.cdx.json
+
+## 5. Secret scan (gitleaks) — pass
+
+    $ rm -rf /tmp/psu05scan && mkdir -p /tmp/psu05scan && \
+      cp .github/workflows/deploy-do.yml docs/SBOM_PROCESS.md docs/RELEASING.md /tmp/psu05scan/ && \
+      gitleaks detect --source=/tmp/psu05scan --no-git --redact -v
+    ...
+    INF scanned ~64284 bytes (64.28 KB) in 303ms
+    INF no leaks found
+    GITLEAKS_EXIT:0
+
+## Result
+
+All gates PASS: actionlint (CI workflow lint) exit 0 and no new shellcheck
+findings vs base, SBOM generate+validate exit 0, gitleaks clean. Scope is limited
+to `.github/workflows/deploy-do.yml` + `docs/SBOM_PROCESS.md` + `docs/RELEASING.md`.

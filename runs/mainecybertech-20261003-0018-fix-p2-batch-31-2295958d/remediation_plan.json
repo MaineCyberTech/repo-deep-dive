@@ -1,7 +1,7 @@
 {
   "run": "20261003-0018-fix-p2-batch-31-2295958d",
   "repo": "mainecybertech",
-  "generated": "2026-10-03T05:22:52Z",
+  "generated": "2026-10-03T06:47:22Z",
   "patchSets": [
     {
       "id": "PATCH-001",
@@ -262,7 +262,10 @@
         "OBS-P2-002",
         "OBS-P3-001",
         "SEC-P3-001",
-        "DATA-P2-001"
+        "DATA-P2-001",
+        "ARCH-P2-003",
+        "OBS-P2-003",
+        "SEC-P3-002"
       ],
       "files": [
         "review.md",
@@ -277,19 +280,87 @@
       "verification": [],
       "severity": "P2",
       "branch": "remediation/PATCH-013-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PS-U01",
+      "title": "Unassigned ARCH findings (catch-all)",
+      "findings": [
+        "ARCH-P2-002",
+        "ARCH-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U01-20261003-0018-fix-p2-batch-31-2295958d",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U02",
+      "title": "Unassigned FINAL findings (catch-all)",
+      "findings": [
+        "FINAL-P1-001",
+        "FINAL-P2-001",
+        "FINAL-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U02-20261003-0018-fix-p2-batch-31-2295958d",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U03",
+      "title": "Unassigned HYG findings (catch-all)",
+      "findings": [
+        "HYG-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P3",
+      "branch": "remediation/PS-U03-20261003-0018-fix-p2-batch-31-2295958d",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U04",
+      "title": "Unassigned INV findings (catch-all)",
+      "findings": [
+        "INV-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P3",
+      "branch": "remediation/PS-U04-20261003-0018-fix-p2-batch-31-2295958d",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U05",
+      "title": "Unassigned SUPPLY findings (catch-all)",
+      "findings": [
+        "SUPPLY-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P3",
+      "branch": "remediation/PS-U05-20261003-0018-fix-p2-batch-31-2295958d",
+      "catchAll": true
     }
   ],
-  "unassignedFindings": [
-    "ARCH-P2-002",
-    "ARCH-P2-003",
-    "ARCH-P3-001",
-    "FINAL-P1-001",
-    "FINAL-P2-001",
-    "FINAL-P2-002",
-    "HYG-P3-001",
-    "INV-P3-001",
-    "OBS-P2-003",
-    "SEC-P3-002",
-    "SUPPLY-P3-001"
+  "unassignedFindings": [],
+  "catchAllSets": [
+    "PS-U01",
+    "PS-U02",
+    "PS-U03",
+    "PS-U04",
+    "PS-U05"
   ]
 }

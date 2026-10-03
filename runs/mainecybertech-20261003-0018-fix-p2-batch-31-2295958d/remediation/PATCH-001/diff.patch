@@ -1,0 +1,319 @@
+diff --git a/apps/worker/src/__tests__/orphan-cleanup.test.ts b/apps/worker/src/__tests__/orphan-cleanup.test.ts
+index 0137b65d..7d889697 100644
+--- a/apps/worker/src/__tests__/orphan-cleanup.test.ts
++++ b/apps/worker/src/__tests__/orphan-cleanup.test.ts
+@@ -75,9 +75,24 @@ function mockClient(opts: {
+     list: jest.fn().mockImplementation((path: string, o: { limit: number; offset: number }) => {
+       const err = opts.listErrorByBucket?.[bucket];
+       if (err) return Promise.resolve({ data: null, error: err });
+-      const all =
+-        opts.prefixEntries?.[bucket]?.[path] ??
+-        (path === "" ? (opts.filesByBucket?.[bucket] ?? []) : []);
++
++      let all: Entry[];
++      if (opts.prefixEntries?.[bucket]?.[path] !== undefined) {
++        // Pass nested listings through verbatim: folders must carry `id: null`
++        // (or omit `id`) and files must carry a real `id`, exactly as the real
++        // Storage API returns them. Tests that omit `id` on a file are now
++        // caught instead of being silently treated as objects.
++        all = opts.prefixEntries[bucket][path];
++      } else if (path === "") {
++        // Root flat listings are files; give them an id unless a test opts out.
++        all = (opts.filesByBucket?.[bucket] ?? []).map((e) => ({
++          ...e,
++          id: e.id === undefined ? `file:${e.name}` : e.id,
++        }));
++      } else {
++        all = [];
++      }
++
+       const page = all.slice(o.offset, o.offset + o.limit);
+       return Promise.resolve({ data: page, error: null });
+     }),
+@@ -117,7 +132,10 @@ describe("orphanCleanup task", () => {
+     active = mockClient({
+       filesByBucket: { documents: [{ name: "doc-1.pdf" }, { name: "doc-2.pdf" }] },
+       queryByTable: {
+-        documents: { data: [{ storage_path: "doc-1.pdf" }, { storage_path: "doc-2.pdf" }], error: null },
++        documents: {
++          data: [{ storage_path: "doc-1.pdf" }, { storage_path: "doc-2.pdf" }],
++          error: null,
++        },
+       },
+     });
+     const result = await orphanCleanup({});
+@@ -126,13 +144,25 @@ describe("orphanCleanup task", () => {
+   });
+ 
+   it("removes only the genuinely orphaned files", async () => {
++    const org = "00000000-0000-0000-0000-00000000000a";
++    const keep = `orgs/${org}/doc-1.pdf`;
++    const orphan = `orgs/${org}/orphan-1.pdf`;
+     active = mockClient({
+-      filesByBucket: { documents: [{ name: "doc-1.pdf" }, { name: "orphan-1.pdf" }] },
+-      queryByTable: { documents: { data: [{ storage_path: "doc-1.pdf" }], error: null } },
++      prefixEntries: {
++        documents: {
++          "": [{ name: "orgs", id: null }],
++          orgs: [{ name: org, id: null }],
++          [`orgs/${org}`]: [
++            { name: "doc-1.pdf", id: "f-keep" },
++            { name: "orphan-1.pdf", id: "f-orphan" },
++          ],
++        },
++      },
++      queryByTable: { documents: { data: [{ storage_path: keep }], error: null } },
+     });
+     const result = await orphanCleanup({});
+     expect(result).toEqual({ ok: true });
+-    expect(active.removeCalls.documents).toEqual([["orphan-1.pdf"]]);
++    expect(active.removeCalls.documents).toEqual([[orphan]]);
+   });
+ 
+   // --- the data-loss regression this suite exists to prevent ----------------
+@@ -175,7 +205,9 @@ describe("orphanCleanup task", () => {
+     const many = Array.from({ length: 250 }, (_, i) => ({ name: `f-${i}.pdf` }));
+     active = mockClient({
+       filesByBucket: { documents: many },
+-      queryByTable: { documents: { data: many.map((m) => ({ storage_path: m.name })), error: null } },
++      queryByTable: {
++        documents: { data: many.map((m) => ({ storage_path: m.name })), error: null },
++      },
+     });
+ 
+     const result = await orphanCleanup({});
+@@ -183,12 +215,26 @@ describe("orphanCleanup task", () => {
+     expect(active.removeCalls.documents ?? []).toEqual([]);
+   });
+ 
+-  it("handles an avatar orphan safely (keyed by basename)", async () => {
++  it("handles an avatar orphan safely (nested, keyed by basename)", async () => {
+     active = mockClient({
+-      filesByBucket: { documents: [], avatars: [{ name: "user-1.png" }, { name: "stale.png" }] },
++      prefixEntries: {
++        avatars: {
++          "": [
++            { name: "user-1", id: null },
++            { name: "user-2", id: null },
++          ],
++          "user-1": [{ name: "avatar.png", id: "a-keep" }],
++          "user-2": [{ name: "old-avatar.png", id: "a-orphan" }],
++        },
++      },
+       queryByTable: {
+         profiles: {
+-          data: [{ avatar_url: "https://x.supabase.co/storage/v1/object/public/avatars/user-1.png" }],
++          data: [
++            {
++              avatar_url:
++                "https://x.supabase.co/storage/v1/object/public/avatars/user-1/avatar.png",
++            },
++          ],
+           error: null,
+         },
+       },
+@@ -196,14 +242,19 @@ describe("orphanCleanup task", () => {
+ 
+     const result = await orphanCleanup({});
+     expect(result).toEqual({ ok: true });
+-    expect(active.removeCalls.avatars).toEqual([["stale.png"]]);
++    expect(active.removeCalls.avatars).toEqual([["user-2/old-avatar.png"]]);
+   });
+ 
+   it("reports failure but still cleans the other bucket when one bucket fails", async () => {
+     active = mockClient({
++      prefixEntries: {
++        avatars: {
++          "": [{ name: "user-1", id: null }],
++          "user-1": [{ name: "avatar.png", id: "a-orphan" }],
++        },
++      },
+       filesByBucket: {
+         documents: [{ name: "doc.pdf" }],
+-        avatars: [{ name: "stale.png" }],
+       },
+       queryByTable: {
+         documents: { data: null, error: { message: "db down" } },
+@@ -213,7 +264,7 @@ describe("orphanCleanup task", () => {
+ 
+     const result = await orphanCleanup({});
+     expect(active.removeCalls.documents ?? []).toEqual([]);
+-    expect(active.removeCalls.avatars).toEqual([["stale.png"]]);
++    expect(active.removeCalls.avatars).toEqual([["user-1/avatar.png"]]);
+     expect(result.ok).toBe(false);
+   });
+ 
+@@ -260,7 +311,10 @@ describe("orphanCleanup task", () => {
+         documents: {
+           "": [{ name: "orgs", id: null }],
+           orgs: [{ name: org, id: null }],
+-          [`orgs/${org}`]: [{ name: "keep.pdf" }, { name: "orphan.pdf" }],
++          [`orgs/${org}`]: [
++            { name: "keep.pdf", id: "f-keep" },
++            { name: "orphan.pdf", id: "f-orphan" },
++          ],
+         },
+       },
+       queryByTable: {
+@@ -274,4 +328,72 @@ describe("orphanCleanup task", () => {
+     expect(result).toEqual({ ok: true });
+     expect(active.removeCalls.documents).toEqual([[orphan]]);
+   });
++
++  // --- DATA-P0-001 hardening: folders are never deletable ------------------
++
++  it("treats a folder entry with an absent `id` as a folder, never an object [DATA-P0-001]", async () => {
++    const org = "00000000-0000-0000-0000-00000000000b";
++    const keep = `orgs/${org}/keep.pdf`;
++    const orphan = `orgs/${org}/orphan.pdf`;
++    active = mockClient({
++      prefixEntries: {
++        documents: {
++          // No `id` at all: an older/proxied Storage response shape. This must
++          // still be walked as a folder, never handed to remove().
++          "": [{ name: "orgs" }],
++          orgs: [{ name: org }],
++          [`orgs/${org}`]: [
++            { name: "keep.pdf", id: "f-keep" },
++            { name: "orphan.pdf", id: "f-orphan" },
++          ],
++        },
++      },
++      queryByTable: {
++        documents: { data: [{ storage_path: keep }], error: null },
++      },
++    });
++
++    const result = await orphanCleanup({});
++    expect(result).toEqual({ ok: true });
++    expect(active.removeCalls.documents).toEqual([[orphan]]);
++    // The folder names themselves must never appear in a remove() call.
++    expect((active.removeCalls.documents ?? []).flat()).not.toContain("orgs");
++    expect((active.removeCalls.documents ?? []).flat()).not.toContain(org);
++  });
++
++  it("never removes the .emptyFolderPlaceholder marker [DATA-P0-001]", async () => {
++    const org = "00000000-0000-0000-0000-00000000000c";
++    const orphan = `orgs/${org}/orphan.pdf`;
++    active = mockClient({
++      prefixEntries: {
++        documents: {
++          "": [{ name: "orgs", id: null }],
++          orgs: [{ name: org, id: null }],
++          [`orgs/${org}`]: [
++            { name: ".emptyFolderPlaceholder", id: "placeholder" },
++            { name: "orphan.pdf", id: "f-orphan" },
++          ],
++        },
++      },
++      queryByTable: { documents: { data: [], error: null } },
++    });
++
++    const result = await orphanCleanup({});
++    expect(result).toEqual({ ok: true });
++    expect(active.removeCalls.documents).toEqual([[orphan]]);
++  });
++
++  it("aborts the bucket rather than removing a non-object (root) path [DATA-P0-001]", async () => {
++    active = mockClient({
++      // A bare root-level name has no "/" and cannot be proven to be an object
++      // key; passing it to remove() is exactly the recursive-prefix hazard.
++      filesByBucket: { documents: [{ name: "legacy-root.pdf" }] },
++      queryByTable: { documents: { data: [], error: null } },
++    });
++
++    const result = await orphanCleanup({});
++    expect(active.removeCalls.documents ?? []).toEqual([]);
++    expect(result.ok).toBe(false);
++    expect(result.error).toContain("documents");
++  });
+ });
+diff --git a/apps/worker/src/tasks/orphan-cleanup.ts b/apps/worker/src/tasks/orphan-cleanup.ts
+index e3f68fd2..be32a20e 100644
+--- a/apps/worker/src/tasks/orphan-cleanup.ts
++++ b/apps/worker/src/tasks/orphan-cleanup.ts
+@@ -16,17 +16,33 @@ const LIST_PAGE_SIZE = 100;
+  */
+ const MAX_LISTED = 10_000;
+ 
+-/** Storage entry shape returned by `list()`. Folders have a null `id`. */
++/** Storage entry shape returned by `list()`. Folders have a null/absent `id`. */
+ type StorageEntry = { name: string; id?: string | null };
+ 
++/** Supabase's own marker object used to materialise an otherwise empty folder. */
++const EMPTY_FOLDER_PLACEHOLDER = ".emptyFolderPlaceholder";
++
++/** Hard ceiling on folder recursion, so a malformed/looping listing cannot run away. */
++const MAX_DEPTH = 8;
++
++/**
++ * A folder entry has no object `id` (Supabase returns `null`; an older or
++ * proxied response may omit the field entirely). Treating `undefined` as a file
++ * is the DATA-P0-001 bug: a bare folder name handed to `remove()` is a
++ * recursive prefix delete.
++ */
++function isFolderEntry(entry: StorageEntry): boolean {
++  return entry.id === null || entry.id === undefined;
++}
++
+ /**
+  * Recursively list every object path in a bucket, following pagination.
+  *
+  * `list(prefix)` returns a mix of files and folder entries (folders have a
+- * null `id`) and only shows nested objects when the folder prefix is listed, so
+- * a single flat call both truncates and hides nested objects. Any read error
+- * aborts the whole listing: an unreadable listing must never degrade into
+- * "these files are orphans".
++ * null/absent `id`) and only shows nested objects when the folder prefix is
++ * listed, so a single flat call both truncates and hides nested objects. Any
++ * read error aborts the whole listing: an unreadable listing must never degrade
++ * into "these files are orphans".
+  */
+ async function listAllFiles(
+   storageBucket: {
+@@ -38,7 +54,12 @@ async function listAllFiles(
+   bucket: string,
+   prefix = "",
+   seen = { count: 0 },
++  depth = 0,
+ ): Promise<string[]> {
++  if (depth > MAX_DEPTH) {
++    throw new Error(`list ${bucket} exceeded max folder depth ${MAX_DEPTH}`);
++  }
++
+   const paths: string[] = [];
+   let offset = 0;
+ 
+@@ -53,9 +74,11 @@ async function listAllFiles(
+     const page = data ?? [];
+ 
+     for (const entry of page) {
++      // Never surface a folder's internal placeholder as a real object.
++      if (!entry.name || entry.name === EMPTY_FOLDER_PLACEHOLDER) continue;
+       const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name;
+-      if (entry.id === null) {
+-        paths.push(...(await listAllFiles(storageBucket, bucket, fullPath, seen)));
++      if (isFolderEntry(entry)) {
++        paths.push(...(await listAllFiles(storageBucket, bucket, fullPath, seen, depth + 1)));
+       } else {
+         paths.push(fullPath);
+       }
+@@ -163,6 +186,18 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
+ 
+       if (orphaned.length === 0) continue;
+ 
++      // Defence in depth (DATA-P0-001): `remove()` treats a bare folder name
++      // or trailing-slash prefix as a RECURSIVE delete, so only concrete,
++      // nested object keys may ever be handed to it. If anything else slips
++      // through, abort the bucket instead of destroying unrelated objects.
++      const unsafe = orphaned.filter((p) => p.length === 0 || p.endsWith("/") || !p.includes("/"));
++      if (unsafe.length > 0) {
++        const message = `refusing to remove non-object path(s): ${unsafe.join(", ")}`;
++        logger.error({ bucket, unsafe }, "Aborted orphan removal for unsafe paths");
++        failures.push(`${bucket}: ${message}`);
++        continue;
++      }
++
+       const { error: removeError } = await supabase.storage.from(bucket).remove(orphaned);
+       if (removeError) {
+         logger.error(

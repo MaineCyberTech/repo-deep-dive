@@ -1,0 +1,46 @@
+{
+    "patchSet":  "PATCH-001",
+    "run":  "20261003-0018-fix-p2-batch-31-2295958d",
+    "repo":  "mainecybertech",
+    "branch":  "remediation/patch-001-20261003-0018-fix-p2-batch-31-2295958d",
+    "base":  "fix/p2-batch-31",
+    "baseSha":  "11746adcbea50d313162cea6eb42a59358a17d29",
+    "auditedCommit":  "2295958d",
+    "commit":  "0538e1ce8ba78fe0407a6ea206f352079823d798",
+    "findings":  [
+                     "DATA-P0-001",
+                     "TEST-P2-001"
+                 ],
+    "files":  [
+                  "apps/worker/src/tasks/orphan-cleanup.ts",
+                  "apps/worker/src/__tests__/orphan-cleanup.test.ts"
+              ],
+    "diffSha256":  "ff9111184d63b41405ce918c30a3e083b40180dd94ee51f673020224c945770e",
+    "commands":  [
+                     {
+                         "cmd":  "corepack pnpm --filter worker test -- orphan",
+                         "note":  "14 passed, 14 total",
+                         "exit":  0
+                     },
+                     {
+                         "cmd":  "corepack pnpm --filter worker test -- orphan (unpatched source, git stash)",
+                         "note":  "3 new regression tests fail as expected",
+                         "exit":  1
+                     },
+                     {
+                         "exit":  0,
+                         "cmd":  "corepack pnpm --filter worker typecheck"
+                     },
+                     {
+                         "cmd":  "corepack pnpm --filter worker lint",
+                         "note":  "0 errors; 1 pre-existing unrelated warning",
+                         "exit":  0
+                     },
+                     {
+                         "cmd":  "gitleaks detect --no-git --redact (docker, changed files)",
+                         "note":  "no leaks found",
+                         "exit":  0
+                     }
+                 ],
+    "pr":  "https://github.com/MaineCyberTech/mainecybertech/pull/43"
+}

@@ -1,0 +1,24 @@
+# Verification log
+
+| When | Patch set | State | Finding status | Evidence | Note |
+|---|---|---|---|---|---|
+| 2026-10-03T05:43:50Z | PATCH-001 | open | partially-fixed | 0538e1ce8ba78fe0407a6ea206f352079823d798 | Base fix/p2-batch-31 force-updated to 11746adc; recursive listing already present via 08ad3d4d. PR #43 adds absent-id folder guard, .emptyFolderPlaceholder skip, pre-remove object-key assertion + regression tests. |
+| 2026-10-03T06:37:57Z | PATCH-002 | open | partially-fixed | 42c76bfa195b184245743b1df56c36e5bd17508f | Draft PR #53 open on base fix/p2-batch-31; lab gates green (typecheck, 1416 tests), gitleaks clean. Awaiting human review. |
+| 2026-10-03T06:38:48Z | PATCH-002 | open | partially-fixed | 42c76bfa195b184245743b1df56c36e5bd17508f |  |
+| 2026-10-03T06:46:49Z | PATCH-004 | open | partially-fixed | fda6aef53a1087e6ad39d8de69a05879683e640b | Draft PR #54: deploy gate fail-closed (validate/builds/attestations success required); actionlint clean/no new findings, docs guards green, gitleaks clean. Prod env secrets/reviewers remain operator action (CI-P1-001). |
+| 2026-10-03T06:47:22Z | PATCH-004 | open | partially-fixed | fda6aef53a1087e6ad39d8de69a05879683e640b |  |
+| 2026-10-03T06:59:31Z | PS-U02 | open | partially-fixed | c11f40adf58a613679b464a73e33f3a12724b6e8 | docs/RELEASE_GATE.md; draft PR #55 |
+| 2026-10-03T07:12:20Z | PATCH-003 | open | partially-fixed | 26ea60433a3605df44ffddb0196327cbc08223f4 |  |
+| 2026-10-03T07:26:32Z | PATCH-005 | open | partially-fixed | ab783ed7e282544d803dd26da095a8476d5ceb29 | Draft PR #57: search now honors req.orgScope; explicit org narrows, empty scope fails closed, all-tenants path audited. Lab gates green (typecheck, 1410 tests), gitleaks clean. |
+| 2026-10-03T07:33:26Z | PATCH-006 | merged | verified-fixed | e84c8ee98033adcd101aeb6dd9aa9f7ada2dafa | Already fixed at PR base 11746adc by prior remediation IR-P0-003 (e59d875d, 5e97b660, e84c8ee9); audit ran on stale clone 2295958d. No duplicate PR opened. Verified in lab: docker compose config, promtool check/test rules, amtool check-config all exit 0. |
+| 2026-10-03T07:40:23Z | PATCH-011 | open | partially-fixed | a7776f3fc9748752346cd705fcd188ba500947d3 |  |
+| 2026-10-03T07:47:47Z | PATCH-009 | open | partially-fixed | c7e2bd02d222df802b05879693118a8d8b2a4543 |  |
+| 2026-10-03T07:54:46Z | PATCH-010 | open | partially-fixed | 203c62917770fbe1bd6ef6436b8211524a60de56 | Draft PR #60 open; lab typecheck+test exit 0; gitleaks clean. |
+| 2026-10-03T08:02:51Z | PATCH-012 | open | partially-fixed | 3e7a39bbd97b9ebc5b23101b52ddb861809a3ac5 | Draft PR #61 open on base fix/p2-batch-31 @ 11746adc; licenses.json untracked + CI guard added; lab gates green (docs counts/links, actionlint, license gate, guard fail-closed, gitleaks). |
+| 2026-10-03T08:12:53Z | PATCH-008 | open | partially-fixed | 624c02e1b2cebdf890f3d69a2bfdd580ced4f111 | Draft PR #62: all demo-seeding migrations gated on explicit app.seed_demo (default off); 5302128/5302406 included for chain consistency. Lab: types --check exit 0, api tests 122 suites/1406 passed, guard verified on PostgreSQL 17, gitleaks clean. |
+| 2026-10-03T08:18:02Z | PATCH-007 | merged | verified-fixed | 8b02f91ac772b393e1bfd83afe80b70b408ff679 | already fixed at base fix/p2-batch-31 by prior merged commit 8b02f91a (PR #30): enforce_admins=true, require_code_owner_reviews=true, real check-run contexts; residual CodeQL/Validate/SBOM required-context additions not applied (CodeQL red, SBOM artifact-only, Validate workflow_call-only) |
+| 2026-10-03T08:39:58Z | PATCH-013 | open | partially-fixed | 1c62862a0aa2fe90facb1a60942398871bb63073 | draft PR #63 (draft -> partially-fixed); DATA-P2-001 and ARCH-P2-003 already fixed at base 11746adc; HYG-P2-001/002, CI-P3-001, OBS-P2-003 need owner decisions |
+| 2026-10-03T08:51:14Z | PS-U01 | open | partially-fixed | 6ea9cb8e4da21bc0243073da4c2615199f47056a | Draft PR #64; startup RLS fail-closed guard + middleware non-authoritative docs; findings reproduce at base 11746adc |
+| 2026-10-03T08:54:37Z | PS-U03 | open | partially-fixed | 3e53b3dabe8b03ece1ab39fc0ed6c0b9240a8c66 |  |
+| 2026-10-03T09:04:12Z | PS-U04 | open | partially-fixed | fd27150f0860c7b3e8397b73b2066a5908f03214 | PS-U04: removed superseded prior-run snapshots under prompts/repo-deep-dive (157 files), regenerated prompts/manifest.json (630); draft PR #66 |
+| 2026-10-03T09:10:18Z | PS-U05 | open | partially-fixed | e8e05155d859313bb3f16ab7f72b214f1e270139 | Draft PR #67: deploy-path image SBOM digest-bound + actions/attest-sbom (push-to-registry); actionlint + SBOM validate + gitleaks clean at e8e05155. |

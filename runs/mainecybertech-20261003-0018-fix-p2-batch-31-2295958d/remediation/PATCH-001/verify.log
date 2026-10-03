@@ -1,0 +1,229 @@
+PATCH-001 verification - mainecybertech - run 20261003-0018-fix-p2-batch-31-2295958d
+Date: 2026-10-03T01:38:52.9408136-04:00
+Repo: C:\temp\mainecybertech
+BUT: origin/fix/p2-batch-31 was force-updated after the audit; it now points at 11746adc and the audited 2295958d is no longer on the branch.
+     Branch based on origin/fix/p2-batch-31 (11746adc) per the runner instructions. The base already contained commit 08ad3d4d
+     (recursive folder-aware listing); this patch adds the missing pre-remove object-key guard, .emptyFolderPlaceholder
+     handling, and absent-id folder defence.
+Host: Microsoft Windows NT 10.0.26200.0; node v24.19.0; pnpm 10.34.3
+BASE_SHA=11746adcbea50d313162cea6eb42a59358a17d29
+
+======================================================================
+COMMAND: corepack pnpm --filter worker test -- orphan
+CWD: C:\temp\mainecybertech   EXIT: 0
+======================================================================
+
+> worker@ test C:\temp\mainecybertech\apps\worker
+> jest --passWithNoTests "--" "orphan"
+
+corepack : PASS src/__tests__/orphan-cleanup.test.ts
+At line:1 char:110
++ ... rphan ==="; corepack pnpm --filter worker test -- orphan 2>&1 | Tee-O ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS src/__test...cleanup.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  orphanCleanup task
+    ΓêÜ returns { ok: true } when no files in storage (5 ms)
+    ΓêÜ returns { ok: true } and removes nothing when all files are referenced (1 ms)
+    ΓêÜ removes only the genuinely orphaned files (1 ms)
+    ΓêÜ DELETES NOTHING when the reference query errors (was: wiped the bucket) (1 ms)
+    ΓêÜ DELETES NOTHING when the storage listing errors
+    ΓêÜ pages through a bucket larger than one listing page (3 ms)
+    ΓêÜ handles an avatar orphan safely (nested, keyed by basename) (1 ms)
+    ΓêÜ reports failure but still cleans the other bucket when one bucket fails (2 ms)
+    ΓêÜ spares a valid file-request upload referenced by file_request_uploads (2 ms)
+    ΓêÜ spares a document version object referenced only by document_versions (2 ms)
+    ΓêÜ lists nested objects recursively and reconciles full paths (2 ms)
+    ΓêÜ treats a folder entry with an absent `id` as a folder, never an object [DATA-P0-001] (1 ms)
+    ΓêÜ never removes the .emptyFolderPlaceholder marker [DATA-P0-001] (1 ms)
+    ΓêÜ aborts the bucket rather than removing a non-object (root) path [DATA-P0-001] (2 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       14 passed, 14 total
+Snapshots:   0 total
+Time:        4.922 s
+Ran all test suites matching /orphan/i.
+
+
+======================================================================
+COMMAND (FAIL-THEN-PASS): git stash push -- apps/worker/src/tasks/orphan-cleanup.ts && corepack pnpm --filter worker test -- orphan
+Shows the NEW regression tests failing on the unpatched source. EXIT: 1
+======================================================================
+
+> worker@ test C:\temp\mainecybertech\apps\worker
+> jest --passWithNoTests "--" "orphan"
+
+corepack : FAIL src/__tests__/orphan-cleanup.test.ts
+At line:1 char:188
++ ... FAIL) ==="; corepack pnpm --filter worker test -- orphan 2>&1 | Tee-O ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL src/__test...cleanup.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  orphanCleanup task
+    ΓêÜ returns { ok: true } when no files in storage (4 ms)
+    ΓêÜ returns { ok: true } and removes nothing when all files are referenced (2 ms)
+    ΓêÜ removes only the genuinely orphaned files (1 ms)
+    ΓêÜ DELETES NOTHING when the reference query errors (was: wiped the bucket) (2 ms)
+    ΓêÜ DELETES NOTHING when the storage listing errors (1 ms)
+    ΓêÜ pages through a bucket larger than one listing page (1 ms)
+    ΓêÜ handles an avatar orphan safely (nested, keyed by basename) (1 ms)
+    ΓêÜ reports failure but still cleans the other bucket when one bucket fails (1 ms)
+    ΓêÜ spares a valid file-request upload referenced by file_request_uploads (1 ms)
+    ΓêÜ spares a document version object referenced only by document_versions (1 ms)
+    ΓêÜ lists nested objects recursively and reconciles full paths (1 ms)
+    ├ù treats a folder entry with an absent `id` as a folder, never an object [DATA-P0-001] (4 ms)
+    ├ù never removes the .emptyFolderPlaceholder marker [DATA-P0-001] (1 ms)
+    ├ù aborts the bucket rather than removing a non-object (root) path [DATA-P0-001] (1 ms)
+
+  ΓùÅ orphanCleanup task ΓÇ║ treats a folder entry with an absent `id` as a folder, never an object [DATA-P0-001]
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+      Array [
+        Array [
+    -     "orgs/00000000-0000-0000-0000-00000000000b/orphan.pdf",
+    +     "orgs",
+        ],
+      ]
+
+    [0m [90m 351 |[39m     [36mconst[39m result [33m=[39m [36mawait[39m orphanCleanup({})[33m;[39m
+     [90m 352 |[39m     expect(result)[33m.[39mtoEqual({ ok[33m:[39m [36mtrue[39m })[33m;[39m
+    [31m[1m>[22m[39m[90m 353 |[39m     
+expect(active[33m.[39mremoveCalls[33m.[39mdocuments)[33m.[39mtoEqual([[orphan]])[33m;[39m
+     [90m     |[39m                                          [31m[1m^[22m[39m
+     [90m 354 |[39m     [90m// The folder names themselves must never appear in a remove() call.[39m
+     [90m 355 |[39m     expect((active[33m.[39mremoveCalls[33m.[39mdocuments [33m?[39m[33m?[39m 
+[])[33m.[39mflat())[33m.[39mnot[33m.[39mtoContain([32m"orgs"[39m)[33m;[39m
+     [90m 356 |[39m     expect((active[33m.[39mremoveCalls[33m.[39mdocuments [33m?[39m[33m?[39m 
+[])[33m.[39mflat())[33m.[39mnot[33m.[39mtoContain(org)[33m;[39m[0m
+
+      at Object.<anonymous> (src/__tests__/orphan-cleanup.test.ts:353:42)
+
+  ΓùÅ orphanCleanup task ΓÇ║ never removes the .emptyFolderPlaceholder marker [DATA-P0-001]
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+      Array [
+        Array [
+    +     "orgs/00000000-0000-0000-0000-00000000000c/.emptyFolderPlaceholder",
+          "orgs/00000000-0000-0000-0000-00000000000c/orphan.pdf",
+        ],
+      ]
+
+    [0m [90m 376 |[39m     [36mconst[39m result [33m=[39m [36mawait[39m orphanCleanup({})[33m;[39m
+     [90m 377 |[39m     expect(result)[33m.[39mtoEqual({ ok[33m:[39m [36mtrue[39m })[33m;[39m
+    [31m[1m>[22m[39m[90m 378 |[39m     
+expect(active[33m.[39mremoveCalls[33m.[39mdocuments)[33m.[39mtoEqual([[orphan]])[33m;[39m
+     [90m     |[39m                                          [31m[1m^[22m[39m
+     [90m 379 |[39m   })[33m;[39m
+     [90m 380 |[39m
+     [90m 381 |[39m   it([32m"aborts the bucket rather than removing a non-object (root) path 
+[DATA-P0-001]"[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (src/__tests__/orphan-cleanup.test.ts:378:42)
+
+  ΓùÅ orphanCleanup task ΓÇ║ aborts the bucket rather than removing a non-object (root) path [DATA-P0-001]
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 5
+
+    - Array []
+    + Array [
+    +   Array [
+    +     "legacy-root.pdf",
+    +   ],
+    + ]
+
+    [0m [90m 388 |[39m
+     [90m 389 |[39m     [36mconst[39m result [33m=[39m [36mawait[39m orphanCleanup({})[33m;[39m
+    [31m[1m>[22m[39m[90m 390 |[39m     expect(active[33m.[39mremoveCalls[33m.[39mdocuments 
+[33m?[39m[33m?[39m [])[33m.[39mtoEqual([])[33m;[39m
+     [90m     |[39m                                                [31m[1m^[22m[39m
+     [90m 391 |[39m     expect(result[33m.[39mok)[33m.[39mtoBe([36mfalse[39m)[33m;[39m
+     [90m 392 |[39m     expect(result[33m.[39merror)[33m.[39mtoContain([32m"documents"[39m)[33m;[39m
+     [90m 393 |[39m   })[33m;[39m[0m
+
+      at Object.<anonymous> (src/__tests__/orphan-cleanup.test.ts:390:48)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 11 passed, 14 total
+Snapshots:   0 total
+Time:        1.11 s, estimated 3 s
+Ran all test suites matching /orphan/i.
+C:\temp\mainecybertech\apps\worker:
+ΓÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILΓÇë worker@ test: `jest --passWithNoTests "--" "orphan"`
+Exit status 1
+
+
+======================================================================
+COMMAND: corepack pnpm --filter worker typecheck   EXIT: 0
+======================================================================
+
+> worker@ typecheck C:\temp\mainecybertech\apps\worker
+> tsc --noEmit
+
+
+
+======================================================================
+COMMAND: corepack pnpm --filter worker lint   EXIT: 0 (1 pre-existing warning in src/tasks/retention.ts, unrelated)
+======================================================================
+
+> worker@ lint C:\temp\mainecybertech\apps\worker
+> eslint src/
+
+
+C:\temp\mainecybertech\apps\worker\src\tasks\retention.ts
+  50:3  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+
+Γ£û 1 problem (0 errors, 1 warning)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
+
+
+======================================================================
+COMMAND: docker run --rm -v <changed-files-dir>:/scan zricethezav/gitleaks:latest detect --source=/scan --no-git --redact -v
+Scanned only the two changed files. EXIT: 0
+======================================================================
+docker : Unable to find image 'zricethezav/gitleaks:latest' locally
+At line:1 char:379
++ ... s') -Force; docker run --rm -v "${scan}:/scan" zricethezav/gitleaks:l ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Unable to find ...latest' locally:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+latest: Pulling from zricethezav/gitleaks
+a43ab0c74cc4: Pulling fs layer
+61fdfd7c0175: Pulling fs layer
+d49a2dee86fb: Pulling fs layer
+d92b655ae8e2: Pulling fs layer
+cc89e3f50cd2: Download complete
+a43ab0c74cc4: Download complete
+d49a2dee86fb: Download complete
+d49a2dee86fb: Pull complete
+d92b655ae8e2: Download complete
+61fdfd7c0175: Download complete
+d92b655ae8e2: Pull complete
+a43ab0c74cc4: Pull complete
+61fdfd7c0175: Pull complete
+Digest: sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+Status: Downloaded newer image for zricethezav/gitleaks:latest
+
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+
+[90m5:40AM[0m [32mINF[0m [1mscanned ~23478 bytes (23.48 KB) in 113ms[0m
+[90m5:40AM[0m [32mINF[0m [1mno leaks found[0m
+

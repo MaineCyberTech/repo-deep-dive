@@ -1,0 +1,132 @@
+=== host ===
+Linux ci-runner 7.0.14-20-pve #1 SMP PREEMPT_DYNAMIC PMX 7.0.14-20 (2026-09-24T10:43Z) x86_64 GNU/Linux
+=== docker versions ===
+Docker version 26.1.5+dfsg1, build a72d7cd
+=== 1) docker compose config (renders + validates compose) ===
+COMPOSE_EXIT=0
+--- stderr ---
+--- services in rendered config ---
+3:  alertmanager:
+64:  api:
+131:  caddy:
+197:  prometheus:
+241:  redis:
+284:  web:
+312:  worker:
+374:  default:
+377:  alertmanager-data:
+379:  caddy-config:
+381:  caddy-data:
+383:  prom-data:
+385:  redis-data:
+397:  options:
+401:  cap_drop:
+403:  security_opt:
+=== 2) promtool check rules ===
+Unable to find image 'prom/prometheus:v3.5.1' locally
+v3.5.1: Pulling from prom/prometheus
+5d243c38b886: Pulling fs layer
+508fa822aee0: Pulling fs layer
+3acce2a1650a: Pulling fs layer
+fffbebc0a44f: Pulling fs layer
+bcb57e4d7625: Pulling fs layer
+d0c515ccd947: Pulling fs layer
+fe89738d95b9: Pulling fs layer
+5d177c9719ed: Pulling fs layer
+4a43ababd2d6: Pulling fs layer
+5607de111fe1: Pulling fs layer
+d0c515ccd947: Waiting
+fe89738d95b9: Waiting
+5d177c9719ed: Waiting
+4a43ababd2d6: Waiting
+5607de111fe1: Waiting
+fffbebc0a44f: Waiting
+bcb57e4d7625: Waiting
+508fa822aee0: Verifying Checksum
+508fa822aee0: Download complete
+5d243c38b886: Verifying Checksum
+5d243c38b886: Download complete
+5d243c38b886: Pull complete
+bcb57e4d7625: Verifying Checksum
+bcb57e4d7625: Download complete
+508fa822aee0: Pull complete
+d0c515ccd947: Verifying Checksum
+d0c515ccd947: Download complete
+fe89738d95b9: Verifying Checksum
+fe89738d95b9: Download complete
+5d177c9719ed: Download complete
+3acce2a1650a: Download complete
+4a43ababd2d6: Verifying Checksum
+4a43ababd2d6: Download complete
+5607de111fe1: Verifying Checksum
+5607de111fe1: Download complete
+fffbebc0a44f: Verifying Checksum
+fffbebc0a44f: Download complete
+3acce2a1650a: Pull complete
+fffbebc0a44f: Pull complete
+bcb57e4d7625: Pull complete
+d0c515ccd947: Pull complete
+fe89738d95b9: Pull complete
+5d177c9719ed: Pull complete
+4a43ababd2d6: Pull complete
+5607de111fe1: Pull complete
+Digest: sha256:38c3b05c3bc744ff1b0b7b4eb82196026442845e62a1e2073795565da506d7a2
+Status: Downloaded newer image for prom/prometheus:v3.5.1
+Checking /cfg/prometheus.rules.yml
+  SUCCESS: 6 rules found
+
+PROMTOOL_EXIT=0
+=== 3) promtool unit tests (rules behaviour) ===
+  SUCCESS
+
+PROMTOOL_TEST_EXIT=0
+=== 4) render alertmanager.tmpl.yml (same awk as compose) + amtool check-config ===
+RENDER_EXIT=0
+--- unrendered placeholders remaining (should be none outside comments) ---
+(none)
+Unable to find image 'prom/alertmanager:v0.28.1' locally
+v0.28.1: Pulling from prom/alertmanager
+9fa9226be034: Pulling fs layer
+1617e25568b2: Pulling fs layer
+545c14a5a415: Pulling fs layer
+6fcbfeb5877c: Pulling fs layer
+a9c7f41169bf: Pulling fs layer
+5759234535c5: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+a9c7f41169bf: Waiting
+5759234535c5: Waiting
+4f4fb700ef54: Waiting
+6fcbfeb5877c: Waiting
+1617e25568b2: Verifying Checksum
+1617e25568b2: Download complete
+9fa9226be034: Download complete
+9fa9226be034: Pull complete
+a9c7f41169bf: Verifying Checksum
+a9c7f41169bf: Download complete
+545c14a5a415: Verifying Checksum
+545c14a5a415: Download complete
+1617e25568b2: Pull complete
+6fcbfeb5877c: Verifying Checksum
+6fcbfeb5877c: Download complete
+4f4fb700ef54: Verifying Checksum
+4f4fb700ef54: Download complete
+5759234535c5: Verifying Checksum
+5759234535c5: Download complete
+545c14a5a415: Pull complete
+6fcbfeb5877c: Pull complete
+a9c7f41169bf: Pull complete
+5759234535c5: Pull complete
+4f4fb700ef54: Pull complete
+Digest: sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+Status: Downloaded newer image for prom/alertmanager:v0.28.1
+Checking '/etc/alertmanager/alertmanager.yml'  SUCCESS
+Found:
+ - global config
+ - route
+ - 1 inhibit rules
+ - 3 receivers
+ - 0 templates
+
+AMTOOL_EXIT=0
+=== SUMMARY ===
+COMPOSE_EXIT=0 PROMTOOL_EXIT=0 PROMTOOL_TEST_EXIT=0 RENDER_EXIT=0 AMTOOL_EXIT=0

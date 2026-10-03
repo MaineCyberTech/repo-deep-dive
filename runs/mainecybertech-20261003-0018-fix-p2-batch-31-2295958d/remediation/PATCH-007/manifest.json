@@ -1,0 +1,60 @@
+{
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "patchSet": "PATCH-007",
+  "finding": "CI-P2-001",
+  "baseBranch": "fix/p2-batch-31",
+  "baseCommit": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditCommit": "2295958d",
+  "branch": null,
+  "commit": null,
+  "pr": null,
+  "result": "already-fixed-at-base",
+  "reason": "CI-P2-001 (branch protection permits admin bypass and ignores CODEOWNERS) is already fixed on the remediation base branch fix/p2-batch-31 (11746adc). The fix came from prior remediation commit 8b02f91a ('fix(ci): make branch-protection required checks match real check-runs', merged via PR #30), which is an ancestor of the base. .github/branch-protection/main.json and develop.json now set enforce_admins:true and require_code_owner_reviews:true, and the required contexts were normalised to real emitted check-run names; scripts/check-required-checks.mjs passes. The residual audit suggestion to add CodeQL/Validate/SBOM to required contexts was deliberately NOT applied: CodeQL is currently red on a pre-existing CSRF alert (AGENTS.md:63), SBOM is artifact-only by design (docs/CI.md:27), and validate.yml is workflow_call-only so it emits no PR check-run (requiring it would deadlock merges). The audit ran against a stale divergent local clone at 2295958d. No code change was required, so no branch/commit/PR was created.",
+  "existingFix": {
+    "commit": "8b02f91ac772b393e1bfd83afe80b70b408ff679",
+    "subject": "fix(ci): make branch-protection required checks match real check-runs",
+    "mergedPr": 30
+  },
+  "files": [
+    ".github/branch-protection/main.json",
+    ".github/branch-protection/develop.json",
+    ".github/CODEOWNERS",
+    "scripts/check-required-checks.mjs"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-007/diff.patch",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "note": "empty - no change vs base"
+  },
+  "commands": [
+    {
+      "command": "git merge-base --is-ancestor 8b02f91a origin/fix/p2-batch-31",
+      "runner": "local git",
+      "purpose": "confirm the prior branch-protection fix is merged into the base",
+      "exit": 0,
+      "result": "8b02f91a is an ancestor of base 11746adc"
+    },
+    {
+      "command": "node scripts/check-required-checks.mjs",
+      "runner": "ci-runner (LXC 200, 172.23.128.51) node v20.20.2",
+      "purpose": "base branch-protection contexts resolve to real emitted check-runs",
+      "exit": 0,
+      "result": "PASS: all required checks match a workflow job (2 files, 41 check-run names)"
+    },
+    {
+      "command": "actionlint <changed workflows>",
+      "runner": "n/a",
+      "purpose": "lint changed workflows",
+      "exit": null,
+      "result": "not run - no workflow changed (no diff)"
+    }
+  ],
+  "evidence": [
+    "remediation/PATCH-007/verify.log",
+    "remediation/PATCH-007/report.md",
+    "remediation/PATCH-007/diff.patch"
+  ],
+  "gitleaks": "not-run (no diff; nothing pushed)",
+  "scopeCheck": "n/a (no change)"
+}

@@ -1,0 +1,70 @@
+{
+  "patchSet": "PATCH-012",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/patch-012-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "commit": "3e7a39bbd97b9ebc5b23101b52ddb861809a3ac5",
+  "findings": [
+    "SUPPLY-P2-001",
+    "INV-P2-001",
+    "HYG-P3-002"
+  ],
+  "files": [
+    "licenses.json",
+    ".github/workflows/test.yml",
+    "docs/LICENSE_POLICY.md"
+  ],
+  "diffSha256": "6d922b00284ab4e9b9031fdc59d9cd53ee617577732cf74c01a4eb26f3689237",
+  "commands": [
+    {
+      "cmd": "corepack pnpm install --frozen-lockfile (Proxmox ci-runner)",
+      "note": "lockfile up to date",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-counts.mjs (Proxmox ci-runner)",
+      "note": "docs counts OK",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-links.mjs (Proxmox ci-runner)",
+      "note": "docs links OK",
+      "exit": 0
+    },
+    {
+      "cmd": "actionlint .github/workflows/test.yml (Proxmox ci-runner, actionlint 1.7.12)",
+      "note": "no findings",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/collect-licenses.mjs --out licenses.json && node scripts/license-gate.mjs licenses.json (Proxmox ci-runner)",
+      "note": "PASS: every resolved package uses an allowed license or a documented exception",
+      "exit": 0
+    },
+    {
+      "cmd": "bash guard-check.sh - artifacts untracked (Proxmox ci-runner)",
+      "note": "GUARD_PASS: generated artifacts are untracked",
+      "exit": 0
+    },
+    {
+      "cmd": "git add -f licenses.json; bash guard-check.sh - artifact re-introduced (Proxmox ci-runner)",
+      "note": "GUARD_FAIL: generated artifact(s) are tracked: licenses.json (fail-closed proven)",
+      "exit": 1
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact (changed files, Proxmox ci-runner)",
+      "note": "no leaks found",
+      "exit": 0
+    }
+  ],
+  "notRun": [
+    {
+      "cmd": "corepack pnpm --filter api test",
+      "reason": "no application code changed (workflow + docs + untracking a generated aggregate only)"
+    }
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/61"
+}

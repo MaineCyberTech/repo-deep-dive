@@ -1,0 +1,67 @@
+{
+  "patchSet": "PATCH-008",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/patch-008-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "commit": "624c02e1b2cebdf890f3d69a2bfdd580ced4f111",
+  "findings": [
+    "FEAT-P2-002"
+  ],
+  "files": [
+    "supabase/migrations/5302119_demo_test_data.sql",
+    "supabase/migrations/5302120_demo_module_data.sql",
+    "supabase/migrations/5302121_demo_permission_edge_cases.sql",
+    "supabase/migrations/5302123_demo_expanded_test_data.sql",
+    "supabase/migrations/5302126_demo_worker_admin_coverage.sql",
+    "supabase/migrations/5302128_role_catalog_expansion.sql",
+    "supabase/migrations/5302406_device_profiles.sql"
+  ],
+  "scopeNote": "5302128 and 5302406 are not in the demo*.sql glob but move demo data through the same prod migration path and depend on the demo orgs created by 5302119; gating only the demo files would make a fresh-DB migration run fail on an FK. Included to keep the fix correct.",
+  "diffSha256": "f3bb76d2bd7083020e7ef5f12b46d41dd6795a1a83732e01446c33b168d516ac",
+  "commands": [
+    {
+      "cmd": "corepack pnpm install --frozen-lockfile (Proxmox ci-runner)",
+      "note": "lockfile up to date; Done in 4.7s",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/generate-db-types.js --check (Proxmox ci-runner)",
+      "note": "database types up to date (134 migrations)",
+      "exit": 0
+    },
+    {
+      "cmd": "corepack pnpm --filter api test (Proxmox ci-runner)",
+      "note": "122 suites / 1406 tests passed",
+      "exit": 0
+    },
+    {
+      "cmd": "bash guard-db-check.sh - guard expression on PostgreSQL 17 (Proxmox ci-runner, docker)",
+      "note": "unset->skip(t); 'true'->run(f); 'false'->skip(t)",
+      "exit": 0
+    },
+    {
+      "cmd": "git grep -l 'app.seed_demo is not' -- supabase/migrations (host)",
+      "note": "all 7 demo-seeding files gated; old heuristic removed",
+      "exit": 0
+    },
+    {
+      "cmd": "gitleaks detect --no-git --redact (diff additions only, Proxmox ci-runner)",
+      "note": "no leaks found (gitleaks 8.30.1)",
+      "exit": 0
+    }
+  ],
+  "notRun": [
+    {
+      "cmd": "supabase db reset / migrate an empty DB and assert zero demo rows",
+      "reason": "requires standing up the full Supabase local stack; outside the set's mandated verification and would re-run seeds (the intended local demo source). Guard logic verified on a real PostgreSQL 17 engine instead."
+    },
+    {
+      "cmd": "corepack pnpm lint / typecheck / build",
+      "reason": "only migration SQL changed; not in the set's verification list"
+    }
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/62"
+}

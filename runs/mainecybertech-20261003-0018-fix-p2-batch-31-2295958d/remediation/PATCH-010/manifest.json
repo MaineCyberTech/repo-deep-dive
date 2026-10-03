@@ -1,0 +1,55 @@
+{
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "org": "MaineCyberTech",
+  "patchSet": "PATCH-010",
+  "findings": ["API-P2-002", "FEAT-P3-001", "SUPPLY-P2-002"],
+  "base": {
+    "branch": "fix/p2-batch-31",
+    "sha": "11746adcbea50d313162cea6eb42a59358a17d29"
+  },
+  "branch": "remediation/patch-010-20261003-0018-fix-p2-batch-31-2295958d",
+  "commit": "203c62917770fbe1bd6ef6436b8211524a60de56",
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/60",
+  "draft": true,
+  "files": [
+    "apps/api/src/routes/docs.ts",
+    "apps/api/src/middleware/security-headers.ts",
+    "apps/api/src/__tests__/docs.test.ts"
+  ],
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile",
+      "runner": "proxmox-ci-runner (172.23.128.51)",
+      "exit": 0,
+      "evidence": "remediation/PATCH-010/install.log"
+    },
+    {
+      "command": "corepack pnpm --filter api typecheck && corepack pnpm --filter api test",
+      "runner": "proxmox-ci-runner (172.23.128.51)",
+      "exit": 0,
+      "evidence": "remediation/PATCH-010/verify.log",
+      "result": "122 suites / 1409 tests passed; docs.test.ts PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (changed files)",
+      "runner": "local docker zricethezav/gitleaks:latest",
+      "exit": 0,
+      "evidence": "remediation/PATCH-010/verify.log",
+      "result": "no leaks found"
+    }
+  ],
+  "artifacts": {
+    "diff.patch": "remediation/PATCH-010/diff.patch",
+    "verify.log": "remediation/PATCH-010/verify.log",
+    "install.log": "remediation/PATCH-010/install.log",
+    "pr_body.md": "remediation/PATCH-010/pr_body.md"
+  },
+  "hashes": {
+    "diff.patch_sha256": "3613261de5f57c477a25890e0260843fd50a7011f1a5c8a3d4ee3aaaaae500a2",
+    "verify.log_sha256": "5fc77545eaf43e1061f2cf34abf17c1245e028c64ddf1afa6c3e781935c4e20a"
+  },
+  "gitleaks": "pass",
+  "scopeCheck": "pass (2 patch-set files + 1 accompanying test)",
+  "generated": "2026-10-03T07:55:00Z"
+}

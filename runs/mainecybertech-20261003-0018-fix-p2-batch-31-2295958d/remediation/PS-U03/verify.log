@@ -1,0 +1,31 @@
+PS-U03 verification - mainecybertech - run 20261003-0018-fix-p2-batch-31-2295958d
+Date (UTC): 2026-10-03T08:53:21Z
+Repo: C:\temp\mainecybertech  Base: origin/fix/p2-batch-31 (11746adc)
+Head (working tree fix, uncommitted at run time): 11746adcbea50d313162cea6eb42a59358a17d29 + AGENTS.md/review.md edits
+Runner: Proxmox ci-runner via lab-sync.ps1 + lab-run.ps1
+Finding: HYG-P3-001 - stale machine-specific repo path in generated docs (AGENTS.md -> review.md)
+
+> node scripts/sync-review-md.mjs --check
+review.md is in sync with AGENTS.md
+SYNCREVIEW_EXIT=0
+
+> node scripts/check-docs-links.mjs
+docs links OK
+DOCS_LINKS_EXIT=0
+
+> node scripts/check-docs-counts.mjs
+docs counts OK
+DOCS_COUNTS_EXIT=0
+
+> gitleaks detect --source=/tmp/psu03scan --no-git --redact -v
+System.Management.Automation.RemoteException
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+System.Management.Automation.RemoteException
+[90m8:53AM[0m [32mINF[0m [1mscanned ~236965 bytes (236.96 KB) in 303ms[0m
+[90m8:53AM[0m [32mINF[0m [1mno leaks found[0m
+GITLEAKS_EXIT=0
+

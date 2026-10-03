@@ -1,0 +1,74 @@
+{
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "patchSet": "PATCH-009",
+  "finding": "FEAT-P2-001",
+  "baseBranch": "fix/p2-batch-31",
+  "baseCommit": "11746adc",
+  "branch": "remediation/patch-009-20261003-0018-fix-p2-batch-31-2295958d",
+  "commit": "c7e2bd02d222df802b05879693118a8d8b2a4543",
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/59",
+  "prState": "draft",
+  "files": [
+    "apps/api/src/middleware/api-key.ts",
+    "apps/api/src/middleware/auth.ts",
+    "apps/api/src/__tests__/api-key-auth.test.ts"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-009/diff.patch",
+    "sha256": "93a38b1c4d55266aa741ff64e988c9516acd87fa30802b1cbafe27331399b60e"
+  },
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile",
+      "runner": "ci-runner (LXC 200, 172.23.128.51)",
+      "purpose": "setup",
+      "exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter api typecheck && corepack pnpm --filter api test",
+      "runner": "ci-runner (LXC 200, 172.23.128.51)",
+      "purpose": "verification",
+      "exit": 0,
+      "result": "123 test suites passed; 1413 tests passed"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source apps/api/src/middleware/api-key.ts",
+      "runner": "ci-runner (LXC 200, 172.23.128.51)",
+      "purpose": "secret gate",
+      "gitleaksVersion": "8.30.1",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source apps/api/src/middleware/auth.ts",
+      "runner": "ci-runner (LXC 200, 172.23.128.51)",
+      "purpose": "secret gate",
+      "gitleaksVersion": "8.30.1",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source apps/api/src/__tests__/api-key-auth.test.ts",
+      "runner": "ci-runner (LXC 200, 172.23.128.51)",
+      "purpose": "secret gate",
+      "gitleaksVersion": "8.30.1",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "command": "eslint --no-warn-ignored --config apps/api/eslint.config.js --max-warnings=0 <changed files>",
+      "runner": "local (windows, repo node_modules)",
+      "purpose": "lint",
+      "exit": 0
+    }
+  ],
+  "evidence": [
+    "remediation/PATCH-009/verify.log",
+    "remediation/PATCH-009/diff.patch",
+    "remediation/PATCH-009/pr_body.md"
+  ],
+  "gitleaks": "pass",
+  "scopeCheck": "pass",
+  "notes": "Route tests mock Supabase; no live-DB end-to-end key auth was run (lab command provisions no Supabase)."
+}

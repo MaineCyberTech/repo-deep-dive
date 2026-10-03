@@ -1,0 +1,46 @@
+# PS-U04 verification log
+
+- repo: mainecybertech
+- branch: remediation/ps-u04-20261003-0018-fix-p2-batch-31-2295958d
+- base: origin/fix/p2-batch-31 @ 11746adcbea50d313162cea6eb42a59358a17d29
+- commit verified: fd27150f0860c7b3e8397b73b2066a5908f03214
+- audited commit: 2295958d (stale audit clone; finding re-verified at 11746adc)
+- lab: Proxmox ci-runner 172.23.128.51:/srv/work/mainecybertech (node v20.20.2)
+- date: 2026-10-03T05:03:11.4523170-04:00
+- runner helpers: lab-sync.ps1 (wipes+syncs /srv/work/mainecybertech) then lab-run.ps1
+
+All commands executed in the lab against /srv/work/mainecybertech synced at the
+commit above. Raw stdout + exit codes follow.
+
+## node scripts/verify-prompts.js verify
+Prompt provenance OK ΓÇö all files match manifest.
+EXIT: 0
+
+## node scripts/check-docs-counts.mjs
+docs counts OK
+EXIT: 0
+
+## node scripts/check-docs-links.mjs
+docs links OK
+EXIT: 0
+
+## node scripts/sync-review-md.mjs --check
+review.md is in sync with AGENTS.md
+EXIT: 0
+
+## gitleaks detect --source=/tmp/psu04docs --no-git --redact (AGENTS.md, review.md, prompts/PROVENANCE.md)
+
+[90m9:03AM[0m [32mINF[0m [1mscanned ~240078 bytes (240.08 KB) in 304ms[0m
+[90m9:03AM[0m [32mINF[0m [1mno leaks found[0m
+EXIT:0
+
+## gitleaks: generated prompts/manifest.json is a hash file (false-positive cross-check)
+prompts/manifest.json contains only relative paths + SHA-256 hex digests. gitleaks'
+heuristic generic-api-key rule matches the hex digests themselves. This reproduces at
+base and is not a secret:
+    git show HEAD~1:prompts/manifest.json (base 11746adc) -> gitleaks leaks found: 22
+    (same generic-api-key rule on SHA-256 hex). PS-U04 introduces no new secret material.
+
+## Result
+All gates PASS (exit 0): prompt-provenance, docs-counts, docs-links, review.md mirror.
+Changed docs/prose scan is gitleaks-clean.

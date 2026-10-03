@@ -1,0 +1,83 @@
+{
+  "patchSet": "PATCH-013",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/patch-013-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "commit": "1c62862a0aa2fe90facb1a60942398871bb63073",
+  "findings": [
+    "INV-P2-002",
+    "INV-P3-002",
+    "SUPPLY-P3-002",
+    "CI-P2-002",
+    "TEST-P2-002",
+    "TEST-P3-001",
+    "DATA-P2-002",
+    "ARCH-P2-001",
+    "OBS-P2-002",
+    "OBS-P3-001",
+    "SEC-P3-001",
+    "SEC-P3-002"
+  ],
+  "alreadyFixedAtBase": {
+    "DATA-P2-001": "encrypted_pii is written by apps/api/src/routes/profiles.ts:175 and scripts/backfill-profile-pii.mjs; scripts/generate-db-types.js --check runs in test.yml. Verified at 11746adc.",
+    "ARCH-P2-003": "infra/digitalocean/prometheus.yml has an alerting block targeting alertmanager:9093, docker-compose.yml defines an alertmanager service, and alertmanager.tmpl.yml exists. Verified at 11746adc."
+  },
+  "openQuestions": [
+    "HYG-P2-001 (externalize the committed prompts/audit corpus): requires moving packs/audit outputs to a separate repository or artifact store - an org/repo decision, not a code change.",
+    "HYG-P2-002 (duplicate product catalogs): review.md Known Debt states the divergence is intentional pending a catalog content workflow; do not force-merge user-visible copy. Requires a store/commerce decision.",
+    "CI-P3-001 (main far behind develop; scheduled jobs only fire from the default branch): promoting/renaming the default branch is a repo-admin decision.",
+    "OBS-P2-003 (backup/restore verified on the deployed branch): db-restore-test.yml already asserts table/migration/row/RLS/age floors, but a green scheduled run on the deployed branch needs Spaces credentials and an ops drill.",
+    "OBS-P3-001 (tabletop evidence): runbooks added; an actual recorded tabletop exercise still needs to be run.",
+    "ARCH-P2-001 (single-host SPOF): recovery runbook added; splitting Redis and adding an API replica is an infra/budget decision.",
+    "CI-P2-002: the scheduled drift plan stays skipped until DO_API_TOKEN is rotated and the repository variable TF_DRIFT_PLAN_ENABLED=true is set."
+  ],
+  "files": [
+    ".github/workflows/test.yml",
+    ".github/workflows/terraform-do.yml",
+    "AGENTS.md",
+    "review.md",
+    "apps/api/jest.config.mjs",
+    "apps/web/jest.config.mjs",
+    "apps/api/src/middleware/security-headers.ts",
+    "apps/api/src/middleware/csrf.ts",
+    "apps/api/src/routes/webhooks.ts",
+    "apps/api/src/lib/timing-safe.ts",
+    "apps/api/src/__tests__/timing-safe.test.ts",
+    "apps/api/src/__tests__/route-authorization-guard.test.ts",
+    "apps/api/src/__tests__/security.test.ts",
+    "apps/worker/src/tasks/orphan-cleanup.ts",
+    "apps/worker/src/__tests__/orphan-cleanup.test.ts",
+    "docs/portal_platform_formal_handoff_bundle/supabase_consolidated_fresh_bootstrap_20260529.sql",
+    "docs/PLATFORM_FAILURE_RUNBOOKS.md",
+    "docs/SLO.md",
+    "docs/CI.md",
+    "docs/runbooks/README.md",
+    "infra/digitalocean/dashboards/mct-overview.json"
+  ],
+  "diffSha256": "f8d41d0823377a63ef27c43356e9e0176f108c3f97aa28579ffdb77045870aca",
+  "commands": [
+    { "cmd": "corepack pnpm install --frozen-lockfile", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "corepack pnpm --filter api typecheck", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "corepack pnpm --filter worker typecheck", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "corepack pnpm --filter api test:coverage", "note": "124 suites / 1411 tests pass; coverage stmts 72.86 branches 49.71 funcs 75.30 lines 78.65 vs ratcheted thresholds 70/45/70/74", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "corepack pnpm --filter web test:coverage", "note": "271 suites / 1832 tests pass; coverage stmts 48.93 branches 41.29 funcs 40.38 lines 49.65 vs ratcheted thresholds 47/39/39/47", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "corepack pnpm --filter worker test", "note": "12 suites / 125 tests pass (includes new DATA-P2-002 chunking test)", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "node scripts/check-docs-links.mjs", "note": "docs links OK", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "node scripts/check-docs-counts.mjs", "note": "docs counts OK", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "node scripts/generate-db-types.js --check", "note": "generated DB types current (DATA-P2-001)", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "node scripts/sync-review-md.mjs --check", "note": "review.md mirror in sync (INV-P3-002)", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "actionlint .github/workflows/test.yml", "note": "no findings", "runner": "Proxmox ci-runner (actionlint 1.7.12)", "exit": 0 },
+    { "cmd": "actionlint -shellcheck= .github/workflows/terraform-do.yml && actionlint -shellcheck= .github/workflows/test.yml", "note": "syntax/expressions OK. Bare actionlint reports 4 PRE-EXISTING SC2086 info findings; base 11746adc fails identically (base_actionlint_exit:1) and no workflow runs actionlint in CI.", "runner": "Proxmox ci-runner (actionlint 1.7.12)", "exit": 0 },
+    { "cmd": "yq -e . infra/digitalocean/dashboards/mct-overview.json", "note": "dashboard JSON parses", "runner": "Proxmox ci-runner (yq)", "exit": 0 },
+    { "cmd": "bash guard-check.sh", "note": "SUPPLY-P3-002 guard passes on the tree and fails closed on synthetic supabase/.temp + .env paths", "runner": "Proxmox ci-runner", "exit": 0 },
+    { "cmd": "gitleaks detect --no-git --redact (changed files)", "note": "no leaks found", "runner": "Proxmox ci-runner (gitleaks)", "exit": 0 }
+  ],
+  "notRun": [
+    { "cmd": "promtool check rules / test rules", "reason": "no Prometheus rule files changed (SLOs are committed as docs + a Grafana-importable dashboard JSON)" },
+    { "cmd": "corepack pnpm run ci (full build + e2e)", "reason": "not required for this batch; api/web/worker typecheck+coverage, docs guards, actionlint and the secret gate cover the changed surface" }
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/63"
+}

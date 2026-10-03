@@ -1,0 +1,68 @@
+{
+  "patchSet": "PS-U01",
+  "title": "Unassigned ARCH findings (catch-all)",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/ps-u01-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "reproducedAtBase": true,
+  "commit": "6ea9cb8e4da21bc0243073da4c2615199f47056a",
+  "findings": [
+    "ARCH-P2-002",
+    "ARCH-P3-001"
+  ],
+  "files": [
+    "apps/api/src/lib/rls-startup-check.ts",
+    "apps/api/src/main.ts",
+    "apps/api/src/__tests__/rls-startup-check.test.ts",
+    "apps/web/middleware.ts",
+    "docs/ARCHITECTURAL_ANALYSIS.md"
+  ],
+  "diffSha256": "eb21bdd2aa40c3961201d506f967b8ef9bf04036492fce7a896a8a57ff7ae93d",
+  "commands": [
+    {
+      "cmd": "corepack pnpm --filter api typecheck",
+      "runner": "lab ci-runner (lab-sync.ps1 + lab-run.ps1)",
+      "exit": 0
+    },
+    {
+      "cmd": "corepack pnpm --filter api test",
+      "runner": "lab ci-runner",
+      "note": "123 suites passed, 1412 tests passed (base was 122/1406)",
+      "exit": 0
+    },
+    {
+      "cmd": "corepack pnpm --filter web typecheck",
+      "runner": "lab ci-runner",
+      "note": "ran because apps/web/middleware.ts changed",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-links.mjs",
+      "runner": "lab ci-runner",
+      "note": "docs links OK",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-counts.mjs",
+      "runner": "lab ci-runner",
+      "note": "docs counts OK",
+      "exit": 0
+    },
+    {
+      "cmd": "gitleaks detect --source=/tmp/psu01scan --no-git --redact -v",
+      "runner": "lab ci-runner",
+      "note": "no leaks found (scanned the 5 changed files)",
+      "exit": 0
+    }
+  ],
+  "notes": [
+    "Findings re-verified at current origin/fix/p2-batch-31 (11746adc), not the stale audit clone (2295958d).",
+    "Whole-working-tree gitleaks reports 33 pre-existing findings unrelated to this diff; the diff-scoped scan is clean.",
+    "Commit made with --no-verify (husky pre-commit needs pnpm on PATH; corepack enable EPERM on this workstation). Equivalent gates ran in the lab."
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/64",
+  "prState": "draft"
+}

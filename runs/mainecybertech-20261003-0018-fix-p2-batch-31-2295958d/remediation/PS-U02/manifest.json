@@ -1,0 +1,54 @@
+{
+  "patchSet": "PS-U02",
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "branch": "remediation/ps-u02-20261003-0018-fix-p2-batch-31-2295958d",
+  "base": "fix/p2-batch-31",
+  "baseSha": "11746adcbea50d313162cea6eb42a59358a17d29",
+  "auditedCommit": "2295958d",
+  "commit": "c11f40adf58a613679b464a73e33f3a12724b6e8",
+  "findings": [
+    "FINAL-P1-001",
+    "FINAL-P2-001",
+    "FINAL-P2-002"
+  ],
+  "files": [
+    "docs/RELEASE_GATE.md",
+    "docs/INDEX.md",
+    "docs/RELEASING.md"
+  ],
+  "diffSha256": "686a267cb1be7a0f153a968c5bfc96d99250044de51c450e6bfbb6ad381a18fd",
+  "commands": [
+    {
+      "cmd": "corepack pnpm --filter api typecheck",
+      "runner": "lab ci-runner (lab-sync.ps1 + lab-run.ps1)",
+      "exit": 0
+    },
+    {
+      "cmd": "corepack pnpm --filter api test",
+      "runner": "lab ci-runner",
+      "note": "122 suites passed, 1406 tests passed (after removing a stale untracked env.test.ts left by a prior sync)",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-links.mjs",
+      "runner": "lab ci-runner",
+      "note": "docs links OK",
+      "exit": 0
+    },
+    {
+      "cmd": "node scripts/check-docs-counts.mjs",
+      "runner": "lab ci-runner",
+      "note": "docs counts OK",
+      "exit": 0
+    },
+    {
+      "cmd": "gitleaks detect --source=/tmp/psu02scan --no-git --redact -v",
+      "runner": "lab ci-runner",
+      "note": "no leaks found",
+      "exit": 0
+    }
+  ],
+  "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/55",
+  "prState": "draft"
+}

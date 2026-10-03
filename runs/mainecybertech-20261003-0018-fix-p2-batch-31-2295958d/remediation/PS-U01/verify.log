@@ -1,0 +1,190 @@
+PS-U01 verification - mainecybertech - run 20261003-0018-fix-p2-batch-31-2295958d
+Date (UTC): 2026-10-03T08:48:31Z
+Host: ci-runner  Repo: /srv/work/mainecybertech  HEAD: 11746adc
+
+$ corepack pnpm --filter api typecheck
+
+> api@ typecheck /srv/work/mainecybertech/apps/api
+> tsc --noEmit
+
+EXIT=0
+----------
+$ corepack pnpm --filter api test
+
+> api@ test /srv/work/mainecybertech/apps/api
+> jest
+
+PASS src/__tests__/security.test.ts (5.594 s)
+PASS src/__tests__/openapi-contracts.test.ts (8.518 s)
+PASS src/__tests__/projects.test.ts
+PASS src/__tests__/auth.test.ts
+PASS src/__tests__/store-tenant-isolation.test.ts
+PASS src/__tests__/mfa-recovery.test.ts (10.115 s)
+PASS src/__tests__/field-services.test.ts
+PASS src/__tests__/tickets.test.ts
+PASS src/__tests__/notifications.test.ts
+PASS src/__tests__/store-catalog.test.ts
+PASS src/__tests__/store-campaigns.test.ts
+PASS src/__tests__/documents.test.ts
+PASS src/__tests__/file-requests.test.ts
+PASS src/__tests__/client-portal.test.ts
+PASS src/__tests__/webhook-management.test.ts
+PASS src/__tests__/webhook-dead-letters.test.ts
+PASS src/__tests__/vendors.test.ts
+PASS src/__tests__/store-proposals.test.ts
+PASS src/__tests__/network-diagrams.test.ts
+PASS src/__tests__/csp-report.test.ts
+PASS src/__tests__/batch.test.ts
+PASS src/__tests__/tickets-export.test.ts
+PASS src/__tests__/search.test.ts
+PASS src/__tests__/client-onboarding-command-center.test.ts
+PASS src/__tests__/store-visual-assets.test.ts
+PASS src/__tests__/organizations.test.ts
+PASS src/__tests__/edu-automation.test.ts
+PASS src/__tests__/project-tracker.test.ts
+PASS src/__tests__/assets.test.ts
+PASS src/__tests__/middleware-entitlement.test.ts
+PASS src/__tests__/scorecards-gamification.test.ts
+PASS src/__tests__/search-portal.test.ts
+PASS src/__tests__/projects-export.test.ts
+PASS src/__tests__/rls-startup-check.test.ts
+PASS src/__tests__/store-intake-convert.test.ts
+PASS src/__tests__/ai.test.ts
+PASS src/__tests__/dashboard.test.ts
+PASS src/__tests__/store-quotes.test.ts
+PASS src/__tests__/mfa-recovery-lib.test.ts
+PASS src/__tests__/proposals.test.ts
+PASS src/__tests__/service-catalog.test.ts
+PASS src/__tests__/status-page.test.ts
+PASS src/__tests__/profiles.test.ts
+PASS src/__tests__/admin.test.ts
+PASS src/__tests__/memberships.test.ts
+PASS src/__tests__/security-suite.test.ts
+PASS src/__tests__/governance.test.ts
+PASS src/__tests__/approvals.test.ts
+PASS src/__tests__/api-keys.test.ts
+PASS src/__tests__/webhook-dispatcher-idempotency.test.ts
+PASS src/__tests__/billing.test.ts
+PASS src/__tests__/qbr.test.ts
+PASS src/__tests__/webhooks.test.ts
+PASS src/__tests__/security-ops.test.ts
+PASS src/__tests__/findings.test.ts
+PASS src/__tests__/dmarc-coach.test.ts
+PASS src/__tests__/compliance.test.ts
+PASS src/__tests__/notification-preferences.test.ts
+PASS src/__tests__/me-permissions.test.ts
+PASS src/__tests__/final.test.ts
+PASS src/__tests__/proposals-nested-items.test.ts
+PASS src/__tests__/training-hub.test.ts
+PASS src/__tests__/license-optimizer.test.ts
+PASS src/__tests__/users.test.ts
+PASS src/__tests__/middleware-permissions.test.ts
+PASS src/__tests__/dynamic-client-forms-builder.test.ts
+PASS src/__tests__/public.test.ts
+PASS src/__tests__/analytics.test.ts
+PASS src/__tests__/edge-cases.test.ts
+PASS src/__tests__/staging.test.ts
+PASS src/__tests__/satisfaction-pulse-widget.test.ts
+PASS src/__tests__/bulk.test.ts
+PASS src/__tests__/cab.test.ts
+PASS src/__tests__/powershell-policy.test.ts
+PASS src/__tests__/business-os.test.ts
+PASS src/__tests__/sop-library.test.ts
+PASS src/__tests__/domain-monitors.test.ts
+PASS src/__tests__/health.test.ts
+PASS src/__tests__/roles.test.ts
+PASS src/__tests__/uptime-monitor.test.ts
+PASS src/__tests__/circuit-breaker.test.ts
+PASS src/__tests__/knowledge-base.test.ts
+PASS src/__tests__/device-profiles.test.ts
+PASS src/__tests__/auth-redirect-origin.test.ts
+PASS src/__tests__/middleware-rate-limit.test.ts
+PASS src/__tests__/insurance-binder.test.ts
+PASS src/__tests__/sla.test.ts
+PASS src/__tests__/idempotency.test.ts
+PASS src/__tests__/supabase-scoped-client.test.ts
+  ● Console
+
+    console.warn
+      ⚠️  Node.js 20 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 22 or later. For more information, visit: https://github.com/orgs/supabase/discussions/45715
+
+    > 1 | import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+        | ^
+      2 | import type { Request } from "express";
+      3 | import type { Database } from "@mct/sdk/database.types";
+      4 | import { getEnv } from "../config/env";
+
+      at Object.<anonymous> (../../node_modules/.pnpm/@supabase+supabase-js@2.117.2_@opentelemetry+api@1.9.1/node_modules/@supabase/supabase-js/src/index.ts:102:11)
+      at Object.<anonymous> (src/services/supabase.ts:1:1)
+      at Object.<anonymous> (src/__tests__/supabase-scoped-client.test.ts:11:1)
+
+PASS src/__tests__/optimistic-locking.test.ts
+PASS src/__tests__/audit.test.ts
+PASS src/__tests__/cache.test.ts
+PASS src/__tests__/notifications-admin-create.test.ts
+PASS src/__tests__/get-scoped-client.test.ts
+PASS src/__tests__/notify-enforcement.test.ts
+PASS src/__tests__/csrf.test.ts
+PASS src/__tests__/docs.test.ts
+PASS src/__tests__/http-client.test.ts
+PASS src/__tests__/middleware-org-access.test.ts
+PASS src/__tests__/impersonation-service.test.ts
+PASS src/__tests__/lib-idempotency.test.ts
+PASS src/lib/service-role.test.ts
+PASS src/__tests__/middleware-auth.test.ts
+PASS src/__tests__/middleware-request-id.test.ts
+PASS src/__tests__/intake-handoff.test.ts
+PASS src/__tests__/final-stats-helpers.test.ts
+PASS src/__tests__/bot-detection.test.ts
+PASS src/__tests__/webhook-signature.test.ts
+PASS src/__tests__/validators.test.ts
+PASS src/__tests__/ssrf-guard.test.ts
+PASS src/__tests__/query.test.ts
+PASS src/__tests__/tenant-scoping-guard.test.ts
+PASS src/__tests__/field-encryption.test.ts
+PASS src/__tests__/lead-scoring.test.ts
+PASS src/__tests__/sanitize-search.test.ts
+PASS src/__tests__/middleware-admin.test.ts
+PASS src/__tests__/mfa-enforcement.test.ts
+PASS src/__tests__/middleware-auth-expired.test.ts
+PASS src/__tests__/db-types.test.ts
+PASS src/__tests__/role-key.test.ts
+PASS src/__tests__/profile-pii.test.ts
+PASS src/__tests__/rls-boundary-metrics.test.ts
+PASS src/__tests__/tenant.test.ts
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+
+Test Suites: 123 passed, 123 total
+Tests:       1412 passed, 1412 total
+Snapshots:   0 total
+Time:        28.575 s, estimated 30 s
+Ran all test suites.
+EXIT=0
+----------
+$ corepack pnpm --filter web typecheck
+
+> web@ typecheck /srv/work/mainecybertech/apps/web
+> tsc --noEmit
+
+EXIT=0
+----------
+$ node scripts/check-docs-links.mjs
+docs links OK
+EXIT=0
+----------
+$ node scripts/check-docs-counts.mjs
+docs counts OK
+EXIT=0
+----------
+$ gitleaks detect --source=/tmp/psu01scan --no-git --redact -v
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m8:49AM[0m [32mINF[0m [1mscanned ~41276 bytes (41.28 KB) in 258ms[0m
+[90m8:49AM[0m [32mINF[0m [1mno leaks found[0m
+EXIT=0
+----------

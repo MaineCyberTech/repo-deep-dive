@@ -1,0 +1,136 @@
+PATCH-008 verification - mainecybertech - run 20261003-0018-fix-p2-batch-31-2295958d
+Findings: FEAT-P2-002 (P2) - demo/test data can be seeded into a fresh production database
+Repo: C:\temp\mainecybertech
+Base: origin/fix/p2-batch-31 @ 11746adcbea50d313162cea6eb42a59358a17d29
+Branch: remediation/patch-008-20261003-0018-fix-p2-batch-31-2295958d
+Lab: Proxmox ci-runner (172.23.128.51) via C:\temp\proxmox-vm\scripts\lab-sync.ps1 / lab-run.ps1
+
+--- Reproduction at base (before fix) ---
+At base 11746adc the demo/test dataset ships inside the versioned migration path
+(`supabase db push`), guarded only by a domain heuristic that is FALSE on a
+brand-new database (no organization exists yet), so the demo rows/users are
+inserted on a fresh production project.
+
+Reproduction commands (run at base 11746adc):
+  git ls-tree -r --name-only origin/fix/p2-batch-31 -- supabase/migrations | grep demo
+    -> supabase/migrations/5302119_demo_test_data.sql
+       supabase/migrations/5302120_demo_module_data.sql
+       supabase/migrations/5302121_demo_permission_edge_cases.sql
+       supabase/migrations/5302123_demo_expanded_test_data.sql
+       supabase/migrations/5302126_demo_worker_admin_coverage.sql
+  git show origin/fix/p2-batch-31:supabase/migrations/5302119_demo_test_data.sql | grep -E 'if exists|primary_domain|raise notice'
+    ->   if exists (
+           where primary_domain is not null
+             and primary_domain not like '%.example'
+             and primary_domain not like '%.local'
+           raise notice '5302119: production-like organization domains detected - skipping demo data';
+  git grep -c 'app.seed_demo' origin/fix/p2-batch-31 -- supabase
+    -> (no output: explicit opt-in gate absent at base)
+
+Also at base, two more migrations move demo data through the same production
+path: `5302128_role_catalog_expansion.sql` (a guarded demo-user block) and
+`5302406_device_profiles.sql` (an UNGUARDED demo insert referencing the five
+demo org ids). Both are gated by the same fix so the migration chain stays
+valid on an empty database.
+
+--- Fix applied ---
+Replaced the "skip only if a production-like domain exists" heuristic in all
+demo-seeding blocks with an explicit opt-in setting that defaults OFF:
+  coalesce(current_setting('app.seed_demo', true), '') <> 'true'  ->  skip
+Demo data now only loads when an operator explicitly enables it on a disposable
+database (`alter database postgres set app.seed_demo = 'true';`). Local/E2E
+`supabase db reset` still gets demo data from supabase/seeds/ (config.toml
+[db.seed]), which run AFTER migrations. Files changed:
+  supabase/migrations/5302119_demo_test_data.sql
+  supabase/migrations/5302120_demo_module_data.sql
+  supabase/migrations/5302121_demo_permission_edge_cases.sql
+  supabase/migrations/5302123_demo_expanded_test_data.sql
+  supabase/migrations/5302126_demo_worker_admin_coverage.sql
+  supabase/migrations/5302128_role_catalog_expansion.sql
+  supabase/migrations/5302406_device_profiles.sql
+
+--- Static guard coverage (fix) ---
+COMMAND (host): git grep -l "app.seed_demo is not" -- supabase/migrations
+  supabase/migrations/5302119_demo_test_data.sql
+  supabase/migrations/5302120_demo_module_data.sql
+  supabase/migrations/5302121_demo_permission_edge_cases.sql
+  supabase/migrations/5302123_demo_expanded_test_data.sql
+  supabase/migrations/5302126_demo_worker_admin_coverage.sql
+  supabase/migrations/5302128_role_catalog_expansion.sql
+  supabase/migrations/5302406_device_profiles.sql
+COMMAND (host): git grep -n "production-like organization domains" -- supabase/migrations
+  (no output - old heuristic fully removed)
+EXIT: 0
+
+=== install dependencies (Proxmox ci-runner) ===
+COMMAND: corepack pnpm install --frozen-lockfile
+Lockfile is up to date, resolution step is skipped
+...
++ supabase 2.119.0
++ typescript 5.9.3
+. prepare$ husky
+. prepare: Done
+Done in 4.7s using pnpm v10.34.3
+EXIT: 0
+
+=== database types drift check (Proxmox ci-runner) ===
+COMMAND: node scripts/generate-db-types.js --check
+Processing 134 migration files...
+Found 12 enum types: membership_status, org_status, ticket_status, ticket_priority, project_status, task_status, contract_status, invoice_status, document_visibility, comment_target_type, notification_channel, audit_actor_type
+database types up to date
+TYPES_CHECK_EXIT:0
+EXIT: 0
+
+=== api tests (Proxmox ci-runner) ===
+COMMAND: corepack pnpm --filter api test
+PASS src/__tests__/db-types.test.ts
+PASS src/__tests__/middleware-auth.test.ts
+PASS src/__tests__/tenant.test.ts
+... (122 suites; full raw log: remediation/PATCH-008/api-test.raw.log)
+Test Suites: 122 passed, 122 total
+Tests:       1406 passed, 1406 total
+Snapshots:   0 total
+Time:        20.355 s, estimated 34 s
+Ran all test suites.
+POWERSHELL_LASTEXIT=0
+EXIT: 0
+
+=== guard mechanism - real Postgres (Proxmox ci-runner, docker) ===
+COMMAND: bash /tmp/guard-db-check-patch008.sh
+  (starts ghcr.io/supabase/postgres:17.11.0.002, evaluates the two guard
+   expressions used in every changed migration)
+server: PostgreSQL 17.11 on x86_64-pc-linux-gnu
+default (unset flag) skip? -> t
+explicit 'true' skip?     -> f
+explicit 'false' skip?    -> t
+GUARD_DB_OK
+EXIT: 0
+Interpretation: with no setting (fresh production) the guard is TRUE -> the
+demo block returns/skips; it only runs when app.seed_demo='true' is explicitly
+set. 'false'/other values keep it skipped.
+
+=== gitleaks - diff additions (Proxmox ci-runner) ===
+COMMAND: git diff origin/fix/p2-batch-31 -- supabase/migrations | grep '^+' > additions.txt;
+         gitleaks detect --no-git --redact -v   (scans only ADDED lines)
+scanned ~5840 bytes (5.84 KB) in 237ms
+no leaks found
+GITLEAKS_DIFF_EXIT:0
+NOTE: scanning the whole changed files (not just the diff) reports two
+PRE-EXISTING generic-api-key false positives at 5302128 lines 101 and 122
+(module-key string literals 'm365-hardening' / 'patch-compliance' in unchanged
+role->permission config). They are not introduced by this diff and are outside
+the changed hunks; the diff-scoped secret gate is clean.
+
+=== not run ===
+- Full `supabase db reset` / migrate-an-empty-DB assertion (finding's suggested
+  validation). Not run: standing up the full Supabase local stack (auth/storage
+  schemas required by the 134-migration chain) is outside this patch set's
+  mandated verification and would also re-run seeds, which are the intended
+  local source of demo data. The guard mechanism itself was verified against a
+  real PostgreSQL 17 engine above, and static coverage confirms every
+  demo-seeding block is gated.
+- `corepack pnpm lint` / `typecheck` / `build`: not in the set's verification
+  list; only migration SQL changed (no application code).
+
+RESULT: all mandated gates pass (0). Finding FEAT-P2-002 -> partially-fixed
+(draft PR pending human review/merge).
