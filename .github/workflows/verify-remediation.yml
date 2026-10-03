@@ -1,0 +1,108 @@
+name: Verify remediation
+
+# Read-only verification pass for a remediation branch: re-runs the machine checks
+# and the patch set's declared verification commands against a candidate branch, on
+# the lab (self-hosted runner). Never merges, approves, or pushes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: Target repository name
+        required: true
+      ref:
+        description: Branch/tag/SHA under verification
+        required: true
+        default: main
+      run:
+        description: 'Pack run folder under runs/ (optional, e.g. chat-20261003-0018-develop-a72b8cc)'
+        required: false
+        default: ''
+      patch_set:
+        description: 'Patch set id to verify (optional; blank = all)'
+        required: false
+        default: ''
+      deep:
+        description: Run deep checks (hadolint/trivy)
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: [self-hosted, linux, x64, ci-runner]
+    env:
+      ORG: ${{ github.repository_owner }}
+      REPO: ${{ inputs.repo }}
+      REF: ${{ inputs.ref }}
+      RUN: ${{ inputs.run }}
+      PATCH_SET: ${{ inputs.patch_set }}
+      DEEP: ${{ inputs.deep }}
+      REPO_DIR: ${{ github.workspace }}/work/${{ inputs.repo }}
+      GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
+
+    steps:
+      - name: Checkout pack
+        uses: actions/checkout@v4
+
+      - name: Clone target at ref
+        run: |
+          set -euo pipefail
+          mkdir -p work
+          git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${REPO}.git" "$REPO_DIR"
+          cd "$REPO_DIR"
+          git fetch -q origin "$REF" || true
+          git checkout -q "$REF"
+          echo "Verifying \`$REPO\` @ \`$(git rev-parse --short HEAD)\` (\`$REF\`)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Machine checks (deterministic)
+        run: |
+          set -euo pipefail
+          EXTRA=""
+          if [ "$DEEP" = "true" ]; then EXTRA="--deep"; fi
+          python3 tools/deterministic_checks.py "$REPO_DIR" -o out --run "$REPO@$REF" $EXTRA || true
+          {
+            echo "### Machine findings"
+            echo
+            if [ -f out/lens_deterministic.md ]; then sed -n '1,40p' out/lens_deterministic.md; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Patch-set verification commands
+        if: ${{ inputs.run != '' }}
+        run: |
+          set -uo pipefail
+          PLAN="runs/$RUN/remediation_plan.json"
+          if [ ! -f "$PLAN" ]; then echo "no plan at $PLAN (skipping)"; exit 0; fi
+          export REPO_DIR PATCH_SET
+          python3 - "$PLAN" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, os, subprocess, sys
+          plan = json.load(open(sys.argv[1]))
+          want = os.environ.get("PATCH_SET", "")
+          repo_dir = os.environ["REPO_DIR"]
+          lines = ["", "### Patch-set verification", "", "| Patch | Command | Exit |", "|---|---|---:|"]
+          overall = 0
+          for ps in plan.get("patchSets", []):
+              if want and want not in ("all", ps["id"]):
+                  continue
+              cmds = ps.get("verification") or []
+              if not cmds:
+                  lines.append("| %s | _(none declared)_ | - |" % ps["id"])
+                  continue
+              for cmd in cmds:
+                  p = subprocess.run(["bash", "-lc", cmd], cwd=repo_dir)
+                  lines.append("| %s | `%s` | %d |" % (ps["id"], cmd.replace("|", "\\|"), p.returncode))
+                  overall = overall or p.returncode
+          print("\n".join(lines))
+          print("\nVERIFY_RESULT: %s" % ("PASS" if overall == 0 else "FAIL"))
+          PY
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-${{ inputs.repo }}
+          path: out/
+          if-no-files-found: warn

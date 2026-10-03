@@ -14,8 +14,12 @@ Checks:
   GIT   no LICENSE; large tracked files.
   DOC   no README.
 
+  --deep (opt-in) additionally runs, when the tools are installed:
+  DOCKER hadolint on Dockerfiles.
+  DEP    trivy filesystem vulnerability scan (lockfiles / dependencies).
+
 Usage:
-  tools/deterministic_checks.py <repo-root> [-o OUTDIR] [--run NAME] [--json PATH]
+  tools/deterministic_checks.py <repo-root> [-o OUTDIR] [--run NAME] [--deep]
 
 Writes OUTDIR/deterministic-findings.json and OUTDIR/lens_deterministic.md.
 Read-only against the target repo (gitleaks is run with --no-git --redact).
@@ -252,9 +256,78 @@ def check_supply_chain(root, add):
             imgs[:15])
 
 
+def check_deep(root, add):
+    """Opt-in heavier checks: Dockerfile lint (hadolint) and dependency vulns (trivy)."""
+    dockerfiles = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for f in filenames:
+            if f == "Dockerfile" or f.startswith("Dockerfile.") or f.endswith(".Dockerfile"):
+                dockerfiles.append(os.path.join(dirpath, f))
+
+    if dockerfiles:
+        if have("hadolint"):
+            problems = []
+            for df in dockerfiles:
+                rel = os.path.relpath(df, root).replace(os.sep, "/")
+                try:
+                    r = subprocess.run(["hadolint", "-f", "json", df],
+                                       capture_output=True, text=True, timeout=120)
+                    for item in json.loads(r.stdout or "[]"):
+                        if item.get("level") in ("error", "warning"):
+                            problems.append("%s:%s %s %s" % (rel, item.get("line"),
+                                                             item.get("code", ""),
+                                                             (item.get("message") or "")[:80]))
+                except Exception:
+                    pass
+            if problems:
+                add("SUPPLY", "P3", "Dockerfile lint (hadolint): %d issue(s)" % len(problems),
+                    "Harden container builds; load into a registry as non-root with pinned bases.",
+                    problems[:15])
+        else:
+            add("SUPPLY", "P3", "hadolint not installed (Dockerfile lint skipped)",
+                "Install hadolint to lint Dockerfiles in --deep mode.", [])
+
+    if have("trivy"):
+        with tempfile.TemporaryDirectory() as td:
+            rep = os.path.join(td, "trivy.json")
+            subprocess.run(["trivy", "fs", "--scanners", "vuln", "--format", "json",
+                            "--quiet", "--skip-dirs", "node_modules", "--skip-dirs", ".git",
+                            "-o", rep, root], capture_output=True, text=True, timeout=900)
+            vulns = []
+            if os.path.exists(rep):
+                try:
+                    data = json.load(open(rep, encoding="utf-8"))
+                except Exception:
+                    data = {}
+                for result in data.get("Results", []):
+                    target = result.get("Target", "?")
+                    try:
+                        target = os.path.relpath(target, root).replace(os.sep, "/")
+                    except Exception:
+                        pass
+                    for v in result.get("Vulnerabilities", []) or []:
+                        vulns.append((v.get("Severity", "UNKNOWN"), target,
+                                      v.get("VulnerabilityID", "?"), v.get("PkgName", "?")))
+            buckets = {}
+            for sev, target, vid, pkg in vulns:
+                key = {"CRITICAL": "P1", "HIGH": "P1", "MEDIUM": "P2", "LOW": "P3"}.get(sev, "P3")
+                buckets.setdefault(key, []).append("%s %s %s" % (target, vid, pkg))
+            for key in ("P1", "P2", "P3"):
+                hits = buckets.get(key)
+                if hits:
+                    add("DEP", key, "trivy: %d %s vulnerabilit%s" % (
+                        len(hits), key, "y" if len(hits) == 1 else "ies"),
+                        "Known CVEs in dependencies; upgrade the affected package. "
+                        "Verify and remediate or record a risk acceptance.", sorted(hits)[:15])
+    else:
+        add("DEP", "P3", "trivy not installed (dependency vuln scan skipped)",
+            "Install trivy to enable the --deep dependency vulnerability scan.", [])
+
+
 # ---------------------------------------------------------------- driver ----
 
-def run_checks(root):
+def run_checks(root, deep=False):
     raw = []
 
     def add(area, sev, title, detail, evidence):
@@ -268,6 +341,8 @@ def run_checks(root):
     check_supply_chain(root, add)
     check_hygiene(root, add)
     check_docs(root, add)
+    if deep:
+        check_deep(root, add)
 
     # assign stable IDs: group by area, order by severity then title
     raw.sort(key=lambda f: (f["area"], f["severity"], f["title"]))
@@ -319,6 +394,8 @@ def main():
     ap.add_argument("repo", help="repository root (read-only)")
     ap.add_argument("-o", "--outdir", default=None, help="output directory")
     ap.add_argument("--run", default=None, help="run name (default: repo basename)")
+    ap.add_argument("--deep", action="store_true",
+                    help="also run hadolint/trivy (only when installed)")
     args = ap.parse_args()
 
     if not os.path.isdir(args.repo):
@@ -330,7 +407,7 @@ def main():
     outdir = args.outdir or os.path.join(root, "deterministic-out")
     os.makedirs(outdir, exist_ok=True)
 
-    findings = run_checks(root)
+    findings = run_checks(root, deep=args.deep)
     c = counts(findings)
     now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     doc = {"run": name, "generated": now, "sourceReports": 1,
