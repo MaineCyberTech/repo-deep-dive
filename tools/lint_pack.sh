@@ -73,6 +73,70 @@ if errs:
 PY
 then ok "prompt counts (actual $actual = base $base + falcon $falcon)"; else bad "prompt count mismatch"; fi
 
+# --- 5b. Execution order covers every prompt (ARCH-P2-001) ----------------------
+# The execution order / prompt status is duplicated across the example manifests
+# and the profile manifest; this asserts every prompt file is referenced by
+# exactly the right manifest (base vs falcon-lab) so coverage cannot silently drift.
+if python3 - <<'PY'
+import json, pathlib, re
+
+prompts = sorted(
+    p.name for p in pathlib.Path("prompts").glob("[0-9][0-9]_*.md")
+    if not p.name.endswith("SHARED_AUDIT_RULES.md")
+)
+all_nums = {f[:2] for f in prompts}
+profile = json.load(open("profiles/falcon-lab.manifest.json", encoding="utf-8-sig"))
+falcon_nums = {e["id"] for e in profile.get("addedPrompts", [])}
+errs = []
+
+
+def nums(paths):
+    out = set()
+    for p in paths:
+        m = re.match(r"^(\d\d)_", p)
+        if m:
+            out.add(m.group(1))
+    return out
+
+
+base = json.load(open("examples/audit_manifest.example.json", encoding="utf-8-sig"))
+base_order = nums(base.get("executionOrder", []))
+expected_base = all_nums - falcon_nums
+if base_order != expected_base:
+    errs.append("base example executionOrder set != base prompt set "
+                "(missing=%s extra=%s)" % (sorted(expected_base - base_order),
+                                           sorted(base_order - expected_base)))
+
+falcon = json.load(open("examples/audit_manifest.falcon-lab.example.json",
+                        encoding="utf-8-sig"))
+falcon_covered = nums(falcon.get("executionOrder", [])) | nums(falcon.get("naReports", []))
+if falcon_covered != all_nums:
+    errs.append("falcon example executionOrder+naReports != prompt set "
+                "(missing=%s extra=%s)" % (sorted(all_nums - falcon_covered),
+                                           sorted(falcon_covered - all_nums)))
+
+ps = profile.get("promptStatus", {})
+profile_covered = set(ps.get("run", [])) | set(ps.get("adapted", {})) | set(ps.get("na", {}))
+if profile_covered != all_nums:
+    errs.append("profile promptStatus != prompt set "
+                "(missing=%s extra=%s)" % (sorted(all_nums - profile_covered),
+                                           sorted(profile_covered - all_nums)))
+
+wave_refs = set()
+for w in profile.get("waves", []):
+    wave_refs |= set(w.get("prompts", [])) | set(w.get("na", []))
+if wave_refs != all_nums:
+    errs.append("profile waves != prompt set "
+                "(missing=%s extra=%s)" % (sorted(all_nums - wave_refs),
+                                           sorted(wave_refs - all_nums)))
+
+if errs:
+    print("; ".join(errs))
+    raise SystemExit(1)
+print("%d prompts covered by order/status/waves" % len(all_nums))
+PY
+then ok "execution order/status/waves cover the prompt set"; else bad "execution order/status drift"; fi
+
 # --- 6. Referenced files exist --------------------------------------------------
 if python3 - <<'PY'
 import json, pathlib

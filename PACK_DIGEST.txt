@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T03:30:45Z
+# generated: 2026-10-04T03:33:01Z
 # files: 1030
 # format: sha256  path
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -1016,7 +1016,7 @@ a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_r
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
 1bb87facd85a7d836ebd3f2cddf084b107c112f4029b915579e2d58d65594407  ./tools/lab_runner.py
 add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_findings.py
-99451c2ca60a4c82411e6112d188d3379082783f3c73b9ee148529180480a4a0  ./tools/lint_pack.sh
+48135c586e0f554bf190bfeb13d33428b08a84b16ef0a5f82e18e10490af16af  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
 a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
@@ -1028,7 +1028,7 @@ e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_d
 f17648cfd68e4108add83223190dc485ed40d00cf639f881ca454c4000e1d66b  ./tools/repo_inventory.py
 f8e835fce3153791f01f6eb3dbcf20732323c58112b3f7c5e53df50f4544c236  ./tools/review_index.py
 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
-6844a691f52f73a7ebca8f0cabc19670d12df785c3d779d863dd7f9ac4160338  ./tools/run_toolchain.py
+c6bbcbb8b9d12407dff5182473169814b2b915b80a2b0868d73e793b3632ee14  ./tools/run_toolchain.py
 101b10c67a604792be29c9c69c57ecb0225cc1666e81dd588e80f60de8d5a10f  ./tools/self_test.sh
 94b75cad96cd3c97734134f4ef60fd1c916843b08a3185c60d3f8d4c0087254d  ./wiring/REPO_WIRING.md
 b0ed61e5a481f2c949a10a7870a1acf1f75c2003d9f2db4840c66d06a6280280  ./wiring/SUGGESTED_TOOLING.md

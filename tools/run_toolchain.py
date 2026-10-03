@@ -8,14 +8,15 @@ delta (diff_runs.py), and CSV export (findings_to_csv.py).
 
 Usage:
   python3 tools/run_toolchain.py <run-folder> [--write] [--dashboard]
-      [--diff <old-run-folder>] [--no-check] [--strict]
+      [--diff <old-run-folder>] [--no-check]
 
 Read-only by default (every step prints a summary; CSV goes to a temp
 file). --write lets each step emit its artifacts into the run folder.
 --dashboard also renders dashboard.md/html + pr_comment.md (with --write).
---diff compares against an older run. --no-check skips check_run.sh.
---strict turns a skipped check (no bash) into a failure.
-Fails fast: the first failing step aborts the chain. ASCII-only output.
+--diff compares against an older run. The check_run.sh validation step is
+mandatory and strict by default: when bash is unavailable the chain fails
+(exit 2) unless --no-check is passed explicitly. Fails fast: the first
+failing step aborts the chain. ASCII-only output.
 """
 
 import argparse
@@ -53,9 +54,9 @@ def main():
     ap.add_argument("--diff", default=None, metavar="OLD_RUN",
                     help="record the delta against an older run folder")
     ap.add_argument("--no-check", action="store_true",
-                    help="skip check_run.sh validation")
+                    help="skip check_run.sh validation (explicit opt-out)")
     ap.add_argument("--strict", action="store_true",
-                    help="fail when the check step must be skipped (no bash)")
+                    help="deprecated: strict checking is now the default")
     args = ap.parse_args()
 
     py = sys.executable
@@ -64,16 +65,13 @@ def main():
 
     if not args.no_check:
         bash = shutil.which("bash")
-        if bash:
-            ok = step("check_run.sh",
-                      [bash, os.path.join(TOOLS, "check_run.sh"), args.run_dir]) and ok
-        elif args.strict:
-            print("FAILED: check requested but no bash found (--strict)",
+        if not bash:
+            print("FAILED: check_run.sh requested but no bash found on PATH "
+                  "(install bash, or pass --no-check to skip validation)",
                   file=sys.stderr)
             raise SystemExit(2)
-        else:
-            print("== check_run.sh ==")
-            print("skipped: no bash on PATH (use --strict to fail, --no-check to silence)")
+        ok = step("check_run.sh",
+                  [bash, os.path.join(TOOLS, "check_run.sh"), args.run_dir]) and ok
 
     ok = step("collect_findings.py",
               [py, os.path.join(TOOLS, "collect_findings.py"), args.run_dir] + write) and ok
