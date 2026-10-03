@@ -7,42 +7,42 @@ Owner/Target/Status columns drive tools/collect_findings.py enrichment.
 | EXEC-P1-001 | P1 | Release gate condition: revocation must be terminal before broad/production rollout |  |  | partially-fixed | terminal revocation guard + regression test; draft PR awaiting human review |
 | FINAL-P1-001 | P1 | Consolidated release blocker: revocation is not terminal on the enrollment path |  |  | partially-fixed | terminal revocation guard + regression test; draft PR awaiting human review |
 | SEC-P1-001 | P1 | Re-enrollment silently resets a REVOKED or RETIRED sensor to CONFIGURING |  |  | partially-fixed | terminal revocation guard + regression test; draft PR awaiting human review |
-| API-P2-001 | P2 | Contract documents cursor pagination that the implementation ignores |  |  | open |  |
-| API-P2-002 | P2 | `SensorSummary.queueDepth` is documented but never returned |  |  | open |  |
-| ARCH-P2-001 | P2 | The control plane executes a mutable working tree, not a pinned release |  |  | open |  |
-| ARCH-P2-002 | P2 | Edge control plane is a co-tenant single point of failure on the shared lab host |  |  | open |  |
-| CI-P2-001 | P2 | Branch protection and required checks cannot be enforced; pushes to main are only advisory-gated |  |  | open |  |
+| API-P2-001 | P2 | Contract documents cursor pagination that the implementation ignores |  |  | verified-fixed | origin/main already contains merged keyset-pagination fix (71cffcd); PS-013 no-op avoided; >500 sensor fixture returns nextCursor at f5811d1 |
+| API-P2-002 | P2 | `SensorSummary.queueDepth` is documented but never returned |  |  | verified-fixed | No new PR: origin/main already contains merged fix a4b388b (SensorSummary.queueDepth populated from latest heartbeat sample + schema test). PS-012 no-op avoided. |
+| ARCH-P2-001 | P2 | The control plane executes a mutable working tree, not a pinned release |  |  | partially-fixed | PS-011 draft PR #27: dirty-tree fail-closed guard + derived-artifact regen guards |
+| ARCH-P2-002 | P2 | Edge control plane is a co-tenant single point of failure on the shared lab host |  |  | partially-fixed | remediation PS-018 open eed97d71b52bc1646f63e95968c9588ded240535 https://github.com/MaineCyberTech/falcon-edge/pull/30 |
+| CI-P2-001 | P2 | Branch protection and required checks cannot be enforced; pushes to main are only advisory-gated |  |  | partially-fixed | remediation PS-018 open eed97d71b52bc1646f63e95968c9588ded240535 https://github.com/MaineCyberTech/falcon-edge/pull/30 |
 | CI-P2-002 | P2 | Dependabot auto-merge does not bind the merge to the exact checked commit |  |  | partially-fixed | draft PR #18; actionlint+pytest+gitleaks+run-block test green |
-| DATA-P2-001 | P2 | The idempotency table is unbounded and stores full response bodies |  |  | open |  |
-| DATA-P2-002 | P2 | No foreign keys and no retention for events, state_reports, heartbeat history |  |  | open |  |
-| DATA-P2-003 | P2 | No schema migration mechanism; only CREATE TABLE IF NOT EXISTS |  |  | open |  |
-| EXEC-P2-001 | P2 | Production readiness remains insufficient-evidence |  |  | open |  |
-| FEAT-P2-001 | P2 | `SensorSummary.queueDepth` is documented but never populated |  |  | open |  |
-| FINAL-P2-001 | P2 | Cross-cutting theme: automation artifacts and claims are not continuously bound to their sources |  |  | open |  |
-| HYG-P2-001 | P2 | Summary documentation drifts from the code (test counts, Dependabot cadence) |  |  | open |  |
-| HYG-P2-002 | P2 | Committed derived artifacts (audit mirrors, closeout response, evidence) can go stale |  |  | open |  |
-| INV-P2-001 | P2 | 900 raw evidence files committed with no retention or size policy |  |  | open |  |
-| INV-P2-002 | P2 | Wave-0 inventory tooling is blind to the route table, schema, and entry points |  |  | open |  |
-| OBS-P2-001 | P2 | No alert delivery path (no Alertmanager/pager); rules are visible only in Prometheus/Grafana |  |  | open |  |
-| OBS-P2-002 | P2 | Inventory alert metrics depend on host-side SSH to each sensor (single point of failure) |  |  | open |  |
-| SC-P2-001 | P2 | CI installs Python dependencies and tools without version pinning or hashes |  |  | open |  |
-| SC-P2-002 | P2 | Secret scanning covers only the working tree, never git history |  |  | open |  |
-| SC-P2-003 | P2 | CI downloads lint/scan binaries via curl without checksum verification |  |  | open |  |
-| SC-P2-004 | P2 | Credential-bearing image artifacts and releases rely solely on private-repo access (owner-accepted) |  |  | open |  |
-| SEC-P2-001 | P2 | HTTP transport has no rate limiting, security headers, or slow-client protection |  |  | open |  |
-| SEC-P2-002 | P2 | Inventory metrics collector disables SSH host-key verification |  |  | open |  |
-| SEC-P2-003 | P2 | Raw host inventory (MAC/IP/hostnames) is world-readable on sensors and read over the network |  |  | open |  |
-| TEST-P2-001 | P2 | Test-count claims are stale and mutually inconsistent (163 vs 197 vs 253) |  |  | open |  |
+| DATA-P2-001 | P2 | The idempotency table is unbounded and stores full response bodies |  |  | partially-fixed | draft PR #22; pytest phase2+phase3 130 passed, ci/validate.sh ALL PASS, gitleaks clean on edge-builder @ 8f6999d |
+| DATA-P2-002 | P2 | No foreign keys and no retention for events, state_reports, heartbeat history |  |  | partially-fixed | draft PR #23; DATA-P2-003 + FK half of DATA-P2-002 already on base (85a1097); residual audit_log retention + index added; pytest phase2+phase3 131 passed, store lifecycle 8 passed, ci/validate.sh ALL PASS, gitleaks clean on edge-builder @ 48885ee |
+| DATA-P2-003 | P2 | No schema migration mechanism; only CREATE TABLE IF NOT EXISTS |  |  | partially-fixed | draft PR #23; DATA-P2-003 + FK half of DATA-P2-002 already on base (85a1097); residual audit_log retention + index added; pytest phase2+phase3 131 passed, store lifecycle 8 passed, ci/validate.sh ALL PASS, gitleaks clean on edge-builder @ 48885ee |
+| EXEC-P2-001 | P2 | Production readiness remains insufficient-evidence |  |  | partially-fixed | remediation PS-018 open eed97d71b52bc1646f63e95968c9588ded240535 https://github.com/MaineCyberTech/falcon-edge/pull/30 |
+| FEAT-P2-001 | P2 | `SensorSummary.queueDepth` is documented but never populated |  |  | verified-fixed | No new PR: origin/main already contains merged fix a4b388b (SensorSummary.queueDepth populated from latest heartbeat sample + schema test). PS-012 no-op avoided. |
+| FINAL-P2-001 | P2 | Cross-cutting theme: automation artifacts and claims are not continuously bound to their sources |  |  | partially-fixed | remediation PS-018 open eed97d71b52bc1646f63e95968c9588ded240535 https://github.com/MaineCyberTech/falcon-edge/pull/30 |
+| HYG-P2-001 | P2 | Summary documentation drifts from the code (test counts, Dependabot cadence) |  |  | partially-fixed | docs-only fix; three findings addressed in draft PR #21; verification on edge-builder: pytest phase2 73 passed, phase10 drift guard 3 passed, ci/validate.sh ALL PASS, gitleaks no leaks |
+| HYG-P2-002 | P2 | Committed derived artifacts (audit mirrors, closeout response, evidence) can go stale |  |  | partially-fixed | PS-011 draft PR #27: dirty-tree fail-closed guard + derived-artifact regen guards |
+| INV-P2-001 | P2 | 900 raw evidence files committed with no retention or size policy |  |  | partially-fixed | fail-closed evidence size budget (ci/check_evidence_size.py + ci/validate.sh); verified on edge-builder |
+| INV-P2-002 | P2 | Wave-0 inventory tooling is blind to the route table, schema, and entry points |  |  | partially-fixed | remediation PS-017 open b843f64a32d92da995f6b243aa3db56e23d4bfe0 |
+| OBS-P2-001 | P2 | No alert delivery path (no Alertmanager/pager); rules are visible only in Prometheus/Grafana |  |  | partially-fixed | draft PR #24; OBS-P2-002 in-repo half (collector self-health + collector-vs-sensor alert gating) verified on edge-builder (pytest phase2+phase3 129 passed, phase8+phase9 27 passed, ci/validate ALL PASS, gitleaks clean @ ca69cf9); OBS-P2-001 deferred - delivery receiver is an owner/monitoring decision (audit open question), no receiver fabricated |
+| OBS-P2-002 | P2 | Inventory alert metrics depend on host-side SSH to each sensor (single point of failure) |  |  | partially-fixed | draft PR #24; OBS-P2-002 in-repo half (collector self-health + collector-vs-sensor alert gating) verified on edge-builder (pytest phase2+phase3 129 passed, phase8+phase9 27 passed, ci/validate ALL PASS, gitleaks clean @ ca69cf9); OBS-P2-001 deferred - delivery receiver is an owner/monitoring decision (audit open question), no receiver fabricated |
+| SC-P2-001 | P2 | CI installs Python dependencies and tools without version pinning or hashes |  |  | partially-fixed | SC-P2-001/003: hash-pinned dev requirements + verified tool checksums; draft PR #20, actionlint+pytest+pin/hash check+gitleaks green |
+| SC-P2-002 | P2 | Secret scanning covers only the working tree, never git history |  |  | partially-fixed | draft PR #19; actionlint + pytest tests/phase2 + gitleaks full-history/dummy-secret green |
+| SC-P2-003 | P2 | CI downloads lint/scan binaries via curl without checksum verification |  |  | partially-fixed | SC-P2-001/003: hash-pinned dev requirements + verified tool checksums; draft PR #20, actionlint+pytest+pin/hash check+gitleaks green |
+| SC-P2-004 | P2 | Credential-bearing image artifacts and releases rely solely on private-repo access (owner-accepted) |  |  | partially-fixed | remediation PS-018 open eed97d71b52bc1646f63e95968c9588ded240535 https://github.com/MaineCyberTech/falcon-edge/pull/30 |
+| SEC-P2-001 | P2 | HTTP transport has no rate limiting, security headers, or slow-client protection |  |  | partially-fixed | draft PR #28; pytest phase2+phase3 134 passed, focused transport tests 5 passed, ci/validate.sh ALL PASS, gitleaks clean on edge-builder @ 1cb9ec0 |
+| SEC-P2-002 | P2 | Inventory metrics collector disables SSH host-key verification |  |  | partially-fixed |  |
+| SEC-P2-003 | P2 | Raw host inventory (MAC/IP/hostnames) is world-readable on sensors and read over the network |  |  | partially-fixed | draft PR #26; pytest phase2+phase3 129 passed, phase9 19 passed, ci/validate.sh ALL PASS, gitleaks clean on edge-builder; DB 0700/0600 + hashed show/associate verified @ 4c38bb7 |
+| TEST-P2-001 | P2 | Test-count claims are stale and mutually inconsistent (163 vs 197 vs 253) |  |  | partially-fixed | docs-only fix; three findings addressed in draft PR #21; verification on edge-builder: pytest phase2 73 passed, phase10 drift guard 3 passed, ci/validate.sh ALL PASS, gitleaks no leaks |
 | TEST-P2-002 | P2 | No regression test that re-enrollment of a REVOKED/RETIRED sensor is refused |  |  | partially-fixed | terminal revocation guard + regression test; draft PR awaiting human review |
-| API-P3-001 | P3 | Problem `instance` is a static string rather than the request path |  |  | open |  |
-| API-P3-002 | P3 | Vector ingest is at-least-once with no idempotency key or dedupe |  |  | open |  |
-| ARCH-P3-001 | P3 | Bare stdlib HTTP transport has no connection or rate limits |  |  | open |  |
-| CI-P3-001 | P3 | CI documentation states a 20-minute Dependabot sweep; the workflow runs daily |  |  | open |  |
-| DATA-P3-001 | P3 | Queue age-expiry is evaluable only on enqueue; `purge_expired` is unwired |  |  | open |  |
-| FEAT-P3-001 | P3 | `destroyKeys` is recorded in the audit log but performs no key destruction server-side |  |  | open |  |
-| FEAT-P3-002 | P3 | `create-token` prints the plaintext bootstrap token to stdout when `--out` is omitted |  |  | open |  |
-| HYG-P3-001 | P3 | Hardcoded, drifted sensor endpoint/key list in the inventory metrics collector |  |  | open |  |
-| INV-P3-001 | P3 | Generated models, schemas, dashboard JSON, and audit mirrors are committed and can go stale |  |  | open |  |
-| OBS-P3-001 | P3 | Stale `pending_directives` metric is documented but unfixed |  |  | open |  |
-| TEST-P3-001 | P3 | Coverage is reported informationally with no threshold gate |  |  | open |  |
-| TEST-P3-002 | P3 | HEAD explicitly lands a known-flaky time-relative test fixture |  |  | open |  |
+| API-P3-001 | P3 | Problem `instance` is a static string rather than the request path |  |  | partially-fixed | remediation PS-014 open efe174a9af2d995ca2e4749b062a8b2bb8245aec https://github.com/MaineCyberTech/falcon-edge/pull/31 |
+| API-P3-002 | P3 | Vector ingest is at-least-once with no idempotency key or dedupe |  |  | partially-fixed | remediation PS-014 open efe174a9af2d995ca2e4749b062a8b2bb8245aec https://github.com/MaineCyberTech/falcon-edge/pull/31 |
+| ARCH-P3-001 | P3 | Bare stdlib HTTP transport has no connection or rate limits |  |  | partially-fixed | draft PR #28; pytest phase2+phase3 134 passed, focused transport tests 5 passed, ci/validate.sh ALL PASS, gitleaks clean on edge-builder @ 1cb9ec0 |
+| CI-P3-001 | P3 | CI documentation states a 20-minute Dependabot sweep; the workflow runs daily |  |  | partially-fixed | docs-only fix; three findings addressed in draft PR #21; verification on edge-builder: pytest phase2 73 passed, phase10 drift guard 3 passed, ci/validate.sh ALL PASS, gitleaks no leaks |
+| DATA-P3-001 | P3 | Queue age-expiry is evaluable only on enqueue; `purge_expired` is unwired |  |  | partially-fixed | draft PR #22; pytest phase2+phase3 130 passed, ci/validate.sh ALL PASS, gitleaks clean on edge-builder @ 8f6999d |
+| FEAT-P3-001 | P3 | `destroyKeys` is recorded in the audit log but performs no key destruction server-side |  |  | partially-fixed | remediation PS-014 open efe174a9af2d995ca2e4749b062a8b2bb8245aec https://github.com/MaineCyberTech/falcon-edge/pull/31 |
+| FEAT-P3-002 | P3 | `create-token` prints the plaintext bootstrap token to stdout when `--out` is omitted |  |  | partially-fixed | remediation PS-014 open efe174a9af2d995ca2e4749b062a8b2bb8245aec https://github.com/MaineCyberTech/falcon-edge/pull/31 |
+| HYG-P3-001 | P3 | Hardcoded, drifted sensor endpoint/key list in the inventory metrics collector |  |  | partially-fixed |  |
+| INV-P3-001 | P3 | Generated models, schemas, dashboard JSON, and audit mirrors are committed and can go stale |  |  | partially-fixed | PS-011 draft PR #27: dirty-tree fail-closed guard + derived-artifact regen guards |
+| OBS-P3-001 | P3 | Stale `pending_directives` metric is documented but unfixed |  |  | verified-fixed | verified-fixed at base f5811d1: `falcon_edge_sensor_pending_directives` is expiry-aware (AGENTS.md) and tests/phase8/test_observability.py::test_pending_directives_are_expiry_aware locks it; no new change (PS-018) |
+| TEST-P3-001 | P3 | Coverage is reported informationally with no threshold gate |  |  | partially-fixed | remediation PS-018 open eed97d71b52bc1646f63e95968c9588ded240535 https://github.com/MaineCyberTech/falcon-edge/pull/30 |
+| TEST-P3-002 | P3 | HEAD explicitly lands a known-flaky time-relative test fixture |  |  | partially-fixed | remediation PS-018 open eed97d71b52bc1646f63e95968c9588ded240535 https://github.com/MaineCyberTech/falcon-edge/pull/30 |

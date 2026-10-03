@@ -1,0 +1,324 @@
+diff --git a/ci/validate.sh b/ci/validate.sh
+index 0a7822b..f51fbcc 100755
+--- a/ci/validate.sh
++++ b/ci/validate.sh
+@@ -25,6 +25,12 @@ python3 api/generate_models.py --check || rc=1
+ echo "== exported schemas =="
+ python3 api/generate_schemas.py --check || rc=1
+ 
++echo "== closeout response sync =="
++python3 closeout/generate_final_response.py --check || rc=1
++
++echo "== derived artifact guards =="
++python3 closeout/check_derived.py || rc=1
++
+ echo "== decision register =="
+ python3 ci/check_decisions.py docs/phase0/OWNER_DECISIONS.json || rc=1
+ 
+diff --git a/closeout/check_derived.py b/closeout/check_derived.py
+new file mode 100644
+index 0000000..b9b7ab0
+--- /dev/null
++++ b/closeout/check_derived.py
+@@ -0,0 +1,105 @@
++#!/usr/bin/env python3
++"""Guard committed point-in-time derived artifacts against silent drift.
++
++Findings HYG-P2-002 / INV-P3-001: several derived artifacts are committed without a
++regeneration/`--check` guard. `closeout/generate_final_response.py --check` covers
++FINAL_RESPONSE.json against its source of truth (ledgers/gate_ledger.csv). This script
++covers the artifacts that have no generator: the Grafana dashboard and the frozen audit
++mirror. They are pinned by content SHA-256 in `closeout/derived_artifacts.json`, so an
++edit or regeneration that was not intentionally accompanied by a manifest update makes
++`ci/validate.sh` fail.
++
++Usage:
++    check_derived.py    verify every pinned artifact matches its recorded digest (exit 1 on drift)
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++import os
++import sys
++
++REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++MANIFEST = os.path.join(REPO, "closeout", "derived_artifacts.json")
++
++
++def file_sha256(path: str) -> str:
++    """SHA-256 of the artifact's text content with CRLF normalised to LF.
++
++    The pinned artifacts are text (JSON / Markdown / HTML). Normalising line endings keeps
++    the digest stable across a normal checkout and a `git archive` export even when a
++    historical blob predates the repository's ``eol=lf`` policy.
++    """
++    digest = hashlib.sha256()
++    with open(path, "rb") as fh:
++        digest.update(fh.read().replace(b"\r\n", b"\n"))
++    return digest.hexdigest()
++
++
++def tree_sha256(root: str) -> str:
++    """SHA-256 over the sorted (relative path, content digest) pairs under ``root``.
++
++    Line-ending policy is LF-only in the repository (see .gitattributes), so hashing the
++    working-tree bytes is stable across checkouts.
++    """
++    digest = hashlib.sha256()
++    for dirpath, dirnames, filenames in os.walk(root):
++        dirnames.sort()
++        for name in sorted(filenames):
++            absolute = os.path.join(dirpath, name)
++            relative = os.path.relpath(absolute, root).replace(os.sep, "/")
++            digest.update(relative.encode("utf-8"))
++            digest.update(b"\0")
++            digest.update(file_sha256(absolute).encode("ascii"))
++            digest.update(b"\n")
++    return digest.hexdigest()
++
++
++def main() -> int:
++    with open(MANIFEST, encoding="utf-8") as fh:
++        manifest = json.load(fh)
++
++    failures = 0
++    frozen_at = (manifest.get("frozen_at_commit") or "?")[:12]
++    for entry in manifest.get("artifacts", []):
++        target = os.path.join(REPO, entry["path"])
++        if not os.path.isfile(target):
++            print(f"FAIL derived artifact missing: {entry['path']}")
++            failures += 1
++            continue
++        actual = file_sha256(target)
++        expected = entry["sha256"]
++        if actual != expected:
++            print(f"FAIL derived artifact drifted: {entry['path']}")
++            print(f"     expected {expected}")
++            print(f"     actual   {actual}")
++            failures += 1
++        else:
++            print(f"PASS {entry['path']} frozen at {frozen_at}")
++
++    for entry in manifest.get("directories", []):
++        target = os.path.join(REPO, entry["path"])
++        if not os.path.isdir(target):
++            print(f"FAIL derived directory missing: {entry['path']}")
++            failures += 1
++            continue
++        actual = tree_sha256(target)
++        expected = entry["tree_sha256"]
++        if actual != expected:
++            print(f"FAIL derived directory drifted: {entry['path']}")
++            print(f"     expected tree {expected}")
++            print(f"     actual   tree {actual}")
++            failures += 1
++        else:
++            print(f"PASS {entry['path']} frozen at {frozen_at}")
++
++    if failures:
++        print(f"derived-artifact guard: {failures} failure(s); update "
++              f"closeout/derived_artifacts.json only when the artifact is intentionally regenerated")
++        return 1
++    print("derived-artifact guard: all pinned artifacts match")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/closeout/derived_artifacts.json b/closeout/derived_artifacts.json
+new file mode 100644
+index 0000000..f14da7a
+--- /dev/null
++++ b/closeout/derived_artifacts.json
+@@ -0,0 +1,18 @@
++{
++  "note": "Point-in-time derived artifacts pinned by SHA-256 (text content, CRLF normalised to LF). Update deliberately when an artifact is regenerated; ci/validate.sh runs closeout/check_derived.py and fails on drift (HYG-P2-002 / INV-P3-001).",
++  "frozen_at_commit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
++  "artifacts": [
++    {
++      "path": "config/grafana/edge-fleet-dashboard.json",
++      "sha256": "dbc25604e8a5eb974ea231e0cca3ae7f5d8125de10e3a06107eec3615716d0e4",
++      "kind": "hand-authored Grafana dashboard snapshot (no generator)"
++    }
++  ],
++  "directories": [
++    {
++      "path": "docs/audits/repo-deep-dive/20261002-0630-edge-f6f1610",
++      "tree_sha256": "c18a1444e94c0bbbb3bc4a3863bb47b7cfe8469ea63542ef5d3a876bf8080e15",
++      "kind": "frozen audit mirror (immutable snapshot; run commit in INDEX.md)"
++    }
++  ]
++}
+diff --git a/closeout/generate_final_response.py b/closeout/generate_final_response.py
+index a625a0a..6356dcf 100644
+--- a/closeout/generate_final_response.py
++++ b/closeout/generate_final_response.py
+@@ -1,8 +1,15 @@
+ #!/usr/bin/env python3
+-"""Regenerate closeout/FINAL_RESPONSE.json from the gate ledger and repository state.
++"""Regenerate (or verify) closeout/FINAL_RESPONSE.json from the gate ledger.
+ 
+ Derived fields: commit, generated_utc, gate_counts, phase_gate_counts.
+ Everything else (scope labels, limitations, next steps) is authored text.
++
++Usage:
++    generate_final_response.py            write the output
++    generate_final_response.py --check    verify the derived fields are in sync (exit 1 on drift)
++
++HYG-P2-002 / INV-P3-001: FINAL_RESPONSE.json is a derived artifact; --check keeps it bound
++to its source of truth (ledgers/gate_ledger.csv) and is wired into ci/validate.sh.
+ """
+ from __future__ import annotations
+ 
+@@ -11,6 +18,7 @@ import csv
+ import json
+ import os
+ import subprocess
++import sys
+ from datetime import datetime, timezone
+ 
+ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+@@ -18,27 +26,48 @@ LEDGER = os.path.join(REPO, "ledgers", "gate_ledger.csv")
+ RESPONSE = os.path.join(REPO, "closeout", "FINAL_RESPONSE.json")
+ 
+ STATUSES = ["PASS", "FAIL", "BLOCKED", "INSUFFICIENT_EVIDENCE", "NOT_RUN", "NOT_APPLICABLE"]
++DERIVED_KEYS = ("gate_counts", "phase_gate_counts")
+ 
+ 
+-def main() -> int:
+-    rows = list(csv.DictReader(open(LEDGER)))
++def compute(rows) -> dict:
++    """Return the ledger-derived fields for FINAL_RESPONSE.json."""
+     total = collections.Counter(r["status"] for r in rows)
+     per_phase = collections.defaultdict(collections.Counter)
+     for row in rows:
+         per_phase[int(row["phase"])][row["status"]] += 1
++    return {
++        "gate_counts": {status: total.get(status, 0) for status in STATUSES},
++        "phase_gate_counts": {
++            str(phase): {status: per_phase[phase].get(status, 0) for status in STATUSES
++                         if per_phase[phase].get(status, 0)}
++            for phase in sorted(per_phase)
++        },
++    }
++
++
++def main(argv=None) -> int:
++    argv = sys.argv[1:] if argv is None else argv
++    rows = list(csv.DictReader(open(LEDGER)))
++    derived = compute(rows)
++    doc = json.load(open(RESPONSE))
++
++    if "--check" in argv:
++        drift = [key for key in DERIVED_KEYS if doc.get(key) != derived[key]]
++        if drift:
++            print("FAIL closeout/FINAL_RESPONSE.json out of sync with ledgers/gate_ledger.csv: "
++                  + ", ".join(drift))
++            for key in drift:
++                print(f"  {key}: committed={doc.get(key)} computed={derived[key]}")
++            return 1
++        print("PASS closeout/FINAL_RESPONSE.json derived fields in sync with ledgers/gate_ledger.csv")
++        return 0
+ 
+     commit = subprocess.run(["git", "-C", REPO, "rev-parse", "HEAD"], capture_output=True,
+                             text=True).stdout.strip() or None
+-    doc = json.load(open(RESPONSE))
+     doc["commit"] = commit
+     doc["generated_utc"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
+         "+00:00", "Z")
+-    doc["gate_counts"] = {status: total.get(status, 0) for status in STATUSES}
+-    doc["phase_gate_counts"] = {
+-        str(phase): {status: per_phase[phase].get(status, 0) for status in STATUSES
+-                     if per_phase[phase].get(status, 0)}
+-        for phase in sorted(per_phase)
+-    }
++    doc.update(derived)
+     with open(RESPONSE, "w") as fh:
+         json.dump(doc, fh, indent=2)
+         fh.write("\n")
+diff --git a/deploy/edge-control-plane.service b/deploy/edge-control-plane.service
+index d26088f..6043cb8 100644
+--- a/deploy/edge-control-plane.service
++++ b/deploy/edge-control-plane.service
+@@ -17,6 +17,11 @@ User=user
+ Group=user
+ WorkingDirectory=/home/user/falcon-edge-build
+ Environment=PYTHONPATH=/home/user/falcon-edge-build/src
++# ARCH-P2-001: the unit executes a mutable working tree. Refuse to start from a dirty
++# tree so an uncommitted / partially-applied edit cannot serve traffic (fail closed);
++# /api/v1/healthz additionally reports source_commit / source_dirty for every observation.
++# `--no-optional-locks` keeps `git status` read-only under ProtectHome=read-only.
++ExecStartPre=/bin/sh -c 'set -e; cd /home/user/falcon-edge-build; if [ -n "$$(/usr/bin/git --no-optional-locks status --porcelain)" ]; then echo "ARCH-P2-001: source tree /home/user/falcon-edge-build is dirty; refusing to start. Commit or stash local edits (or deploy a pinned clean tree)."; /usr/bin/git --no-optional-locks status --porcelain; exit 1; fi'
+ ExecStart=/usr/bin/python3 -m falcon_control --config /home/user/falcon-edge-build/deploy/edge-control-plane.lab.json
+ Restart=on-failure
+ RestartSec=3
+diff --git a/tests/phase10/test_derived_artifact_guards.py b/tests/phase10/test_derived_artifact_guards.py
+new file mode 100644
+index 0000000..6896f07
+--- /dev/null
++++ b/tests/phase10/test_derived_artifact_guards.py
+@@ -0,0 +1,63 @@
++#!/usr/bin/env python3
++"""Regression tests for committed derived-artifact guards (HYG-P2-002 / INV-P3-001).
++
++Locks the two guards wired into ci/validate.sh: FINAL_RESPONSE.json against its source of
++truth (ledgers/gate_ledger.csv), and the pinned dashboard / frozen-audit-mirror digests.
++"""
++import importlib.util
++import os
++import shutil
++import subprocess
++import sys
++import tempfile
++import unittest
++
++REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++CHECK_DERIVED = os.path.join(REPO, "closeout", "check_derived.py")
++GEN_FINAL = os.path.join(REPO, "closeout", "generate_final_response.py")
++
++
++def load_check_derived():
++    spec = importlib.util.spec_from_file_location("check_derived", CHECK_DERIVED)
++    module = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(module)
++    return module
++
++
++class GuardInvocationTests(unittest.TestCase):
++    def test_final_response_check_passes(self):
++        result = subprocess.run([sys.executable, GEN_FINAL, "--check"], cwd=REPO,
++                                capture_output=True, text=True)
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertIn("in sync", result.stdout)
++
++    def test_derived_artifact_check_passes(self):
++        result = subprocess.run([sys.executable, CHECK_DERIVED], cwd=REPO,
++                                capture_output=True, text=True)
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertIn("all pinned artifacts match", result.stdout)
++
++
++class TreeDigestTests(unittest.TestCase):
++    def setUp(self):
++        self.tmp = tempfile.mkdtemp(prefix="falcon-edge-tree-")
++        self.mod = load_check_derived()
++
++    def tearDown(self):
++        shutil.rmtree(self.tmp, ignore_errors=True)
++
++    def test_tree_digest_is_stable_and_detects_change(self):
++        os.makedirs(os.path.join(self.tmp, "sub"))
++        with open(os.path.join(self.tmp, "a.txt"), "w") as fh:
++            fh.write("one\n")
++        with open(os.path.join(self.tmp, "sub", "b.txt"), "w") as fh:
++            fh.write("two\n")
++        first = self.mod.tree_sha256(self.tmp)
++        self.assertEqual(first, self.mod.tree_sha256(self.tmp))
++        with open(os.path.join(self.tmp, "sub", "b.txt"), "a") as fh:
++            fh.write("edit\n")
++        self.assertNotEqual(first, self.mod.tree_sha256(self.tmp))
++
++
++if __name__ == "__main__":
++    unittest.main(verbosity=2)

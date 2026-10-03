@@ -1,0 +1,86 @@
+# Remediation verification - PS-003 (falcon-edge)
+# Finding: SC-P2-002 - Secret scanning covers only the working tree, never git history
+# Branch: remediation/ps-003-20261003-0018-fix-trust-root-87532ec
+# Base:   origin/main (af6f83a)
+# Tree:   working tree with .github/workflows/validate.yml and .gitleaks.toml modified vs af6f83a
+#         (captured pre-commit; the committed SHA is recorded in manifest.json)
+# Runner: edge-builder VM (172.23.128.51) via lab-sync.ps1 / lab-run.ps1
+# Captured: 2026-10-03T02:46:17.3629208-04:00
+# Changed: .github/workflows/validate.yml, .gitleaks.toml
+
+# NOTE: the patch-plan verification 'gitleaks detect --source . (git mode) finds an
+# injected dummy secret' is exercised by /tmp/ps003_gitleaks_history_test.sh, which
+# commits a fake token, deletes it, then shows tree mode misses it and git mode catches it.
+### actionlint .github/workflows/validate.yml
+EXIT=0
+
+### gitleaks detect --no-git --redact --source . -v (working-tree secret gate)
+ssh.exe : 
+At line:1 char:8
++ $out = & ssh -i C:\temp\proxmox-vm\scripts\edge_key -o StrictHostKeyC ...
++        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    Gùï
+    GöéGò¦
+    Göé Gùï
+    Gùï Gûæ
+    Gûæ    gitleaks
+
+[90m6:45AM[0m [32mINF[0m [1mscanned ~7333460 bytes (7.33 MB) in 2.64s[0m
+[90m6:45AM[0m [32mINF[0m [1mno leaks found[0m
+EXIT=0
+
+### gitleaks detect --source . --redact --config .gitleaks.toml --log-opts=--all
+### (repo full git history; expect exit 0 = clean)
+
+    Gùï
+    GöéGò¦
+    Göé Gùï
+    Gùï Gûæ
+    Gûæ    gitleaks
+
+[90m6:45AM[0m [32mINF[0m [1m312 commits scanned.[0m
+[90m6:45AM[0m [32mINF[0m [1mscanned ~8001934 bytes (8 MB) in 2.5s[0m
+[90m6:45AM[0m [32mINF[0m [1mno leaks found[0m
+EXIT=0
+
+### bash /tmp/ps003_gitleaks_history_test.sh
+### (injected-then-deleted secret proves git mode catches it and --no-git misses it)
+== tree mode (old command: --no-git): expect NO detection ==
+
+    Gùï
+    GöéGò¦
+    Göé Gùï
+    Gùï Gûæ
+    Gûæ    gitleaks
+
+[90m6:45AM[0m [32mINF[0m [1mscanned ~0 bytes (0) in 386ms[0m
+[90m6:45AM[0m [32mINF[0m [1mno leaks found[0m
+TREE_EXIT=0
+
+== git mode (new command: --log-opts=--all): expect DETECTION ==
+
+    Gùï
+    GöéGò¦
+    Göé Gùï
+    Gùï Gûæ
+    Gûæ    gitleaks
+
+[90m6:45AM[0m [32mINF[0m [1m1 commits scanned.[0m
+[90m6:45AM[0m [32mINF[0m [1mscanned ~54 bytes (54 bytes) in 394ms[0m
+[90m6:45AM[0m [33mWRN[0m [1mleaks found: 1[0m
+GIT_EXIT=1
+
+RESULT=PASS (tree mode missed the deleted secret; git mode caught it)
+EXIT=0
+
+### python3 -m pytest -q tests/phase2
+........................................................................ [ 98%]
+.                                                                        [100%]
+73 passed in 38.11s
+EXIT=0
+
+
+# script exit: 0

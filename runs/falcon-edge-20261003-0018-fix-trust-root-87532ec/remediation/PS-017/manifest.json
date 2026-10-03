@@ -1,0 +1,94 @@
+{
+  "patchSet": "PS-017",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": null,
+  "commit": "b843f64a32d92da995f6b243aa3db56e23d4bfe0",
+  "pr": null,
+  "prState": "upstream-merged",
+  "findings": [
+    "INV-P2-002"
+  ],
+  "files": [
+    "repo-deep-dive/tools/repo_inventory.py"
+  ],
+  "resolution": "No new falcon-edge change. The patch set's only file, repo-deep-dive/tools/repo_inventory.py, does not exist in the falcon-edge repository or in any falcon-edge branch (git rev-list --all --objects has no such path); it is owned by the sibling repo MaineCyberTech/repo-deep-dive. The canonical tool fix (segment-aware test/spec detection + Next.js App Router / pages API route detection) is already merged on repo-deep-dive origin/main at b843f64 (author 2026-10-03 04:05). Per the guardrails, no branch, commit or draft PR was created for falcon-edge to avoid a no-op PR. Verified on edge-builder: (a) is_test_path is segment-aware (src/data/species.ts and src/latest_hotfix.py are not tests; tests/species.test.ts and pkg/foo_test.py are); (b) a Next.js-style fixture yields 4 routes (app router, route groups, pages/api); (c) bash ci/validate.sh and python3 -m pytest -q tests/phase2 tests/phase3 pass on falcon-edge origin/main f5811d1; (d) gitleaks reports no leaks. RESIDUAL (not hidden): the merged canonical fix is Next.js/JS-oriented and does NOT parse falcon-edge's Python surface, so the tool still reports routes=0, migrations=0, entry_points=0 for falcon-edge. INV-P2-002's own validation ('routes/tables/entry points non-empty') therefore still fails for this repo, so the finding is only partially addressed at the tooling level and a falcon-edge-scoped PR cannot fix it.",
+  "reasonNoChange": "The patch-set file is not in falcon-edge (cross-repo dependency on MaineCyberTech/repo-deep-dive); its canonical fix is already merged upstream. A falcon-edge branch/PR would be empty or unrelated, which the runner guardrails forbid.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04, Linux 6.8.0-142-generic; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1. Tested a git archive --format=tar.gz of falcon-edge origin/main f5811d1, git-initialised so ci/validate.sh runs its git ls-files loop. Tool run is repo-deep-dive tools/repo_inventory.py @ b843f64.",
+  "baseReproduction": {
+    "source": "git archive --format=tar.gz of falcon-edge origin/main (f5811d1)",
+    "canonicalFixPresentUpstream": true,
+    "nextJsFixtureRoutesDetected": 4,
+    "segmentAwareTestDetection": true,
+    "falconEdgeRoutes": 0,
+    "falconEdgeMigrations": 0,
+    "falconEdgeEntryPoints": 0,
+    "findingStillReproduces": true,
+    "reproduces": true,
+    "reproducesNote": "INV-P2-002's validation (routes/migrations/entry points non-empty for falcon-edge) still fails with the canonical upstream tool; the canonical fix targets Next.js/JS repos, not falcon-edge's Python regex ROUTES / CREATE TABLE SCHEMA / __main__ entry points."
+  },
+  "commands": [
+    {
+      "command": "python3 repo_inventory.py /srv/work/falcon-edge-ps017  (canonical tool @ b843f64 vs falcon-edge origin/main)",
+      "runner": "edge-builder VM (Python 3.12.3)",
+      "exit": 0,
+      "result": "files: 1355 lines: 41595; routes: 0 migrations: 0 workflows: 5 containers: 0 test_files: 52; entry_points: 0 (JSON)"
+    },
+    {
+      "command": "python3 repo_inventory.py /srv/work/ps017-fixture  (Next.js-style fixture)",
+      "runner": "edge-builder VM (Python 3.12.3)",
+      "exit": 0,
+      "result": "routes: 4 -> ['/healthz', '/users', '/api/widgets', '/api/health']; tests.files=1; tests.dirs=['tests']"
+    },
+    {
+      "command": "python3 -c 'is_test_path assertions (segment-aware)'",
+      "runner": "edge-builder VM (Python 3.12.3)",
+      "exit": 0,
+      "result": "5/5 OK: tests/species.test.ts=True, src/data/species.ts=False, src/latest_hotfix.py=False, app/contest/main.py=False, pkg/foo_test.py=True"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "129 passed in 69.22s"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.64 MB)"
+    }
+  ],
+  "notRun": [
+    {
+      "command": "git switch -c remediation/ps-017-20261003-0018-fix-trust-root-87532ec origin/main",
+      "reason": "No source change can be made in falcon-edge: repo-deep-dive/tools/repo_inventory.py is absent from the repo."
+    },
+    {
+      "command": "commit fix(tools): segment-aware inventory detection [INV-P2-002]; push; open draft PR (-Repo falcon-edge)",
+      "reason": "No-op PR forbidden. The canonical fix already exists upstream (repo-deep-dive b843f64) and the target file is not in falcon-edge; an empty/unrelated falcon-edge PR would violate the guardrails."
+    }
+  ],
+  "residual": {
+    "finding": "INV-P2-002",
+    "status": "partially-addressed (tooling-only)",
+    "detail": "To fully satisfy INV-P2-002's validation for falcon-edge, repo-deep-dive/tools/repo_inventory.py would need Python-stack support: parse the regex ROUTES table (src/falcon_control/service.py:258), the CREATE TABLE SCHEMA (src/falcon_control/store.py:52-187), and __main__/console_scripts entry points. That is a new, separate cross-repo change and was out of scope for a falcon-edge PR; recommend filing it against MaineCyberTech/repo-deep-dive.",
+    "recommendedValidation": "python3 tools/repo_inventory.py <falcon-edge> -> routes / migrations / entry_points non-empty"
+  },
+  "diff": {
+    "path": "remediation/PS-017/diff.patch",
+    "sha256": "cc8a7f0a5f7ea45b65c31c3959b223ce1709f38cba0f9cdf6150d76c2539c846",
+    "note": "Full patch of the already-merged canonical upstream fix (repo-deep-dive b843f64) for tools/repo_inventory.py and PACK_DIGEST.txt; not a diff produced by this runner."
+  },
+  "verifyLog": "remediation/PS-017/verify.log",
+  "verifyLogSha256": "8efa6346cbb98887846429dddde5ad1b0a49b2cf1890df742a53675b31dad6ef",
+  "generated": "2026-10-03T09:15:35Z"
+}

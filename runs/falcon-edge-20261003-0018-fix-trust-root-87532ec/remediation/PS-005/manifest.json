@@ -1,0 +1,51 @@
+{
+  "patchSet": "PS-005",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "af6f83af72834a42de4ac10ad98a3c489047d1b8",
+  "branch": "remediation/ps-005-20261003-0018-fix-trust-root-87532ec",
+  "commit": "f2dbd1dc5aaa90a88096c404be163d54ea7df8fc",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/21",
+  "prState": "draft",
+  "findings": ["TEST-P2-001", "HYG-P2-001", "CI-P3-001"],
+  "files": [
+    "docs/GITHUB_CI.md",
+    "docs/CURRENT_STATE.md",
+    "docs/security/BRANCH_PROTECTION.md",
+    "tests/phase10/test_ci_doc_drift.py"
+  ],
+  "runner": "edge-builder VM (172.23.128.52), Ubuntu 24.04; git archive of the committed branch + remote script (edge-builder job API has no /sync or /repos)",
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "73 passed in 42.65s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase10/test_ci_doc_drift.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "3 passed in 0.02s"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-005/diff.patch",
+    "sha256": "e0f1408b444fe3d396baa7ff4be2cf8dad0929ffa7a33aa736af1d74a4c7decd"
+  },
+  "verifyLog": "remediation/PS-005/verify.log",
+  "generated": "2026-10-03T07:07:47Z"
+}

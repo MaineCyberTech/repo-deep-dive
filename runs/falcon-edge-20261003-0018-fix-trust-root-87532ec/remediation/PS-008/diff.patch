@@ -1,0 +1,205 @@
+diff --git a/automation/validation/inventory_metrics.py b/automation/validation/inventory_metrics.py
+index ae4c508..c6e0ec9 100644
+--- a/automation/validation/inventory_metrics.py
++++ b/automation/validation/inventory_metrics.py
+@@ -12,6 +12,15 @@ world-readable) - and atomically writes a Prometheus textfile:
+   falcon_edge_inventory_last_scan_timestamp{sensor="3b"} 1759387710
+   falcon_edge_inventory_last_scan_age_seconds{sensor="3b"} 3600
+ 
++Collector self-health (OBS-P2-002) - emitted on every run, independent of any sensor read, so a
++rule can tell "the collector/host stopped" apart from "a sensor's inventory DB could not be read":
++
++  falcon_edge_inventory_collector_ok 1
++  falcon_edge_inventory_collector_last_run_timestamp 1759387710
++  falcon_edge_inventory_collector_sensors_ok 3
++  falcon_edge_inventory_collector_sensors_total 4
++  falcon_edge_inventory_collector_errors_total{reason="ssh"} 1
++
+ No credentials are read or printed; the SSH keys are the lab delivery keys.
+ """
+ from __future__ import annotations
+@@ -80,18 +89,25 @@ def read_remote(host: str, key: str, timeout: int):
+ def collect(now: int, timeout: int, local_only: bool = False) -> str:
+     lines: list[str] = []
+     emitted: set[str] = set()
++    outcomes: list[bool] = []
++    errors = {"db": 0, "ssh": 0}
+ 
+-    def emit(name: str, value, labels: dict, help_text: str = "") -> None:
++    def emit(name: str, value, labels: dict, help_text: str = "",
++             metric_type: str = "gauge") -> None:
+         if name not in emitted:
+             if help_text:
+                 lines.append(f"# HELP {name} {help_text}")
+-            lines.append(f"# TYPE {name} gauge")
++            lines.append(f"# TYPE {name} {metric_type}")
+             emitted.add(name)
+         label_text = ",".join(f'{k}="{v}"' for k, v in labels.items())
+-        lines.append(f"{name}{{{label_text}}} {value}")
++        if label_text:
++            lines.append(f"{name}{{{label_text}}} {value}")
++        else:
++            lines.append(f"{name} {value}")
+ 
+     def one(name: str, result) -> None:
+         ok = result is not None
++        outcomes.append(ok)
+         hosts, services, scans, last = result if ok else (0, 0, 0, "")
+         ts = parse_epoch(last)
+         emit("falcon_edge_inventory_scan_ok", 1 if ok else 0, {"sensor": name},
+@@ -112,6 +128,7 @@ def collect(now: int, timeout: int, local_only: bool = False) -> str:
+         one(LAB[0], read_db(LAB[1]))
+     except (sqlite3.Error, OSError) as exc:
+         print(f"lab read failed: {exc}", file=sys.stderr)
++        errors["db"] += 1
+         one(LAB[0], None)
+     if not local_only:
+         for name, host, key in SENSORS:
+@@ -119,7 +136,25 @@ def collect(now: int, timeout: int, local_only: bool = False) -> str:
+                 one(name, read_remote(host, key, timeout))
+             except (subprocess.SubprocessError, OSError, ValueError) as exc:
+                 print(f"{name} read failed: {exc}", file=sys.stderr)
++                errors["ssh"] += 1
+                 one(name, None)
++
++    # Collector self-health (OBS-P2-002): prove the collector *ran* and report how many
++    # targets it reached, so the alert rules can distinguish a collector/host failure from a
++    # sensor whose inventory DB is unreadable. Emitted regardless of individual read results.
++    emit("falcon_edge_inventory_collector_ok", 1, {},
++         "Inventory metrics collector completed a pass (1); a stale/missing sample means the "
++         "collector or its host is down.")
++    emit("falcon_edge_inventory_collector_last_run_timestamp", now, {},
++         "UTC epoch of the last completed collector run.")
++    emit("falcon_edge_inventory_collector_sensors_ok", sum(outcomes), {},
++         "Inventory targets read successfully on this run.")
++    emit("falcon_edge_inventory_collector_sensors_total", len(outcomes), {},
++         "Inventory targets attempted on this run.")
++    for reason, count in errors.items():
++        emit("falcon_edge_inventory_collector_errors_total", count, {"reason": reason},
++             "Collector read failures by stage (db = local database, ssh = sensor).",
++             metric_type="counter")
+     return "\n".join(lines) + "\n"
+ 
+ 
+diff --git a/config/prometheus/edge-alerts.yaml b/config/prometheus/edge-alerts.yaml
+index 482a0be..55e5945 100644
+--- a/config/prometheus/edge-alerts.yaml
++++ b/config/prometheus/edge-alerts.yaml
+@@ -203,8 +203,10 @@ groups:
+           runbook: docs/runbooks/sensor-silence.md
+ 
+       - alert: EdgeInventoryStale
+-        # daily scans (03:37 + up to 30m randomized delay); 36h allows one missed night
+-        expr: falcon_edge_inventory_scan_ok == 1 and time() - falcon_edge_inventory_last_scan_timestamp > 129600
++        # daily scans (03:37 + up to 30m randomized delay); 36h allows one missed night.
++        # Gated on the collector being fresh: if the host collector stopped, EdgeInventoryExporterDown
++        # fires instead - do not blame the sensors (OBS-P2-002).
++        expr: falcon_edge_inventory_scan_ok == 1 and time() - falcon_edge_inventory_last_scan_timestamp > 129600 and on() (time() - falcon_edge_inventory_collector_last_run_timestamp < 7200)
+         for: 30m
+         labels:
+           severity: warning
+@@ -214,7 +216,10 @@ groups:
+           runbook: docs/runbooks/fleet-inventory.md
+ 
+       - alert: EdgeInventoryUnreadable
+-        expr: falcon_edge_inventory_scan_ok == 0
++        # A *sensor* read failed while the collector itself is healthy. If the collector is stale,
++        # this stays quiet and EdgeInventoryExporterDown carries the signal, so "collector down" and
++        # "sensor down" are distinguishable (OBS-P2-002).
++        expr: falcon_edge_inventory_scan_ok == 0 and on() (time() - falcon_edge_inventory_collector_last_run_timestamp < 7200)
+         for: 1h
+         labels:
+           severity: warning
+@@ -224,12 +229,13 @@ groups:
+           runbook: docs/runbooks/fleet-inventory.md
+ 
+       - alert: EdgeInventoryExporterDown
+-        # monitoring-of-the-monitoring for the inventory exporter itself
+-        expr: absent(falcon_edge_inventory_scan_ok)
+-        for: 3h
++        # Monitoring-of-the-monitoring for the inventory exporter/collector (OBS-P2-002): fires on
++        # total absence or when the collector's own heartbeat is older than two hourly runs.
++        expr: absent(falcon_edge_inventory_scan_ok) or (time() - falcon_edge_inventory_collector_last_run_timestamp > 7200)
++        for: 30m
+         labels:
+           severity: warning
+           component: edge-observability
+         annotations:
+-          summary: "Fleet inventory metrics exporter has not produced data"
++          summary: "Fleet inventory metrics collector has not completed a run in 2 hours"
+           runbook: docs/runbooks/fleet-inventory.md
+diff --git a/docs/runbooks/fleet-inventory.md b/docs/runbooks/fleet-inventory.md
+index 84ea99b..a305ec4 100644
+--- a/docs/runbooks/fleet-inventory.md
++++ b/docs/runbooks/fleet-inventory.md
+@@ -17,6 +17,15 @@ rates, no exploitation, no credential testing, no third-party networks.
+   `_last_scan_timestamp`, `_last_scan_age_seconds`, labelled by `sensor`). The monitoring stack's
+   node-exporter textfile collector picks it up additively; the edge rules include
+   `EdgeInventoryStale`, `EdgeInventoryUnreadable` and `EdgeInventoryExporterDown`.
++- **Collector vs sensor (OBS-P2-002):** the collector also writes unlabelled self-health series on
++  every run — `falcon_edge_inventory_collector_ok`,
++  `falcon_edge_inventory_collector_last_run_timestamp`,
++  `falcon_edge_inventory_collector_sensors_ok` / `_sensors_total`, and
++  `falcon_edge_inventory_collector_errors_total{reason="db"|"ssh"}`. This host-side SSH collector
++  is the single point of failure for all inventory signals, so the rules use the heartbeat to tell
++  a collector/host outage (`EdgeInventoryExporterDown`, heartbeat >2 h) apart from a sensor read
++  failure (`EdgeInventoryUnreadable`, suppressed while the collector is stale). The durable fix —
++  per-sensor self-export — remains an agent-plumbing item (audit OBS-P2-002).
+ 
+ **Commands**
+ - `detect` — the IPv4 subnets this host is attached to (its own interfaces).
+diff --git a/tests/phase9/test_inventory_metrics.py b/tests/phase9/test_inventory_metrics.py
+index 1feac7b..092fc87 100644
+--- a/tests/phase9/test_inventory_metrics.py
++++ b/tests/phase9/test_inventory_metrics.py
+@@ -1,4 +1,5 @@
+ """Tests for the fleet inventory metrics exporter (ED-20)."""
++import importlib.util
+ import os
+ import subprocess
+ import sys
+@@ -9,6 +10,13 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
+ SCRIPT = os.path.join(REPO, "automation", "validation", "inventory_metrics.py")
+ 
+ 
++def load_module():
++    spec = importlib.util.spec_from_file_location("inventory_metrics", SCRIPT)
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++
+ class TestInventoryMetrics(unittest.TestCase):
+     def test_local_only_writes_series(self):
+         with tempfile.TemporaryDirectory() as tmp:
+@@ -20,12 +28,29 @@ class TestInventoryMetrics(unittest.TestCase):
+             for series in ("falcon_edge_inventory_scan_ok", "falcon_edge_inventory_hosts_total",
+                            "falcon_edge_inventory_services_total", "falcon_edge_inventory_scans_total",
+                            "falcon_edge_inventory_last_scan_timestamp",
+-                           "falcon_edge_inventory_last_scan_age_seconds"):
++                           "falcon_edge_inventory_last_scan_age_seconds",
++                           "falcon_edge_inventory_collector_ok",
++                           "falcon_edge_inventory_collector_last_run_timestamp",
++                           "falcon_edge_inventory_collector_sensors_ok",
++                           "falcon_edge_inventory_collector_sensors_total"):
+                 self.assertIn(series, text)
+             self.assertIn('sensor="lab"', text)
+             self.assertEqual(text.count("# HELP falcon_edge_inventory_scan_ok"), 1)
+             self.assertEqual(text.count("# TYPE falcon_edge_inventory_scan_ok"), 1)
+ 
++    def test_collector_health_is_distinct_from_sensor_readability(self):
++        """OBS-P2-002: a completed pass that cannot read a sensor DB still reports
++        collector_ok=1 with scan_ok=0, so rules can tell collector-down from sensor-down."""
++        mod = load_module()
++        mod.LAB = ("lab", os.path.join(tempfile.gettempdir(), "falcon-missing-inventory.db"))
++        text = mod.collect(now=1000000, timeout=1, local_only=True)
++        self.assertIn('falcon_edge_inventory_scan_ok{sensor="lab"} 0', text)
++        self.assertIn("falcon_edge_inventory_collector_ok 1", text)
++        self.assertIn("falcon_edge_inventory_collector_sensors_ok 0", text)
++        self.assertIn("falcon_edge_inventory_collector_sensors_total 1", text)
++        self.assertIn('falcon_edge_inventory_collector_errors_total{reason="db"} 1', text)
++        self.assertIn("falcon_edge_inventory_collector_last_run_timestamp 1000000", text)
++
+     def test_help(self):
+         p = subprocess.run([sys.executable, SCRIPT, "--help"], capture_output=True, text=True)
+         self.assertEqual(p.returncode, 0, p.stderr)

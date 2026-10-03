@@ -1,0 +1,19 @@
+docs: close CI/test hygiene gaps [TEST-P2-001,HYG-P2-001]
+
+The authoritative docs stated a fixed suite size that drifts as the suite
+grows: CURRENT_STATE.md carried "197 tests OK", and GITHUB_CI.md /
+BRANCH_PROTECTION.md did not say where the per-run count is authoritative.
+This closes the residual test-count / cadence documentation drift for the
+20261003-0018-fix-trust-root-87532ec run.
+
+- TEST-P2-001 / HYG-P2-001: drop the hardcoded count from CURRENT_STATE.md;
+  state in GITHUB_CI.md and BRANCH_PROTECTION.md that the suite size is
+  reported per run by the CI job log/job summary, never frozen in prose.
+- HYG-P2-001: extend tests/phase10/test_ci_doc_drift.py so the summary and
+  governance docs cannot silently re-hardcode a test count.
+- CI-P3-001: the documented Dependabot cadence already matches the workflow
+  cron (daily 05:23 UTC) and is covered by the same drift guard.
+
+Local check: python -m unittest tests.phase10.test_ci_doc_drift -> 3 tests OK.
+
+AI-Authored-By: opencode (deepseek-v4.1-flash)

@@ -1,0 +1,61 @@
+{
+  "patchSet": "PS-015",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-015-20261003-0018-fix-trust-root-87532ec",
+  "commit": "1cb9ec040cd4159c2e069c76d0e4c4d067c6f9f6",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/28",
+  "prState": "draft",
+  "findings": ["SEC-P2-001", "ARCH-P3-001"],
+  "files": [
+    "src/falcon_control/http_server.py",
+    "tests/phase2/test_service_integration.py"
+  ],
+  "residual": "SEC-P2-001: fixed in the transport (security headers, per-peer fixed-window rate limiter keyed by fingerprint/IP, 30s request-socket timeout). The finding's alternative 'front the service with a reverse proxy' was not taken and the production rate budget is left to the owner (open question). ARCH-P3-001: fixed with BoundedThreadingHTTPServer (BoundedSemaphore cap, default 64 via FALCON_HTTP_MAX_CONNECTIONS); over-capacity connections are shed with 503 SERVER_BUSY.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04, Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; verified via the lab job API /sync (real git clone of the pushed branch at 1cb9ec0, so ci/validate.sh runs its git ls-files parse loop)",
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2/test_service_integration.py -k \"security_headers or connection_bounded or over_capacity or rate_limit\"",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "5 passed, 51 deselected in 1.99s (headers, connection bound, 503 shed, per-peer limiter, 429 over mTLS)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "134 passed in 76.69s (0:01:16)"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.66 MB)"
+    }
+  ],
+  "notRun": [
+    {
+      "command": "live slow-loris client against the 30s socket timeout",
+      "reason": "the timeout is configured on the handler but was not exercised with a deliberately stalled TLS client; recorded as not run rather than asserted"
+    },
+    {
+      "command": "high-concurrency load test proving bounded memory",
+      "reason": "the cap is asserted by shedding a connection once the semaphore is exhausted (unit test), not by a load generator"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-015/diff.patch",
+    "sha256": "e108f5e20174982b7777ff56d46c0be0e50c7edfcefa78dae0d5a18c6297de94"
+  },
+  "verifyLog": "remediation/PS-015/verify.log",
+  "prBody": "remediation/PS-015/pr_body.md",
+  "generated": "2026-10-03T08:56:00Z"
+}

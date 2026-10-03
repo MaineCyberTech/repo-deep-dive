@@ -1,0 +1,198 @@
+commit 71cffcd3ff4daebb974813b5dd9a0483809fd7fd
+Author: build-agent <build-agent@localhost>
+Date: Sat Oct 3 03:17:27 2026 +0000
+Subject: review-fix: audit batch - API-P2-002 pagination, API-P2-004 CSR validation
+
+
+diff --git a/src/falcon_control/service.py b/src/falcon_control/service.py
+index 8b9e563..140879d 100644
+--- a/src/falcon_control/service.py
++++ b/src/falcon_control/service.py
+@@ -630,6 +630,14 @@ class ControlPlaneService:
+             return problem(403, "PROFILE_MISMATCH", "Requested profile is not permitted by this token",
+                            "", False, correlation)
+ 
++        # API-P2-004: validate the CSR before redeeming the single-use bootstrap token; a
++        # malformed body must not destroy a one-shot provisioning token.
++        try:
++            pki.validate_csr(data["csrPem"])
++        except X509Error as exc:
++            return problem(400, "CSR_INVALID", "The CSR is not a valid PKCS#10 request",
++                           str(exc)[:200], False, correlation)
++
+         existing = self.store.get_sensor_by_device_uuid(data["deviceUuid"])
+         if existing is not None:
+             if record["sensor_id"] != existing["sensor_id"]:
+@@ -656,8 +664,12 @@ class ControlPlaneService:
+         cert_path = os.path.join(self.secrets_dir, "sensors", f"{sensor_id}.crt.pem")
+         # R1/ACM-P1-001: the certificate subject is generated server-side from the
+         # sensor id; the submitted CSR subject (e.g. CN=operator) is ignored.
+-        pki.issue_cert(self.ca_dir, data["csrPem"], cert_path, days=CERT_DAYS_LAB,
+-                       subject=pki.sensor_subject(sensor_id))
++        try:
++            pki.issue_cert(self.ca_dir, data["csrPem"], cert_path, days=CERT_DAYS_LAB,
++                           subject=pki.sensor_subject(sensor_id))
++        except X509Error as exc:
++            return problem(400, "CSR_INVALID", "The CSR could not be signed",
++                           str(exc)[:200], False, correlation)
+         fingerprint = cert_fingerprint(cert_path)
+         not_after = cert_not_after(cert_path)
+         if existing is None:
+@@ -723,10 +735,21 @@ class ControlPlaneService:
+                            correlation)
+         now = now_utc()
+         cert_path = os.path.join(self.secrets_dir, "sensors", f"{sensor_id}.crt.pem")
++        # API-P2-004 (same class as enrollment): reject a malformed CSR with a problem
++        # response instead of a transport error; the old certificate stays valid.
++        try:
++            pki.validate_csr(data["csrPem"])
++        except X509Error as exc:
++            return problem(400, "CSR_INVALID", "The CSR is not a valid PKCS#10 request",
++                           str(exc)[:200], False, correlation)
+         # R1/ACM-P1-001: the certificate subject is generated server-side from the
+         # sensor id; the submitted CSR subject (e.g. CN=operator) is ignored.
+-        pki.issue_cert(self.ca_dir, data["csrPem"], cert_path, days=CERT_DAYS_LAB,
+-                       subject=pki.sensor_subject(sensor_id))
++        try:
++            pki.issue_cert(self.ca_dir, data["csrPem"], cert_path, days=CERT_DAYS_LAB,
++                           subject=pki.sensor_subject(sensor_id))
++        except X509Error as exc:
++            return problem(400, "CSR_INVALID", "The CSR could not be signed",
++                           str(exc)[:200], False, correlation)
+         fingerprint = cert_fingerprint(cert_path)
+         not_after = cert_not_after(cert_path)
+         self.store.update_sensor(sensor_id, cert_fingerprint=fingerprint, cert_not_after=not_after,
+@@ -747,13 +770,25 @@ class ControlPlaneService:
+ 
+     def h_list_sensors(self, req, match, identity, correlation):
+         state = (req.query.get("state") or [None])[0]
++        raw_limit = (req.query.get("limit") or ["100"])[0]
+         try:
+-            limit = min(int((req.query.get("limit") or ["100"])[0]), 500)
+-        except ValueError:
+-            limit = 100
+-        rows = self.store.list_sensors(state, limit)
+-        items = [self._summary(row) for row in rows]
+-        return json_response(200, {"items": items})
++            limit = int(raw_limit)
++        except (TypeError, ValueError):
++            return problem(400, "INVALID_LIMIT", "limit must be an integer between 1 and 500",
++                           f"limit={raw_limit}", False, correlation)
++        if not 1 <= limit <= 500:
++            return problem(400, "INVALID_LIMIT", "limit must be between 1 and 500",
++                           f"limit={limit}", False, correlation)
++        cursor = (req.query.get("cursor") or [None])[0] or None
++        if cursor is not None and len(cursor) > 128:
++            return problem(400, "INVALID_CURSOR", "cursor is not valid", "", False, correlation)
++        # API-P2-002: keyset pagination on sensor_id; nextCursor is present only when
++        # another page exists.
++        rows, next_cursor = self.store.list_sensors_page(state, limit, cursor)
++        body = {"items": [self._summary(row) for row in rows]}
++        if next_cursor:
++            body["nextCursor"] = next_cursor
++        return json_response(200, body)
+ 
+     def h_get_sensor(self, req, match, identity, correlation):
+         row, err = self._sensor_or_404(match.group("sensor"), correlation)
+diff --git a/src/falcon_control/store.py b/src/falcon_control/store.py
+index bb8defe..e49114a 100644
+--- a/src/falcon_control/store.py
++++ b/src/falcon_control/store.py
+@@ -156,17 +156,33 @@ class Store:
+             return self._db.execute("SELECT * FROM sensors WHERE device_uuid=?",
+                                     (device_uuid,)).fetchone()
+ 
+-    def list_sensors(self, state: str | None = None, limit: int = 100):
++    def list_sensors(self, state: str | None = None, limit: int = 100,
++                     after: str | None = None):
++        clauses, params = [], []
++        if state:
++            clauses.append("lifecycle_state=?")
++            params.append(state)
++        if after:
++            clauses.append("sensor_id>?")
++            params.append(after)
++        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+         with self._lock:
+-            if state:
+-                rows = self._db.execute(
+-                    "SELECT * FROM sensors WHERE lifecycle_state=? ORDER BY sensor_id LIMIT ?",
+-                    (state, limit)).fetchall()
+-            else:
+-                rows = self._db.execute(
+-                    "SELECT * FROM sensors ORDER BY sensor_id LIMIT ?", (limit,)).fetchall()
++            rows = self._db.execute(
++                f"SELECT * FROM sensors{where} ORDER BY sensor_id LIMIT ?",
++                (*params, limit)).fetchall()
+         return rows
+ 
++    def list_sensors_page(self, state: str | None = None, limit: int = 100,
++                          after: str | None = None):
++        """Keyset page: returns (rows, next_cursor). Fetches one extra row to know
++        whether another page exists (API-P2-002)."""
++        rows = self.list_sensors(state, limit + 1, after)
++        next_cursor = None
++        if len(rows) > limit:
++            rows = rows[:limit]
++            next_cursor = rows[-1]["sensor_id"]
++        return rows, next_cursor
++
+     def update_sensor(self, sensor_id: str, **fields) -> None:
+         fields["sensor_id"] = sensor_id
+         cols = ", ".join(f"{k}=:{k}" for k in fields if k != "sensor_id")
+diff --git a/tests/phase2/test_service_integration.py b/tests/phase2/test_service_integration.py
+index 60c9a04..b6b4c2b 100644
+--- a/tests/phase2/test_service_integration.py
++++ b/tests/phase2/test_service_integration.py
+@@ -370,6 +370,51 @@ class ControlPlaneIT(unittest.TestCase):
+             self.assertEqual(400, status, f"{route} without key: {obj}")
+             self.assertEqual(obj["code"], "MISSING_IDEMPOTENCY_KEY")
+ 
++    def test_sensor_list_pagination_and_limit_validation(self):
++        # API-P2-002: keyset pagination; a negative limit must not bypass the page cap.
++        for name in ("page-a", "page-b", "page-c"):
++            self.enroll(name)
++        seen, cursor, pages = [], None, 0
++        while pages < 10:
++            path = "/api/v1/sensors?limit=2" + (f"&cursor={cursor}" if cursor else "")
++            status, _, obj = self.japi("GET", path, self.op_ctx)
++            self.assertEqual(status, 200, obj)
++            seen += [s["sensorId"] for s in obj["items"]]
++            pages += 1
++            cursor = obj.get("nextCursor")
++            if not cursor:
++                break
++        self.assertGreaterEqual(len(seen), 3)
++        self.assertEqual(len(seen), len(set(seen)), "pagination must not repeat sensors")
++        for bad in ("0", "-1", "501", "abc"):
++            status, _, obj = self.japi("GET", f"/api/v1/sensors?limit={bad}", self.op_ctx)
++            self.assertEqual(400, status, (bad, obj))
++            self.assertEqual(obj["code"], "INVALID_LIMIT")
++
++    def test_malformed_csr_does_not_burn_token(self):
++        # API-P2-004: a bad body must not destroy a single-use bootstrap token, and the
++        # rejection is an RFC 9457 problem, not a transport error.
++        token = self.make_token()
++        bogus = {
++            "schemaVersion": "1.0",
++            "deviceUuid": str(uuid.uuid4()),
++            "csrPem": ("-----BEGIN CERTIFICATE REQUEST-----\n" + "A" * 128
++                       + "\n-----END CERTIFICATE REQUEST-----\n"),
++            "nonce": "n" * 32,
++            "hardware": {"model": "Raspberry Pi 3 Model B", "architecture": "arm64",
++                         "memoryMb": 1024},
++            "agent": {"version": "0.1.0", "apiVersion": "v1", "schemaVersion": "1.0"},
++        }
++        status, _, obj = self.japi("POST", "/api/v1/enrollments", self.noauth_ctx, bogus,
++                                   {"Authorization": "Bearer " + token["token"]})
++        self.assertEqual(400, status, obj)
++        self.assertEqual(obj["code"], "CSR_INVALID")
++        self.assertFalse(obj["retryable"])
++        # the token survived the bad body: a valid enrollment with it still succeeds
++        _, ctx, _, _ = self.enroll("csr-retry", token=token)
++        status, _, _ = self.japi("GET", "/api/v1/healthz", ctx)
++        self.assertEqual(status, 200)
++
+     def test_rbac_boundaries(self):
+         enrolled, ctx, _, _ = self.enroll("rbac")
+         sensor = enrolled["sensorId"]

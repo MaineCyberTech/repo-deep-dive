@@ -1,0 +1,77 @@
+{
+  "patchSet": "PS-010",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-010-20261003-0018-fix-trust-root-87532ec",
+  "commit": "4c38bb7a3366f20ce7a020acf22950706cc1d0ad",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/26",
+  "prState": "draft",
+  "findings": ["SEC-P2-003"],
+  "files": [
+    "automation/validation/fleet_inventory.py",
+    "tests/phase9/test_fleet_inventory.py",
+    "docs/runbooks/fleet-inventory.md",
+    "docs/TROUBLESHOOTING.md"
+  ],
+  "residual": "SEC-P2-003: the DB/directory are created owner-only (0700/0600) and an existing loose DB is tightened on the next write; show/associate hash MAC/IP by default with --raw opt-in. Open question (owner): which account reads the DB (the hourly inventory_metrics lab-host unit reads it directly) -- the fix does not fall back to group-readable. `changes` still prints raw MAC/IP (the finding names show/associate only). No falcon-inventory systemd unit exists in the repo to reconcile.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; tested a git archive --format=tar.gz of the committed branch (preserves modes/LF)",
+  "baseReproduction": {
+    "source": "git archive --format=tar.gz of origin/main (f5811d1)",
+    "dbFileMode": "0644",
+    "showPrintsRawIdentifiers": true,
+    "reproduces": true
+  },
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "129 passed in 73.42s"
+    },
+    {
+      "command": "python3 -m pytest -v tests/phase9/test_fleet_inventory.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "15 passed in 2.70s (owner-only mode, tighten pre-existing, show/associate hashed default + --raw)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase9",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "19 passed in 13.30s (fleet inventory + inventory metrics + soak harness)"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.74 MB)"
+    }
+  ],
+  "functionalCheck": {
+    "patchedDbFileMode": "0600",
+    "patchedDbDirMode": "0700",
+    "showDefaultContainsRaw": false,
+    "showRawFlagContainsRaw": true
+  },
+  "notRun": [
+    {
+      "command": "unprivileged read of the DB by a different account",
+      "reason": "the verification archive only has the ubuntu account; the mode bits (0700/0600) are asserted in unit tests and printed in the functional check, but a second non-owner account was not available to attempt the read"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-010/diff.patch",
+    "sha256": "b307848386941f70599da0e98a498d369cf218c9c65575ae74bd56ecb6996194"
+  },
+  "verifyLog": "remediation/PS-010/verify.log",
+  "prBody": "remediation/PS-010/pr_body.md",
+  "generated": "2026-10-03T08:12:00Z"
+}

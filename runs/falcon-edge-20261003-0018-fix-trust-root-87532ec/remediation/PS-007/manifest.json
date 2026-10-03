@@ -1,0 +1,51 @@
+{
+  "patchSet": "PS-007",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-007-20261003-0018-fix-trust-root-87532ec",
+  "commit": "48885ee73b0713c08e9776df135627194d950f67",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/23",
+  "prState": "draft",
+  "findings": ["DATA-P2-002", "DATA-P2-003"],
+  "files": [
+    "src/falcon_control/store.py",
+    "tests/phase2/test_store_lifecycle.py"
+  ],
+  "residual": "DATA-P2-003 and the FK half of DATA-P2-002 were already implemented on base by commit 85a1097 (PRAGMA user_version migration 0 -> 1, ON DELETE CASCADE FKs, foreign_keys=ON) and covered by tests/phase2/test_store_lifecycle.py. This PR adds the remaining recommendation of DATA-P2-002: audit_log retention (365 d, proposed) + idx_audit_log_at, and reapplies idempotent CREATE INDEX IF NOT EXISTS on open so existing DBs gain new indexes without a version bump.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; tested a git archive --format=tar.gz of the committed branch (preserves modes/LF)",
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "131 passed in 70.84s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2/test_store_lifecycle.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "8 passed in 2.64s (includes new audit-log retention and idempotent-reopen tests)"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-007/diff.patch",
+    "sha256": "8cf56ad5340794ba41a92f9b3fdadb7a63d5e1ce10ba9bbd2e2a6d4d83ba7794"
+  },
+  "verifyLog": "remediation/PS-007/verify.log",
+  "prBody": "remediation/PS-007/pr_body.md",
+  "generated": "2026-10-03T07:40:00Z"
+}

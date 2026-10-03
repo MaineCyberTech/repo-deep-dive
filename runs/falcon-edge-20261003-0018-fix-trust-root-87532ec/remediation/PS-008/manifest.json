@@ -1,0 +1,71 @@
+{
+  "patchSet": "PS-008",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-008-20261003-0018-fix-trust-root-87532ec",
+  "commit": "ca69cf92272cc59cabff334af14bc2dea8f9d00d",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/24",
+  "prState": "draft",
+  "findings": ["OBS-P2-001", "OBS-P2-002"],
+  "files": [
+    "config/prometheus/edge-alerts.yaml",
+    "automation/validation/inventory_metrics.py",
+    "tests/phase9/test_inventory_metrics.py",
+    "docs/runbooks/fleet-inventory.md"
+  ],
+  "residual": "OBS-P2-002: the durable fix (per-sensor self-export) needs agent-plumbing and is deferred; this PR delivers the in-repo half the finding's suggested validation names - collector self-health metrics plus alert rules that distinguish 'collector down' from 'sensor down'. OBS-P2-001: no receiver is guessed; the audit's own open question ('Is a central Alertmanager planned?') is recorded. The recommended delivery heartbeat is inert without a receiver, so no no-op rule was added; the rule set stays at 21.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; promtool not installed; tested a git archive --format=tar.gz of the committed branch (preserves modes/LF)",
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "129 passed in 78.09s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase9/test_inventory_metrics.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "3 passed in 0.17s (includes new collector-vs-sensor test)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase8 tests/phase9",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "27 passed in 18.20s (alert-rule structure + exporter + inventory)"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "python3 YAML + structural parse of config/prometheus/edge-alerts.yaml (promtool absent)",
+      "runner": "edge-builder VM (pyyaml 6.0.1)",
+      "exit": 0,
+      "result": "PASS: 21 rules, each with alert/expr/for, severity, runbook"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found"
+    }
+  ],
+  "notRun": [
+    {
+      "command": "synthetic critical alert delivered end-to-end (OBS-P2-001)",
+      "reason": "requires the monitoring program's delivery stack (Alertmanager/Grafana contact point + receiver), which is an owner decision and not present on the edge-builder verification VM; no receiver was fabricated"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-008/diff.patch",
+    "sha256": "a9569f81e414f401c8605e2116883498c00ef8b00343febf46d19852674455a1"
+  },
+  "verifyLog": "remediation/PS-008/verify.log",
+  "prBody": "remediation/PS-008/pr_body.md",
+  "generated": "2026-10-03T07:55:00Z"
+}

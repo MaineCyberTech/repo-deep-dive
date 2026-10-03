@@ -1,0 +1,101 @@
+{
+  "patchSet": "PS-016",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-016-20261003-0018-fix-trust-root-87532ec",
+  "commit": "52b825b694089d17372ea6e48e3d42f2eaf7ee39",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/29",
+  "prState": "draft",
+  "findings": [
+    "INV-P2-001"
+  ],
+  "files": [
+    "ci/check_evidence_size.py",
+    "ci/validate.sh",
+    "REPOSITORY.md",
+    "tests/phase10/test_evidence_budget_gate.py"
+  ],
+  "residual": "INV-P2-001: the size budget is now fail-closed (exit 1 over 2,500 files / 50 MiB) and ci/validate.sh propagates it, so the finding's required 'CI step that fails when evidence/ exceeds the budget' is in place. The retention policy already lives in REPOSITORY.md and raw evidence is never deleted. Automating the move to the external archive (/srv/falcon/edge-evidence-archive/, with sidecar manifest) remains an ops/tooling follow-up outside the repo; the budget thresholds are unchanged.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04, Linux 6.8.0-142-generic; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1, shellcheck; verified a git archive --format=tar.gz of the committed branch (git-initialised so ci/validate.sh runs its git ls-files parse loop) versus an archive of origin/main",
+  "baseReproduction": {
+    "source": "git archive --format=tar.gz of origin/main (f5811d1)",
+    "checkerAdvisory": true,
+    "isolatedOverBudgetExit": 0,
+    "endToEndOverBudgetFiles": 3550,
+    "endToEndOverBudgetCheckerExit": 0,
+    "endToEndOverBudgetValidateExit": 0,
+    "reproduces": true
+  },
+  "commands": [
+    {
+      "command": "python3 ci/check_evidence_size.py",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "PASS  evidence size: 950 files, 2.5 MiB (budget 2500 files / 50 MiB)"
+    },
+    {
+      "command": "shellcheck -S warning ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "no warnings"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase10/test_evidence_budget_gate.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "3 passed in 0.01s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "129 passed in 69.99s"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "inject 2600 raw files under evidence/; python3 ci/check_evidence_size.py",
+      "runner": "edge-builder VM",
+      "exit": 1,
+      "result": "FAIL  evidence size: 3550 files, 2.5 MiB (budget 2500 files / 50 MiB)"
+    },
+    {
+      "command": "inject 2600 raw files under evidence/; bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 1,
+      "result": "FAIL evidence size budget -> validation: FAILURES PRESENT"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.65 MB)"
+    }
+  ],
+  "functionalCheck": {
+    "underBudgetCheckerExit": 0,
+    "overBudgetCheckerExit": 1,
+    "underBudgetValidateExit": 0,
+    "overBudgetValidateExit": 1,
+    "restoredCheckerExit": 0
+  },
+  "notRun": [
+    {
+      "command": "automated move of completed-phase captures to /srv/falcon/edge-evidence-archive/",
+      "reason": "external archive is outside the repository and this patch set; the gate now blocks over-budget trees and the documented manual/ops remedy is unchanged."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-016/diff.patch",
+    "sha256": "829f29dc651fbfab799f40c0c97901010a5e1e13700111387ad211fece8139f6"
+  },
+  "verifyLog": "remediation/PS-016/verify.log",
+  "prBody": "remediation/PS-016/pr_body.md",
+  "generated": "2026-10-03T09:05:00Z"
+}

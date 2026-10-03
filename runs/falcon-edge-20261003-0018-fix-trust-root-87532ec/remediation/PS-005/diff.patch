@@ -1,0 +1,93 @@
+diff --git a/docs/CURRENT_STATE.md b/docs/CURRENT_STATE.md
+index 6d27f51..fa029a3 100644
+--- a/docs/CURRENT_STATE.md
++++ b/docs/CURRENT_STATE.md
+@@ -150,8 +150,10 @@ and are superseded by that update.
+   extraction and a crash-safe swap with boot recovery.
+ - Live verification: control plane restarted active with `healthz` 200
+   (`c6-control-plane-restart`); the real operator cert still resolves (200, 9 sensors, 1 ACTIVE)
+-  while a freshly CA-signed `CN=operator` cert is rejected (403) (`c6-r1-live-repro`); 197 tests
+-  OK and `ci/validate.sh` ALL PASS (`c6-security-verification`).
++  while a freshly CA-signed `CN=operator` cert is rejected (403) (`c6-r1-live-repro`); the full
++  test suite passed and `ci/validate.sh` ALL PASS (`c6-security-verification`; the suite size is
++  reported by the CI run / job log ΓÇö see `docs/GITHUB_CI.md` ΓÇö not restated as a fixed number here,
++  TEST-P2-001).
+ - Residual: the live device still executes the pre-C6 update-apply script; the image changes
+   exist in the tree (`f1da279`) but not in a published image, so a bake + reflash is required.
+ 
+diff --git a/docs/GITHUB_CI.md b/docs/GITHUB_CI.md
+index 5ee1767..8f1b980 100644
+--- a/docs/GITHUB_CI.md
++++ b/docs/GITHUB_CI.md
+@@ -19,7 +19,9 @@
+   distributions; apt-managed base-OS dist-packages are reported as `os-baseline`, not failed)
+ - the full test suite on **Python 3.12** (lab host / control plane) and **3.13**
+   (Raspberry Pi OS trixie ΓÇö the device runtime); the 3.12 leg also reports informational
+-  in-process coverage in the job summary
++  in-process coverage in the job summary. The suite size is **deliberately not hardcoded**: each
++  run prints the authoritative `Ran N tests` line in its job log and the 3.12 coverage table in
++  the job summary, so this guide stays correct as the suite grows (TEST-P2-001/HYG-P2-001)
+ - an upstream drift check (every pinned action commit still resolves via the GitHub commits API;
+   the default base image URL still resolves) ΓÇö runs on every run, and a **weekly schedule**
+   (Mondays 06:17 UTC) makes rot visible even when nothing is pushed
+diff --git a/docs/security/BRANCH_PROTECTION.md b/docs/security/BRANCH_PROTECTION.md
+index 4658349..ed6177b 100644
+--- a/docs/security/BRANCH_PROTECTION.md
++++ b/docs/security/BRANCH_PROTECTION.md
+@@ -35,7 +35,9 @@ Applied through the classic protection API (or Settings ΓåÆ Branches):
+ ## Compensating controls in place now
+ 
+ - Every push/PR runs `validate` (the full test suite on 3.12/3.13, actionlint, shellcheck, ruff,
+-  gitleaks, zizmor, upstream drift, `ci/validate.sh`, review package build+verify).
++  gitleaks, zizmor, upstream drift, `ci/validate.sh`, review package build+verify). The suite size
++  is reported per run by the job log/job summary rather than hardcoded here (TEST-P2-001); the
++  three required check contexts this file would enforce are listed under **Target settings** above.
+ - `dependabot-merge.yml` merges only PRs whose validate run for the exact commit is green.
+   CI-P2-002 tightened the gate: it requires the `validate`, `tests (3.12)` and `tests (3.13)`
+   check-runs to have completed successfully on the PR's head commit, only for `dependabot/*`
+diff --git a/tests/phase10/test_ci_doc_drift.py b/tests/phase10/test_ci_doc_drift.py
+index 5fee564..7564e11 100644
+--- a/tests/phase10/test_ci_doc_drift.py
++++ b/tests/phase10/test_ci_doc_drift.py
+@@ -1,8 +1,10 @@
+ #!/usr/bin/env python3
+-"""CI documentation drift guard (AI-P2-006).
++"""CI documentation drift guard (AI-P2-006, TEST-P2-001/HYG-P2-001).
+ 
+ `docs/GITHUB_CI.md` must describe the workflows that actually exist: every workflow file
+ is named, the count sentence matches, and the Dependabot sweep cadence matches its cron.
++The authoritative docs must also not hardcode a test count - the suite size is reported
++per CI run (job log / job summary), not frozen in prose.
+ """
+ import glob
+ import os
+@@ -12,6 +14,13 @@ import unittest
+ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ DOC = os.path.join(REPO, "docs", "GITHUB_CI.md")
+ WORKFLOW_DIR = os.path.join(REPO, ".github", "workflows")
++# TEST-P2-001/HYG-P2-001: summary/governance docs must reference the CI run, not a stale count.
++COUNT_DOCS = [
++    DOC,
++    os.path.join(REPO, "docs", "security", "BRANCH_PROTECTION.md"),
++    os.path.join(REPO, "docs", "CURRENT_STATE.md"),
++]
++HARDCODED_TEST_COUNT = re.compile(r"\b\d+\s+tests\b")
+ 
+ 
+ class CiDocDriftTests(unittest.TestCase):
+@@ -33,6 +42,15 @@ class CiDocDriftTests(unittest.TestCase):
+         self.assertIn(match.group(1), doc,
+                       "the Dependabot cron string is not documented in docs/GITHUB_CI.md")
+ 
++    def test_docs_do_not_hardcode_test_count(self):
++        for path in COUNT_DOCS:
++            with open(path, encoding="utf-8") as fh:
++                match = HARDCODED_TEST_COUNT.search(fh.read())
++            if match:
++                self.fail(
++                    f"{os.path.relpath(path, REPO)} hardcodes a test count "
++                    f"({match.group(0)!r}); reference the CI run/job summary instead")
++
+ 
+ if __name__ == "__main__":
+     unittest.main(verbosity=2)

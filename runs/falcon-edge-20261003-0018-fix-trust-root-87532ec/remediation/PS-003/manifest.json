@@ -1,0 +1,63 @@
+{
+  "patchSet": "PS-003",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "af6f83a",
+  "branch": "remediation/ps-003-20261003-0018-fix-trust-root-87532ec",
+  "commit": "252d411a076d89f3cbb07f80f7efb2ae6e7910c5",
+  "commitShort": "252d411",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/19",
+  "prState": "draft",
+  "findings": ["SC-P2-002"],
+  "files": [
+    ".github/workflows/validate.yml",
+    ".gitleaks.toml"
+  ],
+  "scopeNote": "Patch plan lists only .github/workflows/validate.yml. .gitleaks.toml was added as the minimal config required so the new git-history scan does not fail CI on two attested historical generic-api-key false positives (commits a64c629, 3798060; already remediated in-tree by 74bdb09 / 5b1a09e). Allowlist scope = those exact commits AND targetRules=[generic-api-key].",
+  "runner": "edge-builder VM (172.23.128.51) via lab-sync.ps1 / lab-run.ps1",
+  "commands": [
+    {
+      "command": "actionlint .github/workflows/validate.yml",
+      "runner": "edge-builder VM (actionlint 1.7.12)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "command": "gitleaks detect --source . --redact --config .gitleaks.toml --log-opts=--all",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "312 commits scanned; no leaks found"
+    },
+    {
+      "command": "bash /tmp/ps003_gitleaks_history_test.sh",
+      "runner": "edge-builder VM (injected-then-deleted fake token; gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "PASS: --no-git (tree) missed the deleted token (exit 0); --log-opts=--all (git) found it (leaks found: 1, exit 1)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2",
+      "runner": "edge-builder VM (pytest 8.3.5 / Python 3.13.5)",
+      "exit": 0,
+      "result": "73 passed in 38.11s"
+    }
+  ],
+  "scanBeforeAllowlist": {
+    "command": "gitleaks detect --source . --redact --config .gitleaks.toml --log-opts=--all",
+    "runner": "edge-builder VM (gitleaks 8.30.1, pre-.gitleaks.toml change)",
+    "exit": 1,
+    "result": "312 commits scanned; leaks found: 2 - generic-api-key at tests/phase0/test_capture_hardening.py:43 @ a64c629 and tests/phase3/test_agent_integration.py:65 @ 3798060; both inspected and confirmed benign (synthetic redaction fixture literal; Idempotency-Key comment), later remediated in-tree."
+  },
+  "diff": {
+    "path": "remediation/PS-003/diff.patch",
+    "sha256": "f823977eeba9980431333f097083082855171569d62f7e2a52b727aeee4afe2c"
+  },
+  "verifyLog": "remediation/PS-003/verify.log",
+  "generated": "2026-10-03T06:47:00Z"
+}

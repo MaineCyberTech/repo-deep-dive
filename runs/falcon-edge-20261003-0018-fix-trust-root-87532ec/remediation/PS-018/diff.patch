@@ -1,0 +1,181 @@
+diff --git a/.github/workflows/validate.yml b/.github/workflows/validate.yml
+index 45ca797..a6d7859 100644
+--- a/.github/workflows/validate.yml
++++ b/.github/workflows/validate.yml
+@@ -81,6 +81,13 @@ jobs:
+             python3 -m unittest discover -s tests -p "test_*.py"
+           fi
+ 
++      - name: "coverage gate (fail under 85%)"
++        # TEST-P3-001: coverage was informational only; this fails the job if the
++        # in-process src/ coverage drops below the value measured when the gate was
++        # introduced (86% at f5811d1, floor set one point lower for cross-run noise).
++        if: matrix.python-version == '3.12'
++        run: python3 -m coverage report --fail-under=85
++
+   validate:
+     runs-on: ubuntu-latest
+     timeout-minutes: 30
+diff --git a/automation/validation/fleet_inventory.py b/automation/validation/fleet_inventory.py
+index aa579ab..8b9c113 100644
+--- a/automation/validation/fleet_inventory.py
++++ b/automation/validation/fleet_inventory.py
+@@ -19,6 +19,7 @@ Usage (scan needs root; read commands work as any user):
+ from __future__ import annotations
+ 
+ import argparse
++import calendar
+ import hashlib
+ import json
+ import os
+@@ -255,6 +256,18 @@ def discover(args: argparse.Namespace) -> int:
+     return 0
+ 
+ 
++def _now_epoch(args: argparse.Namespace) -> float:
++    """Return the reference time for retention/change windows.
++
++    `--now` (ISO-8601 UTC) makes the cutoff injectable so tests are deterministic
++    instead of racing the wall clock around window boundaries (TEST-P3-002).
++    """
++    now = getattr(args, "now", None)
++    if now:
++        return calendar.timegm(time.strptime(now, "%Y-%m-%dT%H:%M:%SZ"))
++    return time.time()
++
++
+ def prune(args: argparse.Namespace) -> int:
+     """Delete inventory data past the retention window (PRIV-P1-001).
+ 
+@@ -263,7 +276,7 @@ def prune(args: argparse.Namespace) -> int:
+     """
+     db = open_db(args.db)
+     cutoff = time.strftime("%Y-%m-%dT%H:%M:%SZ",
+-                           time.gmtime(time.time() - args.keep_days * 86400))
++                           time.gmtime(_now_epoch(args) - args.keep_days * 86400))
+     deleted = {}
+     deleted["scans"] = db.execute("DELETE FROM scans WHERE finished_utc < ?", (cutoff,)).rowcount
+     deleted["services"] = db.execute(
+@@ -311,7 +324,7 @@ def changes(args: argparse.Namespace) -> int:
+     db = open_db(args.db, read_only=True)
+     db.row_factory = sqlite3.Row
+     cutoff = time.strftime("%Y-%m-%dT%H:%M:%SZ",
+-                           time.gmtime(time.time() - args.since_days * 86400))
++                           time.gmtime(_now_epoch(args) - args.since_days * 86400))
+     print(f"changes since {cutoff}:")
+     for r in db.execute("SELECT h.ip, h.mac, s.port, s.proto, s.service, s.product, s.version "
+                         "FROM services s JOIN hosts h ON h.id=s.host_id "
+@@ -433,6 +446,7 @@ def main() -> int:
+ 
+     p = sub.add_parser("changes")
+     p.add_argument("--since-days", type=float, default=7)
++    p.add_argument("--now", help="ISO-8601 UTC reference time (testing)")
+     p.set_defaults(func=changes)
+ 
+     p = sub.add_parser("associate")
+@@ -447,6 +461,7 @@ def main() -> int:
+     p = sub.add_parser("prune")
+     p.add_argument("--keep-days", type=float, default=90,
+                    help="retention window in days (proposed lab default: 90)")
++    p.add_argument("--now", help="ISO-8601 UTC reference time (testing)")
+     p.set_defaults(func=prune)
+ 
+     args = ap.parse_args()
+diff --git a/docs/security/BRANCH_PROTECTION.md b/docs/security/BRANCH_PROTECTION.md
+index 4658349..fe4810e 100644
+--- a/docs/security/BRANCH_PROTECTION.md
++++ b/docs/security/BRANCH_PROTECTION.md
+@@ -70,3 +70,14 @@ and re-verify; record the change in this file and the decision ledger.
+ plan-gated and the compensating controls (CODEOWNERS, PR template, advisory validate workflows,
+ direct-push discipline) are accepted. Revisit only if the plan changes; the target payload above
+ is kept ready for that case.
++
++## Audit re-affirmation (2026-10-03)
++
++The `repo-deep-dive` audit run `20261003-0018-fix-trust-root-87532ec` re-raised this as
++**CI-P2-001** (P2, owner-accepted): `main` has no enforced required checks and a red push is
++visible but not blocked. The owner's D-011 decision above still stands, and the compensating
++controls have since been strengthened (CI-P2-002 head-bound Dependabot merge; CODEOWNERS + PR
++template). The residual — a bad change can reach `main` without green CI — is **re-affirmed as
++accepted** for the private lab repository; no settings change is possible without a plan
++upgrade. Re-review at the next plan/cost review or if the repository stops carrying
++credential-bearing artifacts.
+diff --git a/ledgers/risk_register.md b/ledgers/risk_register.md
+index cf0084f..9c46f50 100644
+--- a/ledgers/risk_register.md
++++ b/ledgers/risk_register.md
+@@ -22,3 +22,12 @@ Append entries only. Format: ID | UTC | owner | status | component/gate | eviden
+ | R-014 (updated) | 2026-09-30 | build-agent | CLOSED (fixed; re-verification pending) | security trust boundaries | E-REVIEW-FIX c6-security-verification, c6-control-plane-restart, c6-r1-live-repro; commits ddd8d39, d013958, f1da279 | FIXED: enrollment/renewal pin server-side sensor subjects; operator identity requires the recorded fingerprint; ingest attributed to the certificate; revocation enforced live (a CA-signed CN=operator cert gets 403); update-apply verifies root-side with safe extraction and crash recovery. Residual: the running device still executes the old apply script until the next image bake; P2-G02/P2-G03 re-verification in C8 | verify the gates in the C8 pass |
+ | R-015 | 2026-09-30 | build-agent | OPEN | fleet monitoring + backup custody | mirror findings INTG-P1-001, INTG-P1-003, LIVE lens | No alert covers the edge path; edge PKI/DB backups are local-only (outside the central offsite job); the live control plane runs from the working tree | deploy the edge rules additively or add central-side probes; offsite the edge secrets (encrypted); run from a pinned copy with a recorded digest |
+ | R-016 | 2026-09-30 | build-agent | OPEN (mitigated) | secrets custody / offsite | E-REVIEW-FIX 20260930T171215Z_edge-secrets-encrypted; 20260930T1712xxZ edge-secrets-plaintext-retired | Edge secrets backups are now AES-256 encrypted (key /srv/falcon/secrets/backup_enc.key, 0600) and written outside the release surface (/srv/falcon/backups/edge/, keep 7, .enc + .sha256); older plaintext backups were moved from the delivery dir to /srv/falcon/backups/edge/retired-plaintext/; the falcon offsite job uploads the encrypted set to Spaces monitoring/edge-secrets/ at the next scheduled run; the decrypt drill was exercised (27 entries) | verify the first scheduled offsite upload; keep the delivery dir free of secret material |
++| R-017 | 2026-10-03 | build-agent | RESOLVED | observability / stale metric | audit 20261003-0018-fix-trust-root-87532ec (OBS-P3-001); AGENTS.md known-metric note; tests/phase8/test_observability.py test_pending_directives_are_expiry_aware | `falcon_edge_sensor_pending_directives` is expiry-aware as of 2026-10-03 (counts only unexpired directives; expired ones pruned after 7 days) and the old "do not alert on it" caveat is retired. Verified present on main f5811d1; no new change required | none |
++| R-018 | 2026-10-03 | build-agent | RESOLVED | testing / coverage gate | audit run (TEST-P3-001); .github/workflows/validate.yml | Added a fail-closed `coverage report --fail-under=85` step for the 3.12 job after the informational report; the base measured 86% `--source=src` at f5811d1 (302 tests OK). Previously coverage could regress silently | raise the floor as coverage rises |
++| R-019 | 2026-10-03 | build-agent | RESOLVED | testing / flaky fixture | audit run (TEST-P3-002); automation/validation/fleet_inventory.py; tests/phase9/test_fleet_inventory.py | `changes` and `prune` now accept an injectable `--now` (ISO-8601 UTC) and the phase9 fixture uses a fixed reference time, removing the wall-clock boundary flake the HEAD admission flagged | none |
++| R-020 | 2026-10-03 | owner | ACCEPTED | CI / branch protection | audit run (CI-P2-001); docs/security/BRANCH_PROTECTION.md audit re-affirmation; D-011; R-012 | Owner-accepted: required status checks and rulesets stay plan-gated on the private GitHub Free repository. Dated 2026-10-03 re-affirmation recorded; the compensating controls were strengthened (head-bound Dependabot merge); a bad change can still reach main without green CI | revisit at the plan/cost review or if the repo stops carrying credential-bearing artifacts |
++| R-021 | 2026-10-03 | owner | ACCEPTED | supply chain / credential-bearing releases | audit run (SC-P2-004); .github/workflows/bake-image.yml; publish-release.yml; R-007; R-012 | Owner-accepted: the sensor image/release is itself a credential bundle; only repository visibility plus access-controlled artifacts/releases protect it. OPEN QUESTION (owner): encrypt credential side-files, scope releases to a protected environment, rotate baked credentials after first boot, and file an access-revocation drill - the remedy needs an owner decision, not a code guess | owner to choose the encryption/rotation approach and schedule a revocation drill |
++| R-022 | 2026-10-03 | owner | OPEN | architecture / shared-host SPOF | audit run (ARCH-P2-002); AGENTS.md; R-003 | Edge services share one KVM host, kernel, wg0 and disk with the live monitoring stack, so a host-level fault is correlated. The availability dependency is now recorded. OPEN QUESTION (owner, hardware/budget): move the edge control plane to its own host/VM before production and document a break-glass procedure | owner: accept the lab-scoped availability risk or fund a dedicated host; then document break-glass |
++| R-023 | 2026-10-03 | owner | OPEN | repository hygiene / root metadata | audit run (HYG-P3-002) | Root metadata is incomplete: `LICENSE` and `pyproject.toml` are absent (`CONTRIBUTING.md` exists). OPEN QUESTION (owner): choosing a license (open-source, proprietary/all-rights-reserved, or internal-only) is an owner decision and was not guessed | owner to choose the license and root project metadata |
++| R-024 | 2026-10-03 | owner | OPEN | release gate / production readiness | audit run (EXEC-P2-001); docs/CURRENT_STATE.md; ledgers/gate_ledger.csv | Production readiness remains INSUFFICIENT_EVIDENCE: no clean-host replication, owner production acceptance, or production change/rollback approval is recorded. The lab-scoped gate stays explicit and the system is not presented as production-ready. OPEN QUESTION (owner): complete the P10 owner gates | owner: complete P10-G02/G04/G06 before any production claim |
++| R-025 | 2026-10-03 | build-agent | OPEN | cross-cutting / source binding | audit run (FINAL-P2-001); HYG-P2-001; HYG-P2-002; ARCH-P2-001; INV-P2-002 | Cross-cutting theme: hand-maintained summaries and committed derived artifacts drift from their sources. Constituent fixes are tracked in their own patch sets (PS-005 doc counts, PS-011 dirty-tree fail-closed guard + regen guards, PS-017 inventory tooling). OPEN QUESTION: add a docs/derived-artifact drift check to ci/validate.sh once PS-011 lands | track the constituent PRs; add the drift check after PS-011 merges |
+diff --git a/tests/phase9/test_fleet_inventory.py b/tests/phase9/test_fleet_inventory.py
+index 28821ff..ec8e0be 100644
+--- a/tests/phase9/test_fleet_inventory.py
++++ b/tests/phase9/test_fleet_inventory.py
+@@ -12,12 +12,16 @@ sys.path.insert(0, os.path.join(REPO, "automation", "validation"))
+ 
+ 
+ class FleetInventoryTests(unittest.TestCase):
++    # Fixed reference time: `--now` freezes the tools' window so a fixture can never
++    # straddle a cutoff as the wall clock moves (TEST-P3-002, replaces the
++    # time-relative fixture that the HEAD 87532ec admission flagged as flaky).
++    NOW = "2026-10-03T12:00:00Z"
++
+     def setUp(self):
+         import fleet_inventory as fi
+         import datetime
+-        # timestamps relative to now: `changes --since-days 1` is relative to the current
+-        # time, so a hard-coded date goes stale (the row falls outside the cutoff).
+-        recent = (datetime.datetime.now(datetime.timezone.utc)
++        recent = (datetime.datetime.strptime(self.NOW, "%Y-%m-%dT%H:%M:%SZ")
++                  .replace(tzinfo=datetime.timezone.utc)
+                   - datetime.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+         self.tmp = tempfile.TemporaryDirectory()
+         self.db = os.path.join(self.tmp.name, "inv.db")
+@@ -49,7 +53,7 @@ class FleetInventoryTests(unittest.TestCase):
+         self.assertIn("443", p.stdout)
+ 
+     def test_changes(self):
+-        p = self._run("changes", "--since-days", "1")
++        p = self._run("changes", "--since-days", "1", "--now", self.NOW)
+         self.assertEqual(p.returncode, 0, p.stderr)
+         self.assertIn("NEW", p.stdout)
+ 
+@@ -86,7 +90,8 @@ class FleetInventoryTests(unittest.TestCase):
+         # PRIV-P1-001: retention for the raw-identifier database
+         import datetime
+         import sqlite3
+-        old = (datetime.datetime.now(datetime.timezone.utc)
++        old = (datetime.datetime.strptime(self.NOW, "%Y-%m-%dT%H:%M:%SZ")
++               .replace(tzinfo=datetime.timezone.utc)
+                - datetime.timedelta(days=200)).strftime("%Y-%m-%dT%H:%M:%SZ")
+         db = sqlite3.connect(self.db)
+         db.execute("INSERT INTO hosts(mac, ip, hostname, first_seen_utc, last_seen_utc) "
+@@ -101,7 +106,7 @@ class FleetInventoryTests(unittest.TestCase):
+         db.commit()
+         db.close()
+ 
+-        p = self._run("prune", "--keep-days", "90")
++        p = self._run("prune", "--keep-days", "90", "--now", self.NOW)
+         self.assertEqual(p.returncode, 0, p.stderr)
+         self.assertIn("hosts=1", p.stdout)
+         db = sqlite3.connect(self.db)
+@@ -117,7 +122,8 @@ class FleetInventoryTests(unittest.TestCase):
+         # show/changes/export must not require write access (they run as any user)
+         os.chmod(self.db, 0o444)
+         try:
+-            for args in (("changes", "--since-days", "1"), ("show", "10.0.0.5"), ("export",)):
++            for args in (("changes", "--since-days", "1", "--now", self.NOW),
++                         ("show", "10.0.0.5"), ("export",)):
+                 p = self._run(*args)
+                 self.assertEqual(p.returncode, 0, f"{args}: {p.stderr}")
+         finally:

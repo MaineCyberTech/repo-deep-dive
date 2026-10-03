@@ -1,0 +1,75 @@
+{
+  "patchSet": "PS-004",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "af6f83a",
+  "branch": "remediation/ps-004-20261003-0018-fix-trust-root-87532ec",
+  "commit": "acc85e3abad833f5865fa6365c47239b0bfcddd1",
+  "commitShort": "acc85e3",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/20",
+  "prState": "draft",
+  "findings": ["SC-P2-001", "SC-P2-003"],
+  "files": [
+    ".github/workflows/validate.yml",
+    "requirements-dev.txt"
+  ],
+  "scopeNote": "Patch plan files exactly: .github/workflows/validate.yml + new requirements-dev.txt. Base origin/main (af6f83a) already hash-pins the CI toolchain inline (prior-audit commit 73e3ca9); this set externalizes those pins into the committed requirements-dev.txt named by SC-P2-001 and wires the workflow to it. SC-P2-003 required no workflow change (all four downloads already use sha256sum -c) and is verified. No PS-003 hunks (checkout fetch-depth / gitleaks step) are touched.",
+  "runner": "edge-builder VM (172.23.128.51) via lab-sync.ps1 / lab-run.ps1",
+  "commands": [
+    {
+      "command": "actionlint .github/workflows/validate.yml",
+      "runner": "edge-builder VM (actionlint 1.7.12)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "actionlint .github/workflows/*.yml",
+      "runner": "edge-builder VM (actionlint 1.7.12)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2",
+      "runner": "edge-builder VM (pytest 8.3.5 / Python 3.13.5)",
+      "exit": 0,
+      "result": "73 passed in 36.35s"
+    },
+    {
+      "command": "python3 /tmp/ps004_pincheck.py",
+      "runner": "edge-builder VM (stdlib)",
+      "exit": 0,
+      "result": "PASS: 3 requirements, all '==' pinned, 5 sha256 hashes (pyyaml==6.0.3, coverage==7.16.2, zizmor==1.30.1)"
+    },
+    {
+      "command": "bash /tmp/ps004_checksum_test.sh",
+      "runner": "edge-builder VM (sha256sum)",
+      "exit": 0,
+      "result": "matching digest OK (exit 0); corrupted digest FAILED (exit 1) - checksum guard fails closed"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "scanned ~7.33 MB; no leaks found"
+    },
+    {
+      "command": "python3 -m pip install --dry-run --require-hashes --only-binary=:all: -r requirements-dev.txt",
+      "runner": "edge-builder VM",
+      "exit": 1,
+      "result": "NOT RUN: /usr/bin/python3: No module named pip; replaced by the stdlib pin/hash check above"
+    }
+  ],
+  "notGating": {
+    "command": "bash ci/validate.sh",
+    "runner": "edge-builder VM",
+    "exit": 1,
+    "result": "FAILURES PRESENT - all 'FAIL hash mismatch: evidence/raw/**'; cause is the Windows->Linux tar sync (lab tree CRLF vs recorded/git-blob LF). Confirmed for evidence/raw/P10-G07/20260929T053540Z_full-suite-final.out (worktree sha256 03f137d4... vs git-blob sha256 1278c6c0...). None of the failures reference the files changed by PS-004."
+  },
+  "diff": {
+    "path": "remediation/PS-004/diff.patch",
+    "sha256": "26f33333e3456a720ca79eff7d8256025544859eaeecb47a3e57d6596f410744"
+  },
+  "verifyLog": "remediation/PS-004/verify.log",
+  "generated": "2026-10-03T07:05:00Z"
+}

@@ -1,0 +1,79 @@
+{
+  "patchSet": "PS-014",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-014-20261003-0018-fix-trust-root-87532ec",
+  "commit": "efe174a9af2d995ca2e4749b062a8b2bb8245aec",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/31",
+  "prState": "draft",
+  "findings": ["API-P3-001", "API-P3-002", "FEAT-P3-001", "FEAT-P3-002"],
+  "files": [
+    "src/falcon_control/service.py",
+    "src/falcon_cli/__main__.py",
+    "tests/phase2/test_api_polish.py",
+    "tests/phase4/test_cli.py",
+    "docs/TROUBLESHOOTING.md",
+    "docs/runbooks/enrollment-failure.md"
+  ],
+  "resolution": {
+    "API-P3-001": "Fixed: ControlPlaneService.handle() now applies req.path as the RFC 9457 `instance` on every application/problem+json response, replacing the static /api/v1. Tested at the dispatch boundary for 404 and 403.",
+    "API-P3-002": "Fixed: h_ingest_vector reads the optional contract EventBatch.batchId and dedupes per sensor via the existing idempotency table (survives restart); a replayed batch returns accepted=0, deduplicated=true and is audited. Array batches without batchId remain at-least-once, documented in the docstring.",
+    "FEAT-P3-001": "Already fixed on origin/main before this run (h_revoke deletes secrets/sensors/<id>.crt.pem on destroyKeys; covered by tests/phase4/test_cli.py::test_retire_honors_destroy_keys_and_confirm, green in the lab run). No change made in PS-014; verified only.",
+    "FEAT-P3-002": "Fixed: cmd_create_token requires --out (or an explicit --stdout that warns on stderr) and never returns the token in the structured result by default; doc examples updated to pass --out."
+  },
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; tested a git archive of the committed branch (preserves modes/LF), git-initialised so ci/validate.sh's git ls-files parse loop runs",
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "135 passed in 81.89s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2/test_api_polish.py -v",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "6 passed (API-P3-001 instance=path x3 + API-P3-002 replay dedupe x3)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase4/test_cli.py -k create_token",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "3 passed, 11 deselected (FEAT-P3-002)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase6/test_ingest_endpoint.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "12 passed (existing ingest suite regression)"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.74 MB)"
+    }
+  ],
+  "upstreamAlreadyFixed": [
+    {
+      "finding": "FEAT-P3-001",
+      "evidence": "src/falcon_control/service.py h_revoke deletes the stored sensor cert on destroyKeys=true; tests/phase4/test_cli.py::test_retire_honors_destroy_keys_and_confirm asserts the cert file is removed (ran green in the phase2/phase3 + targeted lab runs)",
+      "source": "origin/main prior merged fix (FEAT-P2-002 follow-up)"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-014/diff.patch",
+    "sha256": "C86DC011D625A6FA9EFCA0CA160489481AE450F5B4A0A2693D70105AC8DCE2EF"
+  },
+  "verifyLog": "remediation/PS-014/verify.log",
+  "verifyLogSha256": "3DCD6E971A4FE7412C598B03C3C55A4DE063FEC9277B0D2E4983648CB6513D45",
+  "generated": "2026-10-03T10:08:00Z"
+}

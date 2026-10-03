@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T09:17:36Z
-# files: 595
+# generated: 2026-10-03T10:08:55Z
+# files: 661
 # format: sha256  path
 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
@@ -366,7 +366,7 @@ f2302acb226ad5cef644add974b6a60aaca4ceecd50bf1f3f85249390152bb74  ./runs/falcon-
 771755bc403da58258ec9c84e3a1521588523f3ca873969a1c016bb3986bf3dd  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/dashboard.html
 9ef86842dcd98e1d0747ad68100c23274ec172606f53a8d4978cfce7fce98b92  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/dashboard.md
 43ce839f6ff5581fd4b453cddbb85daf5baa46105ac018144ee589a3998d7443  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/findings.json
-436752b7ffad9126dcd4de6555c73ecde3507236a919914bcac8b284ca256128  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/follow_up_register.md
+b8edab933e2618a54ec59a1044f35f744264750c15eab87dd62fccd05878c740  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/follow_up_register.md
 7adc3f06471b45517e5fedaa3103a4e141119e71e5df4c19d8aa3cc870dc6f9e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/inventory.json
 fb9a6a333c9627c5ba47a153a17e73c628d12a08cd6d50a09246bfdc9ffbace9  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/patch_plan.md
 911017fe53aeac845accfdcb3701d97fcc3ba009c55922695c43682e44fc2bd7  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/pr_comment.md
@@ -378,11 +378,77 @@ b71cf6b1c8a826214e9831a723b100a529d8cd22ccf9e59abf9a49443e801045  ./runs/falcon-
 f1aef52fcf8d4bd78744b14a0eb7f7136572aea1675f0a50004722f595d566cc  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-002/manifest.json
 b0f70973b15919bab6e828441cd432269498f88037a6e078b85bc8bf16309ad1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-002/pr_body.md
 9ddb748b9d3ed709caea6d57a1497ccc152068c383e6078f60808a1aa688c052  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-002/verify.log
+4028e2f715faf66b0a649d5bda49b6c772943cddc13deb78078f768ca2390a6b  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-003/diff.patch
+1a9c9ec497c4c595ab72a5a2a9a253549390f966f7533d95bf0501ee7323c714  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-003/manifest.json
+ca27bda56e72c59c65c7c16e18bea2da4949c7d6d44734bf878aab00e2d911b2  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-003/pr_body.md
+48a6f0e0c394b96d3b76471552ec3f0f8bdf2139650f2067b80bca5fbe85d424  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-003/verify.log
+26f33333e3456a720ca79eff7d8256025544859eaeecb47a3e57d6596f410744  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-004/diff.patch
+3afd61e59802b04c75bdebaab4d37c96874d8b047a9815f967d57e1f774782ad  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-004/manifest.json
+80f7154c6c7860a541b701514f2392be55ed8195dd19d97df4b4c355d30f752a  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-004/pr_body.md
+4aafb4a6268e1b55c4431df3577e83970d349affafa157d14f76aff9c61e00ee  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-004/verify.log
+2b8d77ada81eb6a4e423a600b0136b26fa750be9e10ac00b5706439b5dd952e1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-005/commit-msg.txt
+e53e98f5c580cddb0451b679a8d914b8c8a0702dc938d9df7fa7be078c39b1f1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-005/diff.patch
+aaff6bb1dc890976d9c4b1e5ef094fb20769048dab4f1ee83a4a07a6372ecbd6  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-005/lab-output.txt
+0ff9faa547d607b07da9e9d6a335a1b7fc752f7195968b0812a23d4d2022a437  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-005/manifest.json
+bc39b93ea8dcc3836dbe3f21a5d79caa5f87b15acd1e128726ac63c48bddce4d  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-005/pr_body.md
+6928aa4b872f6cb9efe34629a73194fb71c46a0b4f83237bb21c66cff12f034e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-005/verify.log
+638a96f8650d2ea4a3ae27141df36ff83d8b67ea1e472fe6b2254f70a5c674c1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-005/verify.sh
+19d0ba7fe80bd329f9f5d6f54c730dffeae1dcfd1c1db87dff70662b05fb2783  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-006/commit-msg.txt
+5c693becbf3de7a83554055dd012349cadedfd3377d817c34e10c559dc728bed  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-006/diff.patch
+fdf0d1273c13c49c96fef9c94ac32d7f29cb3950dfbd657ffc819eb7ca21e94e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-006/manifest.json
+2104edac5bd2f63d2771e5fb996fd98582827d27bbc2f2fd8d82d0afc06fdf4d  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-006/pr_body.md
+390b88b89239974188198d09afafc3e0e6956867486165faf60ee3973306f44b  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-006/verify.log
+8cf56ad5340794ba41a92f9b3fdadb7a63d5e1ce10ba9bbd2e2a6d4d83ba7794  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-007/diff.patch
+228e69991db4eba4ab2d8e8afca10811fed8e6b2a87157d364224451a4bff590  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-007/manifest.json
+e038f484dbf90fde2418b4400ecefd10934d511f4b2a51f57afe10bb15cac489  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-007/pr_body.md
+eeda9a2e12ab240f29cf33cbd062d974cadcc5e32e39e8e32d7d7facfe0bd47d  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-007/verify.log
+a9569f81e414f401c8605e2116883498c00ef8b00343febf46d19852674455a1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-008/diff.patch
+40a62d57ba0ee3d04e7201d0f1bccd0ff8ee1f53e50f39ce5aaba46264bd5f67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-008/manifest.json
+ce2b4dc52084d785caaaf0fced6f9ba05288445daf02a1184ae00fb9f703b93e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-008/pr_body.md
+7263b110d5b0e00f3a7830dce9899217a95175f15c93f9d5da2598006c0da51a  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-008/verify.log
+3461cc80e2ae51b758aa243edb05d989286ec09047dbec25f5cd9221f0310a3e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-009/diff.patch
+5a4feea72faf347029011bf6aac8df379033d94d39acea98cfa0adaec55a3e30  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-009/manifest.json
+26d6a261d6745eb0d470f4287877386ad3003c7006cda0ff0473188ba2eeef4e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-009/pr_body.md
+91ff16ba5c1b27ff3164036fe41082b558d9e31abbe9450f92d93529637fc406  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-009/verify.log
+b307848386941f70599da0e98a498d369cf218c9c65575ae74bd56ecb6996194  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-010/diff.patch
+d46abe47dcb8b0015b31696241ac2a201f1bb29cd8227789b5ee1d7cc52515f1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-010/manifest.json
+bb9c4dfaaeb89b0e5e7397d29ed4a91f146096531704bd0be2f738a83e443189  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-010/pr_body.md
+7185cb58e68d835e37d5c5ffb587af3889f4124642bee7d48f3d1e2fa2441f19  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-010/verify.log
+7dd18c6e28047b0bf2ceb03fe1b554a253b0eb33c64856858df443efe777c421  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-011/diff.patch
+3753260b1a7c27e3c8ee3b9bb8227cfde0b53b8f6ce2d971c90c1edc32422f72  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-011/manifest.json
+fb2c21b697d647e394bfeddb58e900ac88d6096ef17a4e3999cc8dff8b457537  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-011/pr_body.md
+aea17652423b893ab92236914dfce83bb0a0d9848e020af8e89b626f11869152  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-011/verify.log
+dbaa460d7500940cb5caf3e9242ba845aa3f4e4b17ed529f798b20f607878544  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-012/diff.patch
+8d1ba8a28e0d492f7c6afb7dc9de7453e6c998fd55183ea9b86b06d69ec6824f  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-012/manifest.json
+3a15c6dd9480ba663886605e1b59d804b8b5a3cbdd936b2dafddb18b133b3cc6  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-012/verify.log
+f71a43aa05ce5b5bc1412607c54ba85e1fb60e84656548d9ef86af1a324f77f7  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-013/diff.patch
+5074bba82b587f9beda6ef30b01c5991f8fc1ddbed9de878ef24af0d8eddf15f  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-013/manifest.json
+bbb970f9d57e32364d307fedc4fe1fcb272d9f5d463713fb79e9847d3fc0eb7d  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-013/verify.log
+c86dc011d625a6fa9efca0ca160489481ae450f5b4a0a2693d70105ac8dce2ef  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-014/diff.patch
+b3643cfe0cef5b45fe885c0af792af6c5b5b99f374d56dc3f79f6de43aefdc55  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-014/manifest.json
+4e90891b97a1409168086a4c5aa4f7ce65c43f30bf739d5834e3eb5a48dda4f1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-014/pr_body.md
+3dcd6e971a4fe7412c598b03c3c55a4de063fec9277b0d2e4983648cb6513d45  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-014/verify.log
+3c3322e2bbb9e3a5fe9084d0ce346be597d4f95d651b1284281615ba8c5f09bc  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-014/verify.sh
+e108f5e20174982b7777ff56d46c0be0e50c7edfcefa78dae0d5a18c6297de94  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-015/diff.patch
+b7d78bd1a31d8083ef9ff141cf191cbb0a6b9e984bc094b2ba2ee11d7bb97cb1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-015/manifest.json
+b8064fe9c7003a8a280c966558519b7515b2d54f8b217fc99ae70f63dd51013b  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-015/pr_body.md
+de65b027ab6d45a0f9a34800d15e94aecfa8a1fda42f0b9a7b5ecd2b8bbd6df7  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-015/verify.log
+829f29dc651fbfab799f40c0c97901010a5e1e13700111387ad211fece8139f6  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-016/diff.patch
+1fc99cce4a550efeee3490c47159592e284907a1702f367c965a6cb5e8fc4bfa  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-016/manifest.json
+007702b5f353b23108d4e25066b5ed29b916f5171a0502d17d4dec71ffca1d43  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-016/pr_body.md
+010e9ca0c3859df344e34e8f133903882c428eab91d1942f7b62da24a38929d0  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-016/verify.log
+cc8a7f0a5f7ea45b65c31c3959b223ce1709f38cba0f9cdf6150d76c2539c846  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-017/diff.patch
+c8cf9c4ee017f59a697ee0e52c804365a0302bd75645cd625434517ae658755e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-017/manifest.json
+8efa6346cbb98887846429dddde5ad1b0a49b2cf1890df742a53675b31dad6ef  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-017/verify.log
+39aa21889f6d4a7b7c56a77a93896b117c75300e810df246e2f30d91a4d44073  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-018/diff.patch
+9b7393df01945abda506cc5ee9abcae36f9bc18e0e0d24224a9a67fae104cb1c  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-018/manifest.json
+e1db58805a1b3d81cb492316c76258cc5268989a82dc67d7d4b4aac5995096aa  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-018/pr_body.md
+837c8d00c0e77caff7e207f221beea45e87bbecc08f59cc5c83147c187ae5e8b  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-018/verify.log
 dd7754d73afaae58b0f28b194dff01165de713939bc977f1c7a0d5e7f61f6355  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation_plan.json
 c31b32b9399319ef46e91226cef42ae471e4f1315b25564f339e748ee2061bac  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/risk_register.md
 f7439a44f7525f8f564e25b2764e3209ab130fd54972d97238eef441519107a5  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/risk_score.json
 7deee4629602d01ed99c8a6341acec7a5ac094cb7a6cc5a9aee66c85c30d10b8  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/roadmap.md
-5244d6b96dbbdc7a081bbebdba4a03354205f1825f46bf1de87dfd4cec1595ea  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/verification_log.md
+a8230109f4062e2808813b246be87d477e921b66314cf1aa4fa5b9ceb88fd963  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/verification_log.md
 a4f4a1d3db391c6708f698e060c1493785563dbe3eff457593c27822589f73ca  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/01_repository_inventory.md
 872af104de4834981dd8db208c0fb23eba071e7c9d0a77e6416d4d3be0b73a4a  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/02_architecture_runtime_topology.md
 bedd737da02324f8c60bad896b4b02b1346c5469a769a9b140380bc54e5706ae  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/03_feature_implementation_map.md

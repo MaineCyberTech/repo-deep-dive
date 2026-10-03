@@ -1,0 +1,303 @@
+diff --git a/automation/validation/fleet_inventory.py b/automation/validation/fleet_inventory.py
+index aa579ab..634f0a2 100644
+--- a/automation/validation/fleet_inventory.py
++++ b/automation/validation/fleet_inventory.py
+@@ -3,16 +3,18 @@
+ 
+ Owner-authorized active discovery of the owner's own subnets (lab decision ED-20).
+ Gentle rates, no exploitation; the database lives on the sensor with raw identifiers,
+-exports hash identifiers (ED-10).
++exports hash identifiers (ED-10). The database and its directory are created owner-only
++(0700/0600) because raw MAC/IP/hostname is reconnaissance material (SEC-P2-003), and
++show/associate output is hashed unless --raw is given.
+ 
+-Usage (scan needs root; read commands work as any user):
++Usage (scan needs root; read commands need read access to the database):
+   fleet_inventory.py detect [--json]                              # subnets this host sees
+   fleet_inventory.py scan --subnet 10.11.12.0/24 [--db PATH] [--label wired]
+   fleet_inventory.py scan --subnet a,b,c | --auto                 # list or all local subnets
+   fleet_inventory.py discover [--ranges a,b] [--recon]            # sweep + deep-scan populated /24s
+-  fleet_inventory.py show <ip|mac> [--db PATH] [--json]
++  fleet_inventory.py show <ip|mac> [--db PATH] [--json] [--raw]
+   fleet_inventory.py changes [--since-days N] [--db PATH]
+-  fleet_inventory.py associate [--db PATH] [--kismet-db PATH] [--json]
++  fleet_inventory.py associate [--db PATH] [--kismet-db PATH] [--json] [--raw]
+   fleet_inventory.py export [--db PATH] [--out FILE]      # hashed identifiers
+   fleet_inventory.py prune [--keep-days N] [--db PATH]    # retention (default 90 days)
+ """
+@@ -30,6 +32,11 @@ import xml.etree.ElementTree as ET
+ 
+ DEFAULT_DB = "/var/lib/falcon-inventory/inventory.db"
+ 
++# SEC-P2-003: the inventory DB holds raw MAC/IP/hostname recon data, so it is created
++# owner-only rather than world-readable.
++DB_DIR_MODE = 0o700
++DB_FILE_MODE = 0o600
++
+ SCHEMA = """
+ CREATE TABLE IF NOT EXISTS scans (
+   id INTEGER PRIMARY KEY AUTOINCREMENT,
+@@ -56,6 +63,11 @@ def utc_now() -> str:
+     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+ 
+ 
++def hash_identifier(value: str) -> str:
++    """Stable truncated SHA-256 for MAC/IP output (ED-10 identifier policy)."""
++    return hashlib.sha256((value or "").encode()).hexdigest()[:16]
++
++
+ def local_subnets() -> list[str]:
+     """IPv4 subnets the host is directly attached to (from its interfaces)."""
+     import ipaddress
+@@ -80,22 +92,43 @@ def local_subnets() -> list[str]:
+     return sorted(subs)
+ 
+ 
++def restrict_db_permissions(path: str) -> None:
++    """Best-effort restrict the inventory DB and its directory to the owning account.
++
++    SEC-P2-003: raw MAC/IP/hostname must not be world-readable. Tighten the directory
++    and the SQLite main/WAL/shared-memory files whenever the write path (scan/prune)
++    opens the database; an already-loose database is tightened on the next write.
++    """
++    directory = os.path.dirname(os.path.abspath(path))
++    try:
++        os.chmod(directory, DB_DIR_MODE)
++    except OSError:
++        pass
++    for candidate in (path, f"{path}-wal", f"{path}-shm"):
++        if os.path.exists(candidate):
++            try:
++                os.chmod(candidate, DB_FILE_MODE)
++            except OSError:
++                pass
++
++
+ def open_db(path: str, read_only: bool = False) -> sqlite3.Connection:
+     if read_only:
+-        # read commands must work as any user: open the (possibly root-owned, read-only)
+-        # database without touching WAL/schema
++        # read-only opens never mutate the database (a non-owner reader cannot chmod
++        # it anyway); the write path below enforces the restrictive mode.
+         if not os.path.exists(path):
+             print(f"database not found: {path}", file=sys.stderr)
+             sys.exit(1)
+         db = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=10)
+         db.execute("PRAGMA busy_timeout=5000")
+         return db
+-    os.makedirs(os.path.dirname(path), exist_ok=True)
++    os.makedirs(os.path.dirname(path), mode=DB_DIR_MODE, exist_ok=True)
+     db = sqlite3.connect(path, timeout=10)
+     db.execute("PRAGMA journal_mode=WAL")
+     db.execute("PRAGMA synchronous=NORMAL")
+     db.execute("PRAGMA busy_timeout=5000")
+     db.executescript(SCHEMA)
++    restrict_db_permissions(path)
+     return db
+ 
+ 
+@@ -295,12 +328,17 @@ def show(args: argparse.Namespace) -> int:
+     svcs = [dict(r) for r in db.execute(
+         "SELECT proto, port, service, product, version, first_seen_utc, last_seen_utc "
+         "FROM services WHERE host_id=? ORDER BY port", (row["id"],))]
+-    doc = {"host": dict(row), "services": svcs}
++    host = dict(row)
++    if not args.raw:
++        # SEC-P2-003: raw MAC/IP is recon material; hash by default, require --raw.
++        host["mac"] = hash_identifier(host["mac"])
++        host["ip"] = hash_identifier(host["ip"])
++    doc = {"host": host, "services": svcs}
+     if args.json:
+         print(json.dumps(doc, indent=2))
+     else:
+-        print(f"{row['ip']} {row['mac']} {row['hostname']} "
+-              f"(first {row['first_seen_utc']}, last {row['last_seen_utc']})")
++        print(f"{host['ip']} {host['mac']} {host['hostname']} "
++              f"(first {host['first_seen_utc']}, last {host['last_seen_utc']})")
+         for s in svcs:
+             ver = " ".join(x for x in (s["product"], s["version"]) if x)
+             print(f"  {s['port']}/{s['proto']} {s['service']} {ver}".rstrip())
+@@ -366,6 +404,11 @@ def associate(args: argparse.Namespace) -> int:
+         rows.append({"ip": h["ip"], "mac": h["mac"], "hostname": h["hostname"],
+                      "services": svcs,
+                      "wireless": ({"type": w[0], "channel": w[1], "rssi": w[2]} if w else None)})
++    if not args.raw:
++        # SEC-P2-003: default to hashed identifiers; --raw reveals MAC/IP for local use.
++        for r in rows:
++            r["ip"] = hash_identifier(r["ip"])
++            r["mac"] = hash_identifier(r["mac"])
+     matched = sum(1 for r in rows if r["wireless"])
+     if args.json:
+         print(json.dumps({"kismet_db": kdb, "hosts": rows, "matched": matched}, indent=2))
+@@ -384,14 +427,11 @@ def export(args: argparse.Namespace) -> int:
+     db.row_factory = sqlite3.Row
+     out = []
+ 
+-    def hid(value: str) -> str:
+-        return hashlib.sha256(value.encode()).hexdigest()[:16]
+-
+     for h in db.execute("SELECT * FROM hosts"):
+         svcs = [dict(r) for r in db.execute(
+             "SELECT port, proto, service, product, version FROM services WHERE host_id=? ORDER BY port",
+             (h["id"],))]
+-        out.append({"mac_hash": hid(h["mac"]), "ip_hash": hid(h["ip"]),
++        out.append({"mac_hash": hash_identifier(h["mac"]), "ip_hash": hash_identifier(h["ip"]),
+                     "hostname": h["hostname"], "first_seen": h["first_seen_utc"],
+                     "last_seen": h["last_seen_utc"], "services": svcs})
+     doc = {"schema": "falcon-inventory-export/1", "generated_utc": utc_now(),
+@@ -429,6 +469,8 @@ def main() -> int:
+     p = sub.add_parser("show")
+     p.add_argument("host")
+     p.add_argument("--json", action="store_true")
++    p.add_argument("--raw", action="store_true",
++                   help="show raw MAC/IP identifiers (default: hashed)")
+     p.set_defaults(func=show)
+ 
+     p = sub.add_parser("changes")
+@@ -438,6 +480,8 @@ def main() -> int:
+     p = sub.add_parser("associate")
+     p.add_argument("--kismet-db")
+     p.add_argument("--json", action="store_true")
++    p.add_argument("--raw", action="store_true",
++                   help="show raw MAC/IP identifiers (default: hashed)")
+     p.set_defaults(func=associate)
+ 
+     p = sub.add_parser("export")
+diff --git a/docs/TROUBLESHOOTING.md b/docs/TROUBLESHOOTING.md
+index 70a5d58..177506a 100644
+--- a/docs/TROUBLESHOOTING.md
++++ b/docs/TROUBLESHOOTING.md
+@@ -283,14 +283,17 @@ python3 automation/validation/fleet_inventory.py show <ip>
+ python3 automation/validation/fleet_inventory.py changes --since-days 2
+ ```
+ 
+-The database is `/var/lib/falcon-inventory/inventory.db` (SQLite, WAL). Read commands
+-(`show`, `changes`, `associate`, `export`) work as any user and need the directory group-writable
+-so SQLite can create the WAL `-shm` file; only `scan`/`discover --recon` need root.
++The database is `/var/lib/falcon-inventory/inventory.db` (SQLite, WAL), created owner-only
++(`0600`; directory `0700`) because it holds raw MAC/IP/hostname recon data (SEC-P2-003). Read
++commands (`show`, `changes`, `associate`, `export`) run read-only and must run as the owning
++account (or root); only `scan`/`discover --recon` need root. `show`/`associate` hash MAC/IP by
++default — add `--raw` when you actually need the raw identifier for local troubleshooting.
+ 
+ **Fix** (full procedure: `runbooks/fleet-inventory.md`)
+ 
+ - Timer inactive → re-enable/start it and run the scan once manually to confirm.
+-- Unreadable DB / permissions → fix ownership (`chgrp falcon`, `chmod 0775`) and re-run.
++- Unreadable DB / permissions → the DB is owner-only (`0600`, dir `0700`); run as the owning
++  account/root, or re-run `scan`/`prune` to re-tighten permissions, then re-run.
+ - The hourly metrics timer on the lab host is `falcon-inventory-metrics.timer`; if only the
+   exporter is down, run `inventory_metrics.py` directly and check
+   `/srv/falcon/textfile/falcon_inventory.prom`.
+diff --git a/docs/runbooks/fleet-inventory.md b/docs/runbooks/fleet-inventory.md
+index 84ea99b..66cf7dc 100644
+--- a/docs/runbooks/fleet-inventory.md
++++ b/docs/runbooks/fleet-inventory.md
+@@ -25,9 +25,11 @@ rates, no exploitation, no credential testing, no third-party networks.
+   UniFi-discovered site list).
+ - `discover --recon` — bounded ping sweep of the /16s around the local subnets, then deep-scan
+   every populated /24 found (for anything the UniFi list does not cover).
+-- `show <ip|mac> [--json]` — one host's inventory (hostname, open ports, service versions).
++- `show <ip|mac> [--json] [--raw]` — one host's inventory (hostname, open ports, service
++  versions); MAC/IP are hashed unless `--raw`.
+ - `changes --since-days N` — new hosts/services and version changes.
+-- `associate [--kismet-db PATH]` — join inventory MACs with the local Kismet device database.
++- `associate [--kismet-db PATH] [--json] [--raw]` — join inventory MACs with the local Kismet
++  device database; MAC/IP are hashed unless `--raw`.
+ - `export [--out FILE]` — hashed identifiers (safe for evidence and delivery).
+ 
+ **Site subnet list** (from the owner's UniFi controller at `10.11.12.13`): 10.11.12.0/24,
+@@ -38,17 +40,21 @@ rates, no exploitation, no credential testing, no third-party networks.
+ prints names/subnets only; never the credential).
+ 
+ **Data handling**
+-- The database keeps raw identifiers (local management plane, ED-10). Exports hash them; evidence
+-  uses the hashed `export`.
+-- Read commands (`show`, `changes`, `associate`, `export`) open the database read-only and work as
+-  any user; the inventory directory is group-writable (`chgrp falcon`, `chmod 0775`) so SQLite can
+-  create the WAL `-shm` file for readers. Only `scan`/`discover --recon` need root.
++- The database keeps raw identifiers (local management plane, ED-10), but it is created owner-only:
++  `/var/lib/falcon-inventory` is `0700` and `inventory.db` plus its `-wal`/`-shm` files are `0600`
++  (SEC-P2-003). The next `scan`/`prune` tightens an already-loose database. A reader must be the
++  owning account (or root) to open it. Exports hash identifiers; evidence uses the hashed `export`.
++- `show` and `associate` hash MAC/IP by default; pass `--raw` for local troubleshooting when the
++  raw identifier is genuinely needed (do not capture raw output into committed evidence).
++- Read commands (`show`, `changes`, `associate`, `export`) open the database read-only. Only
++  `scan`/`discover --recon` need root. If a non-owner (e.g. the hourly metrics exporter) must read
++  the DB, that is an ownership/permission decision — see the remediation PR's open question — not
++  a reason to make the file world-readable again.
+ - **Retention (PRIV-P1-001):** `prune --keep-days 90` deletes scans, hosts and services whose
+   last-seen is older than the window (the proposed lab value; owner confirmation pending) and
+   compacts the database. The daily service runs it as an `ExecStartPost` step.
+-- **Access:** the database is root-owned and group-readable (`root:falcon`, directory `0775`);
+-  writes come only from the daily root service. Raw identifiers never leave the device — evidence
+-  and delivery use the hashed `export`.
++- **Access:** the database is created by the daily root service and owned by it; raw identifiers
++  never leave the device — evidence and delivery use the hashed `export`.
+ - **Degraded-scan guard:** a populated subnet with zero open services logs a warning (added
+   after 2026-10-03, when a `--host-timeout` flag abandoned hosts whose probes queued behind the
+   global `--max-rate` on populated /24s and produced 54 hosts / 0 services; the flag was
+diff --git a/tests/phase9/test_fleet_inventory.py b/tests/phase9/test_fleet_inventory.py
+index 28821ff..fd4d364 100644
+--- a/tests/phase9/test_fleet_inventory.py
++++ b/tests/phase9/test_fleet_inventory.py
+@@ -1,6 +1,8 @@
+ #!/usr/bin/env python3
+ """Tests for the fleet inventory tool (nmap-based, versioned, hashed exports)."""
+ import os
++import sqlite3
++import stat
+ import subprocess
+ import sys
+ import tempfile
+@@ -60,6 +62,50 @@ class FleetInventoryTests(unittest.TestCase):
+         self.assertNotIn("aa:bb:cc:dd:ee:ff", p.stdout)
+         self.assertNotIn("10.0.0.5", p.stdout)
+ 
++    def test_show_hashes_identifiers_by_default(self):
++        p = self._run("show", "10.0.0.5", "--json")
++        self.assertEqual(p.returncode, 0, p.stderr)
++        self.assertNotIn("aa:bb:cc:dd:ee:ff", p.stdout)
++        self.assertNotIn("10.0.0.5", p.stdout)
++        self.assertIn("nginx", p.stdout)  # service detail is still useful
++
++    def test_show_raw_flag_reveals_identifiers(self):
++        p = self._run("show", "10.0.0.5", "--json", "--raw")
++        self.assertEqual(p.returncode, 0, p.stderr)
++        self.assertIn("aa:bb:cc:dd:ee:ff", p.stdout)
++        self.assertIn("10.0.0.5", p.stdout)
++
++    def test_associate_hashes_identifiers_by_default(self):
++        kdb = os.path.join(self.tmp.name, "sample.kismet")
++        k = sqlite3.connect(kdb)
++        k.execute("CREATE TABLE devices (devmac TEXT, type TEXT, device TEXT)")
++        k.execute("INSERT INTO devices VALUES(?,?,?)", ("aa:bb:cc:dd:ee:ff", "wifi", "{}"))
++        k.commit()
++        k.close()
++        p = self._run("associate", "--kismet-db", kdb, "--json")
++        self.assertEqual(p.returncode, 0, p.stderr)
++        self.assertNotIn("aa:bb:cc:dd:ee:ff", p.stdout)
++        self.assertNotIn("10.0.0.5", p.stdout)
++        p = self._run("associate", "--kismet-db", kdb, "--json", "--raw")
++        self.assertEqual(p.returncode, 0, p.stderr)
++        self.assertIn("aa:bb:cc:dd:ee:ff", p.stdout)
++        self.assertIn("10.0.0.5", p.stdout)
++
++    def test_open_db_creates_owner_only_permissions(self):
++        import fleet_inventory as fi
++        nested = os.path.join(self.tmp.name, "restricted", "inv.db")
++        db = fi.open_db(nested)
++        db.close()
++        self.assertEqual(stat.S_IMODE(os.stat(os.path.dirname(nested)).st_mode), 0o700)
++        self.assertEqual(stat.S_IMODE(os.stat(nested).st_mode), 0o600)
++
++    def test_open_db_tightens_preexisting_world_readable_db(self):
++        import fleet_inventory as fi
++        os.chmod(self.db, 0o644)
++        db = fi.open_db(self.db)
++        db.close()
++        self.assertEqual(stat.S_IMODE(os.stat(self.db).st_mode), 0o600)
++
+     def test_help(self):
+         p = subprocess.run([sys.executable, SCRIPT, "--help"], capture_output=True, text=True)
+         self.assertEqual(p.returncode, 0, p.stderr)

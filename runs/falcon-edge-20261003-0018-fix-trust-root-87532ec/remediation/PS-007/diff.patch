@@ -1,0 +1,138 @@
+diff --git a/src/falcon_control/store.py b/src/falcon_control/store.py
+index 5c7adae..6ea3573 100644
+--- a/src/falcon_control/store.py
++++ b/src/falcon_control/store.py
+@@ -9,11 +9,13 @@ foreign keys (ON DELETE CASCADE) to the sensor-scoped tables, removes rows orpha
+ before foreign keys existed, and adds retention indexes. Foreign keys are enforced
+ on every connection (`PRAGMA foreign_keys=ON`).
+ 
+-Retention: `prune()` deletes expired bootstrap tokens and directives and old
+-idempotency keys past `RETENTION_DAYS` (a week of post-expiry debugging is plenty for
+-a lab). Directives are fire-and-forget: the agent tracks the last handled sequence,
+-the control plane serves a directive until expiry, and the pending metric counts only
+-unexpired rows.
++Retention: `prune()` deletes rows past their per-dataset window (`RETENTION_DAYS`):
++expired bootstrap tokens/directives and old idempotency keys (a week of post-expiry
++debugging is plenty for a lab), the sensor-scoped append-only tables (state reports,
++events, heartbeat samples, inventories), and the append-only `audit_log` on a long
++audit window. Directives are fire-and-forget: the agent tracks the last handled
++sequence, the control plane serves a directive until expiry, and the pending metric
++counts only unexpired rows.
+ """
+ from __future__ import annotations
+ 
+@@ -35,6 +37,7 @@ RETENTION_DAYS = {
+     "events": 90,               # proposed
+     "heartbeat_samples": 30,    # proposed (latest sample per sensor)
+     "inventory": 30,            # proposed (latest inventory per sensor)
++    "audit_log": 365,           # proposed (audit trail; kept the longest of any dataset)
+ }
+ # (table, timestamp column) pairs the retention job prunes.
+ RETENTION_COLUMNS = (
+@@ -45,6 +48,7 @@ RETENTION_COLUMNS = (
+     ("events", "received_at"),
+     ("heartbeat_samples", "received_at"),
+     ("inventory", "collected_at"),
++    ("audit_log", "at"),
+ )
+ 
+ _TABLES = {
+@@ -181,6 +185,7 @@ CREATE INDEX IF NOT EXISTS idx_directives_expires ON directives(expires_at);
+ CREATE INDEX IF NOT EXISTS idx_idempotency_created ON idempotency(created_at);
+ CREATE INDEX IF NOT EXISTS idx_state_reports_sensor ON state_reports(sensor_id);
+ CREATE INDEX IF NOT EXISTS idx_events_sensor ON events(sensor_id);
++CREATE INDEX IF NOT EXISTS idx_audit_log_at ON audit_log(at);
+ """
+ _INDEX_STATEMENTS = [s.strip() for s in _INDEXES.split(";") if s.strip()]
+ 
+@@ -196,6 +201,11 @@ class Store:
+         with self._lock:
+             self._db.execute("PRAGMA foreign_keys=ON")
+             self._migrate()
++            # Indexes are declared idempotently (`CREATE INDEX IF NOT EXISTS`) and are
++            # (re)applied on every open, so a database created before an index was
++            # added still receives it without a schema-version bump (DATA-P2-003).
++            for stmt in _INDEX_STATEMENTS:
++                self._db.execute(stmt)
+             # ARCH-P2-001: WAL keeps readers from blocking on the single writer and
+             # survives crashes without a rollback journal; synchronous=NORMAL is safe
+             # with WAL and gentler on SD cards.
+@@ -245,9 +255,10 @@ class Store:
+ 
+         Windows default to `RETENTION_DAYS` (the proposed lab values); expired
+         tokens/directives and old idempotency keys are kept a week past their
+-        expiry/creation, and state reports / events / heartbeat samples / inventories
+-        follow the classification table. Deletions are recorded in `audit_log` when
+-        anything was removed. Returns per-table delete counts.
++        expiry/creation, state reports / events / heartbeat samples / inventories
++        follow the classification table, and the append-only `audit_log` is pruned on
++        a long audit window. Deletions are recorded in `audit_log` when anything was
++        removed. Returns per-table delete counts.
+         """
+         windows = dict(RETENTION_DAYS)
+         if retention:
+diff --git a/tests/phase2/test_store_lifecycle.py b/tests/phase2/test_store_lifecycle.py
+index 41100db..1fa4cc7 100644
+--- a/tests/phase2/test_store_lifecycle.py
++++ b/tests/phase2/test_store_lifecycle.py
+@@ -115,6 +115,20 @@ class PruneTests(unittest.TestCase):
+         self.assertEqual(state_left, 1)
+         self.assertEqual(events_left, 1)
+ 
++    def test_prune_applies_audit_log_retention(self):
++        # DATA-P2-002: the append-only audit log is bounded by a long retention window.
++        old = iso(now() - timedelta(days=RETENTION_DAYS["audit_log"] + 1))
++        recent = iso(now() - timedelta(hours=1))
++        self.store.audit(old, "tester", "old.audit", "{}")
++        self.store.audit(recent, "tester", "recent.audit", "{}")
++        counts = self.store.prune(iso(now()))
++        self.assertEqual(counts["audit_log"], 1)
++        with self.store._lock:
++            actions = {r["action"] for r in
++                       self.store._db.execute("SELECT action FROM audit_log")}
++        self.assertIn("recent.audit", actions)
++        self.assertNotIn("old.audit", actions)
++
+ 
+ class MigrationTests(unittest.TestCase):
+     def test_v0_to_v1_rebuilds_with_foreign_keys(self):
+@@ -159,6 +173,39 @@ class MigrationTests(unittest.TestCase):
+             store.close()
+             tmp.cleanup()
+ 
++    def test_reopen_is_idempotent_and_reapplies_indexes(self):
++        # DATA-P2-003: opening an already-current DB is a no-op (the migration is
++        # idempotent), and the idempotent `CREATE INDEX IF NOT EXISTS` statements keep
++        # an existing DB in sync with indexes added after it was created.
++        tmp = tempfile.TemporaryDirectory(prefix="falcon-idem-")
++        path = os.path.join(tmp.name, "cp.db")
++        store = Store(path)
++        try:
++            sid = "fes_" + "a" * 24
++            add_sensor(store, sid)
++            store.set_desired_state(sid, 1, "{}", '"etag"', iso(now()))
++            # simulate a database created before the audit_log retention index existed
++            with store._lock:
++                store._db.execute("DROP INDEX IF EXISTS idx_audit_log_at")
++                store._db.commit()
++        finally:
++            store.close()
++
++        store2 = Store(path)
++        try:
++            self.assertEqual(store2._db.execute("PRAGMA user_version").fetchone()[0], SCHEMA_VERSION)
++            # rows survive the reopen unchanged (migration is a no-op at the current version)
++            self.assertEqual(store2._db.execute("SELECT COUNT(*) FROM sensors").fetchone()[0], 1)
++            self.assertEqual(
++                store2._db.execute("SELECT COUNT(*) FROM desired_state").fetchone()[0], 1)
++            # the index added after the DB was created is present again
++            self.assertIsNotNone(store2._db.execute(
++                "SELECT 1 FROM sqlite_master WHERE type='index' AND name='idx_audit_log_at'"
++            ).fetchone())
++        finally:
++            store2.close()
++            tmp.cleanup()
++
+ 
+ class ForeignKeyTests(unittest.TestCase):
+     def setUp(self):

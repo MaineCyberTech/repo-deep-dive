@@ -1,0 +1,10 @@
+fix(data): persistence/durability fixes [DATA-P2-001,DATA-P3-001]
+
+DATA-P3-001: enforce queue age-expiry on every agent cycle via purge_expired(),
+not only opportunistically on enqueue; regression test proves a cycle purges an
+expired item with no new enqueue.
+
+DATA-P2-001: idempotency TTL/retention is already implemented on main
+(Store.prune with a 7-day idempotency window, invoked at startup and hourly by
+falcon_control.__main__, covered by tests/phase2/test_store_lifecycle.py); this
+change set leaves that intact and verifies it.

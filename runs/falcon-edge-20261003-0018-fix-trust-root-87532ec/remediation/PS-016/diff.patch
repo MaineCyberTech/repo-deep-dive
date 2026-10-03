@@ -1,0 +1,157 @@
+diff --git a/REPOSITORY.md b/REPOSITORY.md
+index e5dbd79..2328535 100644
+--- a/REPOSITORY.md
++++ b/REPOSITORY.md
+@@ -41,7 +41,8 @@ program's history or ledgers.
+   (verifies every `evidence/MANIFEST.sha256` entry). Both are non-mutating and fail the gate on any
+   mismatch; regenerate with `automation/evidence/index.sh` / `automation/evidence/manifest.sh create`
+   only when the change is intended, then re-run `ci/validate.sh`.
+-- Growth is budgeted (HYG-P2-003): `ci/check_evidence_size.py` warns past 2,500 files / 50 MiB and
++- Growth is budgeted (INV-P2-001 / HYG-P2-003): `ci/check_evidence_size.py` **fails the gate**
++  past 2,500 files / 50 MiB and
+   `automation/evidence/growth.sh` reports the breakdown. Raw evidence is retained for the program
+   lifetime (owner policy); when the budget trips, archive completed-phase captures outside the repo
+   (`/srv/falcon/edge-evidence-archive/`) with a sidecar manifest while keeping
+diff --git a/ci/check_evidence_size.py b/ci/check_evidence_size.py
+index ba35c2a..3fa5cb0 100644
+--- a/ci/check_evidence_size.py
++++ b/ci/check_evidence_size.py
+@@ -1,10 +1,14 @@
+ #!/usr/bin/env python3
+-"""Evidence size budget (HYG-P2-003): warn when the evidence tree exceeds its budget.
++"""Evidence size budget (INV-P2-001): fail the gate when evidence/ exceeds its budget.
+ 
+-Advisory only (always exit 0); the CI step surfaces the warning in the log. The archival
+-policy is in REPOSITORY.md - archive completed-phase captures outside the repo while
+-keeping the evidence index and manifest intact; never delete evidence.
++Fail-closed: exit 1 when the evidence tree is over the file/byte budget so CI blocks
++until completed-phase captures are archived. The archival policy is in REPOSITORY.md -
++archive completed-phase captures outside the repo while keeping the evidence index and
++manifest intact; never delete evidence.
++
++Usage: check_evidence_size.py [--root DIR]
+ """
++import argparse
+ import os
+ import sys
+ 
+@@ -13,23 +17,33 @@ BUDGET_MIB = 50
+ BUDGET_FILES = 2500
+ 
+ 
+-def main() -> int:
+-    total = files = 0
+-    for root, _dirs, names in os.walk(os.path.join(REPO, "evidence")):
++def measure(root: str):
++    total = 0
++    files = 0
++    for dirpath, _dirs, names in os.walk(os.path.join(root, "evidence")):
+         for name in names:
+             try:
+-                total += os.path.getsize(os.path.join(root, name))
++                total += os.path.getsize(os.path.join(dirpath, name))
+             except OSError:
+                 continue
+             files += 1
+-    mib = total / (1024 * 1024)
++    return files, total / (1024 * 1024)
++
++
++def main(argv=None) -> int:
++    ap = argparse.ArgumentParser(description="Evidence size budget gate (INV-P2-001).")
++    ap.add_argument("--root", default=REPO, help="repo root (default: this checkout)")
++    args = ap.parse_args(argv)
++
++    files, mib = measure(os.path.abspath(args.root))
+     over = mib > BUDGET_MIB or files > BUDGET_FILES
+-    print(f"{'WARN' if over else 'PASS'}  evidence size: {files} files, {mib:.1f} MiB "
++    print(f"{'FAIL' if over else 'PASS'}  evidence size: {files} files, {mib:.1f} MiB "
+           f"(budget {BUDGET_FILES} files / {BUDGET_MIB} MiB)")
+-    if over:
+-        print("      archive older raw artifacts per REPOSITORY.md (keep index+manifest)")
+-    return 0
++    if not over:
++        return 0
++    print("      archive older raw artifacts per REPOSITORY.md (keep index+manifest)")
++    return 1
+ 
+ 
+ if __name__ == "__main__":
+-    sys.exit(main())
++    sys.exit(main(sys.argv[1:]))
+diff --git a/ci/validate.sh b/ci/validate.sh
+index 0a7822b..a77764a 100755
+--- a/ci/validate.sh
++++ b/ci/validate.sh
+@@ -41,7 +41,7 @@ echo "== evidence manifest sync =="
+ automation/evidence/manifest.sh check || rc=1
+ 
+ echo "== evidence size budget =="
+-python3 ci/check_evidence_size.py
++python3 ci/check_evidence_size.py || rc=1
+ 
+ echo "== license gate =="
+ python3 ci/license_check.py || rc=1
+diff --git a/tests/phase10/test_evidence_budget_gate.py b/tests/phase10/test_evidence_budget_gate.py
+new file mode 100644
+index 0000000..6e0c4ad
+--- /dev/null
++++ b/tests/phase10/test_evidence_budget_gate.py
+@@ -0,0 +1,57 @@
++#!/usr/bin/env python3
++"""Regression test for the evidence size budget gate (INV-P2-001).
++
++The gate must be fail-closed: an over-budget evidence tree must make the checker return
++non-zero (so `ci/validate.sh` blocks and completed-phase captures get archived), while an
++under-budget tree passes.
++"""
++import importlib.util
++import os
++import tempfile
++import unittest
++
++REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++SCRIPT = os.path.join(REPO, "ci", "check_evidence_size.py")
++VALIDATE = os.path.join(REPO, "ci", "validate.sh")
++
++
++def _load_module():
++    spec = importlib.util.spec_from_file_location("check_evidence_size", SCRIPT)
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def _make_tree(root, n):
++    raw = os.path.join(root, "evidence", "raw")
++    os.makedirs(raw, exist_ok=True)
++    for i in range(n):
++        with open(os.path.join(raw, f"f{i}.txt"), "w", encoding="utf-8") as fh:
++            fh.write("x")
++
++
++class EvidenceBudgetGateTests(unittest.TestCase):
++    def setUp(self):
++        self.mod = _load_module()
++        # Keep the fixture tiny; the gate logic is the same as the real 2,500-file budget.
++        self.mod.BUDGET_FILES = 3
++        self.mod.BUDGET_MIB = 50
++
++    def test_under_budget_passes(self):
++        with tempfile.TemporaryDirectory() as root:
++            _make_tree(root, 2)
++            self.assertEqual(self.mod.main(["--root", root]), 0)
++
++    def test_over_budget_fails_closed(self):
++        with tempfile.TemporaryDirectory() as root:
++            _make_tree(root, 4)
++            self.assertEqual(self.mod.main(["--root", root]), 1)
++
++    def test_validate_wires_the_gate_fail_closed(self):
++        with open(VALIDATE, encoding="utf-8") as fh:
++            text = fh.read()
++        self.assertIn("python3 ci/check_evidence_size.py || rc=1", text)
++
++
++if __name__ == "__main__":
++    unittest.main(verbosity=2)

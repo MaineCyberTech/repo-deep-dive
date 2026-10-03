@@ -1,0 +1,94 @@
+{
+  "patchSet": "PS-011",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-011-20261003-0018-fix-trust-root-87532ec",
+  "commit": "e9d1866e9c20bb14fa6610fb9b917fe84526040c",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/27",
+  "prState": "draft",
+  "findings": [
+    "ARCH-P2-001",
+    "HYG-P2-002",
+    "INV-P3-001"
+  ],
+  "files": [
+    "deploy/edge-control-plane.service",
+    "ci/validate.sh",
+    "closeout/generate_final_response.py",
+    "closeout/check_derived.py",
+    "closeout/derived_artifacts.json",
+    "tests/phase10/test_derived_artifact_guards.py"
+  ],
+  "residual": "ARCH-P2-001: the unit now refuses to start from a dirty working tree (fail-closed ExecStartPre); the stronger fix from the finding (deploy from a pinned release dir / git worktree at a recorded commit) is left to the release pipeline and recorded as an open question. HYG-P2-002 / INV-P3-001: FINAL_RESPONSE.json is checked against ledgers/gate_ledger.csv; the dashboard (no in-repo generator) and the frozen 20261002-0630 audit mirror are pinned by CRLF-normalised SHA-256 rather than regenerated, so they are guarded as immutable snapshots. An in-file 'frozen at <sha>' header for the mirror is a docs follow-up.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04.5; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1, systemd 255; tested a git archive --format=tar.gz of the committed branch (git-initialised so ci/validate.sh runs its git ls-files parse loop)",
+  "baseReproduction": {
+    "source": "git archive --format=tar.gz of origin/main (f5811d1)",
+    "execStartPreGuardPresent": false,
+    "finalResponseCheckWired": false,
+    "checkDerivedPresent": false,
+    "dashboardMutationDetected": false,
+    "reproduces": true
+  },
+  "commands": [
+    {
+      "command": "python3 closeout/generate_final_response.py --check",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "PASS: FINAL_RESPONSE.json derived fields in sync with ledgers/gate_ledger.csv"
+    },
+    {
+      "command": "python3 closeout/check_derived.py",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "all pinned artifacts match (dashboard + audit mirror)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "129 passed in 82.70s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase8 tests/phase10",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "38 passed, 2 skipped in 10.69s"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.73 MB)"
+    }
+  ],
+  "functionalCheck": {
+    "dirtyTreeGuardCleanExit": 0,
+    "dirtyTreeGuardDirtyExit": 1,
+    "systemdAnalyzeVerify": 0,
+    "dashboardMutationCheckDerivedExit": 1,
+    "ledgerMutationFinalResponseCheckExit": 1,
+    "mirrorMutationCheckDerivedExit": 1,
+    "restoredCheckDerivedExit": 0
+  },
+  "notRun": [
+    {
+      "command": "start the real /home/user/falcon-edge-build unit as user 'user' with a dirty tree",
+      "reason": "edge-builder has no production control-plane checkout or 'user' account; the exact ExecStartPre shell body was executed against a clean and dirty repo at the literal path and systemd-analyze verified the unit. The live host was not touched."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-011/diff.patch",
+    "sha256": "7dd18c6e28047b0bf2ceb03fe1b554a253b0eb33c64856858df443efe777c421"
+  },
+  "verifyLog": "remediation/PS-011/verify.log",
+  "prBody": "remediation/PS-011/pr_body.md",
+  "generated": "2026-10-03T08:30:00Z"
+}

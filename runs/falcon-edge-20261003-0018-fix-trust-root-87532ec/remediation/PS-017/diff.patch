@@ -1,0 +1,134 @@
+commit b843f64a32d92da995f6b243aa3db56e23d4bfe0
+Author: JulianB-MCT <Julian.Butler@mainecybertech.com>
+Date:   Sat Oct 3 04:05:30 2026 -0400
+
+    fix(repo_inventory): segment-aware test detection + Next.js App Router routes
+
+diff --git a/PACK_DIGEST.txt b/PACK_DIGEST.txt
+index 290c976..120bc0b 100644
+--- a/PACK_DIGEST.txt
++++ b/PACK_DIGEST.txt
+@@ -1,5 +1,5 @@
+ # repo-deep-dive pack digest
+-# generated: 2026-10-03T06:44:20Z
++# generated: 2026-10-03T08:05:11Z
+ # files: 437
+ # format: sha256  path
+ 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
+@@ -433,7 +433,7 @@ e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_d
+ 061ef83b0702787d3b20b4a3b9edddc011ee1ee37d5ba2e0642d8854536cd0e5  ./tools/remediation_report.py
+ 2e560d8a73ad4bdcc62c59205bceb7dcf0ba09d416328c1d791b7ce2bc207e64  ./tools/remediation_status.py
+ 8d23ac69e0792a65a386b054da66b004bd6c32b9bf6324581ea363c2ad0623a3  ./tools/render_dashboard.py
+-1bbef3888efd79aafcbc48c1dda86143b583b604c0b5daa3402e091a27e94739  ./tools/repo_inventory.py
++96b5af0fd518bea51c5a2f33144c73967d5187567f8a129e3b185194b2494677  ./tools/repo_inventory.py
+ 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
+ 6844a691f52f73a7ebca8f0cabc19670d12df785c3d779d863dd7f9ac4160338  ./tools/run_toolchain.py
+ f1bef7b3443feafabbbd7335167da8f05044d706302afd439137819c63edbaf1  ./tools/self_test.sh
+diff --git a/tools/repo_inventory.py b/tools/repo_inventory.py
+index ab052fc..211b92e 100644
+--- a/tools/repo_inventory.py
++++ b/tools/repo_inventory.py
+@@ -83,6 +83,47 @@ SECRET_NAME_PATTERNS = [
+     "*secret*", "*credential*", "*token*", "id_rsa*", "*.asc", "*.gpg",
+ ]
+ 
++TEST_DIR_NAMES = {"tests", "test", "__tests__", "e2e", "spec", "specs",
++                  "__mocks__", "testing"}
++TEST_FILE_RE = re.compile(
++    r"\.(test|spec)\.[a-z0-9]+$"          # foo.test.ts / foo.spec.js
++    r"|(^|/)test_[^/]+\.py$"               # test_foo.py
++    r"|(^|/)[^/]+_test\.(py|go|rs)$"       # foo_test.py / foo_test.go
++    r"|(^|/)[^/]+[._-](test|spec)\.[a-z0-9]+$",
++    re.I,
++)
++
++
++def is_test_path(rel):
++    """True only for real test files/dirs (not substrings like data/species.ts)."""
++    parts = rel.split("/")
++    if any(p.lower() in TEST_DIR_NAMES for p in parts[:-1]):
++        return True
++    return bool(TEST_FILE_RE.search(parts[-1]))
++
++
++def app_router_route(rel):
++    """Derive an Express-style path from a Next.js App Router route file, else None."""
++    segs = rel.split("/")
++    if "app" not in segs:
++        return None
++    i = segs.index("app")
++    tail = segs[i + 1:-1]
++    tail = [s for s in tail if not (s.startswith("(") and s.endswith(")"))]  # route groups
++    return "/" + "/".join(tail) if tail else "/"
++
++
++def pages_api_route(rel):
++    """Derive the path for a Next.js pages/api handler, else None."""
++    marker = "pages/api/"
++    if marker not in rel:
++        return None
++    rest = rel.split(marker, 1)[1]
++    rest = re.sub(r"\.(ts|tsx|js|jsx|mjs|cjs)$", "", rest)
++    if rest.endswith("/index"):
++        rest = rest[:-len("/index")]
++    return "/api/" + rest if rest else "/api"
++
+ 
+ def run_git(root, args):
+     try:
+@@ -190,7 +231,7 @@ def scan_repo(root):
+         if not path.endswith((".ts", ".js", ".py", ".rb", ".go", ".php", ".java")):
+             continue
+         rel = rel_posix(root, path)
+-        if "test" in rel.lower() or "spec" in rel.lower():
++        if is_test_path(rel):
+             continue
+         try:
+             with open(path, "r", encoding="utf-8", errors="replace") as fh:
+@@ -206,6 +247,22 @@ def scan_repo(root):
+         if len(inv["routes"]) >= 500:
+             break
+ 
++    # Next.js App Router / pages API routes (no explicit router call).
++    for path in iter_files(root):
++        rel = rel_posix(root, path)
++        if is_test_path(rel):
++            continue
++        base = os.path.basename(path)
++        route = None
++        if base in ("route.ts", "route.js", "route.tsx", "route.jsx"):
++            route = app_router_route(rel)
++        elif base.endswith((".ts", ".tsx", ".js", ".jsx")):
++            route = pages_api_route(rel)
++        if route:
++            inv["routes"].append({"file": rel, "path": route})
++            if len(inv["routes"]) >= 500:
++                break
++
+     for path in iter_files(root):
+         rel = rel_posix(root, path)
+         low = rel.lower()
+@@ -215,11 +272,13 @@ def scan_repo(root):
+             inv["workflows"].append(rel)
+         if os.path.basename(path) in ("Dockerfile", "Dockerfile.prod") or rel.endswith(".dockerfile"):
+             inv["containers"].append(rel)
+-        if "test" in low or "spec" in low:
+-            if path.endswith((".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".rb")):
+-                inv["tests"]["files"] += 1
+-        if os.path.basename(path) in ("__tests__", "tests", "test", "e2e", "spec"):
+-            inv["tests"]["dirs"].append(rel)
++        if is_test_path(rel) and path.endswith((".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".rb")):
++            inv["tests"]["files"] += 1
++    for dirpath, dirnames, _files in os.walk(root):
++        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
++        for d in dirnames:
++            if d.lower() in TEST_DIR_NAMES:
++                inv["tests"]["dirs"].append(rel_posix(root, os.path.join(dirpath, d)))
+     inv["migrations"] = sorted(set(inv["migrations"]))[:200]
+     inv["workflows"] = sorted(set(inv["workflows"]))
+     inv["containers"] = sorted(set(inv["containers"]))
+
+# NOTE: PS-017 produced no new commit in falcon-edge. The diff above is the canonical
+# already-merged upstream fix (repo-deep-dive b843f64) that the pack's inventory tooling
+# carries. No branch or draft PR was opened (guardrail: no no-op PRs; the patch-set
+# file repo-deep-dive/tools/repo_inventory.py is not in the falcon-edge repo).

@@ -1,0 +1,66 @@
+{
+  "patchSet": "PS-009",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-009-20261003-0018-fix-trust-root-87532ec",
+  "commit": "ca45c69f0910132c1fa66ed5ae35c6eafdf023ec",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/25",
+  "prState": "draft",
+  "findings": ["SEC-P2-002", "HYG-P3-001"],
+  "files": [
+    "automation/validation/inventory_metrics.py",
+    "config/fleet-sensors.json",
+    "tests/phase9/test_inventory_metrics.py",
+    "docs/ENVIRONMENTS.md",
+    "docs/runbooks/fleet-inventory.md"
+  ],
+  "residual": "SEC-P2-002: fixed in the collector (StrictHostKeyChecking=yes + explicit UserKnownHostsFile; the collector refuses to SSH when known_hosts is absent and surfaces the SSH failure reason). The actual host keys are lab state (in /home/user/.ssh/known_hosts) and were not available to the agent, so no key material is committed. HYG-P3-001: the hardcoded SENSORS literals are gone; endpoints/keys live in config/fleet-sensors.json. The existing endpoint values were preserved verbatim (no live access to re-verify LAN vs tunnel) -- see the PR open question.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; tested a git archive --format=tar.gz of the committed branch (preserves modes/LF)",
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "129 passed in 70.61s"
+    },
+    {
+      "command": "python3 -m pytest -v tests/phase9/test_inventory_metrics.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "7 passed in 0.36s (includes wrong-host-key fail-closed and config-driven sensors)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase9",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "19 passed in 12.31s (inventory metrics + fleet inventory)"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.76 MB)"
+    }
+  ],
+  "notRun": [
+    {
+      "command": "live sensor SSH read with a real wrong host key",
+      "reason": "the sensors are not reachable from the verification VM and pinning real host keys would require committing lab key material; the fail-closed behaviour is exercised with a stand-in OpenSSH that enforces StrictHostKeyChecking=yes + known_hosts (test_wrong_host_key_fails_closed and test_missing_known_hosts_fails_closed_without_ssh)"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-009/diff.patch",
+    "sha256": "3461cc80e2ae51b758aa243edb05d989286ec09047dbec25f5cd9221f0310a3e"
+  },
+  "verifyLog": "remediation/PS-009/verify.log",
+  "prBody": "remediation/PS-009/pr_body.md",
+  "generated": "2026-10-03T08:02:00Z"
+}

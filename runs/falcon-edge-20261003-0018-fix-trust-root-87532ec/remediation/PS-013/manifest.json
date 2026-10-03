@@ -1,0 +1,84 @@
+{
+  "patchSet": "PS-013",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": null,
+  "commit": "71cffcd3ff4daebb974813b5dd9a0483809fd7fd",
+  "pr": null,
+  "prState": "merged",
+  "findings": [
+    "API-P2-001"
+  ],
+  "files": [
+    "src/falcon_control/service.py",
+    "src/falcon_control/store.py",
+    "api/openapi/falcon-edge-v1.yaml"
+  ],
+  "resolution": "No new change required. origin/main already contains merged commit 71cffcd ('review-fix: audit batch - API-P2-002 pagination, API-P2-004 CSR validation', authored in the prior remediation batch) which implements keyset pagination: Store.list_sensors_page fetches limit+1 rows ordered by sensor_id and returns nextCursor only when another page exists, and ControlPlaneService.h_list_sensors reads/validates the cursor query parameter, calls list_sensors_page(state, limit, cursor), and emits body['nextCursor'] when present. The contract at api/openapi/falcon-edge-v1.yaml already documents the cursor query parameter on /sensors and SensorPage.nextCursor. Reproduction: a >500 sensor fixture returns page1 rows=500 nextCursor='sensor-0499' and a final page rows=1 nextCursor=None. API-P2-001 is closed on origin/main. No branch, commit or draft PR was created for PS-013 to avoid a no-op PR (guardrail).",
+  "reasonNoChange": "All listed files already carry the fix on origin/main (merged commit 71cffcd); a new commit would be a no-op PR.",
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04.5; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; tested a git archive --format=tar.gz of origin/main f5811d1 (git-initialised so ci/validate.sh runs its git ls-files parse loop)",
+  "baseReproduction": {
+    "source": "git archive --format=tar.gz of origin/main (f5811d1)",
+    "cursorParamInContract": true,
+    "nextCursorInContract": true,
+    "listSensorsPageInStore": true,
+    "handlerEmitsNextCursor": true,
+    "over500FixtureReturnsNextCursor": true,
+    "findingStillReproduces": false,
+    "reproduces": false
+  },
+  "commands": [
+    {
+      "command": "python3 <<PY (501-sensor fixture: Store.list_sensors_page(None,500,None) then page 2 with the returned cursor)",
+      "runner": "edge-builder VM (Python 3.12.3)",
+      "exit": 0,
+      "result": "page1 rows=500 nextCursor='sensor-0499'; page2 rows=1 nextCursor=None; >500 SENSOR FIXTURE OK"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "129 passed in 73.69s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase1/test_contract_routes.py tests/phase2/test_contract_parity.py",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "2 passed in 0.29s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2/test_service_integration.py -k pagination",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "1 passed, 50 deselected in 4.34s"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~6.64 MB)"
+    }
+  ],
+  "notRun": [
+    {
+      "command": "open draft PR / push branch / commit",
+      "reason": "No source change is needed: origin/main already contains the merged fix (71cffcd). Creating a branch/PR would be a no-op, which the runner guardrails forbid."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-013/diff.patch",
+    "sha256": "ED67D6CC7F45448654BB94A2751F814A2792A0E71D8B1CE1B37871E8979F1D42",
+    "note": "Diff of the already-merged prior fix (71cffcd) for src/falcon_control/service.py, src/falcon_control/store.py and tests/phase2/test_service_integration.py; not a diff produced by this runner."
+  },
+  "verifyLog": "remediation/PS-013/verify.log",
+  "verifyLogSha256": "BBB970F9D57E32364D307FEDC4FE1FCB272D9F5D463713FB79E9847D3FC0EB7D",
+  "generated": "2026-10-03T08:45:00Z"
+}

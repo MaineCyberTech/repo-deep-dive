@@ -1,0 +1,107 @@
+{
+  "patchSet": "PS-018",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "f5811d1c32a3a1f85063b8aa306c67722f5c38a3",
+  "branch": "remediation/ps-018-20261003-0018-fix-trust-root-87532ec",
+  "commit": "eed97d71b52bc1646f63e95968c9588ded240535",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/30",
+  "prState": "draft",
+  "findings": [
+    "OBS-P3-001",
+    "TEST-P3-001",
+    "TEST-P3-002",
+    "CI-P2-001",
+    "SC-P2-004",
+    "ARCH-P2-002",
+    "HYG-P3-002",
+    "EXEC-P2-001",
+    "FINAL-P2-001"
+  ],
+  "files": [
+    ".github/workflows/validate.yml",
+    "automation/validation/fleet_inventory.py",
+    "tests/phase9/test_fleet_inventory.py",
+    "docs/security/BRANCH_PROTECTION.md",
+    "ledgers/risk_register.md"
+  ],
+  "resolution": "Final-register / release-readiness batch. The patch plan lists this set as 'mixed (see owners in risk_register.md)', so fixes were applied per owning domain rather than to a single file. Fixed in code/CI: TEST-P3-001 (fail-closed coverage gate), TEST-P3-002 (injectable --now clock + deterministic phase9 fixture). Documentation/register: CI-P2-001 dated owner re-affirmation; SC-P2-004, ARCH-P2-002, HYG-P3-002, EXEC-P2-001, FINAL-P2-001 dispositions and open questions recorded in ledgers/risk_register.md (R-017..R-025). OBS-P3-001 was verified already fixed at base f5811d1 and needed no change.",
+  "baseReproduction": {
+    "source": "clean checkout of origin/main f5811d1 in /srv/work/falcon-edge (lab job API)",
+    "OBS-P3-001": "already-fixed-at-base",
+    "TEST-P3-001": "reproduces",
+    "TEST-P3-002": "reproduces",
+    "CI-P2-001": "reproduces (owner-accepted; re-affirmed)",
+    "SC-P2-004": "reproduces (owner-accepted)",
+    "ARCH-P2-002": "reproduces (owner decision)",
+    "HYG-P3-002": "reproduces (owner decision on license)",
+    "EXEC-P2-001": "reproduces (owner gates)",
+    "FINAL-P2-001": "reproduces (cross-cutting; constituent PRs tracked)"
+  },
+  "commands": [
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM (patched tree)",
+      "exit": 0,
+      "result": "validation: ALL PASS (json/yaml, openapi, models, schemas, decision register, gate ledger 88, evidence, license, secret scan)"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4, patched tree)",
+      "exit": 0,
+      "result": "129 passed in 73.44s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase9/test_fleet_inventory.py",
+      "runner": "edge-builder VM (pytest 7.4.4, patched tree)",
+      "exit": 0,
+      "result": "10 passed in 1.30s (TEST-P3-002 deterministic fixture)"
+    },
+    {
+      "command": "python3 -m coverage run --source=src -m unittest discover -s tests -p 'test_*.py' && coverage report --fail-under=85",
+      "runner": "edge-builder VM, /srv/work/covvenv (coverage 7.16.2, pyyaml)",
+      "exit": 0,
+      "result": "run exit 0, OK (skipped=7); report TOTAL 86% (3490 stmts / 489 miss); gate exit 0 (TEST-P3-001)"
+    },
+    {
+      "command": "actionlint .github/workflows/validate.yml",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "no findings"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found (scanned ~7.21 MB)"
+    }
+  ],
+  "notRun": [
+    {
+      "command": "GitHub Actions coverage-gate step in CI",
+      "reason": "The workflow step runs on GitHub-hosted runners; the equivalent command (coverage report --fail-under=85) was executed on the patched tree on edge-builder and passed. actionlint validates the workflow syntax."
+    },
+    {
+      "command": "P10 production gates / clean-host replication (EXEC-P2-001)",
+      "reason": "Owner action; out of scope for a code PR. Recorded as an open question."
+    }
+  ],
+  "openQuestions": [
+    "SC-P2-004 (owner): encrypt credential side-files, scope releases to a protected environment, rotate baked credentials after first boot, and schedule an access-revocation drill.",
+    "ARCH-P2-002 (owner, hardware/budget): move the edge control plane to its own host/VM before production and document a break-glass procedure, or accept the lab-scoped availability risk.",
+    "HYG-P3-002 (owner): choose a LICENSE and root project metadata (open-source vs proprietary vs internal-only).",
+    "EXEC-P2-001 (owner): complete P10-G02/G04/G06 before any production claim.",
+    "FINAL-P2-001 (build-agent): add a docs/derived-artifact drift check to ci/validate.sh after PS-011 (dirty-tree + regen guards) lands."
+  ],
+  "residual": {
+    "note": "The owner-decision findings remain open/partially-fixed; only their dispositions and open questions are recorded. The PR is intentionally not a full closure of the release-readiness theme."
+  },
+  "diff": {
+    "path": "remediation/PS-018/diff.patch",
+    "sha256": "39aa21889f6d4a7b7c56a77a93896b117c75300e810df246e2f30d91a4d44073"
+  },
+  "verifyLog": "remediation/PS-018/verify.log",
+  "verifyLogSha256": "837c8d00c0e77caff7e207f221beea45e87bbecc08f59cc5c83147c187ae5e8b",
+  "generated": "2026-10-03T10:05:00Z"
+}

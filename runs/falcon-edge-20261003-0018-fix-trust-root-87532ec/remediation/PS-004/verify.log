@@ -1,0 +1,71 @@
+# Remediation verification - PS-004 (falcon-edge)
+# Findings: SC-P2-001 (unpinned CI Python deps), SC-P2-003 (unverified tool downloads)
+# Branch:  remediation/ps-004-20261003-0018-fix-trust-root-87532ec
+# Base:    origin/main (af6f83a) -- current main already hash-pins the CI toolchain
+#          (commit 73e3ca9 "CI toolchain integrity", a prior audit); this patch set
+#          externalizes those pins into the committed requirements-dev.txt the audit
+#          finding names, and wires the workflow to it.
+# Tree:    working tree with .github/workflows/validate.yml modified and
+#          requirements-dev.txt added vs af6f83a (captured pre-commit; the committed
+#          SHA is recorded in manifest.json)
+# Runner:  edge-builder VM (172.23.128.51) via lab-sync.ps1 / lab-run.ps1
+# Captured: 2026-10-03T07:00Z
+# Changed: .github/workflows/validate.yml, requirements-dev.txt (new)
+
+### actionlint .github/workflows/validate.yml
+EXIT=0
+
+### actionlint .github/workflows/*.yml
+EXIT=0
+
+### python3 -m pytest -q tests/phase2
+........................................................................ [ 98%]
+.                                                                        [100%]
+73 passed in 36.35s
+EXIT=0
+
+### python3 /tmp/ps004_pincheck.py   (SC-P2-001: exact pin + hash check on requirements-dev.txt)
+PASS: 3 requirements, all '==' pinned, 5 sha256 hashes
+  pyyaml==6.0.3
+  coverage==7.16.2
+  zizmor==1.30.1
+EXIT=0
+
+### bash /tmp/ps004_checksum_test.sh   (SC-P2-003: checksum guard rejects a corrupted download)
+reference digest: 953e295735a4e21ef540cb27c091c40e8cc3ac9da563d11ef8125aa3d143560d
+== matching download (expect exit 0) ==
+tool.tgz: OK
+MATCH_EXIT=0
+== corrupted download (expect non-zero) ==
+tool.tgz: FAILED
+sha256sum: WARNING: 1 computed checksum did NOT match
+CORRUPT_EXIT=1
+EXIT=0
+
+### gitleaks detect --no-git --redact --source . -v   (secret gate)
+    o
+    |\
+    | o
+    o ░
+    ░    gitleaks
+6:52AM INF scanned ~7332457 bytes (7.33 MB) in 1.03s
+6:52AM INF no leaks found
+EXIT=0
+
+### python3 -m pip install --dry-run --require-hashes --only-binary=:all: -r requirements-dev.txt
+NOT RUN: /usr/bin/python3: No module named pip (the edge-builder VM's system Python has
+no pip module; pytest is provided out-of-band). Replaced by the stdlib pin/hash check
+above (/tmp/ps004_pincheck.py), which asserts every requirement is '==' pinned with a
+sha256 and that no unpinned/`>=` entry exists.
+
+# Additional (non-gating) observation:
+# `bash ci/validate.sh` reports FAILURES PRESENT on the lab-synced tree, all of the form
+# "FAIL hash mismatch: evidence/raw/**". Cause is the Windows->Linux tar sync: the lab
+# working tree carries CRLF for those text files while the recorded/git-blob hashes are
+# LF. Verified: `file evidence/raw/P10-G07/20260929T053540Z_full-suite-final.out` ->
+# "ASCII text, with CRLF line terminators"; worktree sha256
+# 03f137d469e3ff5bfd7f65e551c697d6f2d3d693f9f580ac55b47bded930bee1 vs git-blob sha256
+# 1278c6c0b91f2ef1b67df5c3c3556b80fbc681458ce8e3df38df80530a6607d5. None of the
+# failures reference the files changed by this patch set; this is not a PS-004 gate.
+
+# script exit: 0

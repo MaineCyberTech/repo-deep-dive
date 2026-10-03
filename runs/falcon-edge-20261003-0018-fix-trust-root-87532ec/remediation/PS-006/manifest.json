@@ -1,0 +1,49 @@
+{
+  "patchSet": "PS-006",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "af6f83af72834a42de4ac10ad98a3c489047d1b8",
+  "branch": "remediation/ps-006-20261003-0018-fix-trust-root-87532ec",
+  "commit": "8f6999df5747f16b2db191ae37a67349508a9513",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/22",
+  "prState": "draft",
+  "findings": ["DATA-P2-001", "DATA-P3-001"],
+  "files": [
+    "src/falcon_agent/runner.py",
+    "tests/phase3/test_agent_integration.py"
+  ],
+  "runner": "edge-builder VM 201 (172.23.128.52), Ubuntu 24.04; Python 3.12.3, pytest 7.4.4, gitleaks 8.30.1; tested a git archive of the committed branch (preserves modes/LF)",
+  "commands": [
+    {
+      "command": "python3 -m pytest -q tests/phase2 tests/phase3",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 0,
+      "result": "130 passed in 90.65s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase3/test_agent_integration.py -k cycle_purges",
+      "runner": "edge-builder VM (pytest 7.4.4)",
+      "exit": 1,
+      "result": "negative control: purge line neutralized -> 1 failed (AssertionError: 0 != 1), test restored; proves the regression test catches DATA-P3-001"
+    },
+    {
+      "command": "bash ci/validate.sh",
+      "runner": "edge-builder VM",
+      "exit": 0,
+      "result": "validation: ALL PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-006/diff.patch",
+    "sha256": "5c693becbf3de7a83554055dd012349cadedfd3377d817c34e10c559dc728bed"
+  },
+  "verifyLog": "remediation/PS-006/verify.log",
+  "generated": "2026-10-03T07:25:00Z"
+}
