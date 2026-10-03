@@ -129,12 +129,22 @@ def check_secrets(root, add):
                     leaks = []
             by_rule = {}
             for l in leaks[:200]:
+                f = l.get("File", "?")
+                try:
+                    f = os.path.relpath(f, root)
+                except Exception:
+                    pass
                 by_rule.setdefault(l.get("RuleID", "rule"), []).append(
-                    "%s:%s" % (l.get("File", "?"), l.get("StartLine", "?")))
+                    "%s:%s" % (f, l.get("StartLine", "?")))
+            high = ("aws", "private-key", "private_key", "github", "gitlab", "slack",
+                    "stripe", "sendgrid", "telegram", "twilio", "rsa", "openssh",
+                    "pkcs", "azure", "digitalocean", "shopify", "discord", "pypi")
             for rule, hits in sorted(by_rule.items()):
-                add("SEC", "P1", "gitleaks: %s (%d hit(s))" % (rule, len(hits)),
-                    "Potential secret detected by gitleaks; verify and remediate.",
-                    hits[:10])
+                sev = "P1" if any(k in rule.lower() for k in high) else "P2"
+                add("SEC", sev, "gitleaks: %s (%d hit(s))" % (rule, len(hits)),
+                    "Potential secret detected by gitleaks (unverified; may be a fixture, "
+                    "placeholder, or example file). Confirm and remediate, or allowlist in "
+                    "`.gitleaks.toml`.", hits[:10])
     else:
         add("SEC", "P3", "gitleaks not installed (secret scan skipped)",
             "Install gitleaks in CI to enable the secret scan.", [])
@@ -150,7 +160,7 @@ def check_ci(root, add):
             [])
         return
     if have("actionlint"):
-        r = subprocess.run(["actionlint", "-color", "never"],
+        r = subprocess.run(["actionlint", "-no-color"],
                            cwd=root, capture_output=True, text=True, timeout=300)
         out = (r.stdout + r.stderr).strip()
         if r.returncode != 0 and out:
