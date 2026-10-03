@@ -1,0 +1,66 @@
+# repo-deep-dive CI example (GitHub Actions)
+#
+# Validates the pack itself and any run folder committed with the repo:
+# lint the pack, validate the run, normalize findings, compute the advisory
+# score, and fail the job when P0 findings are present.
+#
+# Adapt before use:
+# - PACK_DIR: where the pack lives (vendored copy or a checked-out path).
+# - RUN_DIR: the run folder to validate, relative to the repo root.
+# - P0 gate: change `fail_on_p0: true` to `false` for advisory-only runs.
+
+name: repo-deep-dive audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_dir:
+        description: "Run folder to validate (e.g. docs/audits/repo-deep-dive/20260101-0000-manual)"
+        required: true
+        default: "docs/audits/repo-deep-dive/latest"
+  pull_request:
+    paths:
+      - "docs/audits/repo-deep-dive/**"
+
+permissions:
+  contents: read
+
+env:
+  PACK_DIR: docs/audits/repo-deep-dive
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lint pack
+        run: ./tools/lint_pack.sh
+        working-directory: ${{ env.PACK_DIR }}
+
+      - name: Validate run
+        run: ./tools/check_run.sh "${{ inputs.run_dir || 'docs/audits/repo-deep-dive/latest' }}"
+        working-directory: ${{ env.PACK_DIR }}
+
+      - name: Run toolchain (validate, normalize, score)
+        run: python3 tools/run_toolchain.py "${{ inputs.run_dir || 'docs/audits/repo-deep-dive/latest' }}" --write --dashboard
+        working-directory: ${{ env.PACK_DIR }}
+
+      - name: P0 gate (fail when P0 findings exist)
+        run: python3 -c "import json,sys; d=json.load(open('findings.json')); sys.exit(1 if d['counts']['bySeverity'].get('P0',0)>0 else 0)"
+        working-directory: ${{ inputs.run_dir || 'docs/audits/repo-deep-dive/latest' }}
+
+      - name: Upload run artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-${{ github.sha }}
+          path: |
+            ${{ inputs.run_dir || 'docs/audits/repo-deep-dive/latest' }}/findings.json
+            ${{ inputs.run_dir || 'docs/audits/repo-deep-dive/latest' }}/risk_score.json
+            ${{ inputs.run_dir || 'docs/audits/repo-deep-dive/latest' }}/dashboard.md

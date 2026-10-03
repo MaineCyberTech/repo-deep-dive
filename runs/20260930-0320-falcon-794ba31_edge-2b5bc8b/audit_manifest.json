@@ -1,0 +1,107 @@
+{
+  "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "packVersion": "1.0.0",
+  "profile": "falcon-lab",
+  "profileVersion": "1.0.0",
+  "recommendedName": "repo-deep-dive",
+  "run": "20260930-0320-falcon-794ba31_edge-2b5bc8b",
+  "runType": "lens-focused",
+  "conversion": true,
+  "convertedAt": "2026-09-30",
+  "auditWindow": "2026-09-30T03:20Z/2026-09-30T03:45Z",
+  "outputRoot": "docs/audits/repo-deep-dive/{run}/",
+  "scope": {
+    "repos": [
+      {
+        "role": "central",
+        "path": "/home/user/falcon-build",
+        "branch": "main",
+        "sha": "794ba31",
+        "shaFull": "794ba317",
+        "dirty": false,
+        "notes": "HEAD at observation; digest bound to 56acec3; origin ref 79dabe21 (6 commits ahead)"
+      },
+      {
+        "role": "edge",
+        "path": "/home/user/falcon-edge-build",
+        "branch": "main",
+        "sha": "2b5bc8b",
+        "dirty": false,
+        "notes": "HEAD moved during the audit (cfaf09d -> ced99b3 -> 2b5bc8b); origin ref 0348fa1f (23 commits ahead)"
+      }
+    ],
+    "hosts": [
+      {
+        "role": "shared-live-host",
+        "access": "read-only",
+        "liveStack": true,
+        "snapshotTakenAt": "2026-09-30T03:20Z/2026-09-30T03:45Z",
+        "notes": "audit account without root/docker/wg; live checks limited to systemd state, listeners, filesystem, HTTP, read-only DB/metrics"
+      }
+    ],
+    "deliveryDirs": ["/home/user/falcon-edge-delivery", "/home/user"]
+  },
+  "promptCount": 44,
+  "waves": [
+    { "id": 0, "name": "recon", "status": "not-run-this-run", "note": "lens-focused run; recon folded into the six source audits" },
+    { "id": 1, "name": "domain-fanout", "status": "not-run-this-run", "note": "domain prompts not executed; schedule a full run after P0/P1 closure" },
+    { "id": 2, "name": "lenses", "status": "complete" },
+    { "id": 3, "name": "synthesis", "status": "complete", "note": "converted synthesis: EXECUTIVE_SUMMARY.md, RELEASE_GATE.md, risk_register.md, roadmap.md, patch_plan.md" },
+    { "id": 4, "name": "doctrine-wiring", "status": "proposed", "note": "decision-log entry proposed; follow_up_register.md populated; no ledger/gate mutation" }
+  ],
+  "lenses": [
+    { "id": "new_developer", "area": "ND", "targets": ["01", "03"], "report": "lens_new_developer.md", "status": "complete", "sourceReports": ["01-falcon-build-new-developer.md", "03-falcon-edge-new-developer.md"] },
+    { "id": "independent_reviewer", "area": "REV", "targets": ["02", "04"], "report": "lens_independent_reviewer.md", "status": "complete", "sourceReports": ["02-falcon-build-reviewer.md", "04-falcon-edge-reviewer.md"] },
+    { "id": "integration", "area": "INTG", "targets": ["05"], "report": "lens_integration.md", "status": "complete", "sourceReports": ["05-integration-two-repos.md"] },
+    { "id": "live_operations", "area": "LIVE", "targets": ["06"], "report": "lens_live_operations.md", "status": "complete", "sourceReports": ["06-live-operations.md"] }
+  ],
+  "sourceReports": [
+    { "file": "source_reports/01-falcon-build-new-developer.md", "sha256": "795db75285caa6e2e336ab09d5f7567e13e272b78bd5d5805b7aaba2df0e02ea" },
+    { "file": "source_reports/02-falcon-build-reviewer.md", "sha256": "47c7436143e70b437cead696ae14aaae7757ca9076c1de315dda1faab86dbd31" },
+    { "file": "source_reports/03-falcon-edge-new-developer.md", "sha256": "7299d2241f504cb155da4e7bd86b63d5f5b3aaff94d591b97083c4deb842996f" },
+    { "file": "source_reports/04-falcon-edge-reviewer.md", "sha256": "fb7b32359508950a0c4fdd7ea63993b15e9e37932bddfa5e0986fe5300255bee" },
+    { "file": "source_reports/05-integration-two-repos.md", "sha256": "9fffd846de174ef3e60dfb8621cb2753ea7246cd1622bcde8712c6f1aa533ad9" },
+    { "file": "source_reports/06-live-operations.md", "sha256": "7945ef297b8b641490e26894d3cd8d5f4a07fa8adc66f6342e8dbcc9464b7512" }
+  ],
+  "severityMapping": {
+    "01": "High->P1, Medium->P2, Low->P3, Info->P3",
+    "02": "HIGH->P1, MED->P2, LOW->P3",
+    "03": "HIGH->P1, MEDIUM->P2, LOW/MEDIUM->P2 (higher value, noted), LOW->P3",
+    "04": "HIGH->P1, MEDIUM->P2, LOW->P3, INFO->P3",
+    "05": "Critical->P0, High->P1, Medium->P2, Low->P3",
+    "06": "source priority P0->P0, P1->P1, P2->P2"
+  },
+  "requiredFinals": [
+    "INDEX.md",
+    "EXECUTIVE_SUMMARY.md",
+    "RELEASE_GATE.md",
+    "risk_register.md",
+    "roadmap.md",
+    "patch_plan.md",
+    "follow_up_register.md",
+    "audit_manifest.json",
+    "lens_new_developer.md",
+    "lens_independent_reviewer.md",
+    "lens_integration.md",
+    "lens_live_operations.md"
+  ],
+  "findings": {
+    "bySeverity": { "P0": 6, "P1": 22, "P2": 35, "P3": 27 },
+    "total": 90,
+    "byArea": { "ND": 34, "REV": 25, "INTG": 15, "LIVE": 16 }
+  },
+  "wiring": {
+    "decisionLogEntryProposed": true,
+    "followUpRegister": "follow_up_register.md",
+    "gateMutation": "none",
+    "ledgerMutation": "none",
+    "repoWiring": "pending; copy run folder into falcon docs/audits/ + edge mirror when the tree settles (coordinate with active sessions)"
+  },
+  "verification": {
+    "mode": false,
+    "fixedFindings": [],
+    "verificationLog": null,
+    "note": "post-audit remediation known at conversion time is recorded in follow_up_register.md; a verification-only pass is the next step"
+  },
+  "reconciliation": "The release gate is an audit opinion. It reconciles with the program's existing APPROVED verdict by stating deltas and recommended reconciliation; it does not revoke or grant a verdict."
+}

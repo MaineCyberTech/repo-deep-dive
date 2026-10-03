@@ -1,0 +1,77 @@
+{
+  "profile": "falcon-lab",
+  "profileVersion": "1.1.0",
+  "basePack": "repo-deep-dive-full-hardening-audit-pack",
+  "basePackVersion": "1.4.1",
+  "promptCount": 46,
+  "auditName": "repo-deep-dive",
+  "runNaming": "YYYYMMDD-HHMM-falcon-<sha7>_edge-<sha7>",
+  "runNamingFallback": "YYYYMMDD-HHMM-manual",
+  "scope": {
+    "centralRepo": "/home/user/falcon-build",
+    "edgeRepo": "/home/user/falcon-edge-build",
+    "deliveryDir": "/home/user/falcon-edge-delivery",
+    "liveHost": true,
+    "liveHostAccess": "read-only unless explicitly sanctioned"
+  },
+  "outputWiring": {
+    "canonicalRunRoot": "<centralRepo>/docs/audits/repo-deep-dive/{run}/",
+    "edgeMirrorRoot": "<edgeRepo>/docs/audits/repo-deep-dive/{run}/",
+    "manifest": "audit_manifest.json",
+    "ledgerMutation": "none; decision-log entry is proposed in wave 4"
+  },
+  "addedPrompts": [
+    { "id": "41", "file": "prompts/41_evidence_doctrine_gate_integrity_audit.md", "area": "EVID" },
+    { "id": "42", "file": "prompts/42_cross_repo_integration_pairing_audit.md", "area": "XREPO" },
+    { "id": "43", "file": "prompts/43_edge_fleet_hardware_audit.md", "area": "FLEET" },
+    { "id": "44", "file": "prompts/44_data_quality_pipeline_fidelity_audit.md", "area": "DQ" }
+  ],
+  "lenses": [
+    { "id": "new_developer", "area": "ND", "file": "lenses/new_developer.md", "report": "lens_new_developer.md", "targets": ["01", "09", "10", "12", "16", "19", "21", "32", "41", "42"] },
+    { "id": "independent_reviewer", "area": "REV", "file": "lenses/independent_reviewer.md", "report": "lens_independent_reviewer.md", "targets": ["22", "23", "32", "33", "34", "35", "41"] },
+    { "id": "integration", "area": "INTG", "file": "lenses/integration.md", "report": "lens_integration.md", "targets": ["02", "08", "12", "13", "14", "30", "32", "42"] },
+    { "id": "live_operations", "area": "LIVE", "file": "lenses/live_operations.md", "report": "lens_live_operations.md", "targets": ["06", "13", "14", "15", "30", "32", "33", "43"] },
+    { "id": "security_adversary", "area": "ADV", "file": "lenses/security_adversary.md", "report": "lens_security_adversary.md", "targets": ["06", "24", "36", "38", "41", "42", "43", "45"] }
+  ],
+  "promptStatus": {
+    "run": ["00", "01", "02", "06", "09", "11", "12", "13", "14", "15", "16", "19", "21", "22", "23", "24", "32", "33", "34", "35", "36", "38", "40", "41", "42", "43", "44", "45"],
+    "adapted": {
+      "03": "Capability map instead of product features",
+      "07": "OpenSearch/Wazuh data and config schemas; no app DB",
+      "08": "Edge control plane, enrollment, ntfy, Prometheus, Wazuh API",
+      "10": "In-repo ci/ and GitHub protections; scripted deployment",
+      "18": "Monitoring-data governance: redaction, retention, personal data",
+      "20": "Agent-facing docs and automation permission boundaries",
+      "30": "ntfy alert delivery reliability",
+      "31": "OpenSearch indices, ISM/retention, data exposure"
+    },
+    "na": {
+      "04": "No end-user app; operator usability via 16 + LIVE lens",
+      "05": "Upstream UIs only",
+      "17": "No mobile surface",
+      "25": "Single tenant; zone isolation via 06/12",
+      "26": "No first-party admin console",
+      "27": "No webhooks",
+      "28": "No app uploads",
+      "29": "Self-hosted, license-free",
+      "37": "Supabase not used",
+      "39": "No analytics"
+    }
+  },
+  "waves": [
+    { "id": 0, "name": "recon", "mode": "sequential", "prompts": ["00", "01", "02"], "outputs": ["run folders", "INDEX skeleton", "audit_manifest.json", "repo/host snapshot"] },
+    { "id": 1, "name": "domain-fanout", "mode": "parallel-subagents", "prompts": ["03", "06", "24", "07", "08", "30", "31", "10", "34", "11", "35", "36", "38", "12", "09", "13", "32", "33", "14", "15", "18", "16", "19", "20", "21", "41", "42", "43", "44", "45"], "na": ["04", "05", "17", "25", "26", "27", "28", "29", "37", "39"] },
+    { "id": 2, "name": "lenses", "mode": "parallel-subagents" },
+    { "id": 3, "name": "synthesis", "prompts": ["22", "23", "40"] },
+    { "id": 4, "name": "doctrine-wiring", "outputs": ["proposed decision-log entry", "follow_up_register.md", "verification plan"] }
+  ],
+  "boundaries": {
+    "auditOnly": true,
+    "noSecretValues": true,
+    "noLedgerMutation": true,
+    "noGateMutation": true,
+    "auditIsNotReviewNorAdoption": true,
+    "recordRepoStateAtStartAndBeforeWrites": true
+  },
+  "reconciliation": "The release gate is an audit opinion; it must reconcile with existing program verdicts and never grant or revoke one."
+}

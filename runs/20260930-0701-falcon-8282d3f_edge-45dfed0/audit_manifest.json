@@ -1,0 +1,594 @@
+{
+  "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "packVersion": "1.2.1",
+  "profile": "falcon-lab",
+  "profileVersion": "1.0.0",
+  "recommendedName": "repo-deep-dive",
+  "run": "20260930-0701-falcon-8282d3f_edge-45dfed0",
+  "runType": "full-domain",
+  "startedAt": "2026-09-30T07:01Z",
+  "outputRoot": "docs/audits/repo-deep-dive/{run}/",
+  "scope": {
+    "repos": [
+      {
+        "role": "central",
+        "path": "/home/user/falcon-build",
+        "branch": "main",
+        "sha": "8282d3f",
+        "dirty": false,
+        "notes": "clean at run start; run artifacts are written into docs/audits/ during the run; parallel-session activity during the run"
+      },
+      {
+        "role": "edge",
+        "path": "/home/user/falcon-edge-build",
+        "branch": "main",
+        "sha": "45dfed0",
+        "dirty": true,
+        "notes": "in-flight CI work at run start: M closeout/OWNER_ACTIONS.md, M docs/GITHUB_CI.md, M ledgers/risk_register.md; ?? .github/workflows/boot-smoke.yml, ?? automation/validation/qemu_boot_smoke.sh; advanced to f1c5def mid-run (CI work committed); agents verified at current HEAD where possible"
+      }
+    ],
+    "hosts": [
+      {
+        "role": "shared-live-host",
+        "access": "read-only",
+        "liveStack": true,
+        "snapshotTakenAt": "2026-09-30T07:01:55Z",
+        "snapshotTool": "tools/live_snapshot.sh",
+        "snapshotFile": "live_snapshot.txt"
+      }
+    ],
+    "deliveryDirs": [
+      "/home/user/falcon-edge-delivery"
+    ]
+  },
+  "promptCount": 45,
+  "waves": [
+    {
+      "id": 0,
+      "name": "recon",
+      "prompts": [
+        "00",
+        "01",
+        "02"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": 1,
+      "name": "domain-fanout",
+      "status": "complete"
+    },
+    {
+      "id": 2,
+      "name": "lenses",
+      "status": "complete"
+    },
+    {
+      "id": 3,
+      "name": "synthesis",
+      "prompts": [
+        "22",
+        "23",
+        "40"
+      ],
+      "status": "complete"
+    },
+    {
+      "id": 4,
+      "name": "doctrine-wiring",
+      "status": "complete"
+    }
+  ],
+  "executionOrder": [
+    "00_audit_orchestrator.md",
+    "01_repository_inventory.md",
+    "02_architecture_runtime_topology.md",
+    "03_feature_implementation_map.md",
+    "06_security_authz_tenancy_audit.md",
+    "24_access_control_matrix_audit.md",
+    "07_data_schema_migration_runtime_validation.md",
+    "08_api_contracts_realtime_integrations.md",
+    "30_notification_email_push_delivery_audit.md",
+    "31_search_indexing_privacy_audit.md",
+    "10_github_actions_cicd_governance.md",
+    "34_branch_protection_required_checks.md",
+    "11_supply_chain_dependency_secrets.md",
+    "35_sbom_license_policy.md",
+    "36_container_runtime_security.md",
+    "38_env_secret_rotation.md",
+    "12_infra_deployment_environment_drift.md",
+    "09_testing_quality_release_confidence.md",
+    "13_resilience_recovery_failure_modes.md",
+    "32_backup_restore_drill.md",
+    "33_incident_tabletop_exercise.md",
+    "14_observability_monitoring_incident_readiness.md",
+    "15_performance_scalability_cost.md",
+    "18_privacy_compliance_data_governance.md",
+    "16_documentation_devex_operator_readiness.md",
+    "19_platform_evolution_extensibility.md",
+    "20_ai_automation_agent_readiness.md",
+    "21_repo_hygiene_maintainability.md",
+    "41_evidence_doctrine_gate_integrity_audit.md",
+    "42_cross_repo_integration_pairing_audit.md",
+    "43_edge_fleet_hardware_audit.md",
+    "44_data_quality_pipeline_fidelity_audit.md",
+    "22_final_risk_register_roadmap.md",
+    "23_executive_summary_release_gate.md",
+    "40_release_notes_changelog_generator.md"
+  ],
+  "naReports": [
+    "04_usability_workflow_audit.md",
+    "05_ui_ux_accessibility_audit.md",
+    "17_mobile_pwa_responsive_access.md",
+    "25_multi_tenant_isolation_attack_simulation.md",
+    "26_admin_console_abuse_case_audit.md",
+    "27_webhook_delivery_replay_idempotency_audit.md",
+    "28_file_upload_download_security_audit.md",
+    "29_billing_payments_reconciliation_audit.md",
+    "37_supabase_rls_policy_deep_dive.md",
+    "39_analytics_tracking_privacy.md"
+  ],
+  "promptStatus": {
+    "run": [
+      "00",
+      "01",
+      "02",
+      "06",
+      "09",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "19",
+      "21",
+      "22",
+      "23",
+      "24",
+      "32",
+      "33",
+      "34",
+      "35",
+      "36",
+      "38",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44"
+    ],
+    "adapted": [
+      "03",
+      "07",
+      "08",
+      "10",
+      "18",
+      "20",
+      "30",
+      "31"
+    ],
+    "na": [
+      "04",
+      "05",
+      "17",
+      "25",
+      "26",
+      "27",
+      "28",
+      "29",
+      "37",
+      "39"
+    ]
+  },
+  "lenses": [
+    {
+      "id": "new_developer",
+      "area": "ND",
+      "targets": [
+        "01",
+        "09",
+        "10",
+        "12",
+        "16",
+        "19",
+        "21",
+        "32",
+        "41",
+        "42"
+      ],
+      "report": "lens_new_developer.md",
+      "status": "complete"
+    },
+    {
+      "id": "independent_reviewer",
+      "area": "REV",
+      "targets": [
+        "22",
+        "23",
+        "32",
+        "33",
+        "34",
+        "35",
+        "41"
+      ],
+      "report": "lens_independent_reviewer.md",
+      "status": "complete"
+    },
+    {
+      "id": "integration",
+      "area": "INTG",
+      "targets": [
+        "02",
+        "08",
+        "12",
+        "13",
+        "14",
+        "30",
+        "32",
+        "42"
+      ],
+      "report": "lens_integration.md",
+      "status": "complete"
+    },
+    {
+      "id": "live_operations",
+      "area": "LIVE",
+      "targets": [
+        "06",
+        "13",
+        "14",
+        "15",
+        "30",
+        "32",
+        "33",
+        "43"
+      ],
+      "report": "lens_live_operations.md",
+      "status": "complete"
+    },
+    {
+      "id": "security_adversary",
+      "area": "ADV",
+      "targets": [
+        "06",
+        "24",
+        "36",
+        "38",
+        "41",
+        "42",
+        "43"
+      ],
+      "report": "lens_security_adversary.md",
+      "status": "complete"
+    }
+  ],
+  "reports": [
+    {
+      "prompt": "00",
+      "path": "00_audit_orchestrator.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "01",
+      "path": "01_repository_inventory.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "02",
+      "path": "02_architecture_runtime_topology.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "03",
+      "path": "03_feature_implementation_map.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "04",
+      "path": "04_usability_workflow_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "05",
+      "path": "05_ui_ux_accessibility_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "06",
+      "path": "06_security_authz_tenancy_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "07",
+      "path": "07_data_schema_migration_runtime_validation.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "08",
+      "path": "08_api_contracts_realtime_integrations.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "09",
+      "path": "09_testing_quality_release_confidence.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "10",
+      "path": "10_github_actions_cicd_governance.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "11",
+      "path": "11_supply_chain_dependency_secrets.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "12",
+      "path": "12_infra_deployment_environment_drift.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "13",
+      "path": "13_resilience_recovery_failure_modes.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "14",
+      "path": "14_observability_monitoring_incident_readiness.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "15",
+      "path": "15_performance_scalability_cost.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "16",
+      "path": "16_documentation_devex_operator_readiness.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "17",
+      "path": "17_mobile_pwa_responsive_access.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "18",
+      "path": "18_privacy_compliance_data_governance.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "19",
+      "path": "19_platform_evolution_extensibility.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "20",
+      "path": "20_ai_automation_agent_readiness.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "21",
+      "path": "21_repo_hygiene_maintainability.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "22",
+      "path": "22_final_risk_register_roadmap.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "23",
+      "path": "23_executive_summary_release_gate.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "24",
+      "path": "24_access_control_matrix_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "25",
+      "path": "25_multi_tenant_isolation_attack_simulation.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "26",
+      "path": "26_admin_console_abuse_case_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "27",
+      "path": "27_webhook_delivery_replay_idempotency_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "28",
+      "path": "28_file_upload_download_security_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "29",
+      "path": "29_billing_payments_reconciliation_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "30",
+      "path": "30_notification_email_push_delivery_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "31",
+      "path": "31_search_indexing_privacy_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "32",
+      "path": "32_backup_restore_drill.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "33",
+      "path": "33_incident_tabletop_exercise.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "34",
+      "path": "34_branch_protection_required_checks.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "35",
+      "path": "35_sbom_license_policy.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "36",
+      "path": "36_container_runtime_security.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "37",
+      "path": "37_supabase_rls_policy_deep_dive.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "38",
+      "path": "38_env_secret_rotation.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "39",
+      "path": "39_analytics_tracking_privacy.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "40",
+      "path": "40_release_notes_changelog_generator.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "41",
+      "path": "41_evidence_doctrine_gate_integrity_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "42",
+      "path": "42_cross_repo_integration_pairing_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "43",
+      "path": "43_edge_fleet_hardware_audit.md",
+      "status": "complete"
+    },
+    {
+      "prompt": "44",
+      "path": "44_data_quality_pipeline_fidelity_audit.md",
+      "status": "complete"
+    }
+  ],
+  "requiredFinals": [
+    "INDEX.md",
+    "risk_register.md",
+    "roadmap.md",
+    "patch_plan.md",
+    "EXECUTIVE_SUMMARY.md",
+    "RELEASE_GATE.md",
+    "access_control_matrix.md",
+    "backup_restore_drill_plan.md",
+    "incident_tabletop_scenarios.md",
+    "branch_protection_recommendation.md",
+    "sbom_license_policy_recommendation.md",
+    "secret_rotation_runbook.md",
+    "release_notes_draft.md",
+    "changelog_draft.md",
+    "audit_manifest.json",
+    "lens_new_developer.md",
+    "lens_independent_reviewer.md",
+    "lens_integration.md",
+    "lens_live_operations.md",
+    "lens_security_adversary.md",
+    "follow_up_register.md"
+  ],
+  "findings": {
+    "bySeverity": {
+      "P0": 13,
+      "P1": 80,
+      "P2": 131,
+      "P3": 40
+    },
+    "byArea": {
+      "ACM": 8,
+      "ADV": 6,
+      "AI": 6,
+      "API": 9,
+      "ARCH": 5,
+      "BP": 6,
+      "CI": 5,
+      "CTR": 7,
+      "DATA": 7,
+      "DOC": 7,
+      "DQ": 9,
+      "DR": 7,
+      "EVID": 10,
+      "EVOL": 6,
+      "EXEC": 2,
+      "FEAT": 5,
+      "FINAL": 6,
+      "FLEET": 8,
+      "HYGIENE": 6,
+      "INFRA": 6,
+      "INTG": 5,
+      "INV": 5,
+      "IR": 8,
+      "LIVE": 9,
+      "ND": 7,
+      "NOTIF": 7,
+      "OBS": 8,
+      "PERF": 8,
+      "PRIV": 7,
+      "RES": 12,
+      "REV": 6,
+      "SBOM": 6,
+      "SC": 6,
+      "SEARCH": 6,
+      "SEC": 8,
+      "SECRET": 9,
+      "TEST": 6,
+      "XREPO": 10
+    },
+    "total": 264
+  },
+  "priorRun": {
+    "run": "20260930-0320-falcon-794ba31_edge-2b5bc8b",
+    "archive": "/home/user/repo-deep-dive/runs/20260930-0320-falcon-794ba31_edge-2b5bc8b/",
+    "findings": 90,
+    "note": "domain agents verify prior findings' status at the current commits"
+  },
+  "wiring": {
+    "decisionLogEntryProposed": true,
+    "followUpRegister": "follow_up_register.md",
+    "gateMutation": "none",
+    "ledgerMutation": "none",
+    "edgeMirror": "/home/user/falcon-edge-build/docs/audits/repo-deep-dive/20260930-0701-falcon-8282d3f_edge-45dfed0/",
+    "decisionLogEntryFile": "decision_log_entry_proposed.md",
+    "decisionLogEntryApplied": "2026-09-30 (falcon commits c11fa94..724302e)"
+  },
+  "verification": {
+    "mode": false,
+    "fixedFindings": [],
+    "verificationLog": null
+  },
+  "completedAt": "2026-09-30",
+  "gate": "GO WITH CONDITIONS",
+  "priorRunTriage": {
+    "verified-fixed": 1,
+    "partially-fixed": 31,
+    "still-open": 53,
+    "regressed": 2,
+    "not-reassessed": 3
+  }
+}

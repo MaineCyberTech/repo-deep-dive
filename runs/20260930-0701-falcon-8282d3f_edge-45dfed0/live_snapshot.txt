@@ -1,0 +1,167 @@
+# Live snapshot — 2026-09-30T07:01:55Z
+# host: falcon · user: user · mode: read-only capture
+
+## Uptime / load
+ 07:01:55 up 1 day, 15:31,  2 users,  load average: 3.28, 7.36, 5.95
+
+## Memory
+               total        used        free      shared  buff/cache   available
+Mem:            11Gi       8.3Gi       812Mi        13Mi       3.3Gi       3.5Gi
+Swap:          8.0Gi       5.5Gi       2.5Gi
+
+## Disk
+Filesystem                           Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv    171G  134G   30G  82% /
+/dev/mapper/ubuntu--vg-falcon--data  122G   70G   47G  60% /srv/falcon
+
+## Failed systemd units
+  UNIT                  LOAD   ACTIVE SUB    DESCRIPTION
+● fwupd-refresh.service loaded failed failed Refresh fwupd metadata and update motd
+● fwupd.service         loaded failed failed Firmware update daemon
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+2 loaded units listed.
+
+## Falcon-related units
+  dev-disk-by\x2did-dm\x2dname\x2dubuntu\x2d\x2dvg\x2dfalcon\x2d\x2ddata.device                                           loaded    active   plugged   /dev/disk/by-id/dm-name-ubuntu--vg-falcon--data
+  dev-mapper-ubuntu\x2d\x2dvg\x2dfalcon\x2d\x2ddata.device                                                                loaded    active   plugged   /dev/mapper/ubuntu--vg-falcon--data
+  dev-ubuntu\x2dvg-falcon\x2ddata.device                                                                                  loaded    active   plugged   /dev/ubuntu-vg/falcon-data
+  srv-falcon.mount                                                                                                        loaded    active   mounted   /srv/falcon
+  edge-control-plane.service                                                                                              loaded    active   running   Falcon Edge Sensor control plane (lab)
+  falcon-alert-relay.service                                                                                              loaded    active   running   Grafana alert relay: formats alert webhooks into readable ntfy notifications
+  falcon-backup.service                                                                                                   loaded    inactive dead      Monitoring backup job (snapshot + encrypted config + offsite attempt)
+  falcon-disk-guard.service                                                                                               loaded    inactive dead      Falcon disk guard: reclaim space below 5 GiB and alert
+  falcon-docker-user-firewall.service                                                                                     loaded    active   exited    mon lab: restrict Docker-published ports to the management subnet
+  falcon-edge-metrics.service                                                                                             loaded    inactive dead      Falcon Edge fleet metrics exporter (node-exporter textfile collector)
+  falcon-edge-operator-cert.service                                                                                       loaded    inactive dead      Renew the lab operator certificate when it is close to expiry
+  falcon-edge-secrets-backup.service                                                                                      loaded    inactive dead      Back up the lab control-plane secrets (mode 0600 archive)
+  falcon-heartbeat.service                                                                                                loaded    inactive dead      Falcon dead-man heartbeat (Phase 9 WS6 prototype; production must run outside the monitored stack)
+  falcon-metrics.service                                                                                                  loaded    inactive dead      Export monitoring-health metrics for Prometheus
+  falcon-nfacctd.service                                                                                                  loaded    active   running   nfacctd NetFlow/IPFIX collection (license-free)
+  falcon-pmacct.service                                                                                                   loaded    active   running   pmacctd flow telemetry on the SPAN interface (license-free)
+  falcon-service-probe.service                                                                                            loaded    inactive dead      Falcon service probe: user-facing availability metrics for Prometheus
+  falcon-span-interface.service                                                                                           loaded    active   exited    Bring up the SPAN capture interface (ens19) in promiscuous mode
+  falcon-vpn-enroll.service                                                                                               loaded    active   running   Falcon client VPN peer enrollment service
+  falcon-wazuh-agent-proxy.service                                                                                        loaded    active   running   Proxy Wazuh traffic to the manager 127.0.0.1:1516
+  falcon-wazuh-enroll-proxy.service                                                                                       loaded    active   running   Proxy Wazuh traffic to the manager 127.0.0.1:1517
+  falcon-wazuh-agent-proxy.socket                                                                                         loaded    active   running   Falcon Wazuh proxy socket (VPN only) for port 15140
+  falcon-wazuh-enroll-proxy.socket                                                                                        loaded    active   running   Falcon Wazuh proxy socket (VPN only) for port 15141
+  blockdev@dev-mapper-ubuntu\x2d\x2dvg\x2dfalcon\x2d\x2ddata.target                                                       loaded    inactive dead      Block Device Preparation for /dev/mapper/ubuntu--vg-falcon--data
+  falcon-backup.timer                                                                                                     loaded    active   waiting   Run the monitoring backup job daily
+  falcon-disk-guard.timer                                                                                                 loaded    active   waiting   Run the Falcon disk guard every 15 minutes
+  falcon-edge-metrics.timer                                                                                               loaded    active   waiting   Run the Falcon Edge fleet metrics exporter every 5 minutes
+  falcon-edge-operator-cert.timer                                                                                         loaded    active   waiting   Daily operator-certificate expiry check
+  falcon-edge-secrets-backup.timer                                                                                        loaded    active   waiting   Daily edge secrets backup
+  falcon-heartbeat.timer                                                                                                  loaded    active   waiting   Daily Falcon dead-man heartbeat
+  falcon-metrics.timer                                                                                                    loaded    active   waiting   Run monitoring-health metrics export every minute
+  falcon-service-probe.timer                                                                                              loaded    active   waiting   Run the Falcon service probe every two minutes
+
+## Falcon-related timers
+Wed 2026-09-30 07:02:00 UTC            4s Wed 2026-09-30 07:00:25 UTC 1min 30s ago falcon-service-probe.timer       falcon-service-probe.service
+Wed 2026-09-30 07:02:40 UTC           44s Wed 2026-09-30 07:01:40 UTC      15s ago falcon-metrics.timer             falcon-metrics.service
+Wed 2026-09-30 07:04:31 UTC      2min 36s Wed 2026-09-30 06:59:31 UTC 2min 23s ago falcon-edge-metrics.timer        falcon-edge-metrics.service
+Wed 2026-09-30 07:15:00 UTC         13min Wed 2026-09-30 07:00:25 UTC 1min 30s ago falcon-disk-guard.timer          falcon-disk-guard.service
+Thu 2026-10-01 00:00:00 UTC           16h Wed 2026-09-30 00:00:20 UTC       7h ago falcon-heartbeat.timer           falcon-heartbeat.service
+Thu 2026-10-01 01:13:53 UTC           18h Wed 2026-09-30 01:13:53 UTC 5h 48min ago falcon-edge-operator-cert.timer  falcon-edge-operator-cert.service
+Thu 2026-10-01 01:13:56 UTC           18h Wed 2026-09-30 01:13:56 UTC 5h 47min ago falcon-edge-secrets-backup.timer falcon-edge-secrets-backup.service
+Thu 2026-10-01 03:30:00 UTC           20h Wed 2026-09-30 03:30:05 UTC 3h 31min ago falcon-backup.timer              falcon-backup.service
+
+## Listening sockets (first 60)
+Netid State  Recv-Q Send-Q         Local Address:Port  Peer Address:PortProcess
+udp   UNCONN 0      0                    0.0.0.0:5182       0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:15140      0.0.0.0:*          
+udp   UNCONN 0      0                 127.0.0.54:53         0.0.0.0:*          
+udp   UNCONN 0      0              127.0.0.53%lo:53         0.0.0.0:*          
+udp   UNCONN 0      0      192.168.222.228%ens18:68         0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:514        0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:1518       0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:2055       0.0.0.0:*          
+udp   UNCONN 0      0                          *:37575            *:*          
+udp   UNCONN 0      0                       [::]:5182          [::]:*          
+udp   UNCONN 0      0                          *:39931            *:*          
+udp   UNCONN 0      0                          *:56726            *:*          
+udp   UNCONN 0      0                          *:58956            *:*          
+udp   UNCONN 0      0                          *:60677            *:*          
+udp   UNCONN 0      0                          *:46546            *:*          
+udp   UNCONN 0      0                          *:32870            *:*          
+udp   UNCONN 0      0                          *:36768            *:*          
+tcp   LISTEN 0      4096               127.0.0.1:34563      0.0.0.0:*          
+tcp   LISTEN 0      5                 172.17.0.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      512                127.0.0.1:49374      0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:20242      0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:2586       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.2.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:55000      0.0.0.0:*          
+tcp   LISTEN 0      5                    0.0.0.0:8791       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:5601       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:9100       0.0.0.0:*          
+tcp   LISTEN 0      5                    0.0.0.0:9443       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.8.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.3.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:9200       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:8443       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.4.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096               10.99.0.1:15141      0.0.0.0:*          
+tcp   LISTEN 0      4096               10.99.0.1:15140      0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.5.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.1.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:8008       0.0.0.0:*          
+tcp   LISTEN 0      4096           127.0.0.53%lo:53         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:80         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:22         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:23         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:21         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:443        0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:514        0.0.0.0:*          
+tcp   LISTEN 0      25                   0.0.0.0:1514       0.0.0.0:*          
+tcp   LISTEN 0      25                   0.0.0.0:1515       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:1518       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:1516       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:1517       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:1433       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.7.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.6.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096              127.0.0.54:53         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:3306       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.0.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096                    [::]:22            [::]:*          
+tcp   LISTEN 0      25                      [::]:1514          [::]:*          
+tcp   LISTEN 0      25                      [::]:1515          [::]:*          
+
+## WireGuard
+(unavailable: permission or not installed)
+
+## Docker (expected unavailable for the audit account)
+(unavailable)
+
+## Local HTTP probes (unauthenticated)
+  http://127.0.0.1:2586/v1/health -> 200
+  http://127.0.0.1:9200 -> 000ERR
+  https://127.0.0.1/ -> 404
+
+## Journal errors (last 20, if readable)
+Sep 30 03:21:30 falcon sudo[832157]:     user : a password is required ; PWD=/home/user/falcon-build ; USER=root ; COMMAND=/usr/bin/ls /srv/falcon/secrets
+Sep 30 03:22:16 falcon sudo[834219]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/sbin/nft list ruleset
+Sep 30 03:22:16 falcon sudo[834224]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/ss -tulpn
+Sep 30 03:22:22 falcon sudo[835611]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/docker ps --format {{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Ports}}
+Sep 30 03:24:09 falcon sudo[840682]:     user : 3 incorrect password attempts ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/python3 -
+Sep 30 03:24:37 falcon sudo[842259]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/sbin/nft list chain inet falcon_filter input
+Sep 30 03:27:08 falcon sudo[848959]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/true
+Sep 30 03:27:34 falcon sudo[849845]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/sbin/sshd -T
+Sep 30 03:28:13 falcon sudo[854122]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/wg show wg0 latest-handshakes
+Sep 30 03:29:13 falcon sudo[856998]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/ss -tlnp
+Sep 30 03:45:15 falcon systemd[1]: Failed to start fwupd.service - Firmware update daemon.
+Sep 30 03:45:40 falcon systemd[1]: Failed to start fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Sep 30 04:16:15 falcon sudo[980399]:     user : 3 incorrect password attempts ; PWD=/home/user/falcon-build ; USER=root ; COMMAND=/usr/bin/python3 -
+Sep 30 04:26:21 falcon systemd[1]: Failed to start fwupd.service - Firmware update daemon.
+Sep 30 04:26:46 falcon systemd[1]: Failed to start fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Sep 30 05:09:30 falcon systemd[1]: Failed to start fwupd.service - Firmware update daemon.
+Sep 30 05:09:55 falcon systemd[1]: Failed to start fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Sep 30 06:44:36 falcon systemd[1]: Failed to start fwupd.service - Firmware update daemon.
+Sep 30 06:45:01 falcon systemd[1]: Failed to start fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Sep 30 06:54:47 falcon sudo[1437623]:     user : 3 incorrect password attempts ; PWD=/home/user/falcon-build ; USER=root ; COMMAND=/usr/bin/python3 -
+
+# end of snapshot

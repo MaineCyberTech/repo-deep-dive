@@ -1,0 +1,157 @@
+{
+  "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "packVersion": "1.4.1",
+  "profile": "falcon-lab",
+  "profileVersion": "1.1.0",
+  "recommendedName": "repo-deep-dive",
+  "run": "YYYYMMDD-HHMM-falcon-<sha7>_edge-<sha7>",
+  "outputRoot": "docs/audits/repo-deep-dive/{run}/",
+  "scope": {
+    "repos": [
+      {
+        "role": "central",
+        "path": "/home/user/falcon-build",
+        "branch": "<branch>",
+        "sha": "<sha7>",
+        "dirty": false,
+        "notes": "record any parallel-session activity"
+      },
+      {
+        "role": "edge",
+        "path": "/home/user/falcon-edge-build",
+        "branch": "<branch>",
+        "sha": "<sha7>",
+        "dirty": false
+      }
+    ],
+    "hosts": [
+      {
+        "role": "shared-live-host",
+        "access": "read-only unless explicitly sanctioned",
+        "liveStack": true,
+        "snapshotTakenAt": "<ISO-8601>",
+        "snapshotTool": "tools/live_snapshot.sh"
+      }
+    ],
+    "deliveryDirs": ["/home/user/falcon-edge-delivery"]
+  },
+  "promptCount": 46,
+  "waves": [
+    { "id": 0, "name": "recon", "prompts": ["00", "01", "02"], "status": "complete" },
+    { "id": 1, "name": "domain-fanout", "status": "complete" },
+    { "id": 2, "name": "lenses", "status": "complete" },
+    { "id": 3, "name": "synthesis", "prompts": ["22", "23", "40"], "status": "complete" },
+    { "id": 4, "name": "doctrine-wiring", "status": "complete" }
+  ],
+  "executionOrder": [
+    "00_audit_orchestrator.md",
+    "01_repository_inventory.md",
+    "02_architecture_runtime_topology.md",
+    "03_feature_implementation_map.md",
+    "06_security_authz_tenancy_audit.md",
+    "24_access_control_matrix_audit.md",
+    "07_data_schema_migration_runtime_validation.md",
+    "08_api_contracts_realtime_integrations.md",
+    "30_notification_email_push_delivery_audit.md",
+    "31_search_indexing_privacy_audit.md",
+    "10_github_actions_cicd_governance.md",
+    "34_branch_protection_required_checks.md",
+    "11_supply_chain_dependency_secrets.md",
+    "35_sbom_license_policy.md",
+    "36_container_runtime_security.md",
+    "38_env_secret_rotation.md",
+    "12_infra_deployment_environment_drift.md",
+    "09_testing_quality_release_confidence.md",
+    "13_resilience_recovery_failure_modes.md",
+    "32_backup_restore_drill.md",
+    "33_incident_tabletop_exercise.md",
+    "14_observability_monitoring_incident_readiness.md",
+    "15_performance_scalability_cost.md",
+    "18_privacy_compliance_data_governance.md",
+    "16_documentation_devex_operator_readiness.md",
+    "19_platform_evolution_extensibility.md",
+    "20_ai_automation_agent_readiness.md",
+    "21_repo_hygiene_maintainability.md",
+    "41_evidence_doctrine_gate_integrity_audit.md",
+    "42_cross_repo_integration_pairing_audit.md",
+    "43_edge_fleet_hardware_audit.md",
+    "44_data_quality_pipeline_fidelity_audit.md",
+    "45_exploit_chain_attack_path_audit.md",
+    "22_final_risk_register_roadmap.md",
+    "23_executive_summary_release_gate.md",
+    "40_release_notes_changelog_generator.md"
+  ],
+  "naReports": [
+    "04_usability_workflow_audit.md",
+    "05_ui_ux_accessibility_audit.md",
+    "17_mobile_pwa_responsive_access.md",
+    "25_multi_tenant_isolation_attack_simulation.md",
+    "26_admin_console_abuse_case_audit.md",
+    "27_webhook_delivery_replay_idempotency_audit.md",
+    "28_file_upload_download_security_audit.md",
+    "29_billing_payments_reconciliation_audit.md",
+    "37_supabase_rls_policy_deep_dive.md",
+    "39_analytics_tracking_privacy.md"
+  ],
+  "promptStatus": {
+    "run": ["00", "01", "02", "06", "09", "11", "12", "13", "14", "15", "16", "19", "21", "22", "23", "24", "32", "33", "34", "35", "36", "38", "40", "41", "42", "43", "44", "45"],
+    "adapted": ["03", "07", "08", "10", "18", "20", "30", "31"],
+    "na": ["04", "05", "17", "25", "26", "27", "28", "29", "37", "39"]
+  },
+  "lenses": [
+    { "id": "new_developer", "area": "ND", "targets": ["01", "09", "10", "12", "16", "19", "21", "32", "41", "42"], "report": "lens_new_developer.md", "status": "complete" },
+    { "id": "independent_reviewer", "area": "REV", "targets": ["22", "23", "32", "33", "34", "35", "41"], "report": "lens_independent_reviewer.md", "status": "complete" },
+    { "id": "integration", "area": "INTG", "targets": ["02", "08", "12", "13", "14", "30", "32", "42"], "report": "lens_integration.md", "status": "complete" },
+    { "id": "live_operations", "area": "LIVE", "targets": ["06", "13", "14", "15", "30", "32", "33", "43"], "report": "lens_live_operations.md", "status": "complete" },
+    { "id": "security_adversary", "area": "ADV", "targets": ["06", "24", "36", "38", "41", "42", "43", "45"], "report": "lens_security_adversary.md", "status": "complete" }
+  ],
+  "reports": [
+    { "prompt": "00", "path": "00_audit_orchestrator.md", "status": "complete" },
+    { "prompt": "41", "path": "41_evidence_doctrine_gate_integrity_audit.md", "status": "complete" },
+    { "prompt": "42", "path": "42_cross_repo_integration_pairing_audit.md", "status": "complete" },
+    { "prompt": "43", "path": "43_edge_fleet_hardware_audit.md", "status": "complete" },
+    { "prompt": "44", "path": "44_data_quality_pipeline_fidelity_audit.md", "status": "complete" },
+    { "prompt": "22", "path": "22_final_risk_register_roadmap.md", "status": "complete" },
+    { "prompt": "23", "path": "23_executive_summary_release_gate.md", "status": "complete" },
+    { "prompt": "40", "path": "40_release_notes_changelog_generator.md", "status": "complete" }
+  ],
+  "requiredFinals": [
+    "INDEX.md",
+    "risk_register.md",
+    "roadmap.md",
+    "patch_plan.md",
+    "EXECUTIVE_SUMMARY.md",
+    "RELEASE_GATE.md",
+    "access_control_matrix.md",
+    "backup_restore_drill_plan.md",
+    "incident_tabletop_scenarios.md",
+    "branch_protection_recommendation.md",
+    "sbom_license_policy_recommendation.md",
+    "secret_rotation_runbook.md",
+    "release_notes_draft.md",
+    "changelog_draft.md",
+    "audit_manifest.json",
+    "lens_new_developer.md",
+    "lens_independent_reviewer.md",
+    "lens_integration.md",
+    "lens_live_operations.md",
+    "lens_security_adversary.md",
+    "follow_up_register.md"
+  ],
+  "findings": {
+    "bySeverity": { "P0": 0, "P1": 0, "P2": 0, "P3": 0 },
+    "byArea": {}
+  },
+  "wiring": {
+    "decisionLogEntryProposed": true,
+    "followUpRegister": "follow_up_register.md",
+    "gateMutation": "none",
+    "ledgerMutation": "none",
+    "edgeMirror": "<edgeRepo>/docs/audits/repo-deep-dive/{run}/"
+  },
+  "verification": {
+    "mode": false,
+    "fixedFindings": [],
+    "verificationLog": null
+  }
+}
