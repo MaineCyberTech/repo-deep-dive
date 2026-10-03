@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T06:27:19Z
-# files: 411
+# generated: 2026-10-03T06:30:39Z
+# files: 412
 # format: sha256  path
 06ae19670ef32cf470931f55021e2647e86d9340826c8cfcc49acce60bea84f2  ./.github/workflows/deep-dive-deterministic.yml
 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
@@ -405,6 +405,7 @@ add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_fi
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
 e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_digest.sh
 2ab0e297f012e51a1f196fe01ba90dfd29b1f429b1a41404a4b7eed619116c70  ./tools/remediation_plan.py
+061ef83b0702787d3b20b4a3b9edddc011ee1ee37d5ba2e0642d8854536cd0e5  ./tools/remediation_report.py
 2e560d8a73ad4bdcc62c59205bceb7dcf0ba09d416328c1d791b7ce2bc207e64  ./tools/remediation_status.py
 8d23ac69e0792a65a386b054da66b004bd6c32b9bf6324581ea363c2ad0623a3  ./tools/render_dashboard.py
 1bbef3888efd79aafcbc48c1dda86143b583b604c0b5daa3402e091a27e94739  ./tools/repo_inventory.py
