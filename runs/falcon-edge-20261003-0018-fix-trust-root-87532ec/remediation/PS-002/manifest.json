@@ -1,0 +1,54 @@
+{
+  "patchSet": "PS-002",
+  "repo": "falcon-edge",
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "base": "main",
+  "baseCommit": "af6f83a",
+  "branch": "remediation/ps-002-20261003-0018-fix-trust-root-87532ec",
+  "commit": "f19e5bc98bb312f8813b3679bfd26f2cc4f03531",
+  "pr": "https://github.com/MaineCyberTech/falcon-edge/pull/18",
+  "prState": "draft",
+  "findings": ["CI-P2-002"],
+  "files": [
+    ".github/workflows/dependabot-merge.yml"
+  ],
+  "runner": "edge-builder VM (172.23.128.51) via lab-sync.ps1 / lab-run.ps1",
+  "commands": [
+    {
+      "command": "actionlint .github/workflows/dependabot-merge.yml",
+      "runner": "edge-builder VM (actionlint 1.7.12)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase2",
+      "runner": "edge-builder VM (pytest 8.3.5)",
+      "exit": 0,
+      "result": "73 passed in 77.39s"
+    },
+    {
+      "command": "python3 -m pytest -q tests/phase10/test_ci_doc_drift.py",
+      "runner": "edge-builder VM (pytest 8.3.5)",
+      "exit": 0,
+      "result": "2 passed in 0.03s"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . -v",
+      "runner": "edge-builder VM (gitleaks 8.30.1)",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "command": "python3 /tmp/test_ps002_workflow.py",
+      "runner": "edge-builder VM (executes shipped run-block against a mock gh)",
+      "exit": 0,
+      "result": "5/5 scenarios pass: head-move refused; patch merge bound via --match-head-commit; major/grouped/untrusted skipped"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-002/diff.patch",
+    "sha256": "5bd547528d6283f918ba4519a359019143eb7d352070484d28e28a1c9675da0f"
+  },
+  "verifyLog": "remediation/PS-002/verify.log",
+  "generated": "2026-10-03T06:35:13Z"
+}

@@ -1,0 +1,78 @@
+{
+  "patch_set": "PATCH-01",
+  "title": "Remove production RLS weakening",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-01-20261003-0018-develop-a72b8cc",
+  "commit": "1b9b0ca096b9493936e7d7c74600e330082542f8",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/56",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["SEC-P0-001", "CI-P1-002", "DATA-P1-001"],
+  "files": [
+    ".github/workflows/deploy-production.yml",
+    ".github/workflows/deploy-development.yml"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-01/diff.patch",
+    "sha256": "a5a79b200636e50a944bd6553d5545c46265d3958fef5a8958330e2b79467eff",
+    "insertions": 0,
+    "deletions": 273
+  },
+  "verification": [
+    {
+      "command": "rg \"USING \\(true\\)|database/query\" .github/workflows/deploy-production.yml",
+      "runner": "local-rg",
+      "exit_code": 1,
+      "result": "pass (no matches)"
+    },
+    {
+      "command": "rg -n \"Seed auth users|USING \\(true\\)|database/query|users_select|workspace_members_select|encrypted_password|seed\\.test|auth\\.identities|auth\\.users\" .github/workflows/deploy-production.yml .github/workflows/deploy-development.yml",
+      "runner": "local-rg",
+      "exit_code": 1,
+      "result": "pass (no matches)"
+    },
+    {
+      "command": "git diff --name-only",
+      "runner": "git",
+      "exit_code": 0,
+      "result": "only the 2 in-scope workflow files"
+    },
+    {
+      "command": "rg -n users_select_own supabase/migrations/20260626000022_apply_rls_policies.sql",
+      "runner": "local-rg",
+      "exit_code": 0,
+      "result": "least-privilege users_select_own still defined"
+    },
+    {
+      "command": "python (PyYAML) parse both workflows",
+      "runner": "local-python",
+      "exit_code": 0,
+      "result": "OK"
+    },
+    {
+      "command": "git diff --numstat",
+      "runner": "git",
+      "exit_code": 0,
+      "result": "0 138 / 0 135 (deletion only, 0 insertions)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact",
+      "runner": "n/a",
+      "exit_code": null,
+      "result": "not run: gitleaks not installed/on PATH; manual deletion-only gate passed (0 added lines)"
+    },
+    {
+      "command": "supabase start && supabase db reset",
+      "runner": "n/a",
+      "exit_code": null,
+      "result": "not run: supabase CLI not installed/on PATH"
+    }
+  ],
+  "verify_log": "remediation/PATCH-01/verify.log",
+  "generated_at": "2026-10-03T01:36:00-04:00"
+}

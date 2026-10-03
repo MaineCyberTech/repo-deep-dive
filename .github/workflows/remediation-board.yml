@@ -1,0 +1,36 @@
+name: Remediation board
+
+# Publishes the org-wide remediation status board from the archived runs in this pack.
+# Read-only: never pushes or merges.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 1' # Mondays 07:00 UTC, after the deterministic sweep
+
+permissions:
+  contents: read
+
+jobs:
+  board:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout pack
+        uses: actions/checkout@v4
+
+      - name: Build board
+        run: |
+          set -e
+          mkdir -p out
+          python3 tools/remediation_report.py --runs-dir runs --out REMEDIATION_REPORT.md --json out/remediation_report.json
+          cat REMEDIATION_REPORT.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remediation-board
+          path: |
+            REMEDIATION_REPORT.md
+            out/remediation_report.json
+          if-no-files-found: warn

@@ -1,0 +1,20 @@
+# Lab verification - chat PATCH-01 (ci-runner, 2026-10-03)
+
+Runner: Proxmox ci-runner (LXC 200), node 20.20.2 / pnpm 10.34.3 / gitleaks 8.30.1.
+Branch under test: remediation/patch-01-20261003-0018-develop-a72b8cc @ 1b9b0ca.
+
+PATCH-01 rg check (USING (true) / database/query in deploy-production.yml + deploy-development.yml):
+  => no matches (PASS). Residual seed/test-user check: none (PASS). Diff vs develop: 273 deletions.
+
+Repo CI on the branch (base state + fix):
+  pnpm install --frozen-lockfile  => rc=0
+  pnpm typecheck                  => rc=0 (11 tasks)
+  pnpm test                       => rc=1 — @chat/api 485 tests PASS; @chat/web build FAILS at
+                                     prerender /install: "ReferenceError: navigator is not defined"
+                                     (pre-existing at develop, unrelated to PATCH-01)
+
+gitleaks (git mode, tracked files): 8 findings, all pre-existing false positives
+  (generic-api-key in keyboard-shortcuts.tsx; jwt in validate.yml and infra/docker/.env.dev.example).
+
+Conclusion: PATCH-01 verified in the lab (P0 RLS weakening removed). The web /install prerender
+build failure is a separate, pre-existing release blocker worth its own finding.

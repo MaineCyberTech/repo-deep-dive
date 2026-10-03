@@ -1,0 +1,70 @@
+# Remediation verification - PS-002 (falcon-edge)
+# Finding: CI-P2-002 - Dependabot auto-merge does not bind the merge to the exact checked commit
+# Branch: remediation/ps-002-20261003-0018-fix-trust-root-87532ec
+# Base:   origin/main (af6f83a)
+# Tree:   working tree with .github/workflows/dependabot-merge.yml modified vs af6f83a
+#         (captured pre-commit; the committed SHA is recorded in manifest.json)
+# Runner: edge-builder VM (172.23.128.51) via lab-sync.ps1 / lab-run.ps1
+# Captured: 2026-10-03T06:32:52Z
+# Changed: .github/workflows/dependabot-merge.yml (only)
+
+# NOTE: the patch-plan verification 'workflow test where PR head changes mid-check' is not a
+# GitHub-hosted test in this repo; it is exercised by the functional run-block test in
+# /tmp/test_ps002_workflow.py, which executes the shipped run-block against a mock gh.
+
+## actionlint .github/workflows/dependabot-merge.yml
+$ actionlint .github/workflows/dependabot-merge.yml
+EXIT=0
+
+## python3 -m pytest -q tests/phase2
+$ python3 -m pytest -q tests/phase2
+........................................................................ [ 98%]
+.                                                                        [100%]
+73 passed in 77.39s (0:01:17)
+EXIT=0
+
+## python3 -m pytest -q tests/phase10/test_ci_doc_drift.py
+$ python3 -m pytest -q tests/phase10/test_ci_doc_drift.py
+..                                                                       [100%]
+2 passed in 0.03s
+EXIT=0
+
+## gitleaks detect --no-git --redact --source . -v
+$ gitleaks detect --no-git --redact --source . -v
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m6:34AM[0m [32mINF[0m [1mscanned ~7334310 bytes (7.33 MB) in 2.53s[0m
+[90m6:34AM[0m [32mINF[0m [1mno leaks found[0m
+EXIT=0
+
+## python3 /tmp/test_ps002_workflow.py (S1..S5 functional run-block test)
+$ python3 /tmp/test_ps002_workflow.py
+== S1-head-moved ==
+skip PR #1 (head moved aaaa -> bbbb during checks)
+exit=0 merged=False -> PASS
+
+== S2-patch-merge-bound ==
+merging dependabot PR #1 at aaaa (patch/minor; checks green)
+MOCK_MERGE pr merge 1 --repo test/repo --squash --delete-branch --match-head-commit aaaa
+exit=0 merged=True -> PASS
+
+== S3-major-skipped ==
+skip PR #1 (not a verifiable patch/minor update: 'Bump foo from 1.2.3 to 2.0.0')
+exit=0 merged=False -> PASS
+
+== S4-grouped-skipped ==
+skip PR #1 (not a verifiable patch/minor update: 'Bump the npm group across 1 directory with 3 updates')
+exit=0 merged=False -> PASS
+
+== S5-untrusted-author ==
+skip PR #1 (author 'attacker' is not the trusted dependabot[bot])
+exit=0 merged=False -> PASS
+
+PREDICATE_TEST_EXIT=0
+EXIT=0
+

@@ -1,0 +1,69 @@
+{
+  "patch_set": "PATCH-16",
+  "title": "Fix /install SSR prerender (navigator is not defined)",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-16-20261003-0018-develop-a72b8cc",
+  "commit": "c01525def487107299ef04148e20854c90f013a3",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/57",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["BLD-P1-001"],
+  "files": [
+    "apps/web/app/install/page.tsx",
+    "apps/web/lib/pwa/install-state.ts",
+    "apps/web/components/pwa/__tests__/install-state.test.ts"
+  ],
+  "in_scope_files": [
+    "apps/web/app/install/page.tsx",
+    "apps/web/lib/pwa/install-state.ts"
+  ],
+  "test_files": [
+    "apps/web/components/pwa/__tests__/install-state.test.ts"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-16/diff.patch",
+    "sha256": "FBEFE2A19DE89185ED9CF8A03D3813964C26DA789CDCDE2F5C916EE10A9D02D6",
+    "insertions": 58,
+    "deletions": 15
+  },
+  "verification": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter web build",
+      "runner": "lab-ci-runner",
+      "exit_code": 0,
+      "result": "pass: web build succeeded; Generating static pages (9/9); route /install is prerendered (o)"
+    },
+    {
+      "command": "corepack pnpm exec vitest run --config vitest.config.ts apps/web/components/pwa/__tests__/install-state.test.ts apps/web/components/pwa/__tests__/install-prompt.test.tsx",
+      "runner": "lab-ci-runner",
+      "exit_code": 0,
+      "result": "pass: 2 files, 10 tests passed"
+    },
+    {
+      "command": "corepack pnpm --filter web typecheck",
+      "runner": "lab-ci-runner",
+      "exit_code": 0,
+      "result": "pass: tsc --noEmit clean"
+    },
+    {
+      "command": "gitleaks dir /tmp/p16scan --redact",
+      "runner": "lab-ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (scanned 11.50 KB)"
+    },
+    {
+      "command": "git diff --cached --unified=0 ... | gitleaks stdin --redact",
+      "runner": "lab-ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (scanned 2.77 KB)"
+    }
+  ],
+  "verify_log": "remediation/PATCH-16/verify.log",
+  "pr_body": "remediation/PATCH-16/pr_body.md",
+  "generated_at": "2026-10-03T06:02:00-04:00"
+}

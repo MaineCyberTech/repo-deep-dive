@@ -1,0 +1,55 @@
+{
+  "patchSet": "PATCH-04",
+  "title": "Scope admin endpoints to caller's workspaces",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "chat",
+  "base": "origin/develop",
+  "baseCommit": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-04-20261003-0018-develop-a72b8cc",
+  "commit": "c41aa79994f291f22b12a0b9504edb88170c1ff8",
+  "pr": "https://github.com/MaineCyberTech/chat/pull/58",
+  "prDraft": true,
+  "findings": ["SEC-P1-003", "SEC-P1-004", "SEC-P1-005", "SEC-P1-006"],
+  "files": [
+    "apps/api/src/modules/admin/routes.ts",
+    "apps/api/src/modules/admin/__tests__/admin.test.ts",
+    "apps/api/src/modules/import/routes.ts",
+    "apps/api/src/modules/import/__tests__/import.test.ts"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-04/diff.patch",
+    "sha256": "eca14f5447e9bfaaaa41bf6e1d1dcc3e1c3a10c401ff55ce0c09c4d97eddc71d"
+  },
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "Test Files 62 passed (62); Tests 495 passed (495)",
+      "evidence": "remediation/PATCH-04/verify.log"
+    },
+    {
+      "command": "corepack pnpm exec vitest run apps/api/src/modules/admin apps/api/src/modules/import && corepack pnpm --filter api typecheck",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "Tests 28 passed (28); tsc --noEmit clean",
+      "evidence": "remediation/PATCH-04/verify.log"
+    },
+    {
+      "command": "gitleaks protect --staged --redact --exit-code 1",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "no leaks found (diff/staged)",
+      "evidence": "remediation/PATCH-04/gitleaks.log"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --exit-code 1",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 1,
+      "result": "47 pre-existing findings, all in lab-local generated artifacts under apps/web/.next/cache/** (outside this patch)",
+      "evidence": "remediation/PATCH-04/gitleaks.log"
+    }
+  ],
+  "scopeCheck": "pass - only patch-set files plus their tests",
+  "generated": "2026-10-03T06:36:00Z"
+}

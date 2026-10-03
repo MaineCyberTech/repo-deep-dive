@@ -36,6 +36,16 @@ Policy for `prompts/REMEDIATION_RUNNER.md` and the `remediation` workflow. Tune 
 | `falcon-edge` | `edge-builder` (VM 201) | `bash ci/validate.sh`; image bake where relevant |
 | `repo-deep-dive` | `ci-runner` | `bash tools/lint_pack.sh` |
 
+Access: use the **job API** (`tools/lab_runner.py`), not ad-hoc SSH. Sync + run in one hop:
+
+```bash
+tools/lab_runner.py --url $LAB_URL --token $LAB_API_TOKEN --sync --repo <repo> --org MaineCyberTech
+tools/lab_runner.py --url $LAB_URL --token $LAB_API_TOKEN --repo <repo> --command "<verify command>"
+```
+
+The lab images include `actionlint`, `yq`, `hadolint`, `trivy`, `gh`, `shellcheck`, `jq`,
+`gitleaks`, and `pytest`, so verification commands run without setup.
+
 Detection fallback: read `package.json` scripts / `Makefile` / `ci/validate.*` in the repo.
 
 ## Evidence

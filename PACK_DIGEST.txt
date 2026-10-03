@@ -1,15 +1,16 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T06:30:39Z
-# files: 412
+# generated: 2026-10-03T06:37:11Z
+# files: 437
 # format: sha256  path
-06ae19670ef32cf470931f55021e2647e86d9340826c8cfcc49acce60bea84f2  ./.github/workflows/deep-dive-deterministic.yml
+2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
+d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
 096232ac51992a3fd1ec14b54305cccc076275284427cbd0dc8fb9b1614b12f9  ./.github/workflows/remediation.yml
 83ae827bb42049bae6e48ebdc44202425160d6918103bbbe85519f46a805753d  ./.github/workflows/verify-remediation.yml
 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
 f9dadc72410d160930d7b5a9dea435e2d1742f465d9b7847ec7c53a234fbf96b  ./CHANGELOG.md
 80201f90f452b7b8e46377b5472e655461b0fa642972b208cd042a2b1bdc6692  ./CONTRIBUTING.md
-9f6d9a251243614b960c740544f89a9c0a2d86c619b7a40a05daeeef164647f8  ./README.md
+a16e75422c0d38c633f8be539f46d9124516a2419c0df4e3f7ba2cbb339fef1e  ./README.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 7d072b48526b023950e4c48db01e8c273554a6401119f5691e7589ba9bc65d9d  ./VERSION
 f84e53ffca7c30b5c91f892e0136e9173ea795781d337b3df6ef254c85ac5008  ./ci/audit.yml
@@ -25,7 +26,7 @@ b54e2c8db738d91ddebed89b9ab10504f1ef6e3f29722c4d0c53d2a383dd8abe  ./lenses/READM
 ace8db3a318f469526a2f8f1c782041605477ad7bc1110c1d5774e8b386e6f33  ./lenses/security_adversary.md
 b92d576d478d27d15de802dde581d403bb52358c895af020ec28c8ef6e96d961  ./profiles/falcon-lab.manifest.json
 b642d80eba43bbe1757beb9222876a143b6a1e8fe2136ce3723c6ec481f9219d  ./profiles/falcon-lab.md
-e602dd2eb8b3847806ec6e72048394b0fb8f29aeee7079244a38e0bb49f6266b  ./profiles/remediation.md
+c7ffda1be91b473bc684014ca2349fdb31de6907761a6517803fac0a9ecd3a97  ./profiles/remediation.md
 f7de09e0b65002952e07c8d4bd55002a247fc193559009137991fb03b21fa32b  ./prompts/00_SHARED_AUDIT_RULES.md
 b1376372e4042b17f8d6d10cac16fc85c68c396ba9bd9dc4a4b73c12f5cd8bdd  ./prompts/00_audit_orchestrator.md
 386ad9acc34f07d914e05228fbdadb8821da1d5e279de20879d15c951ce14377  ./prompts/01_repository_inventory.md
@@ -75,7 +76,7 @@ ba31d012693432a1ee0fbea8cf43fd6e218238e0f570208eceec2a293d70f3f6  ./prompts/43_e
 41e79d2130aca931c1b9667bb0a8890171e6a66318e80895c9245f7b3dd385ed  ./prompts/45_exploit_chain_attack_path_audit.md
 dc90ac116efc53da0f0c7b6c3c3123ac345b6d00c212d63d8823730757da395b  ./prompts/MASTER_RUNNER_FALCON_LAB.md
 f5cdff431dfc09048110d0227265e10380632dda7880fb14519b497276dd7e7a  ./prompts/MASTER_RUNNER_FULL_HARDENING.md
-b9836237951832dec347f856f5171409db2b1e001b4f768cf4b26e430eeaba04  ./prompts/REMEDIATION_RUNNER.md
+845b16346dc20dd9fbe039995e136b3376e0315ad8b3be4f7f918a229a29c896  ./prompts/REMEDIATION_RUNNER.md
 ff265fba18171efd42131b23f39da4725c8a0ee836c0710ef260640f5b6f0044  ./runbooks/OPERATOR_QUICKSTART.md
 61ec923b3be44f6c2983dabb9381c2888ece9e30392250c14887a6516a74b867  ./runbooks/OPERATOR_QUICKSTART_FALCON_LAB.md
 215938035f309e17f0b3616828f0ee39b2531b6727ace0613e9f80d02c78c0fe  ./runbooks/OPERATOR_TROUBLESHOOTING.md
@@ -218,16 +219,30 @@ a9d14935663449aef0abf265e402c7d2959db348813eb2e51677d0c0f0d99a97  ./runs/chat-20
 26a2673c46c9abe3aae5aea1ddd3eef6a22698acd69c06664cf55192b5ae425a  ./runs/chat-20261003-0018-develop-a72b8cc/dashboard.html
 7ab12871b2e54e328b30f23e0b755c8e6832fd48f3a78cfdb06aec0ae64f66c7  ./runs/chat-20261003-0018-develop-a72b8cc/dashboard.md
 39f102fc94960e69d735627d8ddfff599b98ffc6132f8529c37e862db3d9cd09  ./runs/chat-20261003-0018-develop-a72b8cc/findings.json
-35ce39abcd545e76fe58e3d6b4eed63f8bd32cfac2074824b77f1bdb44b77ee7  ./runs/chat-20261003-0018-develop-a72b8cc/follow_up_register.md
+eb2706432147698ec85dd2cd3ca8ddd90f683f6066122d04efd4c8a536e0ef06  ./runs/chat-20261003-0018-develop-a72b8cc/follow_up_register.md
 0ff9702021865c7249ee5f62758bc70fd3fa06d97d0d6a748b0fdb8fbf0567f2  ./runs/chat-20261003-0018-develop-a72b8cc/inventory.json
 c36227b81ad72aa4e1a8a37f713508581d59eafd78e23e2b15ca3a7579697e0e  ./runs/chat-20261003-0018-develop-a72b8cc/lens_lab_verification.md
 9028a7ebc1dc4c27f3a2b7108dbf9eff0cf786daeb3ae03b6babfb347944f1ec  ./runs/chat-20261003-0018-develop-a72b8cc/patch_plan.md
 898c49b4318efdc456eec989410bdb3bd6ea02f571b8b0bed1d18a672ae161c3  ./runs/chat-20261003-0018-develop-a72b8cc/pr_comment.md
-0b45b9e919ccb64e7f3a4bb67fea3dec92025d2a9ec720087db4a45d1d1b006c  ./runs/chat-20261003-0018-develop-a72b8cc/remediation_plan.json
+849a39c4c45f57e5e2d1e39eb99e2d612df418ed65efa98119d58dedf1f1e7fd  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-01/diff.patch
+fb4bce6faa8c1bd546f08ec73b542da6d12ce9fb75d4164e8a61a68a3444c455  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-01/lab-verify.log
+3db481df9369ef19b44f1f5742728713d036c9171725308a61b42bfc15d55b1a  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-01/manifest.json
+0bc7bdf8e820565e9b0a2849801043c791904551ed42183c941e692f7687d5d1  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-01/pr_body.md
+6ec507004fd5fa05e28e819aa39838d5bc6dee2d647efca08415929e34acfdc1  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-01/verify.log
+eca14f5447e9bfaaaa41bf6e1d1dcc3e1c3a10c401ff55ce0c09c4d97eddc71d  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-04/diff.patch
+d2426194d67f74eb43b096a26c0c6a416259049078664fd2ec13005633bc6afc  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-04/gitleaks.log
+51e296d58b495a87b0c440cc553d253f6f23d4bbafe9e6c4fa9303c2fbc6c252  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-04/manifest.json
+eebdc61d2ead09ec927cd9b2bb7f1b2d66215394d76aef8981324080ab5d863c  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-04/pr_body.md
+24091c75eee789056f4dc50c4fbf6595451c6b47e3c213013077e72d570f1974  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-04/verify.log
+4288d22dc60978429278b4232a001a41ca3a381f9b78db093e4064d38458c4c1  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-16/diff.patch
+a48b90ed40f6706590765310f2331de1357bba15b306704ccb193f5b06549758  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-16/manifest.json
+bec7c90e568f68b9a00e8929cef12a34f92e278ffbb4f230619bb03abec02436  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-16/pr_body.md
+d0a6a94b9f21198b78652514ffb1701b4d1f94683fbdb724c23d762d65d0013d  ./runs/chat-20261003-0018-develop-a72b8cc/remediation/PATCH-16/verify.log
+280f9d4f67e6cfb2a2f47571f7fa38dc9377df6994c35e062c0ae7758c93d2a4  ./runs/chat-20261003-0018-develop-a72b8cc/remediation_plan.json
 6e0443539d6a4b4d1d8371325bde8fc9f6ae6efc5367d04b4d66da4d9119741f  ./runs/chat-20261003-0018-develop-a72b8cc/risk_register.md
 860b95556c37b600a9e82e0c5a58620ecb7f9a6a5e21a80ee525d7ad51c47d42  ./runs/chat-20261003-0018-develop-a72b8cc/risk_score.json
 7d03e60fd5c67b0b6a5cc0775134156358b6c6262f881538c04a27be3f88fc30  ./runs/chat-20261003-0018-develop-a72b8cc/roadmap.md
-5962c7fa248fff865616f2b73026eac2c3bdf2f89c70671acb17717f8b2c63e4  ./runs/chat-20261003-0018-develop-a72b8cc/verification_log.md
+848c18e1c48313f3b63e0a52ca33e5b1adb4ee2389cb0698cab552ccffc302f6  ./runs/chat-20261003-0018-develop-a72b8cc/verification_log.md
 e4560c346c42ce0f85e89785a25bdbdf72182ab0972f6e742ca2ff6f4f7a0cbe  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/01_repository_inventory.md
 7c699a03bb9f24205c2cd9c0484602a212a9bd507afa97ded337235bac9b47c6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/02_architecture_runtime_topology.md
 709725674f51cdae3579808af778c2b677ee6e4042d4a00b37b45a28e883ff26  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/03_feature_implementation_map.md
@@ -277,13 +292,23 @@ f2302acb226ad5cef644add974b6a60aaca4ceecd50bf1f3f85249390152bb74  ./runs/falcon-
 771755bc403da58258ec9c84e3a1521588523f3ca873969a1c016bb3986bf3dd  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/dashboard.html
 9ef86842dcd98e1d0747ad68100c23274ec172606f53a8d4978cfce7fce98b92  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/dashboard.md
 43ce839f6ff5581fd4b453cddbb85daf5baa46105ac018144ee589a3998d7443  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/findings.json
+436752b7ffad9126dcd4de6555c73ecde3507236a919914bcac8b284ca256128  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/follow_up_register.md
 7adc3f06471b45517e5fedaa3103a4e141119e71e5df4c19d8aa3cc870dc6f9e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/inventory.json
 fb9a6a333c9627c5ba47a153a17e73c628d12a08cd6d50a09246bfdc9ffbace9  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/patch_plan.md
 911017fe53aeac845accfdcb3701d97fcc3ba009c55922695c43682e44fc2bd7  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/pr_comment.md
-640b71cdaa29b6d4fa64b179055ce58ee3a35bf09827d2b3b8bed616bc9581da  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation_plan.json
-102bf14f755f611cde539295e7008fadf395464c8697cfb33bee8134aa4f70a8  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/risk_register.md
+b71cf6b1c8a826214e9831a723b100a529d8cd22ccf9e59abf9a49443e801045  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-001/diff.patch
+59a1b671cd61414d9796f076388eb85259f56395753d221b2c475e74de724939  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-001/manifest.json
+365cb4fb336c18a86ab0d8720dc1341ab1d37798ef68e7ea63af2a604dc91fed  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-001/pr_body.md
+16159942a6c1d5313064b8a12aeffc59fe360f95faebee3591a83dc6000d3001  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-001/verify.log
+5bd547528d6283f918ba4519a359019143eb7d352070484d28e28a1c9675da0f  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-002/diff.patch
+f1aef52fcf8d4bd78744b14a0eb7f7136572aea1675f0a50004722f595d566cc  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-002/manifest.json
+b0f70973b15919bab6e828441cd432269498f88037a6e078b85bc8bf16309ad1  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-002/pr_body.md
+9ddb748b9d3ed709caea6d57a1497ccc152068c383e6078f60808a1aa688c052  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-002/verify.log
+dd7754d73afaae58b0f28b194dff01165de713939bc977f1c7a0d5e7f61f6355  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation_plan.json
+c31b32b9399319ef46e91226cef42ae471e4f1315b25564f339e748ee2061bac  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/risk_register.md
 f7439a44f7525f8f564e25b2764e3209ab130fd54972d97238eef441519107a5  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/risk_score.json
 7deee4629602d01ed99c8a6341acec7a5ac094cb7a6cc5a9aee66c85c30d10b8  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/roadmap.md
+5244d6b96dbbdc7a081bbebdba4a03354205f1825f46bf1de87dfd4cec1595ea  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/verification_log.md
 a4f4a1d3db391c6708f698e060c1493785563dbe3eff457593c27822589f73ca  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/01_repository_inventory.md
 872af104de4834981dd8db208c0fb23eba071e7c9d0a77e6416d4d3be0b73a4a  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/02_architecture_runtime_topology.md
 bedd737da02324f8c60bad896b4b02b1346c5469a769a9b140380bc54e5706ae  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/03_feature_implementation_map.md

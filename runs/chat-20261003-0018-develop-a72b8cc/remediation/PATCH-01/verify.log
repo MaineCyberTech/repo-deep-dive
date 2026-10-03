@@ -1,0 +1,55 @@
+﻿PATCH-01 verification log
+Run: 20261003-0018-develop-a72b8cc  Repo: C:\temp\chat
+Date: 2026-10-03T01:34:49.0091148-04:00
+======================================================================
+
+### GATE 1: rg "USING \(true\)|database/query" deploy-production.yml
+$ C:\Users\admin\AppData\Local\Programs\Microsoft VS Code\07f806f999\resources\app\node_modules.asar.unpacked\@vscode\ripgrep-universal\bin\win32-x64\rg.exe USING \(true\)|database/query .github/workflows/deploy-production.yml
+exit code: 1
+(no output)
+RESULT: PASS (no matches, rg exit 1)
+
+### SCAN 2: residual RLS/seed/mgmt patterns in both workflows
+$ C:\Users\admin\AppData\Local\Programs\Microsoft VS Code\07f806f999\resources\app\node_modules.asar.unpacked\@vscode\ripgrep-universal\bin\win32-x64\rg.exe -n Seed auth users|USING \(true\)|database/query|users_select|workspace_members_select|encrypted_password|seed\.test|auth\.identities|auth\.users .github/workflows/deploy-production.yml .github/workflows/deploy-development.yml
+exit code: 1
+(no output)
+RESULT: PASS (no matches, rg exit 1)
+
+### SCAN 3: git diff --name-only
+$ git diff --name-only
+exit code: 0
+git.exe : warning: in the working copy of '.github/workflows/deploy-development.yml', LF will be replaced by CRLF the 
+next time Git touches it
+At C:\Users\admin\AppData\Local\Temp\opencode\run_verify.ps1:16 char:10
++   $out = & $exe @cmdArgs 2>&1 | Out-String
++          ~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of '.github/workflows/deploy-production.yml', LF will be replaced by CRLF the next time 
+Git touches it
+.github/workflows/deploy-development.yml
+.github/workflows/deploy-production.yml
+
+### SCAN 4: migration still defines users_select_own
+$ C:\Users\admin\AppData\Local\Programs\Microsoft VS Code\07f806f999\resources\app\node_modules.asar.unpacked\@vscode\ripgrep-universal\bin\win32-x64\rg.exe -n users_select_own supabase/migrations/20260626000022_apply_rls_policies.sql
+exit code: 0
+6:  create policy "users_select_own" on public.users for select to authenticated using (auth.uid() = id);
+
+### CHECK 5: YAML parse of both workflows
+exit code: 0
+OK  .github/workflows/deploy-production.yml
+OK  .github/workflows/deploy-development.yml
+
+### CHECK 6: supabase db reset (migration-managed policy assertion)
+NOT RUN: supabase CLI not installed / not on PATH; cannot run 'supabase db reset' locally.
+
+### CHECK 7: gitleaks secret scan
+NOT RUN: gitleaks not installed / not on PATH.
+
+### CHECK 7b: manual secret gate (gitleaks unavailable)
+Diff is deletion-only; no added lines can introduce a secret.
+git diff --numstat:
+0	138	.github/workflows/deploy-development.yml
+0	135	.github/workflows/deploy-production.yml
+added lines: 0 (none)

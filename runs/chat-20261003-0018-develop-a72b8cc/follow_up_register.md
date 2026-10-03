@@ -8,7 +8,7 @@ Owner/Target/Status columns drive tools/collect_findings.py enrichment.
 | API-P1-001 | P1 | `/metrics` is readable by any authenticated user |  |  | open |  |
 | ARCH-P1-001 | P1 | Webhook service uses the anonymous Supabase client, so RLS denies all operations |  |  | open |  |
 | ARCH-P1-002 | P1 | Socket.io authorization and presence use the anonymous client; membership checks fail/bypass |  |  | open |  |
-| BLD-P1-001 | P1 | Web build fails prerendering /install (navigator is not defined) |  |  | open |  |
+| BLD-P1-001 | P1 | Web build fails prerendering /install (navigator is not defined) |  |  | partially-fixed |  |
 | CI-P1-001 | P1 | Production auto-deploys on push to `main` without a required review gate in-repo |  |  | open |  |
 | CI-P1-002 | P1 | Deploy workflow mutates production schema and data from CI |  |  | partially-fixed | Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows. |
 | CI-P1-003 | P1 | Security scans are non-blocking |  |  | open |  |
@@ -22,10 +22,10 @@ Owner/Target/Status columns drive tools/collect_findings.py enrichment.
 | FINAL-P1-002 | P1 | Deploy pipeline mutates schema/policies/data outside migrations |  |  | open |  |
 | OBS-P1-001 | P1 | No alerting is wired despite metrics and a TODO |  |  | open |  |
 | SEC-P1-002 | P1 | Tracked credential file `test-signin.json` |  |  | open |  |
-| SEC-P1-003 | P1 | Admin `/v1/admin/users` returns all platform users (including email) to any workspace admin |  |  | open |  |
-| SEC-P1-004 | P1 | Admin `/v1/admin/audit-logs` leaks other tenants' logs when `workspaceId` omitted |  |  | open |  |
-| SEC-P1-005 | P1 | Admin compliance exports are not tenant-scoped on list/download |  |  | open |  |
-| SEC-P1-006 | P1 | Bulk import endpoints operate globally with only "admin of anything" authorization |  |  | open |  |
+| SEC-P1-003 | P1 | Admin `/v1/admin/users` returns all platform users (including email) to any workspace admin |  |  | partially-fixed | draft PR #58 commit c41aa79; SEC-P1-004/005/006 fixed too but not mapped in remediation_plan.json |
+| SEC-P1-004 | P1 | Admin `/v1/admin/audit-logs` leaks other tenants' logs when `workspaceId` omitted |  |  | partially-fixed |  |
+| SEC-P1-005 | P1 | Admin compliance exports are not tenant-scoped on list/download |  |  | partially-fixed |  |
+| SEC-P1-006 | P1 | Bulk import endpoints operate globally with only "admin of anything" authorization |  |  | partially-fixed |  |
 | SEC-P1-007 | P1 | SSH is open to the internet by default |  |  | open |  |
 | SEC-P1-008 | P1 | Webhook secrets are optional and signature can be omitted |  |  | open |  |
 | SUPPLY-P1-001 | P1 | Credential committed to the repository |  |  | open |  |

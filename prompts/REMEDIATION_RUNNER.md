@@ -45,9 +45,14 @@ the machine-readable plan produced by `tools/remediation_plan.py`.
 4. **Implement.** Make the minimal fix for every finding in the set. Reference finding IDs in the
    commit body. If any change is ambiguous or needs a product decision, stop and record an
    **open question** instead of guessing.
-5. **Test (in the lab).** Run the set's verification commands in `{lab}` (or locally when the
-   runner is unavailable). Capture raw output + exit codes to
+5. **Test (in the lab).** Run the set's verification commands in the lab - prefer the job API
+   (`tools/lab_runner.py`), which can sync the repo and run the command in one hop, over ad-hoc SSH
+   (fall back to local execution only when the runner is unavailable):
+   `tools/lab_runner.py --url <ci-runner|edge-builder> --token <t> --sync --repo <repo> --org <org>`
+   then `... --repo <repo> --command "<verification command>"`. Capture raw output + exit codes to
    `<run>/remediation/PS-00N/verify.log`. Fail closed: a failing gate blocks the PR.
+   The lab images now include `actionlint`, `yq`, `hadolint`, `trivy`, `gh`, `shellcheck`, `jq`,
+   `gitleaks`, and `pytest` (both guests), so most verification commands run without setup.
 6. **Secret gate.** `gitleaks detect --no-git --redact` on the working tree; block on findings.
 7. **Commit + push.** Conventional commit `fix(<area>): <title> [<finding-ids>]`; push the branch.
 8. **Pull request.** Open a **draft** PR using `templates/remediation_pr.md`, including:

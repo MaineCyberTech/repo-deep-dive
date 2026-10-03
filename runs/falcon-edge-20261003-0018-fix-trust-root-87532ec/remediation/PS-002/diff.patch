@@ -1,0 +1,106 @@
+diff --git a/.github/workflows/dependabot-merge.yml b/.github/workflows/dependabot-merge.yml
+index 8241b80..0b70bba 100644
+--- a/.github/workflows/dependabot-merge.yml
++++ b/.github/workflows/dependabot-merge.yml
+@@ -6,6 +6,14 @@ name: dependabot-merge
+ # Deliberately a scheduled sweep (not `workflow_run`): it never consumes untrusted event payloads
+ # and never checks out PR code - it only asks the API whether the PR's checks are green and merges
+ # PRs authored by dependabot[bot].
++#
++# Safety constraints (CI-P2-002):
++#   * only patch/minor semver bumps are eligible - major updates are left for a human review, and
++#     anything whose update type cannot be parsed from the title (e.g. grouped updates) is skipped
++#     (fail closed);
++#   * the author must be the trusted dependabot[bot] app, verified via the API;
++#   * the merge is bound to the exact head commit that passed checks (`--match-head-commit`), and
++#     the head is re-read after the check so a commit pushed mid-check is refused.
+ 
+ on:
+   schedule:
+@@ -30,37 +38,60 @@ jobs:
+         env:
+           GH_TOKEN: ${{ github.token }}
+         run: |
+-          # CI-P2-002: `main` is unprotected on the Free plan, so this job is the
+-          # compensating control. It requires the three validate contexts to have
+-          # completed successfully on the PR's head commit, the branch to be a
+-          # dependabot/ branch, and merges exactly the commit that was checked
+-          # (--match-head-commit). Anything else is skipped.
+-          REQUIRED_CHECKS=("validate" "tests (3.12)" "tests (3.13)")
+-          mapfile -t PRS < <(gh pr list --repo "$GITHUB_REPOSITORY" --author "app/dependabot" \
++          set -uo pipefail
++          repo="$GITHUB_REPOSITORY"
++
++          mapfile -t PRS < <(gh pr list --repo "$repo" --author "app/dependabot" \
+             --state open --json number --jq '.[].number')
+           if [ "${#PRS[@]}" -eq 0 ]; then
+             echo "no open dependabot PRs"
+             exit 0
+           fi
++
++          # Only patch/minor semver bumps are eligible. Fail closed: when the update type is not
++          # explicitly parseable from the title (e.g. grouped updates) the PR is skipped.
++          is_patch_or_minor() {
++            local title="$1" from_major to_major
++            [[ "$title" =~ from[[:space:]]+v?([0-9]+)\. ]] || return 1
++            from_major="${BASH_REMATCH[1]}"
++            [[ "$title" =~ to[[:space:]]+v?([0-9]+)\. ]] || return 1
++            to_major="${BASH_REMATCH[1]}"
++            [ "$from_major" = "$to_major" ]
++          }
++
+           for pr in "${PRS[@]}"; do
+-            head_sha="$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)"
+-            branch="$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json headRefName --jq .headRefName)"
+-            case "$branch" in
+-              dependabot/*) ;;
+-              *) echo "skip PR #$pr (unexpected branch $branch)"; continue ;;
+-            esac
+-            checks="$(gh api "repos/$GITHUB_REPOSITORY/commits/$head_sha/check-runs?per_page=100" \
+-              --jq '[.check_runs[] | select(.status == "completed") | .name + "=" + (.conclusion // "")] | join(",")')"
+-            ok=1
+-            for ctx in "${REQUIRED_CHECKS[@]}"; do
+-              case ",$checks," in
+-                *",$ctx=success,"*) ;;
+-                *) echo "skip PR #$pr (context '$ctx' not success on $head_sha)"; ok=0 ;;
+-              esac
+-            done
+-            if [ "$ok" -eq 1 ]; then
+-              echo "merging dependabot PR #$pr at $head_sha (required checks green)"
+-              gh pr merge "$pr" --repo "$GITHUB_REPOSITORY" --squash --delete-branch \
+-                --match-head-commit "$head_sha"
++            author=$(gh pr view "$pr" --repo "$repo" --json author --jq '.author.login' 2>/dev/null) || author=""
++            if [ "$author" != "dependabot[bot]" ]; then
++              echo "skip PR #$pr (author '$author' is not the trusted dependabot[bot])"
++              continue
+             fi
++
++            title=$(gh pr view "$pr" --repo "$repo" --json title --jq '.title' 2>/dev/null) || title=""
++            if ! is_patch_or_minor "$title"; then
++              echo "skip PR #$pr (not a verifiable patch/minor update: '$title')"
++              continue
++            fi
++
++            head=$(gh pr view "$pr" --repo "$repo" --json headRefOid --jq '.headRefOid' 2>/dev/null) || head=""
++            if [ -z "$head" ]; then
++              echo "skip PR #$pr (could not resolve the head commit)"
++              continue
++            fi
++
++            if ! gh pr checks "$pr" --repo "$repo" >/dev/null 2>&1; then
++              echo "skip PR #$pr (checks not green yet)"
++              continue
++            fi
++
++            # Bind the merge to the exact commit that passed checks: re-read the head after the
++            # check and refuse if it moved (force-push / new commit race).
++            head_after=$(gh pr view "$pr" --repo "$repo" --json headRefOid --jq '.headRefOid' 2>/dev/null) || head_after=""
++            if [ "$head" != "$head_after" ]; then
++              echo "skip PR #$pr (head moved $head -> $head_after during checks)"
++              continue
++            fi
++
++            echo "merging dependabot PR #$pr at $head_after (patch/minor; checks green)"
++            gh pr merge "$pr" --repo "$repo" --squash --delete-branch \
++              --match-head-commit "$head_after" || echo "merge of PR #$pr failed"
+           done

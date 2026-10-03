@@ -1,7 +1,7 @@
 {
   "run": "20261003-0018-develop-a72b8cc",
   "repo": "",
-  "generated": "2026-10-03T05:22:52Z",
+  "generated": "2026-10-03T06:36:32Z",
   "patchSets": [
     {
       "id": "PATCH-01",
@@ -69,7 +69,10 @@
       "id": "PATCH-04",
       "title": "Scope admin endpoints to caller's workspaces (SEC-P1-003/004/005/006)",
       "findings": [
-        "SEC-P1-003"
+        "SEC-P1-003",
+        "SEC-P1-004",
+        "SEC-P1-005",
+        "SEC-P1-006"
       ],
       "files": [
         "apps/api/src/modules/admin/routes.ts",
@@ -90,7 +93,8 @@
       "findings": [
         "ARCH-P1-001",
         "FEAT-P1-002",
-        "FINAL-P1-001"
+        "FINAL-P1-001",
+        "ARCH-P1-002"
       ],
       "files": [
         "apps/api/src/modules/webhooks/service.ts",
@@ -165,7 +169,8 @@
       "id": "PATCH-09",
       "title": "Durable webhook retries via BullMQ + stable idempotency key (FEAT-P1-002/003)",
       "findings": [
-        "FEAT-P1-002"
+        "FEAT-P1-002",
+        "FEAT-P1-003"
       ],
       "files": [],
       "dependsOn": [],
@@ -224,7 +229,8 @@
       "id": "PATCH-13",
       "title": "SHA-pin Actions, SBOM for all pushed images (SUPPLY-P2-002/004)",
       "findings": [
-        "SUPPLY-P2-002"
+        "SUPPLY-P2-002",
+        "SUPPLY-P2-004"
       ],
       "files": [],
       "dependsOn": [],
@@ -258,7 +264,8 @@
         "ARCH-P3-005",
         "DATA-P2-003",
         "API-P2-002",
-        "FEAT-P2-004"
+        "FEAT-P2-004",
+        "API-P2-004"
       ],
       "files": [
         "bash\npnpm install --frozen-lockfile\npnpm lint && pnpm typecheck && pnpm test\npnpm vitest run --config vitest.config.ts --coverage\n# RLS/DB (requires local Supabase)\nsupabase start && supabase db reset\n"
@@ -269,13 +276,30 @@
       "verification": [],
       "severity": "P2",
       "branch": "remediation/PATCH-15-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-16",
+      "title": "Fix /install SSR prerender (navigator is not defined)",
+      "findings": [
+        "BLD-P1-001"
+      ],
+      "files": [
+        "apps/web/lib/pwa/install-state.ts",
+        "apps/web/app/install/page.tsx"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "`corepack pnpm --filter web build` succeeds; /install prerenders.",
+      "verification": [
+        "`corepack pnpm --filter web build` succeeds; /install prerenders."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-16-20261003-0018-develop-a72b8cc"
     }
   ],
   "unassignedFindings": [
     "API-P2-003",
-    "API-P2-004",
     "API-P3-005",
-    "ARCH-P1-002",
     "ARCH-P2-003",
     "ARCH-P2-004",
     "CI-P1-001",
@@ -293,14 +317,10 @@
     "INV-P2-003",
     "INV-P3-002",
     "OBS-P2-004",
-    "SEC-P1-004",
-    "SEC-P1-005",
-    "SEC-P1-006",
     "SEC-P1-008",
     "SEC-P2-009",
     "SEC-P2-010",
     "SUPPLY-P2-003",
-    "SUPPLY-P2-004",
     "TEST-P2-002"
   ]
 }

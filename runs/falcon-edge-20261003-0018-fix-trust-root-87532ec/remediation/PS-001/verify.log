@@ -1,0 +1,744 @@
+# Remediation verification - PS-001 (falcon-edge)
+# Branch: remediation/ps-001-20261003-0018-fix-trust-root-87532ec
+# Base:   origin/main (af6f83a)
+# Runner: edge-builder VM (172.23.128.51) via lab-sync.ps1 / lab-run.ps1
+# Captured: 2026-10-03T02:23:17.0459145-04:00
+#
+# NOTE: the preferred runner 'python3 -m pytest -q tests/phase2' could NOT run in the
+# lab: the image has no pytest module. Real output of that attempt was:
+#     /usr/bin/python3: No module named pytest
+#     PYTEST_EXIT=1
+# Fallback (also the patch plan verification): python3 -m unittest discover -s tests/phase2 -t . -v
+# ---------------------------------------------------------------------------
+test_routes_and_contract_paths_match (tests.phase2.test_contract_parity.ContractParityTests.test_routes_and_contract_paths_match) ... /srv/work/falcon-edge/tests/phase2/test_contract_parity.py:35: ResourceWarning: unclosed file <_io.TextIOWrapper name='/srv/work/falcon-edge/api/openapi/falcon-edge-v1.yaml' mode='r' encoding='utf-8'>
+  doc = yaml.safe_load(open(CONTRACT))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_openssl_cross_check (tests.phase2.test_crypto_signing.Ed25519Tests.test_openssl_cross_check) ... /srv/work/falcon-edge/tests/phase2/test_crypto_signing.py:51: ResourceWarning: unclosed file <_io.BufferedWriter name='/tmp/tmpwlk9mnq0/msg.bin'>
+  open(msg, "wb").write(b"falcon edge cross-check")
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/tests/phase2/test_crypto_signing.py:56: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpwlk9mnq0/sig.bin'>
+  self.assertTrue(ed25519.verify(open(sigfile, "rb").read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/tests/phase2/test_crypto_signing.py:57: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/tmpwlk9mnq0/msg.bin'>
+  open(msg, "rb").read(), pk_raw))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/tests/phase2/test_crypto_signing.py:64: ResourceWarning: unclosed file <_io.BufferedWriter name='/tmp/tmpwlk9mnq0/our.sig'>
+  open(our_sig, "wb").write(ed25519.sign(b"falcon edge cross-check", seed))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_rfc8032_vectors (tests.phase2.test_crypto_signing.Ed25519Tests.test_rfc8032_vectors) ... ok
+test_tamper_rejected (tests.phase2.test_crypto_signing.Ed25519Tests.test_tamper_rejected) ... ok
+test_bad_base64_rejected (tests.phase2.test_crypto_signing.SigningTests.test_bad_base64_rejected) ... ok
+test_missing_signature_rejected (tests.phase2.test_crypto_signing.SigningTests.test_missing_signature_rejected) ... ok
+test_round_trip (tests.phase2.test_crypto_signing.SigningTests.test_round_trip) ... ok
+test_tampered_payload_rejected (tests.phase2.test_crypto_signing.SigningTests.test_tampered_payload_rejected) ... ok
+test_unknown_alg_rejected (tests.phase2.test_crypto_signing.SigningTests.test_unknown_alg_rejected) ... ok
+test_wrong_key_id_rejected (tests.phase2.test_crypto_signing.SigningTests.test_wrong_key_id_rejected) ... ok
+test_wrong_key_rejected (tests.phase2.test_crypto_signing.SigningTests.test_wrong_key_rejected) ... ok
+/srv/work/falcon-edge/src/falcon_control/pki.py:148: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/server.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=365, extfile_lines=ext)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/pki.py:163: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/operator.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=days)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-it-g88ncnll/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+test_bootstrap_token_expired (tests.phase2.test_service_integration.ControlPlaneIT.test_bootstrap_token_expired) ... 127.0.0.1 - - [03/Oct/2026 06:23:34] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:292: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-exp.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": str(uuid.uuid4()), "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:34] "POST /api/v1/enrollments HTTP/1.1" 401 -
+ok
+test_bootstrap_token_single_use (tests.phase2.test_service_integration.ControlPlaneIT.test_bootstrap_token_single_use) ... 127.0.0.1 - - [03/Oct/2026 06:23:34] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-once-1.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_ec064036f775836c742ab128.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:35] "POST /api/v1/enrollments HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:272: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-once-2.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": str(uuid.uuid4()), "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:35] "POST /api/v1/enrollments HTTP/1.1" 401 -
+ok
+test_clock_skew_rejected (tests.phase2.test_service_integration.ControlPlaneIT.test_clock_skew_rejected) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-skew.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:35] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_6bde76899d016fc5d3b65cea.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:36] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:36] "POST /api/v1/sensors/fes_6bde76899d016fc5d3b65cea/heartbeats HTTP/1.1" 400 -
+ok
+test_csr_operator_subject_is_pinned_to_sensor (tests.phase2.test_service_integration.ControlPlaneIT.test_csr_operator_subject_is_pinned_to_sensor)
+R1/SEC-P1-001: a CN=operator CSR is issued the server-pinned sensor subject. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-opcsr.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:36] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_c7d4b1569c24062d9a2c0e87.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:37] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:37] "GET /api/v1/sensors HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:37] "GET /api/v1/sensors/fes_c7d4b1569c24062d9a2c0e87/desired-state HTTP/1.1" 200 -
+ok
+test_enrollment_records_site_and_human_name (tests.phase2.test_service_integration.ControlPlaneIT.test_enrollment_records_site_and_human_name) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:558: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/site-device.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:37] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_e41f35989fd7de7e66dd2cda.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:38] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:38] "GET /api/v1/sensors/fes_e41f35989fd7de7e66dd2cda HTTP/1.1" 200 -
+ok
+test_enrollment_requires_token (tests.phase2.test_service_integration.ControlPlaneIT.test_enrollment_requires_token) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:306: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-notoken.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": str(uuid.uuid4()), "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:38] "POST /api/v1/enrollments HTTP/1.1" 401 -
+ok
+test_full_enrollment_flow (tests.phase2.test_service_integration.ControlPlaneIT.test_full_enrollment_flow) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-flow.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:38] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_628ae64b3ff5d2539bc2167c.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:40] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:40] "GET /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:23:40] "GET /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c/desired-state HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:23:40] "GET /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c/desired-state HTTP/1.1" 304 -
+127.0.0.1 - - [03/Oct/2026 06:23:41] "POST /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c/heartbeats HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:41] "PUT /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c/inventory HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:23:41] "POST /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c/state-reports HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:41] "GET /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:23:41] "POST /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c/events HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:41] "GET /api/v1/sensors/fes_628ae64b3ff5d2539bc2167c/update-manifest HTTP/1.1" 204 -
+ok
+test_health_is_public (tests.phase2.test_service_integration.ControlPlaneIT.test_health_is_public) ... 127.0.0.1 - - [03/Oct/2026 06:23:41] "GET /api/v1/healthz HTTP/1.1" 200 -
+ok
+test_heartbeat_replay_and_conflict (tests.phase2.test_service_integration.ControlPlaneIT.test_heartbeat_replay_and_conflict) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-replay.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:41] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_703adf1b03d7239c3c834977.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:42] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:42] "POST /api/v1/sensors/fes_703adf1b03d7239c3c834977/heartbeats HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:42] "POST /api/v1/sensors/fes_703adf1b03d7239c3c834977/heartbeats HTTP/1.1" 409 -
+127.0.0.1 - - [03/Oct/2026 06:23:42] "POST /api/v1/sensors/fes_703adf1b03d7239c3c834977/heartbeats HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:42] "POST /api/v1/sensors/fes_703adf1b03d7239c3c834977/heartbeats HTTP/1.1" 409 -
+ok
+test_idempotency_replay_and_conflict (tests.phase2.test_service_integration.ControlPlaneIT.test_idempotency_replay_and_conflict) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-idem.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:42] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_23c0a6047b3f845b5209351e.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:44] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:44] "POST /api/v1/sensors/fes_23c0a6047b3f845b5209351e/heartbeats HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:45] "POST /api/v1/sensors/fes_23c0a6047b3f845b5209351e/heartbeats HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:45] "POST /api/v1/sensors/fes_23c0a6047b3f845b5209351e/heartbeats HTTP/1.1" 409 -
+127.0.0.1 - - [03/Oct/2026 06:23:45] "POST /api/v1/sensors/fes_23c0a6047b3f845b5209351e/heartbeats HTTP/1.1" 400 -
+ok
+test_ingest_is_attributed_to_certificate_identity (tests.phase2.test_service_integration.ControlPlaneIT.test_ingest_is_attributed_to_certificate_identity)
+R4/SEC-P1-002: forged sensor_id in the ingest payload is overwritten. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-ingest-victim.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:45] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_eb9999fcf9b1860b3abfcfdf.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:46] "POST /api/v1/enrollments HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-ingest-attacker.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:46] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_498af06b12c5201c929a3380.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:47] "POST /api/v1/enrollments HTTP/1.1" 201 -
+warning: ingest sensor_id mismatch: cert_sensor=fes_498af06b12c5201c929a3380 client_supplied=["fes_eb9999fcf9b1860b3abfcfdf"]
+127.0.0.1 - - [03/Oct/2026 06:23:47] "POST /api/v1/ingest/vector HTTP/1.1" 202 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:844: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ingest/vector-20261003.ndjson' mode='r' encoding='utf-8'>
+  lines = [json.loads(line) for line in open(path) if line.strip()]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_malformed_csr_does_not_burn_token (tests.phase2.test_service_integration.ControlPlaneIT.test_malformed_csr_does_not_burn_token) ... 127.0.0.1 - - [03/Oct/2026 06:23:47] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:47] "POST /api/v1/enrollments HTTP/1.1" 400 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-csr-retry.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_7fd15d194715385d417f3bf6.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:48] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:48] "GET /api/v1/healthz HTTP/1.1" 200 -
+ok
+test_malformed_sensor_id_is_not_routed (tests.phase2.test_service_integration.ControlPlaneIT.test_malformed_sensor_id_is_not_routed)
+SEC-P1-005: ids outside the contract pattern never reach a handler/DB. ... 127.0.0.1 - - [03/Oct/2026 06:23:48] "GET /api/v1/sensors/not-a-sensor HTTP/1.1" 404 -
+ok
+test_operator_fingerprint_seeded_once_from_existing_cert (tests.phase2.test_service_integration.ControlPlaneIT.test_operator_fingerprint_seeded_once_from_existing_cert)
+Migration: absent record is seeded once from operator.crt.pem; no CN fallback. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-it-g88ncnll/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:790: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/operator.fingerprint' mode='r' encoding='utf-8'>
+  self.assertEqual(open(record).read().strip(), operator_fp)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_operator_resolution_requires_recorded_fingerprint (tests.phase2.test_service_integration.ControlPlaneIT.test_operator_resolution_requires_recorded_fingerprint)
+R1: only the fingerprint recorded at issuance grants the operator role. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:767: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/operator.fingerprint' mode='r' encoding='utf-8'>
+  recorded = open(record).read().strip()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_quarantine_and_revoke (tests.phase2.test_service_integration.ControlPlaneIT.test_quarantine_and_revoke) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-qr.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:49] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_b327bed0bfddebba9a838205.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:50] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:50] "POST /api/v1/sensors/fes_b327bed0bfddebba9a838205/quarantine HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:50] "GET /api/v1/sensors/fes_b327bed0bfddebba9a838205/desired-state HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:50] "POST /api/v1/sensors/fes_b327bed0bfddebba9a838205/revoke HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:50] "POST /api/v1/sensors/fes_b327bed0bfddebba9a838205/heartbeats HTTP/1.1" 403 -
+ok
+test_quarantine_and_revoke_require_idempotency_key (tests.phase2.test_service_integration.ControlPlaneIT.test_quarantine_and_revoke_require_idempotency_key) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-idem-req.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:50] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_390bf3238b6e5cebae11ba68.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:51] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:51] "POST /api/v1/sensors/fes_390bf3238b6e5cebae11ba68/quarantine HTTP/1.1" 400 -
+127.0.0.1 - - [03/Oct/2026 06:23:51] "POST /api/v1/sensors/fes_390bf3238b6e5cebae11ba68/revoke HTTP/1.1" 400 -
+ok
+test_rbac_boundaries (tests.phase2.test_service_integration.ControlPlaneIT.test_rbac_boundaries) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-rbac.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:51] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_5c554f0a345566b134684d94.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:52] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:52] "GET /api/v1/sensors HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:52] "GET /api/v1/sensors/fes_5c554f0a345566b134684d94/desired-state HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:52] "GET /api/v1/sensors/fes_5c554f0a345566b134684d94/desired-state HTTP/1.1" 403 -
+ok
+test_re_enrollment_of_revoked_or_retired_sensor_is_refused (tests.phase2.test_service_integration.ControlPlaneIT.test_re_enrollment_of_revoked_or_retired_sensor_is_refused)
+TEST-P2-002/SEC-P1-001: revocation is a terminal trust-root state. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-revterminal.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:52] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_4619e0f242ebba8996819fb6.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/sensors/fes_4619e0f242ebba8996819fb6/revoke HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:636: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-revterminal.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": device_uuid, "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/enrollments HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/enrollments HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:636: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-revterminal2.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": device_uuid, "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/enrollments HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:53] "GET /api/v1/sensors/fes_4619e0f242ebba8996819fb6 HTTP/1.1" 200 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-retiredterminal.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:53] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_78b19797940855c324d311ac.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:54] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:54] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:636: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-retiredterminal.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": device_uuid, "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:54] "POST /api/v1/enrollments HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:54] "GET /api/v1/sensors/fes_78b19797940855c324d311ac HTTP/1.1" 200 -
+ok
+test_re_enrollment_renews_certificate (tests.phase2.test_service_integration.ControlPlaneIT.test_re_enrollment_renews_certificate) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-renew.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:54] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_b25962db13f342ca7a371da1.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:55] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:55] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-renew2.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_b25962db13f342ca7a371da1.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:56] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:56] "GET /api/v1/sensors/fes_b25962db13f342ca7a371da1/desired-state HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:56] "GET /api/v1/sensors/fes_b25962db13f342ca7a371da1/desired-state HTTP/1.1" 200 -
+ok
+test_renewal_csr_operator_subject_stays_sensor (tests.phase2.test_service_integration.ControlPlaneIT.test_renewal_csr_operator_subject_stays_sensor)
+R1/SEC-P1-001: the escalation chain via one renewal is closed. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-oprenew.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:56] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_e362f90a6e5047de721dc03b.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:57] "POST /api/v1/enrollments HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:700: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/renew-9eb96136.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": device_uuid, "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:867: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_e362f90a6e5047de721dc03b.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:868: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:57] "POST /api/v1/sensors/fes_e362f90a6e5047de721dc03b/renewals HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:23:57] "GET /api/v1/sensors HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:57] "GET /api/v1/sensors HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:23:57] "GET /api/v1/sensors/fes_e362f90a6e5047de721dc03b/desired-state HTTP/1.1" 200 -
+ok
+test_retired_sensor_cannot_renew_or_ingest (tests.phase2.test_service_integration.ControlPlaneIT.test_retired_sensor_cannot_renew_or_ingest)
+ACM-P1-002: RETIRED is terminal for renewal/ingest and survives heartbeats. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-retiredio.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:57] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_71d4eda7c0f0df6171c55fff.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:58] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:58] "POST /api/v1/sensors/fes_71d4eda7c0f0df6171c55fff/heartbeats HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:58] "GET /api/v1/sensors/fes_71d4eda7c0f0df6171c55fff HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:23:58] "POST /api/v1/ingest/vector HTTP/1.1" 403 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:700: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/renew-e96735e4.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": device_uuid, "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:58] "POST /api/v1/sensors/fes_71d4eda7c0f0df6171c55fff/renewals HTTP/1.1" 403 -
+ok
+test_revoke_destroy_keys_removes_stored_certificate (tests.phase2.test_service_integration.ControlPlaneIT.test_revoke_destroy_keys_removes_stored_certificate)
+FEAT-P2-002: destroyKeys=true deletes the control plane's certificate copy and ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-destroy.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:59] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_a03bfb57c159f7be00670316.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:59] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:23:59] "POST /api/v1/sensors/fes_a03bfb57c159f7be00670316/revoke HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:59] "POST /api/v1/sensors/fes_a03bfb57c159f7be00670316/revoke HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:23:59] "POST /api/v1/sensors/fes_a03bfb57c159f7be00670316/revoke HTTP/1.1" 202 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-keepkeys.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:23:59] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_7571793f1728c12e432bea59.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:00] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:00] "POST /api/v1/sensors/fes_7571793f1728c12e432bea59/revoke HTTP/1.1" 202 -
+ok
+test_revoked_sensor_cannot_ingest_or_renew (tests.phase2.test_service_integration.ControlPlaneIT.test_revoked_sensor_cannot_ingest_or_renew)
+ACM-P1-002: REVOKED is enforced for ingest and renewal without a CRL. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-revokedio.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:00] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_565652195c6240957dd2286e.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:01] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:01] "POST /api/v1/sensors/fes_565652195c6240957dd2286e/revoke HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:24:01] "POST /api/v1/ingest/vector HTTP/1.1" 403 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:700: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/renew-2370545d.csr.pem' mode='r' encoding='utf-8'>
+  "schemaVersion": "1.0", "deviceUuid": device_uuid, "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:01] "POST /api/v1/sensors/fes_565652195c6240957dd2286e/renewals HTTP/1.1" 403 -
+ok
+test_schema_validation_negatives (tests.phase2.test_service_integration.ControlPlaneIT.test_schema_validation_negatives) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-schema.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:01] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_5233a2263d6fcad37bbcdfff.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:02] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:02] "POST /api/v1/sensors/fes_5233a2263d6fcad37bbcdfff/heartbeats HTTP/1.1" 400 -
+127.0.0.1 - - [03/Oct/2026 06:24:02] "POST /api/v1/sensors/fes_5233a2263d6fcad37bbcdfff/heartbeats HTTP/1.1" 400 -
+ok
+test_sensor_id_mismatch_quarantines (tests.phase2.test_service_integration.ControlPlaneIT.test_sensor_id_mismatch_quarantines) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-mismatch-a.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:02] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_e46c2552a85f4f2412e857cc.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:03] "POST /api/v1/enrollments HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-mismatch-b.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:03] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_558d9c08f67dbe4fa29fd98a.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:04] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:04] "POST /api/v1/sensors/fes_558d9c08f67dbe4fa29fd98a/heartbeats HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:24:04] "GET /api/v1/sensors/fes_e46c2552a85f4f2412e857cc HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:04] "GET /api/v1/sensors/fes_e46c2552a85f4f2412e857cc/desired-state HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:24:04] "POST /api/v1/sensors/fes_e46c2552a85f4f2412e857cc/heartbeats HTTP/1.1" 202 -
+ok
+test_sensor_list_pagination_and_limit_validation (tests.phase2.test_service_integration.ControlPlaneIT.test_sensor_list_pagination_and_limit_validation) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-page-a.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:04] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_d7e3ede7ecd9459e48a65cff.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:05] "POST /api/v1/enrollments HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-page-b.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:05] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_ced4949351180848ee35fe0d.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:06] "POST /api/v1/enrollments HTTP/1.1" 201 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-page-c.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:06] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_61b4917ad91f4fbb32f0cc6d.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:06] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:06] "GET /api/v1/sensors?limit=2 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_390bf3238b6e5cebae11ba68 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_498af06b12c5201c929a3380 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_558d9c08f67dbe4fa29fd98a HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_5c554f0a345566b134684d94 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_628ae64b3ff5d2539bc2167c HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_703adf1b03d7239c3c834977 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_7571793f1728c12e432bea59 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_7fd15d194715385d417f3bf6 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=2&cursor=fes_b25962db13f342ca7a371da1 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=0 HTTP/1.1" 400 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=-1 HTTP/1.1" 400 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=501 HTTP/1.1" 400 -
+127.0.0.1 - - [03/Oct/2026 06:24:07] "GET /api/v1/sensors?limit=abc HTTP/1.1" 400 -
+ok
+test_sensor_summary_includes_queue_depth (tests.phase2.test_service_integration.ControlPlaneIT.test_sensor_summary_includes_queue_depth) ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-qd.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:07] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_09962cdaf3b4bb33414051ef.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:08] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:08] "POST /api/v1/sensors/fes_09962cdaf3b4bb33414051ef/heartbeats HTTP/1.1" 202 -
+127.0.0.1 - - [03/Oct/2026 06:24:08] "GET /api/v1/sensors/fes_09962cdaf3b4bb33414051ef HTTP/1.1" 200 -
+ok
+test_unknown_endpoint_problem (tests.phase2.test_service_integration.ControlPlaneIT.test_unknown_endpoint_problem) ... 127.0.0.1 - - [03/Oct/2026 06:24:08] "GET /api/v1/nope HTTP/1.1" 404 -
+ok
+test_unmapped_operator_cn_cert_is_not_operator (tests.phase2.test_service_integration.ControlPlaneIT.test_unmapped_operator_cn_cert_is_not_operator)
+R1: CA-signed CN=operator without a recorded fingerprint resolves to no role. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:758: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/forged-op.csr.pem' mode='r' encoding='utf-8'>
+  pki.issue_cert(self.ca_dir, open(csr).read(), cert)  # no server-side subject pin
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:08] "GET /api/v1/sensors HTTP/1.1" 403 -
+ok
+test_update_manifest_min_agent_version_gate (tests.phase2.test_service_integration.ControlPlaneIT.test_update_manifest_min_agent_version_gate)
+FEAT-P2-001: minAgentVersion is validated at issuance and enforced at fetch. ... /srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-minver.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:08] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_db87f32f48fb87864f447b0d.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:08] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:09] "POST /api/v1/sensors/fes_db87f32f48fb87864f447b0d/update-manifests HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:09] "GET /api/v1/sensors/fes_db87f32f48fb87864f447b0d/update-manifest HTTP/1.1" 409 -
+127.0.0.1 - - [03/Oct/2026 06:24:09] "PUT /api/v1/sensors/fes_db87f32f48fb87864f447b0d/inventory HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:09] "GET /api/v1/sensors/fes_db87f32f48fb87864f447b0d/update-manifest HTTP/1.1" 409 -
+127.0.0.1 - - [03/Oct/2026 06:24:09] "PUT /api/v1/sensors/fes_db87f32f48fb87864f447b0d/inventory HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:09] "GET /api/v1/sensors/fes_db87f32f48fb87864f447b0d/update-manifest HTTP/1.1" 200 -
+127.0.0.1 - - [03/Oct/2026 06:24:10] "POST /api/v1/sensors/fes_db87f32f48fb87864f447b0d/update-manifests HTTP/1.1" 400 -
+ok
+test_wellformed_sensor_id_reaches_handler (tests.phase2.test_service_integration.ControlPlaneIT.test_wellformed_sensor_id_reaches_handler)
+A contract-shaped id still routes; a missing one yields SENSOR_NOT_FOUND. ... 127.0.0.1 - - [03/Oct/2026 06:24:10] "GET /api/v1/sensors/fes_aaaaaaaaaaaaaaaaaaaa HTTP/1.1" 404 -
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:124: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/device-route-ok.csr.pem' mode='r' encoding='utf-8'>
+  "csrPem": open(csr).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:10] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+/srv/work/falcon-edge/src/falcon_control/service.py:813: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/sensors/fes_8c89d48f7448d18bebcb93ba.crt.pem' mode='r' encoding='utf-8'>
+  "certificatePem": open(cert_path).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:814: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-it-g88ncnll/secrets/ca/ca.crt.pem' mode='r' encoding='utf-8'>
+  "trustBundlePem": open(self.ca["cert"]).read(),
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:10] "POST /api/v1/enrollments HTTP/1.1" 201 -
+127.0.0.1 - - [03/Oct/2026 06:24:10] "GET /api/v1/sensors/fes_8c89d48f7448d18bebcb93ba HTTP/1.1" 200 -
+ok
+/srv/work/falcon-edge/src/falcon_control/pki.py:148: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/server.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=365, extfile_lines=ext)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/pki.py:163: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/a/operator.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=days)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/pki.py:163: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/b/operator.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=days)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+test_duplicate_identity_id_fails_closed_at_startup (tests.phase2.test_service_integration.OperatorIdentityTests.test_duplicate_identity_id_fails_closed_at_startup)
+A duplicate operator id (env form) refuses to construct the service. ... ok
+test_env_var_operator_identities (tests.phase2.test_service_integration.OperatorIdentityTests.test_env_var_operator_identities)
+FALCON_OPERATOR_IDENTITIES is parsed as id=fingerprint,id2=fingerprint2. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_env_var_revocation (tests.phase2.test_service_integration.OperatorIdentityTests.test_env_var_revocation)
+FALCON_OPERATOR_REVOKED is a comma-separated denylist. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_malformed_env_entry_fails_closed_at_startup (tests.phase2.test_service_integration.OperatorIdentityTests.test_malformed_env_entry_fails_closed_at_startup)
+An env entry without '=' refuses to construct the service. ... ok
+test_malformed_identity_fingerprint_fails_closed_at_startup (tests.phase2.test_service_integration.OperatorIdentityTests.test_malformed_identity_fingerprint_fails_closed_at_startup)
+A malformed fingerprint in the map refuses to construct the service. ... ok
+test_operator_actions_audit_with_resolved_id (tests.phase2.test_service_integration.OperatorIdentityTests.test_operator_actions_audit_with_resolved_id)
+ACM-P1-001: a real operator request records the resolved id as the actor. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:12] "POST /api/v1/bootstrap-tokens HTTP/1.1" 201 -
+ok
+test_revoked_single_fallback_id_is_refused (tests.phase2.test_service_integration.OperatorIdentityTests.test_revoked_single_fallback_id_is_refused)
+A revoked default operator id also refuses the single-operator fallback. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_revoking_operator_a_refuses_a_but_not_b (tests.phase2.test_service_integration.OperatorIdentityTests.test_revoking_operator_a_refuses_a_but_not_b)
+ACM-P1-001 revocation: a revoked id is refused; other operators keep working. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+127.0.0.1 - - [03/Oct/2026 06:24:13] "GET /api/v1/sensors HTTP/1.1" 403 -
+127.0.0.1 - - [03/Oct/2026 06:24:13] "GET /api/v1/sensors HTTP/1.1" 200 -
+ok
+test_single_operator_fingerprint_fallback_still_works (tests.phase2.test_service_integration.OperatorIdentityTests.test_single_operator_fingerprint_fallback_still_works)
+Backward compatibility: operator_fingerprint remains a fallback identity. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_two_operators_get_distinct_audit_actors (tests.phase2.test_service_integration.OperatorIdentityTests.test_two_operators_get_distinct_audit_actors)
+Two operator certs with distinct fingerprints => distinct audit actors. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_unmatched_fingerprint_is_refused (tests.phase2.test_service_integration.OperatorIdentityTests.test_unmatched_fingerprint_is_refused)
+A certificate whose fingerprint matches no operator id is refused. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-opident-_vj1l2lv/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+/srv/work/falcon-edge/src/falcon_control/pki.py:163: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/operator.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=days)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+test_configured_pin_env_var_matching_cert_grants_operator (tests.phase2.test_service_integration.OperatorTrustRootTests.test_configured_pin_env_var_matching_cert_grants_operator)
+FALCON_OPERATOR_FINGERPRINT is accepted as the pin source. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_configured_pin_matching_cert_grants_operator (tests.phase2.test_service_integration.OperatorTrustRootTests.test_configured_pin_matching_cert_grants_operator)
+A pin equal to the issued operator cert fingerprint works as before. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_configured_pin_mismatch_fails_closed (tests.phase2.test_service_integration.OperatorTrustRootTests.test_configured_pin_mismatch_fails_closed)
+A pin that disagrees with the presented cert grants no operator role. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+error: operator trust root rejected: operator.fingerprint record does not match the configured operator fingerprint pin; refusing operator authority
+error: operator trust root rejected: operator.fingerprint record does not match the configured operator fingerprint pin; refusing operator authority
+ok
+test_invalid_pin_fails_closed_at_startup (tests.phase2.test_service_integration.OperatorTrustRootTests.test_invalid_pin_fails_closed_at_startup)
+A malformed pin refuses to construct the service (no unverifiable trust). ... ok
+test_matching_record_and_pin_grants_operator (tests.phase2.test_service_integration.OperatorTrustRootTests.test_matching_record_and_pin_grants_operator)
+A pin consistent with the record is honored even with the record present. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_pin_file_source_is_honored (tests.phase2.test_service_integration.OperatorTrustRootTests.test_pin_file_source_is_honored)
+A deploy-time operator.fingerprint.pin file configures the trust root. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_record_without_pin_still_grants_operator (tests.phase2.test_service_integration.OperatorTrustRootTests.test_record_without_pin_still_grants_operator)
+Backward compatibility: with no pin, a safe 0644 record still works. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_tampered_record_disagreeing_with_pin_fails_closed (tests.phase2.test_service_integration.OperatorTrustRootTests.test_tampered_record_disagreeing_with_pin_fails_closed)
+SEC-P1-003: writing operator.fingerprint cannot override a configured pin. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+error: operator trust root rejected: operator.fingerprint record does not match the configured operator fingerprint pin; refusing operator authority
+error: operator trust root rejected: operator.fingerprint record does not match the configured operator fingerprint pin; refusing operator authority
+/srv/work/falcon-edge/tests/phase2/test_service_integration.py:967: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/operator.fingerprint' mode='r' encoding='utf-8'>
+  self.assertEqual(open(self.record).read().strip(), self.op_fp)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_world_writable_record_without_pin_is_rejected (tests.phase2.test_service_integration.OperatorTrustRootTests.test_world_writable_record_without_pin_is_rejected)
+No pin: a group/world-writable operator.fingerprint is refused, not trusted. ... /srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-trustroot-l1ucau0j/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+error: operator trust root rejected: operator fingerprint record rejected: /tmp/falcon-edge-trustroot-l1ucau0j/secrets/operator.fingerprint is group- or world-writable (mode 0o666); refusing operator authority
+error: operator trust root rejected: operator fingerprint record rejected: /tmp/falcon-edge-trustroot-l1ucau0j/secrets/operator.fingerprint is group- or world-writable (mode 0o666); refusing operator authority
+ok
+test_health_reports_commit_and_dirty_flag (tests.phase2.test_source_state.HealthSourceStateTests.test_health_reports_commit_and_dirty_flag) ... /srv/work/falcon-edge/src/falcon_control/pki.py:148: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-health-l4jttlky/secrets/server.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=365, extfile_lines=ext)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-health-l4jttlky/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-health-l4jttlky/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_health_reports_unknown_source_for_non_repository (tests.phase2.test_source_state.HealthSourceStateTests.test_health_reports_unknown_source_for_non_repository) ... /srv/work/falcon-edge/src/falcon_control/pki.py:148: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/falcon-edge-health-e5f0r2do/secrets/server.csr.pem' mode='r' encoding='utf-8'>
+  issue_cert(ca_dir, open(csr).read(), cert, days=365, extfile_lines=ext)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/srv/work/falcon-edge/src/falcon_control/service.py:251: ResourceWarning: unclosed file <_io.BufferedReader name='/tmp/falcon-edge-health-e5f0r2do/secrets/signing.seed'>
+  self.signing_seed = open(self._signing_seed_path, "rb").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_default_root_is_the_repository_containing_the_module (tests.phase2.test_source_state.SourceStateHelperTests.test_default_root_is_the_repository_containing_the_module) ... ok
+test_git_repository_clean_then_dirty (tests.phase2.test_source_state.SourceStateHelperTests.test_git_repository_clean_then_dirty) ... ok
+test_non_repository_is_unknown_and_clean (tests.phase2.test_source_state.SourceStateHelperTests.test_non_repository_is_unknown_and_clean) ... ok
+test_fk_violation_rejected_and_cascade_deletes (tests.phase2.test_store_lifecycle.ForeignKeyTests.test_fk_violation_rejected_and_cascade_deletes) ... ok
+test_store_runs_in_wal_mode (tests.phase2.test_store_lifecycle.ForeignKeyTests.test_store_runs_in_wal_mode) ... ok
+test_v0_to_v1_rebuilds_with_foreign_keys (tests.phase2.test_store_lifecycle.MigrationTests.test_v0_to_v1_rebuilds_with_foreign_keys) ... ok
+test_prune_covers_control_datasets_and_audits_deletion (tests.phase2.test_store_lifecycle.PruneTests.test_prune_covers_control_datasets_and_audits_deletion) ... ok
+test_prune_keeps_unbound_tokens (tests.phase2.test_store_lifecycle.PruneTests.test_prune_keeps_unbound_tokens) ... ok
+test_prune_removes_only_rows_past_retention (tests.phase2.test_store_lifecycle.PruneTests.test_prune_removes_only_rows_past_retention) ... ok
+
+----------------------------------------------------------------------
+Ran 74 tests in 58.666s
+
+OK
+UNITTEST_EXIT=0
+ssh_exit=0
+# ---------------------------------------------------------------------------
+# Secret gate (profile gates.gitleaks = true)
+# Command: gitleaks detect --no-git --redact --source . -v
+# ---------------------------------------------------------------------------
+
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+
+[90m6:24AM[0m [32mINF[0m [1mscanned ~7195336 bytes (7.20 MB) in 2.14s[0m
+[90m6:24AM[0m [32mINF[0m [1mno leaks found[0m
+GITLEAKS_EXIT=0
+ssh_exit=0

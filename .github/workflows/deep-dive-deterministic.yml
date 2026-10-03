@@ -21,6 +21,15 @@ on:
         description: Comma-separated repos to skip
         required: false
         default: 'soc,infra,AWS-WWW,www,www-dev'
+      runner:
+        description: 'Runner label (ubuntu-latest, or a self-hosted lab label like ci-runner)'
+        required: false
+        default: ubuntu-latest
+      deep:
+        description: Run deep checks (hadolint/trivy)
+        type: boolean
+        required: false
+        default: false
   schedule:
     - cron: '0 6 * * 1' # Mondays 06:00 UTC
 
@@ -29,7 +38,7 @@ permissions:
 
 jobs:
   deterministic:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     env:
       ORG: ${{ inputs.org || 'MaineCyberTech' }}
       INPUT_REPOS: ${{ inputs.repos }}
@@ -43,6 +52,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install tools
+        if: ${{ !inputs.runner || inputs.runner == 'ubuntu-latest' }}
         run: |
           set -e
           sudo apt-get update -qq
@@ -54,6 +64,11 @@ jobs:
           GL_TAG=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r .tag_name)
           curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/${GL_TAG}/gitleaks_${GL_TAG#v}_linux_x64.tar.gz" \
             | sudo tar -xz -C /usr/local/bin gitleaks || true
+          # hadolint + trivy (only needed for --deep)
+          if [ "${{ inputs.deep }}" = "true" ]; then
+            command -v hadolint >/dev/null || { curl -sSL https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /tmp/hadolint && sudo install -m 0755 /tmp/hadolint /usr/local/bin/hadolint; }
+            command -v trivy >/dev/null || { curl -sSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin; }
+          fi
           echo "tool versions:"; gitleaks version || true; actionlint --version || true; shellcheck --version | head -2 || true
 
       - name: Determine repo list
@@ -74,6 +89,8 @@ jobs:
         run: |
           set -e
           mkdir -p work out
+          EXTRA=""
+          if [ "${{ inputs.deep }}" = "true" ]; then EXTRA="--deep"; fi
           IFS=',' read -ra REPOS <<< "${{ steps.repos.outputs.list }}"
           IFS=',' read -ra EXC <<< "$EXCLUDE"
           for raw in "${REPOS[@]}"; do
@@ -85,7 +102,7 @@ jobs:
             echo "::group::$r"
             if git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${r}.git" "work/$r"; then
               python3 tools/repo_inventory.py "work/$r" -o "out/$r.inventory.json" || true
-              python3 tools/deterministic_checks.py "work/$r" -o "out/$r" || true
+              python3 tools/deterministic_checks.py "work/$r" -o "out/$r" $EXTRA || true
             else
               echo "clone failed: $r"
             fi
