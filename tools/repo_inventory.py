@@ -83,6 +83,47 @@ SECRET_NAME_PATTERNS = [
     "*secret*", "*credential*", "*token*", "id_rsa*", "*.asc", "*.gpg",
 ]
 
+TEST_DIR_NAMES = {"tests", "test", "__tests__", "e2e", "spec", "specs",
+                  "__mocks__", "testing"}
+TEST_FILE_RE = re.compile(
+    r"\.(test|spec)\.[a-z0-9]+$"          # foo.test.ts / foo.spec.js
+    r"|(^|/)test_[^/]+\.py$"               # test_foo.py
+    r"|(^|/)[^/]+_test\.(py|go|rs)$"       # foo_test.py / foo_test.go
+    r"|(^|/)[^/]+[._-](test|spec)\.[a-z0-9]+$",
+    re.I,
+)
+
+
+def is_test_path(rel):
+    """True only for real test files/dirs (not substrings like data/species.ts)."""
+    parts = rel.split("/")
+    if any(p.lower() in TEST_DIR_NAMES for p in parts[:-1]):
+        return True
+    return bool(TEST_FILE_RE.search(parts[-1]))
+
+
+def app_router_route(rel):
+    """Derive an Express-style path from a Next.js App Router route file, else None."""
+    segs = rel.split("/")
+    if "app" not in segs:
+        return None
+    i = segs.index("app")
+    tail = segs[i + 1:-1]
+    tail = [s for s in tail if not (s.startswith("(") and s.endswith(")"))]  # route groups
+    return "/" + "/".join(tail) if tail else "/"
+
+
+def pages_api_route(rel):
+    """Derive the path for a Next.js pages/api handler, else None."""
+    marker = "pages/api/"
+    if marker not in rel:
+        return None
+    rest = rel.split(marker, 1)[1]
+    rest = re.sub(r"\.(ts|tsx|js|jsx|mjs|cjs)$", "", rest)
+    if rest.endswith("/index"):
+        rest = rest[:-len("/index")]
+    return "/api/" + rest if rest else "/api"
+
 
 def run_git(root, args):
     try:
@@ -190,7 +231,7 @@ def scan_repo(root):
         if not path.endswith((".ts", ".js", ".py", ".rb", ".go", ".php", ".java")):
             continue
         rel = rel_posix(root, path)
-        if "test" in rel.lower() or "spec" in rel.lower():
+        if is_test_path(rel):
             continue
         try:
             with open(path, "r", encoding="utf-8", errors="replace") as fh:
@@ -206,6 +247,22 @@ def scan_repo(root):
         if len(inv["routes"]) >= 500:
             break
 
+    # Next.js App Router / pages API routes (no explicit router call).
+    for path in iter_files(root):
+        rel = rel_posix(root, path)
+        if is_test_path(rel):
+            continue
+        base = os.path.basename(path)
+        route = None
+        if base in ("route.ts", "route.js", "route.tsx", "route.jsx"):
+            route = app_router_route(rel)
+        elif base.endswith((".ts", ".tsx", ".js", ".jsx")):
+            route = pages_api_route(rel)
+        if route:
+            inv["routes"].append({"file": rel, "path": route})
+            if len(inv["routes"]) >= 500:
+                break
+
     for path in iter_files(root):
         rel = rel_posix(root, path)
         low = rel.lower()
@@ -215,11 +272,13 @@ def scan_repo(root):
             inv["workflows"].append(rel)
         if os.path.basename(path) in ("Dockerfile", "Dockerfile.prod") or rel.endswith(".dockerfile"):
             inv["containers"].append(rel)
-        if "test" in low or "spec" in low:
-            if path.endswith((".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".rb")):
-                inv["tests"]["files"] += 1
-        if os.path.basename(path) in ("__tests__", "tests", "test", "e2e", "spec"):
-            inv["tests"]["dirs"].append(rel)
+        if is_test_path(rel) and path.endswith((".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs", ".rb")):
+            inv["tests"]["files"] += 1
+    for dirpath, dirnames, _files in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for d in dirnames:
+            if d.lower() in TEST_DIR_NAMES:
+                inv["tests"]["dirs"].append(rel_posix(root, os.path.join(dirpath, d)))
     inv["migrations"] = sorted(set(inv["migrations"]))[:200]
     inv["workflows"] = sorted(set(inv["workflows"]))
     inv["containers"] = sorted(set(inv["containers"]))
