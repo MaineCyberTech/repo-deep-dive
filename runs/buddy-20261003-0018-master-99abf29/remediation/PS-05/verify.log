@@ -1,0 +1,139 @@
+# PS-05 "Hygiene / dead code" - verification log
+
+- Run: 20261003-0018-master-99abf29
+- Repo/base: C:\temp\buddy @ 99abf294dae0d9de8770dfde257bdef5fae9ae1b (origin/master)
+- Branch: remediation/ps-05-20261003-0018-master-99abf29
+- Commit verified: 742c3d335ce14826eb6147952899f43e922c7f21
+- Local env: Windows, node v24.19.0, npm 11.17.0
+- Lab env: ci-runner 172.23.128.51, /srv/work/buddy (wiped + re-synced via lab-sync.ps1)
+- Note: ANSI color escapes were stripped from the captured output.
+
+## Preparation
+
+The lab working directory was wiped (`rm -rf /srv/work/buddy`) and re-synced, then the working
+tree was normalized to the committed content (the Windows tar carries CRLF; `git checkout -- .`
+restored the LF blobs) so the checkout is clean at the commit under test:
+
+```text
+root@172.23.128.51: LAB_OK
+root@172.23.128.51: WIPED
+lab-sync.ps1: synced:buddy  742c3d3
+git status --porcelain --untracked-files=all : (empty)
+git rev-parse HEAD : 742c3d335ce14826eb6147952899f43e922c7f21
+node_modules : absent before npm ci
+```
+
+## Primary gate - lab (ci-runner)
+
+`npm ci && npm run lint && npm run typecheck && npm run test`
+Exit: 0
+
+```text
+added 520 packages, and audited 521 packages in 15s
+
+188 packages are looking for funding
+  run `npm fund` for details
+
+19 vulnerabilities (3 moderate, 14 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> buddy@0.1.0 lint
+> next lint
+
+✔ No ESLint warnings or errors
+
+> buddy@0.1.0 typecheck
+> tsc --noEmit
+
+
+> buddy@0.1.0 test
+> vitest run
+
+The CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v1.6.1 /srv/work/buddy
+
+ ✓ lib/locations/adventure.test.ts  (14 tests) 16ms
+ ✓ lib/actions/care.test.ts  (25 tests) 13ms
+ ✓ lib/generation/generation.test.ts  (39 tests) 176ms
+ ✓ data/items.test.ts  (15 tests) 10ms
+ ✓ lib/progression/lifecycle.test.ts  (17 tests) 9ms
+
+ Test Files  5 passed (5)
+      Tests  110 passed (110)
+   Start at  07:35:26
+   Duration  2.46s (transform 363ms, setup 0ms, collect 726ms, tests 224ms, environment 3.15s, prepare 1.16s)
+
+__VERIFY_EXIT=0
+```
+
+## Secret gate - lab (ci-runner)
+
+Tracked repository content at the commit (authoritative gate):
+
+`git archive HEAD | tar -x -C /tmp/glscan-ps05 && gitleaks detect --no-git --redact --source /tmp/glscan-ps05 -v`
+
+```text
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+7:35AM INF scanned ~252681 bytes (252.68 KB) in 311ms
+7:35AM INF no leaks found
+GITLEAKS_EXIT=0
+```
+
+## Local gate (Windows) - cross-check
+
+Same commit, local working tree, node v24.19.0:
+
+| Command | Exit | Result |
+|---|---:|---|
+| `npm run lint` | 0 | No ESLint warnings or errors |
+| `npm run typecheck` | 0 | clean |
+| `npm run test` | 0 | 5 files / 110 tests passed |
+
+### Pre-existing baseline note (not caused by PS-05)
+
+On unmodified `origin/master`, `npm run typecheck` fails with a pre-existing test-only error:
+
+```text
+lib/progression/lifecycle.test.ts(52,32): error TS2802: Type 'Set<LifecycleStage>' can only be
+iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or
+higher.
+BASELINE_TYPECHECK_EXIT=2
+```
+
+This baseline failure was reproduced with PS-05's changes stashed at the same base. PS-05 carries
+the identical one-line test-only unblock already used by sibling patch sets PS-01/PS-03
+(`Array.from(new Set(stages))`) so the typecheck gate can pass. No runtime code is affected.
+
+## Scope
+
+Files changed versus `origin/master`:
+
+```text
+components/device/MainDevice.tsx  |  2 +-
+data/items.ts                     |  3 +--
+lib/generation/generation.test.ts |  9 +++++++++
+lib/generation/rng.ts             | 12 ++----------
+lib/progression/lifecycle.test.ts |  2 +-
+lib/storage/autosave.ts           | 38 --------------------------------------
+6 files changed, 14 insertions(+), 52 deletions(-)
+```
+
+- In patch-set scope (per `remediation_plan.json`): `lib/storage/autosave.ts`,
+  `lib/generation/rng.ts`, `lib/generation/hash.ts` (no change required), `data/items.ts`,
+  `components/device/MainDevice.tsx`.
+- Supporting test file: `lib/generation/generation.test.ts` (cross-module determinism regression).
+- Pre-existing baseline unblock (test-only): `lib/progression/lifecycle.test.ts`.

@@ -1,0 +1,178 @@
+# PS-04 "Save integrity" - verification log
+
+- Run: 20261003-0018-master-99abf29
+- Repo/base: C:\temp\buddy @ 99abf294dae0d9de8770dfde257bdef5fae9ae1b (origin/master)
+- Branch: remediation/ps-04-20261003-0018-master-99abf29
+- Local env: Windows, node v24.19.0, npm 11.17.0
+- Lab env: ci-runner 172.23.128.51, /srv/work/buddy (synced via lab-sync.ps1)
+- All output below is captured verbatim from the commands that produced it.
+
+## Primary gate - lab (ci-runner): `npm ci && npm run test`
+Exit: 0
+```text
+ssh.exe : npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster 
+implementation
+At C:\temp\proxmox-vm\scripts\lab-run.ps1:8 char:1
++ & ssh -i $KeyFile -o StrictHostKeyChecking=no "root@${Target}" "cd $R ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn deprec... implementation:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache 
+if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and 
+powerful.
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security 
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be 
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security 
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be 
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support 
+for other options.
+
+added 520 packages, and audited 521 packages in 37s
+
+188 packages are looking for funding
+  run `npm fund` for details
+
+19 vulnerabilities (3 moderate, 14 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> buddy@0.1.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v1.6.1 /srv/work/buddy
+
+ Γ£ô lib/actions/care.test.ts  (25 tests) 11ms
+ Γ£ô lib/locations/adventure.test.ts  (14 tests) 19ms
+ Γ£ô lib/generation/generation.test.ts  (38 tests) 187ms
+ Γ£ô lib/progression/lifecycle.test.ts  (17 tests) 15ms
+ Γ£ô data/items.test.ts  (15 tests) 18ms
+ Γ£ô lib/storage/schema.test.ts  (12 tests) 33ms
+
+ Test Files  6 passed (6)
+      Tests  121 passed (121)
+   Start at  06:24:46
+   Duration  4.70s (transform 559ms, setup 0ms, collect 1.15s, tests 283ms, environment 6.40s, prepare 1.96s)
+
+
+```
+
+## Local: `npm run lint`
+Exit: 0
+```text
+
+> buddy@0.1.0 lint
+> next lint
+
+Γ£ö No ESLint warnings or errors
+
+```
+
+## Local: `npm run typecheck`
+Exit: 2 - PRE-EXISTING failure, unrelated to PS-04. Reproduced on the base commit with these changes stashed; error is in lib/progression/lifecycle.test.ts. Tracked by the CI/testing patch set (PS-01/TEST-P3-001).
+```text
+
+> buddy@0.1.0 typecheck
+> tsc --noEmit
+
+lib/progression/lifecycle.test.ts(52,32): error TS2802: Type 'Set<LifecycleStage>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+
+```
+
+## Local: `npm run test -- storage`
+Exit: 0
+```text
+
+> buddy@0.1.0 test
+> vitest run storage
+
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/temp/buddy[39m
+
+ [32mΓ£ô[39m lib/storage/schema.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 26[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 02:25:24
+[2m   Duration [22m 2.63s[2m (transform 297ms, setup 0ms, collect 356ms, tests 26ms, environment 951ms, prepare 246ms)[22m
+
+
+```
+
+## Local: `npm run test` (full suite)
+Exit: 0
+```text
+
+> buddy@0.1.0 test
+> vitest run
+
+node.exe : [33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33mThe CJS bu...e details.[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/temp/buddy[39m
+
+ [32mΓ£ô[39m data/items.test.ts [2m ([22m[2m15 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32mΓ£ô[39m lib/actions/care.test.ts [2m ([22m[2m25 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32mΓ£ô[39m lib/progression/lifecycle.test.ts [2m ([22m[2m17 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32mΓ£ô[39m lib/storage/schema.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 43[2mms[22m[39m
+ [32mΓ£ô[39m lib/locations/adventure.test.ts [2m ([22m[2m14 tests[22m[2m)[22m[90m 50[2mms[22m[39m
+ [32mΓ£ô[39m lib/generation/generation.test.ts [2m ([22m[2m38 tests[22m[2m)[22m[33m 302[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m      Tests [22m [1m[32m121 passed[39m[22m[90m (121)[39m
+[2m   Start at [22m 02:25:30
+[2m   Duration [22m 4.21s[2m (transform 2.09s, setup 1ms, collect 4.51s, tests 479ms, environment 9.99s, prepare 2.23s)[22m
+
+
+```
+
+## Secret scan - lab: `gitleaks detect --no-git --redact --source .`
+Exit: 0 - no leaks found
+```text
+ssh.exe : 
+At C:\temp\proxmox-vm\scripts\lab-run.ps1:8 char:1
++ & ssh -i $KeyFile -o StrictHostKeyChecking=no "root@${Target}" "cd $R ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+
+[90m6:25AM[0m [32mINF[0m [1mscanned ~367505 bytes (367.51 KB) in 810ms[0m
+[90m6:25AM[0m [32mINF[0m [1mno leaks found[0m
+GITLEAKS_EXIT=0
+
+```
+

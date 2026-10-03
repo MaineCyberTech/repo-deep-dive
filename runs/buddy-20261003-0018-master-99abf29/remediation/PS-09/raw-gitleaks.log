@@ -1,0 +1,22 @@
+powershell : 
+At line:1 char:8
++ $out = powershell -ExecutionPolicy Bypass -File C:\temp\proxmox-vm\sc ...
++        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+
+[90m8:08AM[0m [32mINF[0m [1mscanned ~268633 bytes (268.63 KB) in 587ms[0m
+[90m8:08AM[0m [32mINF[0m [1mno leaks found[0m
+__GITLEAKS_EXIT=0
+OK-README.md
+OK-CHANGELOG.md
+OK-docs/README.md
+OK-docs/buddy/reports/phases
+OK-docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack
+__LINKCHECK_DONE__

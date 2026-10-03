@@ -1,0 +1,73 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-02",
+  "title": "Licensing & provenance",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-02-20261003-0018-master-99abf29",
+  "commit": "594dcddb50ca2b6f7b5053e4833e1d324a444250",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/6",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "SUPPLY-P1-001",
+    "SUPPLY-P2-003"
+  ],
+  "filesChanged": [
+    "LICENSE",
+    "NOTICE",
+    "docs/README.md"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Exactly the PS-02 plan files (LICENSE, NOTICE, docs/README.md), all new. No runtime/application code, dependency, lockfile, or configuration changed."
+  },
+  "licenseDecision": {
+    "chosen": false,
+    "reason": "Ambiguous: package.json has no license field, no root README exists, sibling org repos conflict (mainecybertech ISC, chat MIT, snowride proprietary), and the run's executive summary lists 'Public OSS vs private product?' as an open maintainer decision. Per the remediation guardrail, the target license is recorded as an open question rather than guessed.",
+    "placeholder": "LICENSE records the all-rights-reserved default and the pending decision; it grants no rights and is explicitly not a final license."
+  },
+  "commands": [
+    {
+      "command": "npm ci && npm run lint && npm run test",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced clean at 594dcdd)",
+      "exit": 0,
+      "result": "lint clean; 5 test files / 109 tests passed; __VERIFY_EXIT=0"
+    },
+    {
+      "command": "test -f LICENSE && test -f NOTICE && test -f docs/README.md && git ls-files LICENSE NOTICE docs/README.md && grep -l SUPPLY-P2-003 docs/README.md NOTICE",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "all three files present and tracked; provenance text found in docs/README.md and NOTICE"
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-ps02 && gitleaks detect --no-git --redact --source /tmp/glscan-ps02 -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~257441 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0, npm 11.17.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0, npm 11.17.0)",
+      "exit": 0,
+      "result": "5 files / 109 tests passed"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-02/diff.patch",
+    "sha256": "da7e426187d24760be89d0ee7727450f2f0a7e57901db078d658525b2fb4ac21"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-02/verify.log",
+    "sha256": "383abcc6a7a3b9ad32f64bb5180e1d08a4aa1a2109b9d2bc779151105e84bfc6"
+  },
+  "prBody": "remediation/PS-02/pr_body.md",
+  "generated": "2026-10-03T07:15:00Z"
+}

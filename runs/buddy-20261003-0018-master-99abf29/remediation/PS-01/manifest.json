@@ -1,0 +1,90 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-01",
+  "title": "CI + governance",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-01-20261003-0018-master-99abf29",
+  "commit": "2d9cb592d95c025cddf60d42010ea6ebf1dda98a",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/3",
+  "prMode": "draft",
+  "findings": [
+    "CI-P1-001",
+    "CI-P1-002",
+    "CI-P2-001",
+    "TEST-P3-001",
+    "EXEC-P2-001"
+  ],
+  "filesChanged": [
+    ".github/workflows/ci.yml",
+    ".github/dependabot.yml",
+    ".github/CODEOWNERS",
+    "vitest.config.ts",
+    "package.json",
+    "package-lock.json",
+    ".gitignore",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Patch-set files (.github/workflows/ci.yml, .github/dependabot.yml, .github/CODEOWNERS, vitest.config.ts, package.json) plus necessary supporting files: package-lock.json (lockfile for the added @vitest/coverage-v8 devDependency), .gitignore (ignore coverage/ output), and lib/progression/lifecycle.test.ts (the TEST-P3-001 typecheck unblock authorized in the patch instruction). No runtime/application code changed."
+  },
+  "commands": [
+    {
+      "command": "git rev-parse HEAD && npm ci && npm run lint && npm run typecheck && npm run test && npm run test:coverage && npm run build",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, clean checkout at 2d9cb59)",
+      "exit": 0,
+      "result": "109 tests passed (5 files); coverage 83.71% lines / 82.78% branches / 71.42% functions; build compiled successfully"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source /tmp/glscan (git archive HEAD)",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "no leaks found in tracked repository content"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "clean; pre-existing TS2802 error in lib/progression/lifecycle.test.ts fixed"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "5 files / 109 tests passed"
+    },
+    {
+      "command": "npm run test:coverage",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "109 tests; thresholds met"
+    },
+    {
+      "command": "npm run build",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "Compiled successfully; 4/4 static pages generated"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . (whole tree incl node_modules)",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 1,
+      "result": "6 findings, all inside installed node_modules; tracked repository content scans clean (exit 0). Informational only."
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-01/diff.patch",
+    "sha256": "9d016aeec491a6746b5fa3cba79ea105289f624805d2d181a0963b67e994b565"
+  },
+  "verifyLog": "remediation/PS-01/verify.log",
+  "prBody": "remediation/PS-01/pr_body.md",
+  "generated": "2026-10-03T06:45:00Z"
+}

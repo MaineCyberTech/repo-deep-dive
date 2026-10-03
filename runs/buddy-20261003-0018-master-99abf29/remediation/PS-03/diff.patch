@@ -1,0 +1,250 @@
+diff --git a/app/page.test.tsx b/app/page.test.tsx
+new file mode 100644
+index 0000000..a8a8fbb
+--- /dev/null
++++ b/app/page.test.tsx
+@@ -0,0 +1,51 @@
++import { render, waitFor } from '@testing-library/react';
++import { vi, describe, it, expect, beforeEach } from 'vitest';
++
++const { loadGame, hasSave } = vi.hoisted(() => ({
++  loadGame: vi.fn(),
++  hasSave: vi.fn(),
++}));
++
++vi.mock('@/lib/storage/indexeddb', () => ({ loadGame, hasSave }));
++
++import HomePage from '@/app/page';
++import { useGameStore } from '@/lib/buddy/store';
++import { createInitialBuddyState } from '@/lib/generation/engine';
++
++// ARCH-P2-002: the persisted guestId must be restored into the store on reload so
++// subsequent saves keep the same identity.
++describe('HomePage guest identity restore (ARCH-P2-002)', () => {
++  beforeEach(() => {
++    useGameStore.setState({
++      buddy: null,
++      screen: 'boot',
++      guestId: '',
++      isOnline: true,
++      inventory: { coins: 0, items: [] },
++      currentAdventureResult: null,
++    });
++    hasSave.mockReset();
++    loadGame.mockReset();
++    hasSave.mockResolvedValue(true);
++  });
++
++  it('restores guestId and buddy from the loaded save', async () => {
++    const buddy = createInitialBuddyState('guest-abc', 'Persisted');
++    loadGame.mockResolvedValue({
++      version: 2,
++      guestId: 'guest-abc',
++      buddy,
++      createdAt: 1,
++      updatedAt: 2,
++      inventory: { coins: 3, items: [] },
++    });
++
++    render(<HomePage />);
++
++    await waitFor(() => {
++      expect(useGameStore.getState().guestId).toBe('guest-abc');
++    });
++    expect(useGameStore.getState().buddy?.identity.nickname).toBe('Persisted');
++    expect(useGameStore.getState().inventory.coins).toBe(3);
++  });
++});
+diff --git a/app/page.tsx b/app/page.tsx
+index 6bab63a..540b9e6 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -8,7 +8,7 @@ import { loadGame, hasSave } from '@/lib/storage/indexeddb';
+ 
+ export default function HomePage() {
+   const [loaded, setLoaded] = useState(false);
+-  const { buddy, screen, setBuddy, setScreen } = useGameStore();
++  const { buddy, screen, setBuddy, setScreen, setGuestId } = useGameStore();
+ 
+   useEffect(() => {
+     const init = async () => {
+@@ -16,6 +16,11 @@ export default function HomePage() {
+         const save = await loadGame();
+         if (save?.buddy) {
+           setBuddy(save.buddy);
++          // Restore the persisted identity so saves stay bound to the same guest
++          // across reloads (ARCH-P2-002).
++          if (save.guestId) {
++            setGuestId(save.guestId);
++          }
+           if (save.inventory) {
+             useGameStore.getState().setInventory(save.inventory);
+           }
+@@ -29,7 +34,7 @@ export default function HomePage() {
+       setLoaded(true);
+     };
+     init();
+-  }, [setBuddy, setScreen]);
++  }, [setBuddy, setScreen, setGuestId]);
+ 
+   if (!loaded) {
+     return (
+diff --git a/components/device/AdventureScreen.tsx b/components/device/AdventureScreen.tsx
+index e61b2ad..ea577fc 100644
+--- a/components/device/AdventureScreen.tsx
++++ b/components/device/AdventureScreen.tsx
+@@ -12,7 +12,12 @@ interface AdventureScreenProps {
+ }
+ 
+ export function AdventureScreen({ onBack }: AdventureScreenProps) {
+-  const { buddy, inventory, setBuddy, setInventory, setCurrentAdventureResult, guestId } = useGameStore();
++  const buddy = useGameStore((s) => s.buddy);
++  const inventory = useGameStore((s) => s.inventory);
++  const setBuddy = useGameStore((s) => s.setBuddy);
++  const setInventory = useGameStore((s) => s.setInventory);
++  const setCurrentAdventureResult = useGameStore((s) => s.setCurrentAdventureResult);
++  const guestId = useGameStore((s) => s.guestId);
+   const [selectedLocation, setSelectedLocation] = useState<LocationDefinition | null>(null);
+   const [result, setResult] = useState<AdventureResult | null>(null);
+   const [loading, setLoading] = useState(false);
+diff --git a/components/device/MainDevice.test.tsx b/components/device/MainDevice.test.tsx
+new file mode 100644
+index 0000000..b045844
+--- /dev/null
++++ b/components/device/MainDevice.test.tsx
+@@ -0,0 +1,37 @@
++import { render, screen, act } from '@testing-library/react';
++import { describe, it, expect, beforeEach } from 'vitest';
++import { MainDevice } from '@/components/device/MainDevice';
++import { useGameStore } from '@/lib/buddy/store';
++import { createInitialBuddyState } from '@/lib/generation/engine';
++
++// ARCH-P1-002: the device must render the store's buddy (single source of truth),
++// not a private copy, so adventure results written to the store are reflected
++// immediately without remounting.
++describe('MainDevice store decoupling (ARCH-P1-002)', () => {
++  beforeEach(() => {
++    useGameStore.setState({
++      buddy: null,
++      screen: 'boot',
++      guestId: '',
++      isOnline: true,
++      inventory: { coins: 0, items: [] },
++      currentAdventureResult: null,
++    });
++  });
++
++  it('seeds the store from its prop and re-renders when the store buddy changes', () => {
++    const initial = createInitialBuddyState('guest-test', 'Tester');
++    render(<MainDevice buddy={initial} />);
++
++    expect(useGameStore.getState().buddy?.identity.nickname).toBe('Tester');
++    expect(screen.getByText(/Lv\.1/)).toBeTruthy();
++
++    const updated = { ...initial, level: 7, health: 42 };
++    act(() => {
++      useGameStore.getState().setBuddy(updated);
++    });
++
++    expect(screen.getByText(/Lv\.7/)).toBeTruthy();
++    expect(screen.getByText(/HP 42/)).toBeTruthy();
++  });
++});
+diff --git a/components/device/MainDevice.tsx b/components/device/MainDevice.tsx
+index b23a9db..07200d5 100644
+--- a/components/device/MainDevice.tsx
++++ b/components/device/MainDevice.tsx
+@@ -27,30 +27,40 @@ const ACTIONS: { type: CareActionType; label: string; icon: string }[] = [
+ ];
+ 
+ export function MainDevice({ buddy: initialBuddy, initialTab = 'main' }: MainDeviceProps) {
+-  const [currentBuddy, setCurrentBuddy] = useState(initialBuddy);
++  // The game store is the single source of truth for the device. `AdventureScreen`
++  // writes its result straight to the store, so reading `buddy` from the store here
++  // keeps the LCD/mood/HP/energy in sync without a remount (ARCH-P1-002).
++  const storedBuddy = useGameStore((s) => s.buddy);
++  const setBuddy = useGameStore((s) => s.setBuddy);
++  const updateBuddy = useGameStore((s) => s.updateBuddy);
++  const currentBuddy = storedBuddy ?? initialBuddy;
+   const [tab, setTab] = useState<'main' | 'profile' | 'stats' | 'adventure' | 'inventory'>(initialTab);
+   const [message, setMessage] = useState('');
+   const [messageKey, setMessageKey] = useState(0);
+   const [autoSaveStatus, setAutoSaveStatus] = useState('');
+-  const updateBuddy = useGameStore((s) => s.updateBuddy);
+   const buddyRef = useRef(initialBuddy);
+ 
++  // Seed the store from the prop only when it is empty (first mount / isolated use).
++  useEffect(() => {
++    if (!useGameStore.getState().buddy) {
++      setBuddy(initialBuddy);
++    }
++  }, [initialBuddy, setBuddy]);
++
+   useEffect(() => {
+     const buddy = buddyRef.current;
+     const elapsed = Date.now() - buddy.lastInteraction;
+     if (elapsed > 60_000) {
+       const decayed = applyOfflineDecay(buddy, elapsed);
+-      setCurrentBuddy(decayed);
+-      updateBuddy({ needs: decayed.needs, mood: decayed.mood, health: decayed.health });
++      setBuddy(decayed);
+       setMessage('Your buddy missed you!');
+       setMessageKey((k) => k + 1);
+     }
+-  }, [updateBuddy]);
++  }, [setBuddy]);
+ 
+   const handleAction = useCallback(
+     async (action: CareActionType) => {
+       const { buddy: updated, result } = applyAction(currentBuddy, action);
+-      setCurrentBuddy(updated);
+       updateBuddy(updated);
+       setMessage(result.message);
+       setMessageKey((k) => k + 1);
+diff --git a/components/hatch/HatchFlow.tsx b/components/hatch/HatchFlow.tsx
+index bf77fa0..5ee1e51 100644
+--- a/components/hatch/HatchFlow.tsx
++++ b/components/hatch/HatchFlow.tsx
+@@ -14,7 +14,12 @@ export function HatchFlow() {
+ 
+   const handleHatch = useCallback(() => {
+     setStep('hatching');
+-    const guestId = 'guest-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
++    // Use a cryptographically random id (SEC-P3-001). The fallback only runs in
++    // non-secure contexts where `crypto.randomUUID` is unavailable.
++    const guestId =
++      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
++        ? crypto.randomUUID()
++        : 'guest-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+     const buddy = createInitialBuddyState(guestId);
+     setNewBuddy(buddy);
+     useGameStore.getState().setGuestId(guestId);
+diff --git a/lib/progression/lifecycle.test.ts b/lib/progression/lifecycle.test.ts
+index 8258b7b..8464f45 100644
+--- a/lib/progression/lifecycle.test.ts
++++ b/lib/progression/lifecycle.test.ts
+@@ -49,7 +49,7 @@ describe('Lifecycle System', () => {
+ 
+     it('returns all 6 lifecycle stages', () => {
+       const stages = [0, 30, 100, 300, 800, 2000].map(xp => calculateLifecycle(xp));
+-      const uniqueStages = [...new Set(stages)];
++      const uniqueStages = Array.from(new Set(stages));
+       expect(uniqueStages).toHaveLength(6);
+     });
+   });
+diff --git a/vitest.config.ts b/vitest.config.ts
+index 310252a..2bb2989 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -8,6 +8,11 @@ export default defineConfig({
+     setupFiles: [],
+     include: ['**/*.test.ts', '**/*.test.tsx'],
+   },
++  esbuild: {
++    // Next compiles JSX with the automatic runtime; match that in Vitest so
++    // component tests do not need a `React` import in scope.
++    jsx: 'automatic',
++  },
+   resolve: {
+     alias: {
+       '@': path.resolve(__dirname),

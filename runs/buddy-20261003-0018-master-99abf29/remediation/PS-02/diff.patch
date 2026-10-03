@@ -1,0 +1,107 @@
+diff --git a/LICENSE b/LICENSE
+new file mode 100644
+index 0000000..7cc8808
+--- /dev/null
++++ b/LICENSE
+@@ -0,0 +1,17 @@
++LICENSE - PENDING
++
++Copyright (c) 2026 Maine CyberTech. All rights reserved.
++
++This repository does not yet have a chosen license. Absent an explicit license
++grant, all rights are reserved by default: no permission is granted to use,
++copy, modify, or distribute this software or its contents.
++
++This file records the current, unlicensed status so the repository is not
++mistaken for one that grants rights. It is intentionally not a final license.
++The copyright holder must select and publish the project license (for example
++MIT or Apache-2.0 for an open-source release, or a proprietary license) and
++replace this file.
++
++This decision is tracked as an open question under finding SUPPLY-P1-001
++(audit run 20261003-0018-master-99abf29). See NOTICE for third-party and
++vendored-content attribution.
+diff --git a/NOTICE b/NOTICE
+new file mode 100644
+index 0000000..e1090f9
+--- /dev/null
++++ b/NOTICE
+@@ -0,0 +1,34 @@
++NOTICE
++======
++
++This file records ownership and third-party/vendored-content attribution for
++the "buddy" repository. It is an attribution notice, not a license grant.
++
++Ownership
++---------
++Copyright (c) 2026 Maine CyberTech. See repository history for authorship.
++
++Licensing status
++----------------
++No final license has been chosen. Absent an explicit license grant, all rights
++are reserved by default (see LICENSE, which records this pending status). The
++target license for the application code and for the vendored prompt pack is an
++open maintainer/legal decision tracked under finding SUPPLY-P1-001.
++
++Vendored content
++----------------
++docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack/ is a planning and
++prompt pack committed under docs/prompts/ (87 files). Its authorship within the
++organization and its licensing are not recorded in-repo and are unconfirmed
++(finding SUPPLY-P2-003). It must not be redistributed outside the organization
++until its provenance and license are confirmed. Its own README (line 17) states
++that Tamaweb, Tamagotchi, and other copyrighted/proprietary projects must not
++be copied; the pack is documented in docs/README.md.
++
++Application dependencies
++------------------------
++Third-party npm dependencies retain their own licenses as declared in
++package.json / package-lock.json.
++
++This notice carries no license grant and does not modify the terms of any
++third-party component.
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..7069c2c
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,38 @@
++# Documentation
++
++Project documentation for `buddy`, a mobile-first, offline-capable PWA virtual
++pet game.
++
++## Contents
++
++| Path | Description |
++|---|---|
++| `buddy/reports/phases/` | Phase completion reports and phase audits (12 files). |
++| `prompts/buddy_virtual_pet_v2_complete_prompt_pack/` | Vendored planning/prompt pack (87 files). See provenance below. |
++
++## Prompt pack provenance
++
++`docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack/` is a large planning
++and prompt pack (87 markdown files across `prompts/`, `specs/`, `content/`,
++`ux/`, `integration/`, `audits/`, `checklists/`, `templates/`, and `runner/`)
++committed alongside the application.
++
++- **Role:** planning/specification material only; it contains no runnable
++  product code.
++- **Authorship / ownership:** not recorded in-repo and therefore **unconfirmed**
++  (finding `SUPPLY-P2-003`). It must not be assumed to be third-party or
++  in-house until the maintainer/legal owner confirms it.
++- **Licensing:** unconfirmed. Treat as all-rights-reserved pending confirmation;
++  do not redistribute the pack outside the organization.
++- **Originality constraint:** the pack's own `README.md` (line 17) states that
++  Tamaweb, Tamagotchi, and other copyrighted/proprietary projects must not be
++  copied, and the application code must be original.
++
++This classification is tracked under finding `SUPPLY-P2-003` in audit run
++`20261003-0018-master-99abf29`.
++
++## Licensing
++
++The repository has no chosen license yet; `LICENSE` records the pending,
++all-rights-reserved status and the target-license decision is an open question
++under finding `SUPPLY-P1-001`. See also the root `NOTICE`.

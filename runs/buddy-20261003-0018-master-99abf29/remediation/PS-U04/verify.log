@@ -1,0 +1,126 @@
+ssh.exe : npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out 
+lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more 
+comprehensive and powerful.
+At C:\temp\proxmox-vm\scripts\lab-run.ps1:8 char:1
++ & ssh -i $KeyFile -o StrictHostKeyChecking=no "root@${Target}" "cd $R ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn deprec...e and powerful.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster 
+implementation
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security 
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be 
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security 
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be 
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support 
+for other options.
+
+added 521 packages, and audited 522 packages in 13s
+
+188 packages are looking for funding
+  run `npm fund` for details
+
+19 vulnerabilities (3 moderate, 14 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> buddy@0.1.0 lint
+> next lint
+
+Γ£ö No ESLint warnings or errors
+
+> buddy@0.1.0 typecheck
+> tsc --noEmit
+
+
+> buddy@0.1.0 test
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See 
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v1.6.1 /srv/work/buddy
+
+ Γ£ô lib/locations/adventure.test.ts  (14 tests) 11ms
+ Γ£ô lib/actions/care.test.ts  (25 tests) 12ms
+ Γ£ô lib/generation/generation.test.ts  (38 tests) 139ms
+ Γ£ô lib/progression/lifecycle.test.ts  (17 tests) 14ms
+stderr | lib/storage/indexeddb.test.ts > Export / import > rejects a payload that is not valid base64/json
+Failed to import save: DOMException [InvalidCharacterError]: Invalid character
+    at atob (node:buffer:1294:13)
+    at Module.importSave (/srv/work/buddy/lib/storage/indexeddb.ts:88:18)
+    at /srv/work/buddy/lib/storage/indexeddb.test.ts:120:18
+    at file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:135:14
+    at file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:60:26
+    at runTest (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:781:17)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runFiles (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:958:5)
+    at startTests (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:967:3)
+
+stderr | lib/storage/indexeddb.test.ts > Export / import > rejects a JSON payload without a guestId
+Failed to import save: Error: Invalid save format
+    at Module.importSave (/srv/work/buddy/lib/storage/indexeddb.ts:91:13)
+    at /srv/work/buddy/lib/storage/indexeddb.test.ts:128:18
+    at file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:135:14
+    at file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:60:26
+    at runTest (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:781:17)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runFiles (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:958:5)
+    at startTests (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:967:3)
+    at file:///srv/work/buddy/node_modules/vitest/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+stderr | lib/storage/indexeddb.test.ts > Export / import > rejects a JSON payload without a version
+Failed to import save: Error: Invalid save format
+    at Module.importSave (/srv/work/buddy/lib/storage/indexeddb.ts:91:13)
+    at /srv/work/buddy/lib/storage/indexeddb.test.ts:136:18
+    at file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:135:14
+    at file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:60:26
+    at runTest (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:781:17)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runFiles (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:958:5)
+    at startTests (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:967:3)
+    at file:///srv/work/buddy/node_modules/vitest/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+
+stderr | lib/storage/indexeddb.test.ts > Export / import > does not overwrite an existing save when an import is 
+rejected
+Failed to import save: Error: Invalid save format
+    at Module.importSave (/srv/work/buddy/lib/storage/indexeddb.ts:91:13)
+    at /srv/work/buddy/lib/storage/indexeddb.test.ts:143:18
+    at runTest (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:781:11)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runSuite (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:909:15)
+    at runFiles (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:958:5)
+    at startTests (file:///srv/work/buddy/node_modules/@vitest/runner/dist/index.js:967:3)
+    at file:///srv/work/buddy/node_modules/vitest/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:116:7
+    at withEnv (file:///srv/work/buddy/node_modules/vitest/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:83:5)
+    at run (file:///srv/work/buddy/node_modules/vitest/dist/chunks/runtime-runBaseTests.oAvMKtQC.js:105:3)
+
+ Γ£ô lib/storage/indexeddb.test.ts  (15 tests) 67ms
+ Γ£ô data/items.test.ts  (15 tests) 15ms
+ Γ£ô components/device/MainDevice.test.tsx  (4 tests) 338ms
+ Γ£ô components/ui/StatBars.test.tsx  (5 tests) 156ms
+ Γ£ô components/device/AdventureScreen.test.tsx  (3 tests) 1784ms
+ Γ£ô components/hatch/HatchFlow.test.tsx  (3 tests) 6311ms
+
+ Test Files  10 passed (10)
+      Tests  139 passed (139)
+   Start at  08:19:29
+   Duration  10.58s (transform 497ms, setup 2ms, collect 1.62s, tests 8.85s, environment 6.55s, prepare 2.25s)
+
+
+[lab-run exit code] 0

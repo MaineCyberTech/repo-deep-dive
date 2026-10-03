@@ -1,0 +1,83 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-U03",
+  "title": "Unassigned FINAL findings (catch-all)",
+  "finding": "FINAL-P1-001",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-u03-20261003-0018-master-99abf29",
+  "commit": "50c65a028dcc35a168524e3f69859af999bafef4",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/9",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "FINAL-P1-001"
+  ],
+  "filesChanged": [
+    ".github/workflows/release.yml",
+    "docs/release-process.md",
+    "docs/release-process.test.ts",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Catch-all set PS-U03 has no declared file list. FINAL-P1-001 is the release-process finding; its recommended fix is a tag-driven release workflow (build + test + SBOM + changelog + build id). The minimal in-repo fix is the new tag-driven release workflow .github/workflows/release.yml, its documenting process docs/release-process.md, and the doc/workflow test docs/release-process.test.ts (the finding's suggested validation); plus the pre-existing TS2802 typecheck unblock in lib/progression/lifecycle.test.ts, identical to PS-01/PS-03/PS-U01/PS-U02. Additive and non-conflicting with PS-U02 docs/release-readiness.md and PS-01 .github/workflows/ci.yml. No runtime/application logic changed."
+  },
+  "commands": [
+    {
+      "command": "git rev-parse HEAD && (npm ci && npm run lint && npm run typecheck && npm run test)",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced, tree normalized with git checkout -- ., at 50c65a0)",
+      "exit": 0,
+      "result": "lint clean; typecheck clean; 6 test files / 112 tests passed (109 pre-existing + 3 new doc tests); __VERIFY_EXIT=0"
+    },
+    {
+      "command": "actionlint .github/workflows/release.yml",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "no findings; __ACTIONLINT_EXIT=0"
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-psu03 && gitleaks detect --no-git --redact --source /tmp/glscan-psu03 -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~261514 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "6 files / 112 tests passed"
+    }
+  ],
+  "workflowValidation": {
+    "path": ".github/workflows/release.yml",
+    "sha256": "e27dda2f72608cb7bf7e1c99c149084bc146bcfbff9230c40f68b409c32ebf8b",
+    "actionlintExit": 0
+  },
+  "diff": {
+    "path": "remediation/PS-U03/diff.patch",
+    "sha256": "4ed9aa8ed45dcdb66c8587ec5d0a126892eafd696475c5adc35494552548e296"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-U03/verify.log",
+    "sha256": "a16c4f18ad3a46e30b6e9dc280fca889e31828b0b61338d6ed65df41c7bee858"
+  },
+  "prBody": {
+    "path": "remediation/PS-U03/pr_body.md",
+    "sha256": "af14de7b746b2124364ce619f5da5662329d59d10d67e8e383cd16bb7cdff10e"
+  },
+  "generated": "2026-10-03T07:32:13Z"
+}

@@ -1,0 +1,127 @@
+# PS-U01 "Unassigned ARCH findings (catch-all)" - verification log
+
+- Run: 20261003-0018-master-99abf29
+- Finding: ARCH-P1-001 - Entire game is client-authoritative with no server trust boundary
+- Repo/base: C:\temp\buddy @ 99abf294dae0d9de8770dfde257bdef5fae9ae1b (origin/master)
+- Branch: remediation/ps-u01-20261003-0018-master-99abf29
+- Commit verified: 4c2cc7caee7437fe9a179c7d5b87c6c35a1e0b88
+- Lab env: ci-runner 172.23.128.51, /srv/work/buddy (wiped + re-synced via lab-sync.ps1), node v20.20.2, npm 10.8.2
+- Local env: Windows, node v24.19.0, npm 11.17.0
+- Note: ANSI color escapes and PowerShell remoting wrapper noise were stripped from the captured output.
+
+## Preparation
+
+`lab-sync.ps1 -Repo buddy` wiped `/srv/work/buddy` and re-synced the tree. The Windows tar carries
+CRLF; `git checkout -- .` normalized the working tree to the committed LF blobs so the checkout is
+clean at the commit under test:
+
+```text
+synced:buddy
+git rev-parse HEAD : 4c2cc7caee7437fe9a179c7d5b87c6c35a1e0b88
+git status --porcelain --untracked-files=all (before checkout -- .): M .eslintrc.json ... (CRLF artifacts)
+git status --porcelain --untracked-files=all (after checkout -- .): (empty)
+node -v : v20.20.2
+npm -v : 10.8.2
+```
+
+## Primary gate - lab (ci-runner)
+
+`npm ci && npm run lint && npm run typecheck && npm run test`
+Exit: 0
+
+```text
+> npm ci
+
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out
+lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more
+comprehensive and powerful.
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster
+implementation
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support
+for other options.
+
+added 520 packages, and audited 521 packages in 16s
+
+188 packages are looking for funding
+  run `npm fund` for details
+
+19 vulnerabilities (3 moderate, 14 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> buddy@0.1.0 lint
+> next lint
+
+No ESLint warnings or errors
+
+> buddy@0.1.0 typecheck
+> tsc --noEmit
+
+
+> buddy@0.1.0 test
+> vitest run
+
+The CJS build of Vite's Node API is deprecated. See
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v1.6.1 /srv/work/buddy
+
+ lib/locations/adventure.test.ts  (14 tests) 11ms
+ lib/actions/care.test.ts  (25 tests) 11ms
+ lib/generation/generation.test.ts  (38 tests) 328ms
+ data/items.test.ts  (15 tests) 36ms
+ lib/progression/lifecycle.test.ts  (17 tests) 13ms
+ docs/architecture.test.ts  (2 tests) 3ms
+
+ Test Files  6 passed (6)
+      Tests  111 passed (111)
+   Start at  07:19:51
+   Duration  3.62s (transform 463ms, setup 0ms, collect 942ms, tests 402ms, environment 5.07s, prepare 1.86s)
+
+__VERIFY_EXIT=0
+```
+
+## Secret gate - lab (ci-runner)
+
+Tracked repository content at the commit (authoritative gate):
+
+`git archive HEAD | tar -x -C /tmp/glscan-psu01 && gitleaks detect --no-git --redact --source /tmp/glscan-psu01 -v`
+
+Exit: 0
+
+```text
+    o
+    |\
+    | o
+    o |
+    |    gitleaks
+
+7:20AM INF scanned ~258695 bytes (258.70 KB) in 286ms
+7:20AM INF no leaks found
+GITLEAKS_EXIT=0
+```
+
+## Local gate (Windows) - cross-check
+
+Same commit, local working tree, node v24.19.0:
+
+| Command | Exit | Result |
+|---|---:|---|
+| `npm run lint` | 0 | No ESLint warnings or errors |
+| `npm run typecheck` | 0 | clean (includes the pre-existing TS2802 unblock) |
+| `npm run test` | 0 | 6 files / 111 tests passed (109 pre-existing + 2 new doc tests) |

@@ -1,0 +1,74 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-03",
+  "title": "State & identity correctness",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-03-20261003-0018-master-99abf29",
+  "commit": "96c3e6650dc345dd699c6e5825fa9505810c0cb3",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/4",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "ARCH-P1-002",
+    "ARCH-P2-002",
+    "SEC-P3-001"
+  ],
+  "filesChanged": [
+    "app/page.tsx",
+    "app/page.test.tsx",
+    "components/device/AdventureScreen.tsx",
+    "components/device/MainDevice.tsx",
+    "components/device/MainDevice.test.tsx",
+    "components/hatch/HatchFlow.tsx",
+    "vitest.config.ts",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Patch-set files (components/device/MainDevice.tsx, components/device/AdventureScreen.tsx, app/page.tsx, components/hatch/HatchFlow.tsx) plus necessary supporting files: app/page.test.tsx and components/device/MainDevice.test.tsx (required regression tests), vitest.config.ts (esbuild jsx automatic so .tsx tests match Next's runtime), and lib/progression/lifecycle.test.ts (pre-existing TS2802 unblock identical to PS-01, needed for the typecheck gate). lib/buddy/store.ts is in the plan but needed no change. No runtime logic outside the patch set changed."
+  },
+  "commands": [
+    {
+      "command": "git rev-parse HEAD && npm ci && npm run lint && npm run typecheck && npm run test",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced clean at 96c3e66)",
+      "exit": 0,
+      "result": "lint clean; typecheck clean; 7 test files / 111 tests passed (109 pre-existing + 2 new regression tests); __VERIFY_EXIT=0"
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-ps03 && gitleaks detect --no-git --redact --source /tmp/glscan-ps03 -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~257850 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "7 files / 111 tests passed"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-03/diff.patch",
+    "sha256": "b8d71ed74fb8f589e052ec800ac8af468a525f761c8329e722b57983adc0e6c9"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-03/verify.log",
+    "sha256": "6beead71a2c2d2b8556279c3aa72e04c1e0899caf46d3f5fa937e6707e10cf56"
+  },
+  "prBody": "remediation/PS-03/pr_body.md",
+  "generated": "2026-10-03T06:52:00Z"
+}

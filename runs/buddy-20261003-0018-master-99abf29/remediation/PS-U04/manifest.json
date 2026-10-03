@@ -1,0 +1,77 @@
+{
+    "run":  "20261003-0018-master-99abf29",
+    "patchSet":  "PS-U04",
+    "title":  "Unassigned TEST findings (catch-all)",
+    "repo":  "MaineCyberTech/buddy",
+    "base":  "master",
+    "baseSha":  "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+    "branch":  "remediation/ps-u04-20261003-0018-master-99abf29",
+    "commit":  "e1c0555ccb451c3dd006c27ff8b581bc802002e3",
+    "pr":  "https://github.com/MaineCyberTech/buddy/pull/14",
+    "prMode":  "draft",
+    "prDraft":  true,
+    "findings":  [
+                     "TEST-P2-001",
+                     "TEST-P2-002"
+                 ],
+    "filesChanged":  [
+                         "package.json",
+                         "package-lock.json",
+                         "vitest.config.ts",
+                         "lib/storage/indexeddb.test.ts",
+                         "components/ui/StatBars.test.tsx",
+                         "components/device/MainDevice.test.tsx",
+                         "components/hatch/HatchFlow.test.tsx",
+                         "components/device/AdventureScreen.test.tsx",
+                         "lib/progression/lifecycle.test.ts"
+                     ],
+    "commands":  [
+                     {
+                         "command":  "npm ci \u0026\u0026 npm run lint \u0026\u0026 npm run typecheck \u0026\u0026 npm run test",
+                         "runner":  "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced clean)",
+                         "exit":  0,
+                         "result":  "lint clean; typecheck clean; 10 test files / 139 tests passed (109 pre-existing + 30 new); [lab-run exit code] 0"
+                     },
+                     {
+                         "command":  "gitleaks detect --no-git --redact --exit-code 7",
+                         "runner":  "lab:ci-runner (172.23.128.51:/srv/work/buddy)",
+                         "exit":  0,
+                         "result":  "scanned ~388744 bytes; no leaks found"
+                     },
+                     {
+                         "command":  "npm run lint",
+                         "runner":  "local (Windows, node v24.19.0)",
+                         "exit":  0,
+                         "result":  "No ESLint warnings or errors"
+                     },
+                     {
+                         "command":  "npm run typecheck",
+                         "runner":  "local (Windows, node v24.19.0)",
+                         "exit":  0,
+                         "result":  "clean"
+                     },
+                     {
+                         "command":  "npm run test",
+                         "runner":  "local (Windows, node v24.19.0)",
+                         "exit":  0,
+                         "result":  "10 files / 139 tests passed"
+                     }
+                 ],
+    "scopeCheck":  {
+                       "pass":  true,
+                       "note":  "Catch-all set PS-U04 has no declared file list. New RTL component tests (TEST-P2-001), fake-indexeddb persistence tests (TEST-P2-002), the fake-indexeddb dev dependency the fix requires, the Vitest automatic-JSX enabling line, and the pre-existing TS2802 typecheck unblock identical to PS-01/PS-03/PS-08/PS-U01/PS-U02/PS-U03. No application/runtime logic changed."
+                   },
+    "diff":  {
+                 "path":  "remediation/PS-U04/diff.patch",
+                 "sha256":  "b4f7ae47d79353dc9c6807880d85a2af6a7ca11e1a745bd3a1c79f2affa6f5b3"
+             },
+    "verifyLog":  {
+                      "path":  "remediation/PS-U04/verify.log",
+                      "sha256":  "5eb0576a968515ccda97dd5542049007f3f3d2ba48de55c57d53c5f40dee688b"
+                  },
+    "prBody":  {
+                   "path":  "remediation/PS-U04/pr_body.md",
+                   "sha256":  "8f67b2759c43d1c8c2ff5e65208aeac870e5348170afd8b533f1911a5590e408"
+               },
+    "generated":  "2026-10-03T08:21:17Z"
+}

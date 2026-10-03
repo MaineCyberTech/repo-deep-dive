@@ -1,0 +1,88 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-08",
+  "title": "Supply chain & inventory fidelity",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-08-20261003-0018-master-99abf29",
+  "commit": "f31ebd44f3e616d74013e3702cd4d50bfe43835b",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/12",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "SUPPLY-P2-001",
+    "SUPPLY-P2-002",
+    "API-P2-001",
+    "INV-P2-002"
+  ],
+  "deferredFindings": [
+    "API-P2-001"
+  ],
+  "filesChanged": [
+    ".github/dependabot.yml",
+    "package.json",
+    "package-lock.json",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "runArtifacts": [
+    {
+      "path": "inventory.json",
+      "finding": "INV-P2-002",
+      "note": "Hand-corrected entry_points (app/layout.tsx, app/page.tsx), routes (/ from app/page.tsx), tests.files 7->5, tests.dirs populated. Run artifact, not part of the repo PR diff."
+    }
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Repo diff touches exactly the PS-08 plan files (.github/dependabot.yml, package.json, package-lock.json) plus one documented deviation: lib/progression/lifecycle.test.ts (pre-existing TS2802 one-line Set-iteration unblock, identical to PS-01/PS-03/PS-06/PS-07; without it npm run typecheck fails at master). inventory.json is the run artifact named in patch_plan.md, not a buddy repo file."
+  },
+  "commands": [
+    {
+      "command": "npm ci && npm run lint && npm run typecheck && npm run test",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced clean at f31ebd4)",
+      "exit": 0,
+      "result": "npm ci 520 packages; lint clean; typecheck clean; 5 test files / 109 tests passed"
+    },
+    {
+      "command": "npm run --silent sbom > /tmp/ps08-sbom.json",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "valid CycloneDX 1.5 JSON, 22581 bytes, 17 npm components (pkg:npm count = 17)"
+    },
+    {
+      "command": "npm run --silent audit (npm audit --omit=dev)",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 1,
+      "result": "NOT clean: 3 production vulnerabilities (2 high, 1 critical) - nanoid high (non-breaking fix available), next critical + bundled postcss high (fix requires breaking next@16.3.8). Triaged, not auto-fixed; recorded in verify.log and PR open questions."
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-ps08 && gitleaks detect --no-git --redact --source /tmp/glscan-ps08",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~254582 bytes (254.58 KB); no leaks found in tracked content at f31ebd4"
+    },
+    {
+      "command": "npm install --package-lock-only --ignore-scripts --no-audit --no-fund",
+      "runner": "local (Windows, node v24.19.0 / npm 11.17.0)",
+      "exit": 0,
+      "result": "up to date in 1s; package-lock.json root packages[\"\"] gains engines {node >=20}; 3-line diff, no resolution changes"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-08/diff.patch",
+    "sha256": "338586c16fd6ea5907bf0e9621546eaccf206babc199a29d23aee3c5d87d575e"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-08/verify.log",
+    "sha256": "f886aae81ee68e2fa14a42e2a5926d4b1e2ac39c177b4720e299d64edb4e40e2"
+  },
+  "prBody": "remediation/PS-08/pr_body.md",
+  "openQuestions": [
+    "Non-clean production npm audit: next critical + bundled postcss high only fixed by breaking next@16.3.8; nanoid high has non-breaking fix. Next major upgrade is a product/compat decision owned outside PS-08.",
+    "PS-01 (CI) dependency not merged: branch is based on master which has no .github/; duplicate .github/dependabot.yml vs PR #3 will need trivial conflict resolution. Audit/SBOM scripts should be wired into ci.yml after PS-01 lands.",
+    "License allowlist for SUPPLY-P2-002: acceptable-license set is a legal/product decision.",
+    "API-P2-001 deferred: no server/API exists to version.",
+    "Inventory generator (tools/repo_inventory.py) misses Next.js App Router entry points/routes and over-matches test/spec substrings (data/species.ts, vitest.config.ts); run inventory.json hand-corrected, tool fix tracked separately."
+  ],
+  "generated": "2026-10-03T08:05:00Z"
+}

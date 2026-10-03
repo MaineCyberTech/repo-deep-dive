@@ -1,0 +1,72 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-04",
+  "title": "Save integrity",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-04-20261003-0018-master-99abf29",
+  "commit": "ec824fcd696ec5d4018862b0ef8dfd165f3a1a3f",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/2",
+  "prMode": "draft",
+  "findings": [
+    "DATA-P1-001",
+    "DATA-P1-002",
+    "DATA-P2-001",
+    "SEC-P2-001"
+  ],
+  "filesChanged": [
+    "lib/storage/indexeddb.ts",
+    "lib/storage/schema.ts",
+    "lib/storage/autosave.ts",
+    "lib/storage/schema.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Only PS-04 files (indexeddb.ts, new schema.ts, autosave.ts) plus the required new tests (schema.test.ts)."
+  },
+  "commands": [
+    {
+      "command": "npm ci && npm run test",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy)",
+      "exit": 0,
+      "result": "6 test files passed, 121 tests passed"
+    },
+    {
+      "command": "npm run test -- storage",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "lib/storage/schema.test.ts: 12 tests passed"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "6 test files passed, 121 tests passed"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 2,
+      "result": "PRE-EXISTING baseline failure in lib/progression/lifecycle.test.ts (TS2802); reproduced on base commit with changes stashed. Not introduced by PS-04; tracked by PS-01/TEST-P3-001."
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source .",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy)",
+      "exit": 0,
+      "result": "no leaks found"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-04/diff.patch",
+    "sha256": "2373a6c092a83084f3a7dbe5a7f6c3e002e3ac47d7c4ee3e0d7683559a4e091f"
+  },
+  "verifyLog": "remediation/PS-04/verify.log",
+  "generated": "2026-10-03T06:26:00Z"
+}

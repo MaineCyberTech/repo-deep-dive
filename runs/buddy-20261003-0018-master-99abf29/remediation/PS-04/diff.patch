@@ -1,0 +1,412 @@
+diff --git a/lib/storage/autosave.ts b/lib/storage/autosave.ts
+index 1954281..08cbe2e 100644
+--- a/lib/storage/autosave.ts
++++ b/lib/storage/autosave.ts
+@@ -1,5 +1,6 @@
+ import { BuddyState, InventoryState } from '@/lib/generation/types';
+ import { saveGame } from '@/lib/storage/indexeddb';
++import { SAVE_VERSION } from '@/lib/storage/schema';
+ 
+ let autosaveTimer: ReturnType<typeof setInterval> | null = null;
+ 
+@@ -17,7 +18,7 @@ export function startAutosave(
+ 
+     try {
+       await saveGame({
+-        version: 1,
++        version: SAVE_VERSION,
+         buddy,
+         guestId,
+         createdAt: buddy.identity.generatedAt,
+diff --git a/lib/storage/indexeddb.ts b/lib/storage/indexeddb.ts
+index 3ecc0e7..3cc8f13 100644
+--- a/lib/storage/indexeddb.ts
++++ b/lib/storage/indexeddb.ts
+@@ -1,5 +1,6 @@
+ import { openDB, IDBPDatabase } from 'idb';
+ import { GameSave } from '@/lib/generation/types';
++import { MAX_IMPORT_LENGTH, validateSave } from '@/lib/storage/schema';
+ 
+ const DB_NAME = 'buddy-save';
+ const DB_VERSION = 2;
+@@ -44,13 +45,15 @@ export async function loadGame(): Promise<GameSave | null> {
+     const entry = await db.get(STORE_NAME, SAVE_KEY);
+     if (!entry?.value) return null;
+ 
+-    const save = entry.value as GameSave;
+-
+-    if (save.version !== 1) {
+-      save.version = 1;
++    // IndexedDB contents are user-editable, so migrate + validate before use.
++    // Never rewrite the version without running the matching migration.
++    const result = validateSave(entry.value);
++    if (!result.ok) {
++      console.error('Invalid save data:', result.error);
++      return null;
+     }
+ 
+-    return save;
++    return result.save;
+   } catch (error) {
+     console.error('Failed to load game:', error);
+     return null;
+@@ -85,12 +88,16 @@ export async function exportSave(): Promise<string> {
+ 
+ export async function importSave(encoded: string): Promise<boolean> {
+   try {
++    if (typeof encoded !== 'string' || encoded.length === 0 || encoded.length > MAX_IMPORT_LENGTH) {
++      throw new Error('Save payload size invalid');
++    }
+     const json = atob(encoded);
+-    const save = JSON.parse(json) as GameSave;
+-    if (!save.version || !save.guestId) {
+-      throw new Error('Invalid save format');
++    const raw = JSON.parse(json) as unknown;
++    const result = validateSave(raw);
++    if (!result.ok) {
++      throw new Error('Invalid save format: ' + result.error);
+     }
+-    await saveGame(save);
++    await saveGame(result.save);
+     return true;
+   } catch (error) {
+     console.error('Failed to import save:', error);
+diff --git a/lib/storage/schema.test.ts b/lib/storage/schema.test.ts
+new file mode 100644
+index 0000000..2e34113
+--- /dev/null
++++ b/lib/storage/schema.test.ts
+@@ -0,0 +1,118 @@
++import { describe, it, expect } from 'vitest';
++import { SAVE_VERSION, validateSave } from '@/lib/storage/schema';
++import { createInitialBuddyState } from '@/lib/generation/engine';
++import { GameSave } from '@/lib/generation/types';
++
++function validSave(): GameSave {
++  const buddy = createInitialBuddyState('guest-test', 'Testy');
++  return {
++    version: SAVE_VERSION,
++    buddy,
++    guestId: 'guest-test',
++    createdAt: buddy.identity.generatedAt,
++    updatedAt: Date.now(),
++    inventory: { coins: 100, items: [{ id: 'apple', quantity: 2 }] },
++  };
++}
++
++describe('Save schema + migration', () => {
++  it('declares the current save version as 2', () => {
++    expect(SAVE_VERSION).toBe(2);
++  });
++
++  it('accepts a valid current save and preserves the version', () => {
++    const save = validSave();
++    const result = validateSave(save);
++    expect(result.ok).toBe(true);
++    if (result.ok) {
++      expect(result.save.version).toBe(SAVE_VERSION);
++      expect(result.save.guestId).toBe('guest-test');
++      expect(result.save.buddy?.progression.lifecycle).toBe('baby');
++      expect(result.save.inventory?.items).toEqual([{ id: 'apple', quantity: 2 }]);
++    }
++  });
++
++  it('migrates a v1 fixture up to the current version with defaults', () => {
++    const save = validSave();
++    const { progression: _progression, ...buddyV1 } = save.buddy!;
++    const v1 = { ...save, version: 1, buddy: buddyV1, inventory: undefined };
++    const result = validateSave(v1);
++    expect(result.ok).toBe(true);
++    if (result.ok) {
++      expect(result.save.version).toBe(SAVE_VERSION);
++      expect(result.save.buddy?.progression).toBeDefined();
++      expect(result.save.buddy?.progression.totalAdventures).toBe(0);
++      expect(result.save.inventory).toEqual({ coins: 0, items: [] });
++    }
++  });
++
++  it('rejects a save with no version', () => {
++    const { version: _version, ...noVersion } = validSave();
++    const result = validateSave(noVersion);
++    expect(result.ok).toBe(false);
++    if (!result.ok) expect(result.error).toMatch(/version/i);
++  });
++
++  it('rejects an unsupported future version instead of downgrading', () => {
++    const result = validateSave({ ...validSave(), version: SAVE_VERSION + 1 });
++    expect(result.ok).toBe(false);
++    if (!result.ok) expect(result.error).toMatch(/unsupported/i);
++  });
++
++  it('rejects a save missing required fields', () => {
++    const { guestId: _guestId, ...missingGuest } = validSave();
++    expect(validateSave(missingGuest).ok).toBe(false);
++  });
++
++  it('rejects malformed nested data (wrong types)', () => {
++    const save = validSave();
++    const malformed = {
++      ...save,
++      buddy: { ...save.buddy!, stats: { ...save.buddy!.stats, courage: 'lots' } },
++    };
++    expect(validateSave(malformed).ok).toBe(false);
++  });
++
++  it('rejects an unknown mood/mood enum value', () => {
++    const save = validSave();
++    const malformed = { ...save, buddy: { ...save.buddy!, mood: 'ecstatic' } };
++    expect(validateSave(malformed).ok).toBe(false);
++  });
++
++  it('clamps out-of-range stats into [0, 100]', () => {
++    const save = validSave();
++    const drifted = {
++      ...save,
++      buddy: {
++        ...save.buddy!,
++        stats: { ...save.buddy!.stats, courage: 9999, empathy: -50 },
++      },
++    };
++    const result = validateSave(drifted);
++    expect(result.ok).toBe(true);
++    if (result.ok) {
++      expect(result.save.buddy?.stats.courage).toBe(100);
++      expect(result.save.buddy?.stats.empathy).toBe(0);
++    }
++  });
++
++  it('rejects an oversized inventory rather than persisting it', () => {
++    const save = validSave();
++    const items = Array.from({ length: 501 }, (_, i) => ({ id: `item-${i}`, quantity: 1 }));
++    const result = validateSave({ ...save, inventory: { coins: 0, items } });
++    expect(result.ok).toBe(false);
++  });
++
++  it('rejects a null / non-object payload (bad import shape)', () => {
++    expect(validateSave(null).ok).toBe(false);
++    expect(validateSave('not-a-save').ok).toBe(false);
++    expect(validateSave([1, 2, 3]).ok).toBe(false);
++  });
++
++  it('accepts a valid JSON import payload round-trip', () => {
++    // Simulates the decoded payload handled by importSave.
++    const encoded = JSON.stringify(validSave());
++    const result = validateSave(JSON.parse(encoded));
++    expect(result.ok).toBe(true);
++  });
++});
+diff --git a/lib/storage/schema.ts b/lib/storage/schema.ts
+new file mode 100644
+index 0000000..3dbca69
+--- /dev/null
++++ b/lib/storage/schema.ts
+@@ -0,0 +1,209 @@
++import { z } from 'zod';
++import { GameSave, InventoryState } from '@/lib/generation/types';
++import { createInitialProgression } from '@/lib/progression/lifecycle';
++
++/**
++ * Current on-disk save schema version.
++ *
++ * This is the single source of truth for the version written by every
++ * persistence path (manual save, autosave) and expected by `loadGame`.
++ * Bump this together with a migration entry in `MIGRATIONS`.
++ */
++export const SAVE_VERSION = 2;
++
++/** Maximum accepted size of a base64-encoded import payload (~750 KB decoded). */
++export const MAX_IMPORT_LENGTH = 1_000_000;
++
++const RARITY = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
++const MOODS = ['happy', 'content', 'neutral', 'sad', 'sick'] as const;
++const LIFECYCLE = ['egg', 'baby', 'child', 'teen', 'adult', 'elder'] as const;
++const MEMORY_TYPES = ['hatch', 'evolution', 'adventure', 'milestone', 'achievement'] as const;
++
++const clamp = (value: number, min: number, max: number) =>
++  Math.min(max, Math.max(min, value));
++
++/** A finite number, clamped into [min, max] so drifted values recover instead of crashing. */
++const boundedNumber = (min: number, max: number) =>
++  z.number().finite().transform((value) => clamp(value, min, max));
++
++const count = (max: number) => boundedNumber(0, max);
++const timestamp = z.number().finite().nonnegative();
++const shortString = (max: number) => z.string().max(max);
++
++const statsSchema = z.object({
++  courage: boundedNumber(0, 100),
++  curiosity: boundedNumber(0, 100),
++  playfulness: boundedNumber(0, 100),
++  discipline: boundedNumber(0, 100),
++  empathy: boundedNumber(0, 100),
++});
++
++const needsSchema = z.object({
++  hunger: boundedNumber(0, 100),
++  happiness: boundedNumber(0, 100),
++  cleanliness: boundedNumber(0, 100),
++  energy: boundedNumber(0, 100),
++  social: boundedNumber(0, 100),
++});
++
++const personalitySchema = z.object({
++  id: shortString(64),
++  name: shortString(64),
++  description: shortString(1024),
++  likes: z.array(shortString(64)).max(64),
++  dislikes: z.array(shortString(64)).max(64),
++  preferredActivities: z.array(shortString(64)).max(64),
++  careModifiers: z.record(z.number().finite()).default({}),
++  idleLines: z.array(shortString(1024)).max(64),
++  happyLines: z.array(shortString(1024)).max(64),
++  hungryLines: z.array(shortString(1024)).max(64),
++  adventureLines: z.array(shortString(1024)).max(64),
++  sleepLines: z.array(shortString(1024)).max(64),
++});
++
++const identitySchema = z.object({
++  speciesId: shortString(64).min(1),
++  speciesName: shortString(64).min(1),
++  nickname: shortString(64),
++  rarity: z.enum(RARITY),
++  isShiny: z.boolean(),
++  hat: shortString(64),
++  eyes: shortString(64),
++  generatedAt: timestamp,
++  seed: shortString(256),
++});
++
++const memorySchema = z.object({
++  id: shortString(64),
++  type: z.enum(MEMORY_TYPES),
++  title: shortString(128),
++  description: shortString(1024),
++  timestamp,
++  icon: shortString(16),
++});
++
++const progressionSchema = z.object({
++  lifecycle: z.enum(LIFECYCLE),
++  age: count(1_000_000_000),
++  skills: z.object({
++    exploring: count(1_000_000_000),
++    training: count(1_000_000_000),
++    social: count(1_000_000_000),
++    crafting: count(1_000_000_000),
++    cooking: count(1_000_000_000),
++  }),
++  bondLevel: boundedNumber(1, 1_000_000),
++  totalAdventures: count(1_000_000_000),
++  memories: z.array(memorySchema).max(1000),
++  achievements: z.array(shortString(64)).max(1000),
++  careQuality: boundedNumber(0, 1_000_000),
++});
++
++const buddyStateSchema = z.object({
++  identity: identitySchema,
++  stats: statsSchema,
++  needs: needsSchema,
++  personality: personalitySchema,
++  level: boundedNumber(1, 1_000_000),
++  xp: count(1_000_000_000),
++  bond: count(1_000_000_000),
++  mood: z.enum(MOODS),
++  health: boundedNumber(0, 100),
++  lastInteraction: timestamp,
++  totalCareActions: count(1_000_000_000),
++  progression: progressionSchema,
++});
++
++const inventorySchema = z.object({
++  coins: count(1_000_000_000_000),
++  items: z
++    .array(
++      z.object({
++        id: shortString(64).min(1),
++        quantity: count(1_000_000_000),
++      })
++    )
++    .max(500),
++});
++
++export const gameSaveSchema = z.object({
++  version: z.number().int().min(1).max(SAVE_VERSION),
++  buddy: buddyStateSchema.nullable(),
++  guestId: shortString(128).min(1),
++  createdAt: timestamp,
++  updatedAt: timestamp,
++  inventory: inventorySchema.optional(),
++});
++
++function defaultInventory(): InventoryState {
++  return { coins: 0, items: [] };
++}
++
++type RawSave = Record<string, unknown>;
++
++type Migration = (save: RawSave) => RawSave;
++
++/**
++ * Versioned migration registry. Each entry upgrades a save from key `N` to `N + 1`.
++ * Keep transformations pure and idempotent.
++ */
++const MIGRATIONS: Record<number, Migration> = {
++  // v1 predates the guarantee that `progression` and `inventory` exist.
++  1: (save) => {
++    const buddy = save.buddy;
++    if (buddy && typeof buddy === 'object' && !Array.isArray(buddy)) {
++      const record = buddy as RawSave;
++      if (!record.progression || typeof record.progression !== 'object') {
++        record.progression = createInitialProgression();
++      }
++    }
++    if (!save.inventory || typeof save.inventory !== 'object' || Array.isArray(save.inventory)) {
++      save.inventory = defaultInventory();
++    }
++    return { ...save, version: 2 };
++  },
++};
++
++export type SaveValidationResult =
++  | { ok: true; save: GameSave }
++  | { ok: false; error: string };
++
++/**
++ * Validate a raw save object, migrating older versions up to `SAVE_VERSION`.
++ *
++ * Returns a typed result; never throws. Malformed or unsupported saves fail
++ * closed (`ok: false`) so callers can fall back to a recoverable state.
++ */
++export function validateSave(input: unknown): SaveValidationResult {
++  if (!input || typeof input !== 'object' || Array.isArray(input)) {
++    return { ok: false, error: 'save is not an object' };
++  }
++
++  let raw = { ...(input as RawSave) };
++  let version = raw.version;
++  if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) {
++    return { ok: false, error: 'missing or invalid save version' };
++  }
++  if (version > SAVE_VERSION) {
++    return { ok: false, error: `unsupported save version ${version}` };
++  }
++
++  while (version < SAVE_VERSION) {
++    const migrate = MIGRATIONS[version];
++    if (!migrate) {
++      return { ok: false, error: `no migration path from version ${version}` };
++    }
++    raw = migrate(raw);
++    version = raw.version;
++    if (typeof version !== 'number' || !Number.isInteger(version) || version <= 0) {
++      return { ok: false, error: 'migration produced an invalid version' };
++    }
++  }
++
++  const parsed = gameSaveSchema.safeParse(raw);
++  if (!parsed.success) {
++    return { ok: false, error: parsed.error.issues.map((i) => i.path.join('.') + ': ' + i.message).join('; ') };
++  }
++
++  return { ok: true, save: parsed.data as GameSave };
++}

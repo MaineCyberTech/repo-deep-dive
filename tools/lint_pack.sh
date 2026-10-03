@@ -23,7 +23,7 @@ pairs = [
     ("examples/audit_manifest.falcon-lab.example.json", "packVersion"),
     ("profiles/falcon-lab.manifest.json", "basePackVersion"),
 ]
-bad = [f"{p}:{k}={json.load(open(p)).get(k)}" for p, k in pairs if json.load(open(p)).get(k) != v]
+bad = [f"{p}:{k}={json.load(open(p, encoding='utf-8-sig')).get(k)}" for p, k in pairs if json.load(open(p, encoding='utf-8-sig')).get(k) != v]
 if bad:
     print("mismatch: " + ", ".join(bad))
     raise SystemExit(1)
@@ -34,7 +34,7 @@ then ok "JSON version fields match VERSION"; else bad "JSON version fields misma
 n=0; n_bad=0
 while IFS= read -r f; do
   n=$((n + 1))
-  python3 -c "import json,sys;json.load(open(sys.argv[1]))" "$f" 2>/dev/null || { bad "JSON invalid: $f"; n_bad=$((n_bad + 1)); }
+  python3 -c "import json,sys;json.load(open(sys.argv[1], encoding='utf-8-sig'))" "$f" 2>/dev/null || { bad "JSON invalid: $f"; n_bad=$((n_bad + 1)); }
 done < <(find . -name '*.json' -not -path './.git/*' | sort)
 if [[ $n_bad -eq 0 ]]; then ok "$n JSON files parse"; fi
 

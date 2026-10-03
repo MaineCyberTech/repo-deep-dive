@@ -1,0 +1,81 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-06",
+  "title": "Feature wiring",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-06-20261003-0018-master-99abf29",
+  "commit": "25149bb33e65634820179eac3ca4f9c2ce956e5a",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/5",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "FEAT-P1-001",
+    "FEAT-P1-002",
+    "FEAT-P2-001"
+  ],
+  "filesChanged": [
+    "data/achievements.ts",
+    "data/achievements.test.ts",
+    "lib/actions/care.ts",
+    "lib/actions/items.test.ts",
+    "lib/locations/adventure.ts",
+    "lib/locations/adventure.test.ts",
+    "components/device/MainDevice.tsx",
+    "components/device/InventoryScreen.tsx",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Runtime files touched are exactly the PS-06 plan files (lib/actions/care.ts, lib/locations/adventure.ts, components/device/MainDevice.tsx, components/device/InventoryScreen.tsx, data/achievements.ts). Supporting changes are the required new tests (data/achievements.test.ts, lib/actions/items.test.ts), updated tests (lib/locations/adventure.test.ts, lib/progression/lifecycle.test.ts), and a one-line Array.from fix in lib/progression/lifecycle.test.ts for the pre-existing TS2802 typecheck error (identical minimal unblock already used in PS-01/PS-03)."
+  },
+  "commands": [
+    {
+      "command": "npm ci && npm run lint && npm run typecheck && npm run test",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced clean at 25149bb)",
+      "exit": 0,
+      "result": "lint clean; typecheck clean; 7 test files / 124 tests passed; __VERIFY_EXIT=0"
+    },
+    {
+      "command": "npm run test -- achievements lifecycle items",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "4 test files / 47 tests passed"
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-ps06 && gitleaks detect --no-git --redact --source /tmp/glscan-ps06 -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~271575 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "7 test files / 124 tests passed"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-06/diff.patch",
+    "sha256": "8de1352a47ed4a77c1c1c2df9c764c19cfee84cc94aa14d43bd0148e7226175a"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-06/verify.log",
+    "sha256": "b7303bad426aabb75ef524a1898ed49abe87b7e095a9447ff555c7d206c382a1"
+  },
+  "prBody": "remediation/PS-06/pr_body.md",
+  "generated": "2026-10-03T07:10:00Z"
+}

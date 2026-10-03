@@ -1,7 +1,7 @@
 {
   "run": "20261003-0018-master-99abf29",
   "repo": "C:\\temp\\buddy",
-  "generated": "2026-10-03T05:15:24Z",
+  "generated": "2026-10-03T07:15:26Z",
   "patchSets": [
     {
       "id": "PS-01",
@@ -24,11 +24,11 @@
       "effort": "S",
       "verificationText": "CI runs lint/typecheck/test/build; failing PR is blocked; `test:coverage` script exists",
       "verification": [
-        "`npm ci",
+        "npm ci",
         "npm run lint",
         "npm run typecheck",
         "npm run test",
-        "npm run build`"
+        "npm run build"
       ],
       "severity": "P1",
       "branch": "remediation/PS-01-20261003-0018-master-99abf29"
@@ -49,8 +49,8 @@
       "effort": "S",
       "verificationText": "GitHub license detection; pack provenance documented",
       "verification": [
-        "`test -f LICENSE",
-        "echo ok`",
+        "test -f LICENSE",
+        "echo ok",
         "GitHub license badge"
       ],
       "severity": "P1",
@@ -75,7 +75,7 @@
       "effort": "M",
       "verificationText": "component test: adventure updates device; reload test preserves guestId",
       "verification": [
-        "`npm run test -- MainDevice AdventureScreen`"
+        "npm run test -- MainDevice AdventureScreen"
       ],
       "severity": "P1",
       "branch": "remediation/PS-03-20261003-0018-master-99abf29"
@@ -98,7 +98,7 @@
       "effort": "M",
       "verificationText": "migration fixtures + fuzz/malformed-import tests pass",
       "verification": [
-        "`npm run test -- storage` (new tests)"
+        "npm run test -- storage` (new tests)"
       ],
       "severity": "P1",
       "branch": "remediation/PS-04-20261003-0018-master-99abf29"
@@ -151,7 +151,7 @@
       "effort": "M",
       "verificationText": "integration tests: achievement once; lifecycle transition; item use",
       "verification": [
-        "`npm run test -- achievements lifecycle items`"
+        "npm run test -- achievements lifecycle items"
       ],
       "severity": "P1",
       "branch": "remediation/PS-06-20261003-0018-master-99abf29"
@@ -181,8 +181,8 @@
       "effort": "M",
       "verificationText": "error-boundary test; header assertions; offline font load; cache name changes on build",
       "verification": [
-        "`npm run build",
-        "npm run test -- error`",
+        "npm run build",
+        "npm run test -- error",
         "header curl"
       ],
       "severity": "P2",
@@ -209,7 +209,7 @@
       "effort": "M",
       "verificationText": "`npm audit` clean/triaged; SBOM artifact; inventory matches tree",
       "verification": [
-        "`npm audit --production`",
+        "npm audit --production",
         "SBOM generation"
       ],
       "severity": "P2",
@@ -239,13 +239,70 @@
       ],
       "severity": "P2",
       "branch": "remediation/PS-09-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-U01",
+      "title": "Unassigned ARCH findings (catch-all)",
+      "findings": [
+        "ARCH-P1-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U01-20261003-0018-master-99abf29",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U02",
+      "title": "Unassigned EXEC findings (catch-all)",
+      "findings": [
+        "EXEC-P1-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U02-20261003-0018-master-99abf29",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U03",
+      "title": "Unassigned FINAL findings (catch-all)",
+      "findings": [
+        "FINAL-P1-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U03-20261003-0018-master-99abf29",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U04",
+      "title": "Unassigned TEST findings (catch-all)",
+      "findings": [
+        "TEST-P2-001",
+        "TEST-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U04-20261003-0018-master-99abf29",
+      "catchAll": true
     }
   ],
-  "unassignedFindings": [
-    "ARCH-P1-001",
-    "EXEC-P1-001",
-    "FINAL-P1-001",
-    "TEST-P2-001",
-    "TEST-P2-002"
+  "unassignedFindings": [],
+  "catchAllSets": [
+    "PS-U01",
+    "PS-U02",
+    "PS-U03",
+    "PS-U04"
   ]
 }

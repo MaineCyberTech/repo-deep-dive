@@ -1,0 +1,118 @@
+# PS-09 verification log
+
+- Run:           20261003-0018-master-99abf29
+- Repo:          MaineCyberTech/buddy
+- Base:          master @ 99abf294dae0d9de8770dfde257bdef5fae9ae1b
+- Branch:        remediation/ps-09-20261003-0018-master-99abf29
+- Commit:        ac9b9e9391035270795ec0eda6dcf9c8072024b5
+- Lab runner:    ci-runner 172.23.128.51:/srv/work/buddy (wiped + re-synced clean at ac9b9e9)
+- Findings:      INV-P2-001, INV-P3-001, FINAL-P2-001, FINAL-P2-002, EXEC-P2-001
+- Note:          raw, unedited transcripts are in raw-main.log and raw-gitleaks.log in this folder.
+
+## [1] Repo gate - npm ci && npm run lint && npm run typecheck && npm run test
+
+Command : git rev-parse HEAD && (npm ci && npm run lint && npm run typecheck && npm run test); echo __VERIFY_EXIT=$?
+Exit    : 0
+
+```
+ac9b9e9391035270795ec0eda6dcf9c8072024b5
+
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory.
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead ...
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported ...
+npm warn deprecated glob@10.3.10: Old versions of glob are not supported ...
+npm warn deprecated eslint@8.57.1: This version is no longer supported.
+
+added 520 packages, and audited 521 packages in 14s
+
+188 packages are looking for funding
+
+19 vulnerabilities (3 moderate, 14 high, 2 critical)
+Run `npm audit` for details.
+
+> buddy@0.1.0 lint
+> next lint
+
+✔ No ESLint warnings or errors
+
+> buddy@0.1.0 typecheck
+> tsc --noEmit
+
+(no output - clean)
+
+> buddy@0.1.0 test
+> vitest run
+
+ RUN  v1.6.1 /srv/work/buddy
+
+ ✓ lib/actions/care.test.ts  (25 tests) 10ms
+ ✓ lib/locations/adventure.test.ts  (14 tests) 10ms
+ ✓ lib/generation/generation.test.ts  (38 tests) 111ms
+ ✓ lib/progression/lifecycle.test.ts  (17 tests) 8ms
+ ✓ data/items.test.ts  (15 tests) 17ms
+ ✓ docs/inventory-release-docs.test.ts  (5 tests) 5ms
+
+ Test Files  6 passed (6)
+      Tests  114 passed (114)
+   Duration  2.21s
+
+__VERIFY_EXIT=0
+```
+
+## [2] Secret gate - gitleaks on tracked content at the commit
+
+Command : rm -rf /tmp/glscan-ps09 && mkdir -p /tmp/glscan-ps09 \
+          && git archive HEAD | tar -x -C /tmp/glscan-ps09 \
+          && gitleaks detect --no-git --redact --source /tmp/glscan-ps09 -v
+Exit    : 0
+
+```
+gitleaks
+8:08AM INF scanned ~268633 bytes (268.63 KB) in 587ms
+8:08AM INF no leaks found
+__GITLEAKS_EXIT=0
+```
+
+## [3] Docs link check - referenced repo paths exist
+
+Command : for p in README.md CHANGELOG.md docs/README.md \
+          docs/buddy/reports/phases \
+          docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack; \
+          do test -e $p && echo OK-$p || echo MISSING-$p; done
+Exit    : 0
+
+```
+OK-README.md
+OK-CHANGELOG.md
+OK-docs/README.md
+OK-docs/buddy/reports/phases
+OK-docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack
+__LINKCHECK_DONE__
+```
+
+## [4] Local supplementary checks (Windows, node v24.19.0 / npm 11.17.0)
+
+- `npm run typecheck` -> exit 0 (clean).
+- `npm run lint` -> exit 0 (`No ESLint warnings or errors`).
+- `npm run test` -> exit 0; 6 files / 114 tests passed (109 pre-existing + 5 new
+  documentation tests in `docs/inventory-release-docs.test.ts`).
+
+## Scope
+
+- Repo diff touches the PS-09 files `README.md`, `CHANGELOG.md`, `docs/README.md`,
+  plus the new doc test `docs/inventory-release-docs.test.ts`, and the one-line
+  `lib/progression/lifecycle.test.ts` `Set`-iteration unblock for the pre-existing
+  `TS2802` typecheck error (identical change used by
+  PS-01/PS-03/PS-05/PS-06/PS-07/PS-08/PS-U02/PS-U03; without it `npm run typecheck`
+  fails at master). No runtime/application logic or dependencies changed.
+- `docs/README.md` is also added by the licensing patch set (PS-02). This version
+  is a superset: it preserves PS-02's prompt-pack provenance and licensing
+  sections and adds the documentation index, the phase-report reconciliation
+  status matrix (FINAL-P2-001) and the accepted/deferred-risk record
+  (FINAL-P2-002). Merge resolution is therefore additive (keep this file).
+- The audit run's `risk_register.md` is a run artifact under the audit folder, not
+  a file in the buddy repo; the in-repo accepted/deferred-risk record lives in
+  `docs/README.md`.

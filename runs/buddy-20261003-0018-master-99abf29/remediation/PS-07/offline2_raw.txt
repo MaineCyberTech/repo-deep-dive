@@ -1,0 +1,16 @@
+=== build id in .next (alternate env build in place) ===
+verify-abc123
+=== inlined env build id in client chunks ===
+.next/static/chunks/app/error-ccbbc731305f7eda.js
+.next/static/chunks/app/layout-a2e8a552a56d58fe.js
+=== css google font refs (expect none) ===
+NONE
+=== app server output google font refs (expect none) ===
+NONE
+=== context of google ref in main chunk ===
+.next/static/chunks/main-7d4b439b4be7e1c4.js:time",er="edge-runtime-webpack",en="__N_SSG",eo="__N_SSP",ea="https://fonts.googleapis.com/",ei=[{url:ea,preconnect:"https://fonts
+.next/static/chunks/main-7d4b439b4be7e1c4.js:e,t)=>{let n=e.key||t;if(!r&&"link"===e.type&&e.props.href&&["https://fonts.googleapis.com/css","https://use.typekit.net/"].some(t
+=== rendered HTML external font refs (expect 0) ===
+0
+HTML bytes: 7098
+__CHECK2_DONE

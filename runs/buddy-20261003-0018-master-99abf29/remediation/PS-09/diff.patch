@@ -1,0 +1,371 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+new file mode 100644
+index 0000000..15b14fb
+--- /dev/null
++++ b/CHANGELOG.md
+@@ -0,0 +1,49 @@
++# Changelog
++
++All notable changes to `buddy` are documented in this file.
++
++The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
++and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
++
++## [Unreleased]
++
++Release documentation and audit reconciliation for the `0.1.0` release candidate.
++No gameplay behavior changes.
++
++### Added
++
++- `README.md` - root project/operator documentation (purpose, stack, quick
++  start, commands, layout, architecture, testing, docs index).
++- `CHANGELOG.md` - this release history.
++- `docs/README.md` - documentation index, product vs. vendored prompt-pack
++  classification, the reconciled audit status matrix, and the
++  accepted/deferred-risk record.
++
++### Notes
++
++- Audit: `repo-deep-dive` run `20261003-0018-master-99abf29` at commit
++  `99abf29` found **0 P0** and **11 P1** findings and returned **GO WITH
++  CONDITIONS** (not an unconditional GO). See `docs/README.md`.
++- Validation evidence for `99abf29` was captured manually; commit-bound CI
++  evidence is tracked by the CI and release-process work. The verified-repo
++  gate for this documentation change is
++  `npm ci && npm run lint && npm run typecheck && npm run test`.
++
++## [0.1.0-rc1] - 2026-06-24
++
++First release candidate (tag `v0.1.0-rc1`, commit `ce70022`). This tag predates
++the current `master` line and is not bound to an automated build/attestation.
++Later work (save integrity, state correctness, feature wiring, CI, and release
++automation) is tracked in the `Unreleased` section and the audit register.
++
++### Added
++
++- Deterministic Buddy generation from a seed (species, personality, appearance,
++  stats).
++- Hatch flow and the LCD device UI.
++- Care loop (feed, play, rest, clean) with stat decay and XP.
++- Six-stage lifecycle progression (Egg -> Baby -> Child -> Teen -> Adult ->
++  Elder) plus skills and bond tracking.
++- Adventure system: 9 locations, stat-checked outcomes, weighted loot tables,
++  and a 30+ item catalogue with inventory/coins.
++- Offline PWA shell: web manifest, service worker, and IndexedDB persistence.
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..832f315
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,122 @@
++# buddy
++
++`buddy` is a mobile-first, **offline-capable virtual pet PWA**. You hatch a
++deterministic Buddy from a seed, care for it, take it on location adventures,
++collect loot, and watch it evolve through six lifecycle stages.
++
++The game is currently a **guest-only, local-first release candidate**
++(`v0.1.0-rc1`). There is no server, account, or remote data: all state lives in
++the browser (IndexedDB) and the app works offline through a service worker.
++
++## Status
++
++- **Release:** `0.1.0` release candidate - guest/local scope.
++- **Audit:** a `repo-deep-dive` audit of this release (run
++  `20261003-0018-master-99abf29`, commit `99abf29`) found **0 P0** and **11 P1**
++  findings and returned **GO WITH CONDITIONS**. The reconciled status and the
++  accepted/deferred-risk record are in
++  [docs/README.md](docs/README.md).
++- **Known gaps:** achievements, lifecycle evolution, and skills are implemented
++  but not yet wired into the game loop; loaded/imported saves are not
++  runtime-validated; automated CI and release automation are tracked
++  separately. Do not treat the current build as progression-complete.
++
++## Stack
++
++| Area | Choice |
++|---|---|
++| Framework | Next.js 14 (App Router) |
++| UI | React 18, Tailwind CSS |
++| State | Zustand |
++| Persistence | IndexedDB via `idb`; service worker + web manifest for offline/PWA |
++| Validation | Zod (types) |
++| Language | TypeScript (`strict`) |
++| Tests | Vitest (with Testing Library + jsdom) |
++
++## Quick start
++
++Requirements: Node.js 20 LTS or newer, and npm.
++
++```sh
++npm ci
++npm run dev
++```
++
++Then open <http://localhost:3000>.
++
++## Commands
++
++| Command | What it does |
++|---|---|
++| `npm run dev` | Start the Next.js dev server |
++| `npm run build` | Production build |
++| `npm start` | Serve the production build |
++| `npm run lint` | ESLint (`next lint`) |
++| `npm run typecheck` | Type check (`tsc --noEmit`) |
++| `npm run test` | Run the Vitest suite once |
++| `npm run test:watch` | Vitest watch mode |
++| `npm run format` | Prettier write |
++| `npm run format:check` | Prettier check |
++
++Before opening a PR, run the quality gate:
++
++```sh
++npm ci && npm run lint && npm run typecheck && npm run test
++```
++
++## Project layout
++
++```
++app/                 Next.js App Router entry (layout, page, global styles)
++components/          React UI (device, hatch, ui)
++data/                Content catalogues (species, items, locations, loot, achievements)
++lib/
++  actions/           Care-loop actions
++  buddy/             Store and screen definitions
++  generation/        Deterministic seed/hash/engine
++  locations/         Adventure engine
++  personality/       Personality engine
++  progression/       Lifecycle / skills / bond
++  stats/             Stat engine
++  storage/           IndexedDB persistence + autosave
++  offline/           Service worker
++public/              PWA manifest, service worker, icons
++docs/                Project documentation and reports
++```
++
++## Architecture
++
++- **Deterministic generation.** A seed is hashed and expanded through
++  `lib/generation/hash.ts`, `lib/generation/rng.ts`, and
++  `lib/generation/engine.ts`, so the same seed always yields the same Buddy.
++- **Offline-first persistence.** Game saves are stored in IndexedDB
++  (`lib/storage/indexeddb.ts`); the PWA shell is cached by the service worker
++  (`public/sw.js`, `lib/offline/sw.ts`).
++- **State.** Gameplay state lives in a Zustand store (`lib/buddy/store.ts`);
++  actions in `lib/actions/` apply the care loop, and `lib/locations/adventure.ts`
++  applies adventure outcomes.
++
++## Testing
++
++```sh
++npm run test
++```
++
++The unit suite covers the care loop, the adventure/loot engine, deterministic
++generation, lifecycle progression, and the item catalogue (see the `*.test.ts`
++files). Component/E2E coverage and persistence-layer tests are tracked gaps (see
++the audit register in [docs/README.md](docs/README.md)).
++
++## Documentation
++
++- [docs/README.md](docs/README.md) - documentation index, product vs.
++  prompt-pack classification, and the reconciled audit status matrix.
++- [CHANGELOG.md](CHANGELOG.md) - release history.
++- [`docs/buddy/reports/phases/`](docs/buddy/reports/phases/) - phase completion
++  reports.
++
++## License
++
++No license has been chosen yet. Absent an explicit license grant, all rights are
++reserved by default (see the repository `LICENSE` and `NOTICE`, tracked
++separately, and the licensing note in [docs/README.md](docs/README.md)).
+diff --git a/docs/README.md b/docs/README.md
+new file mode 100644
+index 0000000..ba51bd4
+--- /dev/null
++++ b/docs/README.md
+@@ -0,0 +1,96 @@
++# Documentation
++
++Project documentation for `buddy`, a mobile-first, offline-capable PWA virtual
++pet game. This page is the entry point for the `docs/` tree: it indexes the
++documentation, classifies what is product material versus vendored planning
++material, and reconciles the phase reports with the `repo-deep-dive` audit.
++
++## Contents
++
++| Path | Description |
++|---|---|
++| [`buddy/reports/phases/`](buddy/reports/phases/) | Phase completion reports and phase audits (12 files). |
++| [`prompts/buddy_virtual_pet_v2_complete_prompt_pack/`](prompts/buddy_virtual_pet_v2_complete_prompt_pack/) | Vendored planning/prompt pack. See provenance below. |
++| `../README.md` | Root project/operator README (purpose, setup, commands, architecture). |
++| `../CHANGELOG.md` | Release history. |
++| `release-readiness.md` | Release gate policy and current verdict (companion doc, added by the release-readiness patch set). |
++| `release-process.md` | Tag-driven release/versioning process (companion doc, added by the release-process patch set). |
++
++## Prompt pack provenance
++
++`docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack/` is a large planning
++and prompt pack (markdown files across `prompts/`, `specs/`, `content/`, `ux/`,
++`integration/`, `audits/`, `checklists/`, `templates/`, and `runner/`)
++committed alongside the application.
++
++- **Role:** planning/specification material only; it contains no runnable
++  product code.
++- **Authorship / ownership:** not recorded in-repo and therefore **unconfirmed**
++  (finding `SUPPLY-P2-003`). It must not be assumed to be third-party or
++  in-house until the maintainer/legal owner confirms it.
++- **Licensing:** unconfirmed. Treat as all-rights-reserved pending confirmation;
++  do not redistribute the pack outside the organization.
++- **Originality constraint:** the pack's own `README.md` states that Tamaweb,
++  Tamagotchi, and other copyrighted/proprietary projects must not be copied, and
++  the application code must be original.
++
++## Product vs. planning material
++
++| Kind | Location | Meaning |
++|---|---|---|
++| Product docs | root `README.md`, `CHANGELOG.md`, this page, `buddy/reports/phases/` | Describe what the shipped application actually does. |
++| Planning material | `prompts/buddy_virtual_pet_v2_complete_prompt_pack/` | Design/spec prompts; not a description of shipped behavior. |
++
++When the two disagree, the product code under `app/`, `components/`, `lib/`,
++and `data/` is authoritative.
++
++## Audit reconciliation (FINAL-P2-001)
++
++The audited commit is `99abf29`, run `20261003-0018-master-99abf29`. Several
++phase completion reports self-report **"P0/P1/P2/P3 Issues: None"** (for example
++`buddy/reports/phases/phase-05-completion-report.md`), which contradicts the
++audit's finding of **0 P0 / 11 P1**. This page is the addendum: the matrix below
++records the delta so a reader does not over-trust the phase reports.
++
++| Area | Phase report claim | Audit finding at `99abf29` | Status |
++|---|---|---|---|
++| Test/build evidence | "109/109 tests pass", "Build succeeded" (manual, unbound) | Test count supported; no commit-bound artifact (`EXEC-P2-001`) | open - see CI/release work |
++| Achievements | Listed as remaining work, no P1 reported | `FEAT-P1-001` achievements implemented but unwired | open (tracked) |
++| Evolution/skills | Implemented, no P1 reported | `FEAT-P1-002` evolution/skills unwired | open (tracked) |
++| Save version | Not reported | `DATA-P1-001` loadGame downgrades saves to v1 | open (tracked) |
++| Save validation | Not reported | `DATA-P1-002` / `SEC-P2-001` no runtime save validation | open (tracked) |
++| Device/adventure state | Not reported | `ARCH-P1-002` adventure updates store but not device UI | open (tracked) |
++| CI / governance | Not reported | `CI-P1-001` / `CI-P1-002` no CI or required checks | open (tracked) |
++| License | Not reported | `SUPPLY-P1-001` no LICENSE (rights undefined) | open (tracked) |
++| Release binding | Not reported | `FINAL-P1-001` releases not bound to a commit | open (tracked) |
++
++Phase reports are historical artifacts and are left as written; this matrix is
++the reconciliation. Audit statuses are authoritative until a finding is closed
++with evidence bound to the commit under release.
++
++## Accepted and deferred risks (FINAL-P2-002)
++
++This table is the in-repo record of risks that are knowingly **accepted or
++deferred**, with an owner and a date, so unresolved items are not silently
++ignored. It is reviewed per release.
++
++| Risk / finding | Severity | Decision | Owner | Date | Rationale |
++|---|---|---|---|---|---|
++| `ARCH-P1-001` client-authoritative, no server trust boundary | P1 | Deferred | maintainer | 2026-10-03 | Guest-only, local-first app with no server, accounts, or remote data. Must be revisited before any account/cloud mode. |
++| `FINAL-P1-001` releases not bound to a commit | P1 | Deferred | maintainer | 2026-10-03 | Release automation is tracked by the release-process work; the current `v0.1.0-rc1` is a pre-`master` RC, not a bound release. |
++| `SUPPLY-P1-001` no license chosen | P1 | Deferred | maintainer / legal | 2026-10-03 | License choice (open-source vs. proprietary) is a product/legal decision; absence of a grant means all rights reserved until decided. |
++| `EXEC-P2-001` validation evidence manual / unbound | P2 | Accepted for RC | maintainer | 2026-10-03 | The RC is guest/local; commit-bound CI evidence arrives with the CI/release work. |
++
++Accepted/deferred is a deliberate, documented decision - not a claim that the
++risk is closed. A finding moves to `verified-fixed` only with an artifact
++captured at the current commit.
++
++## Licensing
++
++The repository has no chosen license yet. Absent an explicit grant, all rights
++are reserved by default; the `LICENSE` file (tracked separately) records the
++pending, all-rights-reserved status. The target-license decision is an open
++question under finding `SUPPLY-P1-001`. See also the root `NOTICE`.
++
++This classification and reconciliation are tracked under the audit run
++`20261003-0018-master-99abf29`.
+diff --git a/docs/inventory-release-docs.test.ts b/docs/inventory-release-docs.test.ts
+new file mode 100644
+index 0000000..13fbb61
+--- /dev/null
++++ b/docs/inventory-release-docs.test.ts
+@@ -0,0 +1,67 @@
++import { describe, it, expect } from 'vitest';
++import fs from 'fs';
++import path from 'path';
++
++// Documentation checks for the inventory/release-documentation patch set
++// (INV-P2-001, INV-P3-001, FINAL-P2-001, FINAL-P2-002, EXEC-P2-001). These bind
++// the docs' headline claims to files that must exist, so the documentation
++// cannot silently regress. This is the suggested in-repo "claims match code"
++// check until commit-bound CI evidence is available.
++const root = process.cwd();
++const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
++
++describe('root README (INV-P2-001)', () => {
++  it('exists and documents setup, commands, and architecture', () => {
++    const readmePath = path.join(root, 'README.md');
++    expect(fs.existsSync(readmePath)).toBe(true);
++    const readme = read('README.md');
++
++    expect(readme).toMatch(/virtual pet/i);
++    expect(readme).toMatch(/npm ci/);
++    expect(readme).toMatch(/npm run dev/);
++    expect(readme).toMatch(/npm run test/);
++    expect(readme).toMatch(/0\.1\.0/);
++    expect(readme).toMatch(/docs\/README\.md/);
++  });
++});
++
++describe('release history (EXEC-P2-001)', () => {
++  it('CHANGELOG.md records Unreleased and the release candidate', () => {
++    expect(fs.existsSync(path.join(root, 'CHANGELOG.md'))).toBe(true);
++    const changelog = read('CHANGELOG.md');
++
++    expect(changelog).toMatch(/## \[Unreleased\]/);
++    expect(changelog).toMatch(/## \[0\.1\.0-rc1\]/);
++    expect(changelog).toMatch(/99abf29|ce70022/);
++  });
++});
++
++describe('docs index and reconciliation (INV-P3-001, FINAL-P2-001, FINAL-P2-002)', () => {
++  it('docs/README.md classifies the prompt pack and indexes the docs tree', () => {
++    expect(fs.existsSync(path.join(root, 'docs', 'README.md'))).toBe(true);
++    const docs = read(path.join('docs', 'README.md'));
++
++    expect(docs).toMatch(/prompt pack/i);
++    expect(docs).toMatch(/SUPPLY-P2-003/);
++    expect(docs).toMatch(/buddy\/reports\/phases/);
++  });
++
++  it('carries the phase-report reconciliation status matrix', () => {
++    const docs = read(path.join('docs', 'README.md'));
++
++    expect(docs).toMatch(/FINAL-P2-001/);
++    expect(docs).toMatch(/None/);
++    expect(docs).toMatch(/FEAT-P1-001/);
++    expect(docs).toMatch(/EXEC-P2-001/);
++  });
++
++  it('carries an accepted/deferred-risk record with an owner and date', () => {
++    const docs = read(path.join('docs', 'README.md'));
++
++    expect(docs).toMatch(/FINAL-P2-002/);
++    expect(docs).toMatch(/Accepted and deferred risks/);
++    expect(docs).toMatch(/Owner/);
++    expect(docs).toMatch(/\d{4}-\d{2}-\d{2}/);
++    expect(docs).toMatch(/Deferred|Accepted/);
++  });
++});
+diff --git a/lib/progression/lifecycle.test.ts b/lib/progression/lifecycle.test.ts
+index 8258b7b..8464f45 100644
+--- a/lib/progression/lifecycle.test.ts
++++ b/lib/progression/lifecycle.test.ts
+@@ -49,7 +49,7 @@ describe('Lifecycle System', () => {
+ 
+     it('returns all 6 lifecycle stages', () => {
+       const stages = [0, 30, 100, 300, 800, 2000].map(xp => calculateLifecycle(xp));
+-      const uniqueStages = [...new Set(stages)];
++      const uniqueStages = Array.from(new Set(stages));
+       expect(uniqueStages).toHaveLength(6);
+     });
+   });

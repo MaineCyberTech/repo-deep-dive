@@ -1,0 +1,139 @@
+diff --git a/components/device/MainDevice.tsx b/components/device/MainDevice.tsx
+index b23a9db..6c284d8 100644
+--- a/components/device/MainDevice.tsx
++++ b/components/device/MainDevice.tsx
+@@ -9,7 +9,7 @@ import { LcdDisplay } from '@/components/device/LcdDisplay';
+ import { StatBars, NeedBars } from '@/components/ui/StatBars';
+ import { AdventureScreen } from '@/components/device/AdventureScreen';
+ import { InventoryScreen } from '@/components/device/InventoryScreen';
+-import { getStageName, getStageProgress } from '@/lib/progression/lifecycle';
++import { getStageName } from '@/lib/progression/lifecycle';
+ 
+ interface MainDeviceProps {
+   buddy: BuddyState;
+diff --git a/data/items.ts b/data/items.ts
+index 3f228e0..0525cfa 100644
+--- a/data/items.ts
++++ b/data/items.ts
+@@ -5,7 +5,7 @@ export const ITEMS: ItemDefinition[] = [
+   { id: 'bread', name: 'Bread', category: 'food', rarity: 'common', description: 'A warm loaf of bread.', icon: '🍞', sellValue: 2, flavorText: 'Simple and filling.' },
+   { id: 'fish', name: 'Fish', category: 'food', rarity: 'common', description: 'A fresh-caught fish.', icon: '🐟', sellValue: 3, flavorText: 'Omega-3 for a healthy buddy!' },
+   { id: 'berries', name: 'Berry Bowl', category: 'food', rarity: 'common', description: 'Mixed wild berries.', icon: '🫐', sellValue: 3, flavorText: 'Sweet and tangy.' },
+-  { id: 'cake', name: ' celebration Cake', category: 'food', rarity: 'rare', description: 'A fancy cake with frosting.', icon: '🎂', sellValue: 15, flavorText: 'For special occasions!' },
++  { id: 'cake', name: 'Celebration Cake', category: 'food', rarity: 'rare', description: 'A fancy cake with frosting.', icon: '🎂', sellValue: 15, flavorText: 'For special occasions!' },
+   { id: 'honey', name: 'Honey Pot', category: 'food', rarity: 'uncommon', description: 'Sweet golden honey.', icon: '🍯', sellValue: 8, flavorText: 'Buddies love this!' },
+   { id: 'bandage', name: 'Bandage', category: 'medicine', rarity: 'common', description: 'A clean bandage wrap.', icon: '🩹', sellValue: 5, flavorText: 'Heals minor ouchies.' },
+   { id: 'potion', name: 'Health Potion', category: 'medicine', rarity: 'uncommon', description: 'A glowing green potion.', icon: '🧪', sellValue: 20, flavorText: 'Restores vitality.' },
+@@ -38,7 +38,6 @@ export const ITEM_MAP = new Map(ITEMS.map(i => [i.id, i]));
+ export const FOOD_ITEMS = ITEMS.filter(i => i.category === 'food');
+ export const TOY_ITEMS = ITEMS.filter(i => i.category === 'toy');
+ export const HAT_ITEMS = ITEMS.filter(i => i.category === 'hat');
+-export const DECOR_ITEMS = ITEMS.filter(i => i.category === 'decor');
+ export const MEDICINE_ITEMS = ITEMS.filter(i => i.category === 'medicine');
+ export const MATERIAL_ITEMS = ITEMS.filter(i => i.category === 'material');
+ export const SKILL_BOOK_ITEMS = ITEMS.filter(i => i.category === 'skill_book');
+\ No newline at end of file
+diff --git a/lib/generation/generation.test.ts b/lib/generation/generation.test.ts
+index 1a4bf64..e48b76a 100644
+--- a/lib/generation/generation.test.ts
++++ b/lib/generation/generation.test.ts
+@@ -44,6 +44,15 @@ describe('Deterministic Generation', () => {
+   });
+ 
+   describe('SeededRNG', () => {
++    it('createRNG derives string seeds through the shared hashString (HYG-P2-002)', () => {
++      const viaCreateRNG = createRNG('shared-seed');
++      const viaHash = new SeededRNG(hashString('shared-seed'));
++
++      for (let i = 0; i < 20; i++) {
++        expect(viaCreateRNG.next()).toBe(viaHash.next());
++      }
++    });
++
+     it('produces consistent results with same seed', () => {
+       const rng1 = new SeededRNG(12345);
+       const rng2 = new SeededRNG(12345);
+diff --git a/lib/generation/rng.ts b/lib/generation/rng.ts
+index a484491..700f353 100644
+--- a/lib/generation/rng.ts
++++ b/lib/generation/rng.ts
+@@ -1,3 +1,5 @@
++import { hashString } from '@/lib/generation/hash';
++
+ export class SeededRNG {
+   private state: number;
+ 
+@@ -49,14 +51,4 @@ export class SeededRNG {
+ export function createRNG(seed: string | number): SeededRNG {
+   const numericSeed = typeof seed === 'string' ? hashString(seed) : seed;
+   return new SeededRNG(numericSeed);
+-}
+-
+-function hashString(str: string): number {
+-  let hash = 0;
+-  for (let i = 0; i < str.length; i++) {
+-    const char = str.charCodeAt(i);
+-    hash = ((hash << 5) - hash) + char;
+-    hash = hash & hash;
+-  }
+-  return Math.abs(hash);
+ }
+\ No newline at end of file
+diff --git a/lib/progression/lifecycle.test.ts b/lib/progression/lifecycle.test.ts
+index 8258b7b..8464f45 100644
+--- a/lib/progression/lifecycle.test.ts
++++ b/lib/progression/lifecycle.test.ts
+@@ -49,7 +49,7 @@ describe('Lifecycle System', () => {
+ 
+     it('returns all 6 lifecycle stages', () => {
+       const stages = [0, 30, 100, 300, 800, 2000].map(xp => calculateLifecycle(xp));
+-      const uniqueStages = [...new Set(stages)];
++      const uniqueStages = Array.from(new Set(stages));
+       expect(uniqueStages).toHaveLength(6);
+     });
+   });
+diff --git a/lib/storage/autosave.ts b/lib/storage/autosave.ts
+deleted file mode 100644
+index 1954281..0000000
+--- a/lib/storage/autosave.ts
++++ /dev/null
+@@ -1,38 +0,0 @@
+-import { BuddyState, InventoryState } from '@/lib/generation/types';
+-import { saveGame } from '@/lib/storage/indexeddb';
+-
+-let autosaveTimer: ReturnType<typeof setInterval> | null = null;
+-
+-export function startAutosave(
+-  getBuddy: () => BuddyState | null,
+-  getInventory: () => InventoryState,
+-  intervalMs: number = 10000
+-): void {
+-  stopAutosave();
+-  const guestId = 'guest-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+-
+-  autosaveTimer = setInterval(async () => {
+-    const buddy = getBuddy();
+-    if (!buddy) return;
+-
+-    try {
+-      await saveGame({
+-        version: 1,
+-        buddy,
+-        guestId,
+-        createdAt: buddy.identity.generatedAt,
+-        updatedAt: Date.now(),
+-        inventory: getInventory(),
+-      });
+-    } catch (error) {
+-      console.error('Autosave failed:', error);
+-    }
+-  }, intervalMs);
+-}
+-
+-export function stopAutosave(): void {
+-  if (autosaveTimer) {
+-    clearInterval(autosaveTimer);
+-    autosaveTimer = null;
+-  }
+-}
+\ No newline at end of file

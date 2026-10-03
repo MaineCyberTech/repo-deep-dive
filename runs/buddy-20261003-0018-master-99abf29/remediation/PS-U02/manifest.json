@@ -1,0 +1,71 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-U02",
+  "title": "Unassigned EXEC findings (catch-all)",
+  "finding": "EXEC-P1-001",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-u02-20261003-0018-master-99abf29",
+  "commit": "2f04de62b80cecf69e4ad52e06c297bd553044c0",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/8",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "EXEC-P1-001"
+  ],
+  "filesChanged": [
+    "docs/release-readiness.md",
+    "docs/release-readiness.test.ts",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Catch-all set PS-U02 has no declared file list. EXEC-P1-001 is the release-gate meta finding; its recommended fix is to close/accept PS-01..PS-04 with commit-bound validation evidence and re-audit. The minimal in-repo fix is to make the gate policy and its conditions explicit: new docs/release-readiness.md (the policy) and its doc test docs/release-readiness.test.ts (the finding's suggested validation); plus the pre-existing TS2802 typecheck unblock in lib/progression/lifecycle.test.ts, identical to PS-01/PS-03/PS-U01. No runtime/application logic changed."
+  },
+  "commands": [
+    {
+      "command": "git rev-parse HEAD && (npm ci && npm run lint && npm run typecheck && npm run test)",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced via lab-sync.ps1, tree normalized with git checkout -- ., at 2f04de6)",
+      "exit": 0,
+      "result": "lint clean; typecheck clean; 6 test files / 112 tests passed (109 pre-existing + 3 new doc tests); __VERIFY_EXIT=0"
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-psu02 && gitleaks detect --no-git --redact --source /tmp/glscan-psu02 -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~258070 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "6 files / 112 tests passed"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-U02/diff.patch",
+    "sha256": "4d55e7090d98983de9d778fda57312914871ba090e07eafbedd451a5f648f928"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-U02/verify.log",
+    "sha256": "e46d08cfed8b8978a589d0e55983286b75dc3173060b3e019e90e39b059b46ca"
+  },
+  "prBody": {
+    "path": "remediation/PS-U02/pr_body.md",
+    "sha256": "c18c96512b8965b0a73dd7e3e5372e0d8ce6847a62c07343d67d694f8ae8414f"
+  },
+  "generated": "2026-10-03T07:27:00Z"
+}

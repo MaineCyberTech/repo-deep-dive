@@ -1,0 +1,86 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-09",
+  "title": "Documentation reconciliation",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-09-20261003-0018-master-99abf29",
+  "commit": "ac9b9e9391035270795ec0eda6dcf9c8072024b5",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/13",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "INV-P2-001",
+    "INV-P3-001",
+    "FINAL-P2-001",
+    "FINAL-P2-002",
+    "EXEC-P2-001"
+  ],
+  "filesChanged": [
+    "README.md",
+    "CHANGELOG.md",
+    "docs/README.md",
+    "docs/inventory-release-docs.test.ts",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Diff touches the PS-09 plan docs (README.md, CHANGELOG.md, docs/README.md), the new doc test docs/inventory-release-docs.test.ts, and the one-line lib/progression/lifecycle.test.ts Set-iteration unblock for the pre-existing TS2802 typecheck error (identical change used by PS-01/PS-03/PS-05/PS-06/PS-07/PS-08/PS-U02/PS-U03). No runtime/application logic, schema, storage, dependency, or configuration changed. docs/README.md is a superset of the sibling licensing PR (PS-02) version, additive by design."
+  },
+  "commands": [
+    {
+      "command": "git rev-parse HEAD && (npm ci && npm run lint && npm run typecheck && npm run test); echo __VERIFY_EXIT=$?",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced clean at ac9b9e9)",
+      "exit": 0,
+      "result": "lint clean; typecheck clean; 6 test files / 114 tests passed (109 pre-existing + 5 new documentation tests); __VERIFY_EXIT=0"
+    },
+    {
+      "command": "rm -rf /tmp/glscan-ps09 && mkdir -p /tmp/glscan-ps09 && git archive HEAD | tar -x -C /tmp/glscan-ps09 && gitleaks detect --no-git --redact --source /tmp/glscan-ps09 -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~268633 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "for p in README.md CHANGELOG.md docs/README.md docs/buddy/reports/phases docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack; do test -e $p && echo OK-$p || echo MISSING-$p; done",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "all referenced repo paths exist (OK-README.md, OK-CHANGELOG.md, OK-docs/README.md, OK-docs/buddy/reports/phases, OK-docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack)"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0 / npm 11.17.0)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0 / npm 11.17.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0 / npm 11.17.0)",
+      "exit": 0,
+      "result": "6 files / 114 tests passed"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-09/diff.patch",
+    "sha256": "E0028DDDE25908772FB948F82CF26EBF485C82FF41EDD55D77665FF896061947"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-09/verify.log",
+    "sha256": "D48E76AA9DFE6A06F5A414FD577ED0CFD94D9A5F870728A18AB37FB40D7A75FC",
+    "raw": [
+      "remediation/PS-09/raw-main.log",
+      "remediation/PS-09/raw-gitleaks.log"
+    ]
+  },
+  "prBody": {
+    "path": "remediation/PS-09/pr_body.md",
+    "sha256": "2DE118171CE6134D525EFE2313F1561F13B837DD30287C659F93EFB80DC79DB0"
+  },
+  "generated": "2026-10-03T08:10:00Z"
+}

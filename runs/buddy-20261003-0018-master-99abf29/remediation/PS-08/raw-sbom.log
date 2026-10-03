@@ -1,0 +1,6 @@
+SBOM_EXIT=0
+22581 /tmp/ps08-sbom.json
+
+> buddy@0.1.0 sbom
+> npm sbom --sbom-format cyclonedx --omit=dev
+17

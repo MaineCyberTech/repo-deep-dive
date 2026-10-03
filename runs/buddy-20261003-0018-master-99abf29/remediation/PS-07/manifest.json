@@ -1,0 +1,87 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-07",
+  "title": "Operations, privacy, offline",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-07-20261003-0018-master-99abf29",
+  "commit": "de0cae1f170e567502cc99ee6509f9f6c68afed9",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/11",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "OBS-P2-001",
+    "OBS-P2-002",
+    "OBS-P3-001",
+    "API-P2-001",
+    "API-P2-002",
+    "SEC-P2-002",
+    "ARCH-P2-001"
+  ],
+  "deferredFindings": [
+    "API-P2-001"
+  ],
+  "filesChanged": [
+    "app/error.tsx",
+    "app/error.test.tsx",
+    "app/globals.css",
+    "app/layout.tsx",
+    "lib/offline/sw.ts",
+    "lib/progression/lifecycle.test.ts",
+    "next.config.js",
+    "public/sw.js"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Runtime files are the PS-07 plan files (app/error.tsx, next.config.js, public/sw.js, app/globals.css, app/layout.tsx). Two documented deviations are required/unblocking: lib/offline/sw.ts is the one-line registration that versions the worker URL (without it the SW cache cannot change per build), and lib/progression/lifecycle.test.ts is the pre-existing TS2802 one-line unblock used identically by PS-01/PS-03/PS-06. app/error.test.tsx is the required error-boundary test."
+  },
+  "commands": [
+    {
+      "command": "npm ci && npm run lint && npm run typecheck && npm run test",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced clean at de0cae1)",
+      "exit": 0,
+      "result": "npm ci 520 packages; lint clean; typecheck clean; 6 test files / 112 tests passed"
+    },
+    {
+      "command": "npm run build && npm run test -- error",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "next build compiled successfully (fonts self-hosted in .next/static/media); app/error.test.tsx 3 tests passed"
+    },
+    {
+      "command": "next start -p 3999; curl -sSI / and /sw.js",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "CSP + X-Content-Type-Options + X-Frame-Options + Referrer-Policy + Permissions-Policy + HSTS present on both; /sw.js Cache-Control: public, max-age=0, must-revalidate"
+    },
+    {
+      "command": "offline/privacy/cache checks (fonts refs, build-id -> sw registration)",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "0 fonts.googleapis.com refs in built CSS/server output/rendered HTML; .next/BUILD_ID 99abf29 -> verify-abc123 and build id inlined in the client bundle that registers /sw.js?v=<id>"
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-ps07c && gitleaks detect --no-git --redact --source /tmp/glscan-ps07c -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~262285 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "npm run lint / npm run typecheck / npm run test / npm run build",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "clean lint/typecheck; 6 files / 112 tests; build OK"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-07/diff.patch",
+    "sha256": "5ad4d8f8e40d4ae7ad5aa4709cae8b9482fd571453afe20215abdaaff7f7e73f"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-07/verify.log",
+    "sha256": "a7da03635d9a620c792701d12ed2f69417cb7d1a45475dba68e2024add5c747d"
+  },
+  "prBody": "remediation/PS-07/pr_body.md",
+  "generated": "2026-10-03T07:55:00Z"
+}

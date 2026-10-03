@@ -1,0 +1,23 @@
+chore(deps): supply-chain + inventory hardening [SUPPLY-P2-001/002]
+
+Addresses the PS-08 supply-chain findings:
+
+- SUPPLY-P2-001: add `.github/dependabot.yml` (npm + GitHub Actions,
+  weekly, grouped minor/patch updates, security-update PRs) and an
+  `engines.node >=20` field so the toolchain is managed and reproducible.
+- SUPPLY-P2-002 (partial): add `npm run audit` (npm audit --omit=dev) and
+  `npm run sbom` (npm sbom --sbom-format cyclonedx --omit=dev) so
+  vulnerability scanning and a CycloneDX SBOM are runnable in CI. Wiring
+  these into a workflow depends on PS-01 (CI) and the license allowlist is
+  a legal/product decision -> recorded as open questions.
+- INV-P2-002: hand-correct the run's `inventory.json` (entry_points, routes,
+  tests.files/dirs); the audit tool's Next.js App Router detection gap is an
+  open question. This is a run artifact, not a repo file.
+- API-P2-001: deferred - there is still no server/API in the tree to version.
+
+Deviation: `lib/progression/lifecycle.test.ts` one-line Set-iteration unblock
+for the pre-existing TS2802 typecheck error (same unblock used by
+PS-01/PS-03/PS-06/PS-07).
+
+Findings: SUPPLY-P2-001, SUPPLY-P2-002, INV-P2-002 (run artifact),
+API-P2-001 (deferred).

@@ -1,0 +1,532 @@
+diff --git a/app/error.test.tsx b/app/error.test.tsx
+new file mode 100644
+index 0000000..17c87b3
+--- /dev/null
++++ b/app/error.test.tsx
+@@ -0,0 +1,57 @@
++import React from 'react';
++import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
++import { fireEvent, render, screen, waitFor } from '@testing-library/react';
++import { deleteSave } from '@/lib/storage/indexeddb';
++import ErrorBoundary from './error';
++
++vi.mock('@/lib/storage/indexeddb', () => ({
++  deleteSave: vi.fn().mockResolvedValue(undefined),
++}));
++
++const mockedDeleteSave = vi.mocked(deleteSave);
++const errorSpy = vi.spyOn(console, 'error');
++
++describe('app/error Error boundary (OBS-P2-002)', () => {
++  beforeEach(() => {
++    mockedDeleteSave.mockClear();
++    errorSpy.mockClear();
++    errorSpy.mockImplementation(() => {});
++  });
++
++  afterAll(() => {
++    errorSpy.mockRestore();
++  });
++
++  it('renders a recoverable fallback and reports a structured error', () => {
++    const error = Object.assign(new Error('boom'), { digest: 'abc123' });
++
++    render(<ErrorBoundary error={error} reset={() => {}} />);
++
++    expect(screen.getByText('SYSTEM FAULT')).toBeTruthy();
++    expect(screen.getByText('TRY AGAIN')).toBeTruthy();
++    expect(screen.getByText('RELOAD')).toBeTruthy();
++    expect(screen.getByText('RESET SAVE')).toBeTruthy();
++
++    const logged = errorSpy.mock.calls.map((call) => String(call[0])).join('\n');
++    expect(logged).toContain('"type":"error"');
++    expect(logged).toContain('boom');
++    expect(logged).toContain('abc123');
++  });
++
++  it('invokes reset when TRY AGAIN is clicked', () => {
++    const reset = vi.fn();
++
++    render(<ErrorBoundary error={new Error('boom')} reset={reset} />);
++    fireEvent.click(screen.getByText('TRY AGAIN'));
++
++    expect(reset).toHaveBeenCalledTimes(1);
++  });
++
++  it('clears the save when RESET SAVE is clicked', async () => {
++    render(<ErrorBoundary error={new Error('boom')} reset={() => {}} />);
++
++    fireEvent.click(screen.getByText('RESET SAVE'));
++
++    await waitFor(() => expect(mockedDeleteSave).toHaveBeenCalledTimes(1));
++  });
++});
+diff --git a/app/error.tsx b/app/error.tsx
+new file mode 100644
+index 0000000..ca67cde
+--- /dev/null
++++ b/app/error.tsx
+@@ -0,0 +1,107 @@
++'use client';
++
++import React, { useEffect } from 'react';
++import { deleteSave } from '@/lib/storage/indexeddb';
++
++const BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev';
++
++interface ErrorBoundaryProps {
++  error: Error & { digest?: string };
++  reset: () => void;
++}
++
++interface ErrorReport {
++  type: 'error';
++  message: string;
++  digest: string | null;
++  buildId: string;
++  timestamp: string;
++}
++
++/**
++ * Minimal, dependency-free structured error report (OBS-P2-001).
++ *
++ * Privacy note: only the error message, Next.js digest and build id are
++ * emitted - never save contents or other user data. The event is emitted as a
++ * single JSON line so a log collector can pick it up, and also dispatched on
++ * `window` so a reporter (e.g. Sentry) can be attached later without changing
++ * call sites.
++ */
++export function reportError(error: Error & { digest?: string }): ErrorReport {
++  const report: ErrorReport = {
++    type: 'error',
++    message: error.message,
++    digest: error.digest ?? null,
++    buildId: BUILD_ID,
++    timestamp: new Date().toISOString(),
++  };
++
++  console.error(JSON.stringify(report));
++
++  if (typeof window !== 'undefined') {
++    window.dispatchEvent(new CustomEvent('buddy:error', { detail: report }));
++  }
++
++  return report;
++}
++
++export default function Error({ error, reset }: ErrorBoundaryProps) {
++  useEffect(() => {
++    reportError(error);
++  }, [error]);
++
++  const reload = () => {
++    if (typeof window !== 'undefined') {
++      window.location.reload();
++    }
++  };
++
++  const resetSave = async () => {
++    try {
++      await deleteSave();
++    } catch {
++      // Ignore storage errors; a reload still gives the user a clean start.
++    } finally {
++      reload();
++    }
++  };
++
++  return (
++    <div
++      className="min-h-screen flex flex-col items-center justify-center p-6 lcd-screen"
++      role="alert"
++    >
++      <div className="max-w-md w-full text-center space-y-4">
++        <h1 className="lcd-text-danger text-2xl font-bold">SYSTEM FAULT</h1>
++        <p className="lcd-text text-sm">
++          Buddy hit an unexpected error. You can try again, reload, or reset the
++          device save to recover.
++        </p>
++        <p className="lcd-text text-xs opacity-70">Build: {BUILD_ID}</p>
++        <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
++          <button
++            type="button"
++            onClick={reset}
++            className="btn-device btn-primary px-4 py-2 rounded focus-ring"
++          >
++            TRY AGAIN
++          </button>
++          <button
++            type="button"
++            onClick={reload}
++            className="btn-device px-4 py-2 rounded focus-ring"
++          >
++            RELOAD
++          </button>
++          <button
++            type="button"
++            onClick={resetSave}
++            className="btn-device px-4 py-2 rounded focus-ring"
++          >
++            RESET SAVE
++          </button>
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/app/globals.css b/app/globals.css
+index e4ae908..2e5c990 100644
+--- a/app/globals.css
++++ b/app/globals.css
+@@ -2,8 +2,6 @@
+ @tailwind components;
+ @tailwind utilities;
+ 
+-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+-
+ :root {
+   --color-lcd-bg: #1a1a2e;
+   --color-lcd-fg: #e8e8d0;
+@@ -25,7 +23,7 @@ html {
+ }
+ 
+ body {
+-  font-family: 'IBM Plex Sans', sans-serif;
++  font-family: var(--font-ibm-plex-sans), 'IBM Plex Sans', sans-serif;
+   background-color: #0a0a0f;
+   color: #e8e8d0;
+   min-height: 100vh;
+@@ -61,7 +59,7 @@ body {
+ }
+ 
+ .lcd-screen {
+-  font-family: 'JetBrains Mono', monospace;
++  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+   background: linear-gradient(180deg, #1a1a2e 0%, #0f0f1a 100%);
+   color: #e8e8d0;
+   border: 2px solid #2a2a4a;
+@@ -101,7 +99,7 @@ body {
+ }
+ 
+ .btn-device {
+-  font-family: 'JetBrains Mono', monospace;
++  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+   background: linear-gradient(180deg, #2a2a4a 0%, #1a1a3a 100%);
+   border: 1px solid #3a3a5a;
+   color: #e8e8d0;
+diff --git a/app/layout.tsx b/app/layout.tsx
+index fd46e72..7b8e1fc 100644
+--- a/app/layout.tsx
++++ b/app/layout.tsx
+@@ -1,11 +1,32 @@
+ import type { Metadata, Viewport } from 'next';
++import { IBM_Plex_Sans, JetBrains_Mono } from 'next/font/google';
+ import './globals.css';
+ import { ServiceWorkerRegistration } from '@/components/ui/ServiceWorkerRegistration';
+ import { OfflineIndicator } from '@/components/ui/OfflineIndicator';
+ 
++/**
++ * Fonts are self-hosted at build time via next/font instead of loading from
++ * fonts.googleapis.com at runtime. This removes the third-party request and
++ * makes the typography available offline (API-P2-002).
++ */
++const ibmPlexSans = IBM_Plex_Sans({
++  subsets: ['latin'],
++  weight: ['400', '500', '600', '700'],
++  variable: '--font-ibm-plex-sans',
++  display: 'swap',
++});
++
++const jetbrainsMono = JetBrains_Mono({
++  subsets: ['latin'],
++  weight: ['400', '500', '700'],
++  variable: '--font-jetbrains-mono',
++  display: 'swap',
++});
++
+ export const metadata: Metadata = {
+   title: 'Buddy - Your LCD Virtual Pet',
+-  description: 'Hatch and care for your deterministic ASCII Buddy in this retro LCD-style virtual pet game.',
++  description:
++    'Hatch and care for your deterministic ASCII Buddy in this retro LCD-style virtual pet game.',
+   manifest: '/manifest.json',
+   appleWebApp: {
+     capable: true,
+@@ -32,11 +53,10 @@ export default function RootLayout({
+   children: React.ReactNode;
+ }) {
+   return (
+-    <html lang="en" className="h-full">
+-      <head>
+-        <link rel="preconnect" href="https://fonts.googleapis.com" />
+-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+-      </head>
++    <html
++      lang="en"
++      className={`h-full ${ibmPlexSans.variable} ${jetbrainsMono.variable}`}
++    >
+       <body className="h-full flex flex-col">
+         <a href="#main-content" className="skip-link">
+           Skip to main content
+@@ -49,4 +69,4 @@ export default function RootLayout({
+       </body>
+     </html>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/lib/offline/sw.ts b/lib/offline/sw.ts
+index ee489f6..6b2ffd6 100644
+--- a/lib/offline/sw.ts
++++ b/lib/offline/sw.ts
+@@ -3,7 +3,11 @@ export function registerServiceWorker(): void {
+   if (!('serviceWorker' in navigator)) return;
+ 
+   window.addEventListener('load', () => {
+-    navigator.serviceWorker.register('/sw.js').then(
++    // Version the worker URL so each build installs a fresh worker and opens a
++    // new `buddy-cache-<buildId>` cache; the activate handler purges the rest
++    // (ARCH-P2-001).
++    const buildId = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev';
++    navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(buildId)}`).then(
+       (registration) => {
+         console.log('SW registered:', registration.scope);
+       },
+diff --git a/lib/progression/lifecycle.test.ts b/lib/progression/lifecycle.test.ts
+index 8258b7b..8464f45 100644
+--- a/lib/progression/lifecycle.test.ts
++++ b/lib/progression/lifecycle.test.ts
+@@ -49,7 +49,7 @@ describe('Lifecycle System', () => {
+ 
+     it('returns all 6 lifecycle stages', () => {
+       const stages = [0, 30, 100, 300, 800, 2000].map(xp => calculateLifecycle(xp));
+-      const uniqueStages = [...new Set(stages)];
++      const uniqueStages = Array.from(new Set(stages));
+       expect(uniqueStages).toHaveLength(6);
+     });
+   });
+diff --git a/next.config.js b/next.config.js
+index 274d580..e6d3a87 100644
+--- a/next.config.js
++++ b/next.config.js
+@@ -1,10 +1,87 @@
++const { execSync } = require('child_process');
++
++/**
++ * Resolve a build id that is stable for a given commit and changes on every
++ * deploy. It is exposed to the client (OBS-P3-001) and quoted into the service
++ * worker registration so the offline cache name changes per build (ARCH-P2-001).
++ */
++function resolveBuildId() {
++  if (process.env.NEXT_PUBLIC_BUILD_ID) return process.env.NEXT_PUBLIC_BUILD_ID;
++  if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 12);
++  try {
++    return execSync('git rev-parse --short HEAD', {
++      stdio: ['ignore', 'pipe', 'ignore'],
++    })
++      .toString()
++      .trim();
++  } catch {
++    return 'dev';
++  }
++}
++
++const buildId = resolveBuildId();
++const isDev = process.env.NODE_ENV !== 'production';
++
++// Fonts are self-hosted via next/font, so the policy can stay same-origin
++// (SEC-P2-002, API-P2-002). 'unsafe-inline' is required by Next.js for the
++// inlined runtime bootstrap; 'unsafe-eval' is only allowed during development.
++const contentSecurityPolicy = [
++  "default-src 'self'",
++  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
++  "style-src 'self' 'unsafe-inline'",
++  "img-src 'self' data: blob:",
++  "font-src 'self' data:",
++  `connect-src 'self'${isDev ? ' ws:' : ''}`,
++  "worker-src 'self'",
++  "manifest-src 'self'",
++  "object-src 'none'",
++  "base-uri 'self'",
++  "form-action 'self'",
++  "frame-ancestors 'none'",
++  'upgrade-insecure-requests',
++].join('; ');
++
++const securityHeaders = [
++  { key: 'Content-Security-Policy', value: contentSecurityPolicy },
++  { key: 'X-Content-Type-Options', value: 'nosniff' },
++  { key: 'X-Frame-Options', value: 'DENY' },
++  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
++  {
++    key: 'Permissions-Policy',
++    value: 'camera=(), microphone=(), geolocation=(), payment=()',
++  },
++  {
++    key: 'Strict-Transport-Security',
++    value: 'max-age=63072000; includeSubDomains',
++  },
++];
++
+ /** @type {import('next').NextConfig} */
+ const nextConfig = {
+   reactStrictMode: true,
+-  output: "standalone",
++  output: 'standalone',
++  generateBuildId: () => buildId,
++  env: {
++    NEXT_PUBLIC_BUILD_ID: buildId,
++  },
+   images: {
+     unoptimized: true,
+   },
++  async headers() {
++    return [
++      {
++        source: '/:path*',
++        headers: securityHeaders,
++      },
++      {
++        // Ensure the browser revalidates the worker script on navigation.
++        source: '/sw.js',
++        headers: [
++          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
++        ],
++      },
++    ];
++  },
+ };
+ 
+-module.exports = nextConfig;
+\ No newline at end of file
++module.exports = nextConfig;
+diff --git a/public/sw.js b/public/sw.js
+index b5c8081..3d0d048 100644
+--- a/public/sw.js
++++ b/public/sw.js
+@@ -1,58 +1,85 @@
+-var CACHE_NAME = 'buddy-cache-v1';
+-var ASSETS_TO_CACHE = [
+-  '/',
+-  '/manifest.json',
+-  '/icon-192.svg',
+-  '/icon-512.svg',
+-];
+-
+-self.addEventListener('install', function(event) {
++'use strict';
++
++/**
++ * Cache name is derived from the `?v=<build id>` query string used when the
++ * worker is registered (see lib/offline/sw.ts). A new build produces a new
++ * script URL, which triggers an install and activates a fresh cache while the
++ * activate handler purges every older `buddy-cache-*` entry (ARCH-P2-001).
++ */
++function resolveCacheName() {
++  try {
++    var version = new URL(self.location.href).searchParams.get('v');
++    if (version) return 'buddy-cache-' + version;
++  } catch (error) {
++    // fall through to the generic name
++  }
++  return 'buddy-cache-dev';
++}
++
++var CACHE_NAME = resolveCacheName();
++var ASSETS_TO_CACHE = ['/', '/manifest.json', '/icon-192.svg', '/icon-512.svg'];
++
++self.addEventListener('install', function (event) {
+   event.waitUntil(
+-    caches.open(CACHE_NAME).then(function(cache) {
+-      return cache.addAll(ASSETS_TO_CACHE);
+-    })
++    caches
++      .open(CACHE_NAME)
++      .then(function (cache) {
++        return cache.addAll(ASSETS_TO_CACHE);
++      })
++      .then(function () {
++        return self.skipWaiting();
++      })
+   );
+-  self.skipWaiting();
+ });
+ 
+-self.addEventListener('activate', function(event) {
++self.addEventListener('activate', function (event) {
+   event.waitUntil(
+-    caches.keys().then(function(cacheNames) {
+-      return Promise.all(
+-        cacheNames
+-          .filter(function(name) { return name !== CACHE_NAME; })
+-          .map(function(name) { return caches.delete(name); })
+-      );
+-    })
++    caches
++      .keys()
++      .then(function (cacheNames) {
++        return Promise.all(
++          cacheNames
++            .filter(function (name) {
++              return name !== CACHE_NAME;
++            })
++            .map(function (name) {
++              return caches.delete(name);
++            })
++        );
++      })
++      .then(function () {
++        return self.clients.claim();
++      })
+   );
+-  self.clients.claim();
+ });
+ 
+-self.addEventListener('fetch', function(event) {
++self.addEventListener('fetch', function (event) {
+   var request = event.request;
+ 
+   if (request.method !== 'GET') return;
+ 
+   event.respondWith(
+-    caches.match(request).then(function(cachedResponse) {
++    caches.match(request).then(function (cachedResponse) {
+       if (cachedResponse) {
+         return cachedResponse;
+       }
+ 
+-      return fetch(request).then(function(response) {
+-        if (response && response.status === 200 && response.type === 'basic') {
+-          var responseClone = response.clone();
+-          caches.open(CACHE_NAME).then(function(cache) {
+-            cache.put(request, responseClone);
+-          });
+-        }
+-        return response;
+-      }).catch(function() {
+-        if (request.mode === 'navigate') {
+-          return caches.match('/');
+-        }
+-        return new Response('Offline', { status: 503 });
+-      });
++      return fetch(request)
++        .then(function (response) {
++          if (response && response.status === 200 && response.type === 'basic') {
++            var responseClone = response.clone();
++            caches.open(CACHE_NAME).then(function (cache) {
++              cache.put(request, responseClone);
++            });
++          }
++          return response;
++        })
++        .catch(function () {
++          if (request.mode === 'navigate') {
++            return caches.match('/');
++          }
++          return new Response('Offline', { status: 503 });
++        });
+     })
+   );
+-});
+\ No newline at end of file
++});

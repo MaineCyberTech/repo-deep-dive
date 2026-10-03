@@ -1,0 +1,91 @@
+diff --git a/.github/dependabot.yml b/.github/dependabot.yml
+new file mode 100644
+index 0000000..b7ccff5
+--- /dev/null
++++ b/.github/dependabot.yml
+@@ -0,0 +1,35 @@
++version: 2
++updates:
++  # Keep npm dependencies patched and surface vulnerable versions as PRs.
++  - package-ecosystem: npm
++    directory: "/"
++    schedule:
++      interval: weekly
++    open-pull-requests-limit: 5
++    labels:
++      - dependencies
++      - audit-remediation
++    commit-message:
++      prefix: "chore(deps)"
++    groups:
++      production-minor-patch:
++        dependency-type: production
++        update-types:
++          - minor
++          - patch
++      development-minor-patch:
++        dependency-type: development
++        update-types:
++          - minor
++          - patch
++
++  # Keep GitHub Actions pinned to current major versions.
++  - package-ecosystem: github-actions
++    directory: "/"
++    schedule:
++      interval: weekly
++    open-pull-requests-limit: 5
++    labels:
++      - dependencies
++    commit-message:
++      prefix: "chore(ci)"
+diff --git a/lib/progression/lifecycle.test.ts b/lib/progression/lifecycle.test.ts
+index 8258b7b..8464f45 100644
+--- a/lib/progression/lifecycle.test.ts
++++ b/lib/progression/lifecycle.test.ts
+@@ -49,7 +49,7 @@ describe('Lifecycle System', () => {
+ 
+     it('returns all 6 lifecycle stages', () => {
+       const stages = [0, 30, 100, 300, 800, 2000].map(xp => calculateLifecycle(xp));
+-      const uniqueStages = [...new Set(stages)];
++      const uniqueStages = Array.from(new Set(stages));
+       expect(uniqueStages).toHaveLength(6);
+     });
+   });
+diff --git a/package-lock.json b/package-lock.json
+index ff98927..0b61ddc 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -31,6 +31,9 @@
+         "tailwindcss": "^3.4.0",
+         "typescript": "^5.4.0",
+         "vitest": "^1.5.0"
++      },
++      "engines": {
++        "node": ">=20"
+       }
+     },
+     "node_modules/@alloc/quick-lru": {
+diff --git a/package.json b/package.json
+index 4f5f053..676a93f 100644
+--- a/package.json
++++ b/package.json
+@@ -2,6 +2,9 @@
+   "name": "buddy",
+   "version": "0.1.0",
+   "private": true,
++  "engines": {
++    "node": ">=20"
++  },
+   "scripts": {
+     "dev": "next dev",
+     "build": "next build",
+@@ -11,6 +14,8 @@
+     "test": "vitest run",
+     "test:watch": "vitest",
+     "test:ui": "vitest --ui",
++    "audit": "npm audit --omit=dev",
++    "sbom": "npm sbom --sbom-format cyclonedx --omit=dev",
+     "format": "prettier --write .",
+     "format:check": "prettier --check ."
+   },

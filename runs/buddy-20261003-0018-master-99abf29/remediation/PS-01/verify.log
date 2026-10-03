@@ -1,0 +1,222 @@
+# PS-01 "CI + governance" - verification log
+
+- Run: 20261003-0018-master-99abf29
+- Repo/base: C:\temp\buddy @ 99abf294dae0d9de8770dfde257bdef5fae9ae1b (origin/master)
+- Branch: remediation/ps-01-20261003-0018-master-99abf29
+- Commit verified: 2d9cb592d95c025cddf60d42010ea6ebf1dda98a
+- Local env: Windows, node v24.19.0, npm 11.17.0
+- Lab env: ci-runner 172.23.128.51, /srv/work/buddy (synced via lab-sync.ps1)
+- Note: ANSI color escapes were stripped from the captured output. The CP1252 rendering of
+  UTF-8 glyphs (for example "Γ£ö" for a check mark) is left as captured by the Windows console.
+
+## Preparation
+
+The lab working directory was wiped (`rm -rf /srv/work/buddy`) and re-synced, then reset to the
+commit under test so that no files from prior patch-set runs remained:
+
+```text
+HEAD is now at 2d9cb59 ci: gate install/lint/test + Dependabot/CODEOWNERS [CI-P1-001/002]
+git status --porcelain --untracked-files=all : (empty)
+git rev-parse HEAD : 2d9cb592d95c025cddf60d42010ea6ebf1dda98a
+lib/storage/ : autosave.ts indexeddb.ts   (PS-04 files absent)
+```
+
+## Primary gate - lab (ci-runner)
+
+`git rev-parse HEAD && npm ci && npm run lint && npm run typecheck && npm run test && npm run test:coverage && npm run build`
+Exit: 0
+
+```text
+2d9cb592d95c025cddf60d42010ea6ebf1dda98a
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it.
+Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more
+comprehensive and powerful.
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant and faster
+implementation
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated glob@10.3.10: Old versions of glob are not supported, and contain widely publicized security
+vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be
+purchased (at exorbitant rates) by contacting i@izs.me
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support
+for other options.
+
+added 536 packages, and audited 537 packages in 19s
+
+190 packages are looking for funding
+  run `npm fund` for details
+
+20 vulnerabilities (3 moderate, 14 high, 3 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> buddy@0.1.0 lint
+> next lint
+
+Γ£ö No ESLint warnings or errors
+
+> buddy@0.1.0 typecheck
+> tsc --noEmit
+
+
+> buddy@0.1.0 test
+> vitest run
+
+The CJS build of Vite's Node API is deprecated. See
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v1.6.1 /srv/work/buddy
+
+ Γ£ô lib/locations/adventure.test.ts  (14 tests) 18ms
+ Γ£ô lib/actions/care.test.ts  (25 tests) 25ms
+ Γ£ô lib/generation/generation.test.ts  (38 tests) 224ms
+ Γ£ô data/items.test.ts  (15 tests) 13ms
+ Γ£ô lib/progression/lifecycle.test.ts  (17 tests) 11ms
+
+ Test Files  5 passed (5)
+      Tests  109 passed (109)
+   Start at  06:39:07
+   Duration  3.20s (transform 467ms, setup 1ms, collect 1.19s, tests 291ms, environment 3.57s, prepare 1.54s)
+
+
+> buddy@0.1.0 test:coverage
+> vitest run --coverage
+
+The CJS build of Vite's Node API is deprecated. See
+https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v1.6.1 /srv/work/buddy
+      Coverage enabled with v8
+
+ Γ£ô lib/actions/care.test.ts  (25 tests) 23ms
+ Γ£ô lib/locations/adventure.test.ts  (14 tests) 15ms
+ Γ£ô lib/generation/generation.test.ts  (38 tests) 241ms
+ Γ£ô lib/progression/lifecycle.test.ts  (17 tests) 23ms
+ Γ£ô data/items.test.ts  (15 tests) 18ms
+
+ Test Files  5 passed (5)
+      Tests  109 passed (109)
+   Start at  06:39:11
+   Duration  3.13s (transform 471ms, setup 1ms, collect 910ms, tests 320ms, environment 4.06s, prepare 1.05s)
+
+ % Coverage report from v8
+-------------------|---------|----------|---------|---------|----------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+-------------------|---------|----------|---------|---------|----------------------
+All files          |   83.71 |    82.78 |   71.42 |   83.71 |
+ data              |   92.13 |    95.23 |       0 |   92.13 |
+  achievements.ts  |       0 |        0 |       0 |       0 | 1-145
+  eyes.ts          |     100 |      100 |     100 |     100 |
+  hats.ts          |     100 |      100 |     100 |     100 |
+  items.ts         |     100 |      100 |     100 |     100 |
+  locations.ts     |     100 |      100 |     100 |     100 |
+  loot-tables.ts   |     100 |      100 |     100 |     100 |
+  personalities.ts |     100 |      100 |     100 |     100 |
+  species.ts       |     100 |      100 |     100 |     100 |
+ lib/actions       |   93.33 |    85.29 |   83.33 |   93.33 |
+  care.ts          |    97.1 |    87.87 |     100 |    97.1 | 106-107,117-119
+  labels.ts        |       0 |        0 |       0 |       0 | 1-7
+ lib/buddy         |       0 |        0 |       0 |       0 |
+  store.ts         |       0 |        0 |       0 |       0 | 1-82
+ lib/generation    |   96.27 |       96 |   81.25 |   96.27 |
+  engine.ts        |     100 |      100 |     100 |     100 |
+  hash.ts          |     100 |      100 |     100 |     100 |
+  rng.ts           |    75.8 |    91.66 |      70 |    75.8 | 18-19,32,50-52,54-62
+  types.ts         |     100 |      100 |     100 |     100 |
+ lib/locations     |   96.98 |    56.25 |     100 |   96.98 |
+  adventure.ts     |   96.98 |    56.25 |     100 |   96.98 | 106,143-145,152
+ lib/offline       |       0 |        0 |       0 |       0 |
+  sw.ts            |       0 |        0 |       0 |       0 | 1-34
+ lib/personality   |    90.9 |      100 |      50 |    90.9 |
+  engine.ts        |    90.9 |      100 |      50 |    90.9 | 21-22
+ lib/progression   |   83.17 |    95.23 |   85.71 |   83.17 |
+  lifecycle.ts     |   83.17 |    95.23 |   85.71 |   83.17 | 65-82
+ lib/stats         |   63.75 |      100 |   57.14 |   63.75 |
+  engine.ts        |   63.75 |      100 |   57.14 |   63.75 | 48-56,59-68,71-80
+ lib/storage       |       0 |        0 |       0 |       0 |
+  autosave.ts      |       0 |        0 |       0 |       0 | 1-38
+  indexeddb.ts     |       0 |        0 |       0 |       0 | 1-121
+-------------------|---------|----------|---------|---------|----------------------
+
+> buddy@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/4) ...
+   Generating static pages (1/4)
+   Generating static pages (2/4)
+   Generating static pages (3/4)
+ Γ£ô Generating static pages (4/4)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Γöî Γùï /                                    24.5 kB         112 kB
+Γöö Γùï /_not-found                          873 B          88.1 kB
++ First Load JS shared by all            87.2 kB
+  Γö£ chunks/117-b61aa44b4b3e6e29.js       31.7 kB
+  Γö£ chunks/fd9d1056-f6ef01eda5bda97c.js  53.6 kB
+  Γöö other shared chunks (total)          1.86 kB
+
+
+Γùï  (Static)  prerendered as static content
+```
+
+Note: `test:coverage` passed with the thresholds configured in `vitest.config.ts`
+(lines >= 80, statements >= 80, branches >= 75, functions >= 65; measured above).
+
+## Secret gate - lab (ci-runner)
+
+### Tracked repository content at the commit (authoritative gate)
+
+`git archive HEAD | tar -x -C /tmp/glscan && gitleaks detect --no-git --redact --source /tmp/glscan -v`
+Exit: 0
+
+```text
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+INF scanned ~255935 bytes (255.93 KB) in 343ms
+INF no leaks found
+GITLEAKS_EXIT=0
+```
+
+### Whole working tree including installed dependencies (informational)
+
+`gitleaks detect --no-git --redact --source .` over `/srv/work/buddy` (includes `node_modules`)
+reported `leaks found: 6` (GITLEAKS_EXIT=1). Every finding is inside the installed dependency
+tree (`node_modules`); scanning only tracked repository content at the same commit finds none.
+No secret is present in the repository or in this patch set.
+
+## Local gate (Windows) - cross-check
+
+Same commit, local working tree, node v24.19.0:
+
+| Command | Exit | Result |
+|---|---:|---|
+| `npm run lint` | 0 | No ESLint warnings or errors |
+| `npm run typecheck` | 0 | clean (pre-existing TS2802 error fixed) |
+| `npm run test` | 0 | 5 files / 109 tests passed |
+| `npm run test:coverage` | 0 | 109 tests; 83.7% lines/statements, 82.8% branches, 71.4% functions |
+| `npm run build` | 0 | Compiled successfully; 4/4 static pages generated |

@@ -23,14 +23,28 @@
     "node",
     "npm"
   ],
-  "entry_points": [],
-  "routes": [],
+  "entry_points": [
+    "app/layout.tsx",
+    "app/page.tsx"
+  ],
+  "routes": [
+    {
+      "file": "app/page.tsx",
+      "path": "/"
+    }
+  ],
   "migrations": [],
   "workflows": [],
   "containers": [],
   "tests": {
-    "files": 7,
-    "dirs": []
+    "files": 5,
+    "dirs": [
+      "data",
+      "lib/actions",
+      "lib/generation",
+      "lib/locations",
+      "lib/progression"
+    ]
   },
   "secret_adjacent_files": [],
   "largest_dirs": [

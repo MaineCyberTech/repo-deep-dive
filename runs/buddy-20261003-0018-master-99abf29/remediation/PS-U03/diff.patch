@@ -1,0 +1,250 @@
+diff --git a/.github/workflows/release.yml b/.github/workflows/release.yml
+new file mode 100644
+index 0000000..7327900
+--- /dev/null
++++ b/.github/workflows/release.yml
+@@ -0,0 +1,99 @@
++name: Release
++
++# Tag-driven release. Publishing a `v*` tag builds and tests the app at the tagged
++# commit, generates an SBOM and a changelog that records the exact commit, packages
++# the build, attests its provenance, and publishes it as a GitHub Release. Every
++# artifact is therefore bound to the commit the tag points at.
++on:
++  push:
++    tags:
++      - "v*"
++
++# Read the repo; write the GitHub Release and the build-provenance attestation.
++permissions:
++  contents: write
++  id-token: write
++  attestations: write
++
++concurrency:
++  group: release-${{ github.ref }}
++  cancel-in-progress: false
++
++jobs:
++  release:
++    name: build / test / package / publish
++    runs-on: ubuntu-latest
++    steps:
++      - name: Checkout
++        uses: actions/checkout@v4
++        with:
++          fetch-depth: 0
++
++      - name: Use Node.js 20
++        uses: actions/setup-node@v4
++        with:
++          node-version: 20
++          cache: npm
++
++      - name: Install dependencies
++        run: npm ci
++
++      - name: Lint
++        run: npm run lint
++
++      - name: Typecheck
++        run: npm run typecheck
++
++      - name: Test
++        run: npm run test
++
++      - name: Build
++        run: npm run build
++
++      - name: Record build id
++        id: build
++        run: |
++          {
++            echo "commit=$(git rev-parse HEAD)"
++            echo "short=$(git rev-parse --short HEAD)"
++            echo "tag=${GITHUB_REF_NAME}"
++          } >> "$GITHUB_OUTPUT"
++
++      - name: Generate SBOM
++        run: npm sbom --sbom-format cyclonedx > sbom.cdx.json
++
++      - name: Generate changelog
++        run: |
++          prev="$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)"
++          {
++            echo "# Release ${GITHUB_REF_NAME}"
++            echo
++            echo "- Commit: ${{ steps.build.outputs.commit }}"
++            echo "- Tag: ${GITHUB_REF_NAME}"
++            echo
++            if [ -n "$prev" ]; then
++              echo "## Changes since ${prev}"
++              git log --pretty=format:'- %h %s' "${prev}..${GITHUB_REF_NAME}"
++            else
++              echo "## Changes"
++              git log --pretty=format:'- %h %s'
++            fi
++            echo
++          } > CHANGELOG-RELEASE.md
++
++      - name: Package artifact
++        run: tar -czf "buddy-${GITHUB_REF_NAME}.tar.gz" .next public package.json package-lock.json sbom.cdx.json CHANGELOG-RELEASE.md
++
++      - name: Attest build provenance
++        uses: actions/attest-build-provenance@v1
++        with:
++          subject-path: "buddy-${{ github.ref_name }}.tar.gz"
++
++      - name: Publish GitHub Release
++        uses: softprops/action-gh-release@v2
++        with:
++          name: ${{ github.ref_name }}
++          body_path: CHANGELOG-RELEASE.md
++          files: |
++            buddy-${{ github.ref_name }}.tar.gz
++            sbom.cdx.json
+diff --git a/docs/release-process.md b/docs/release-process.md
+new file mode 100644
+index 0000000..8ffc55a
+--- /dev/null
++++ b/docs/release-process.md
+@@ -0,0 +1,76 @@
++# Release and versioning process
++
++This document records how a `buddy` release is cut and how its artifacts are bound
++to the commit they were built from. It closes audit finding `FINAL-P1-001` ("No
++release/versioning process binds artifacts to a commit") by providing the
++tag-driven release process the finding recommends: build + test + SBOM + changelog
+++ build id, with build-provenance attestation.
++
++Before this change, releases were manual tags with no automated build/test, no
++SBOM, no changelog, and no runtime build id, so a shipped artifact could not be
++traced back to the commit it came from.
++
++## Process
++
++Every release is cut from a **tag** matching `v*` (for example `v0.1.0-rc2`). The
++tag is the single source of truth for "what was released".
++
++Publishing a tag triggers `.github/workflows/release.yml`, which, at the tagged
++commit:
++
++1. installs dependencies (`npm ci`);
++2. runs the full quality gate: `npm run lint`, `npm run typecheck`, `npm run test`,
++   `npm run build`;
++3. records the **build id** ΓÇö the full commit SHA (`git rev-parse HEAD`) ΓÇö plus the
++   tag name;
++4. generates an **SBOM** (`npm sbom --sbom-format cyclonedx`, Software Bill of
++   Materials) for the dependency set that was built;
++5. generates a **changelog** (`CHANGELOG-RELEASE.md`) whose header records the
++   build id and whose body lists the commits since the previous tag;
++6. packages the build and the SBOM/changelog into `buddy-<tag>.tar.gz`;
++7. attests the artifact's build provenance
++   (`actions/attest-build-provenance`) so the artifact can be verified as produced
++   by this workflow from this commit;
++8. publishes a GitHub Release carrying the artifact, the SBOM, and the changelog.
++
++Because the tag points at an immutable commit and the workflow only runs on tags,
++the release notes, SBOM, changelog, and artifact all carry the same build id. Any
++one of them can be used to identify the exact commit under release.
++
++## Verifying an artifact's commit
++
++To check which commit a release came from:
++
++- the release notes record `Commit: <full-sha>`;
++- read the tag's commit directly: `git rev-parse '<tag>^{commit}'`;
++- compare against the run that published it:
++  `gh run list --workflow release.yml`.
++
++If those do not agree, the release is not trustworthy and should not be used.
++
++## Cutting a release
++
++```sh
++git switch master
++git pull
++git tag -a v0.1.0-rc2 -m "buddy v0.1.0-rc2"
++git push origin v0.1.0-rc2
++```
++
++Watch the `Release` workflow run; a red run blocks the release. Once it is green,
++the GitHub Release is published with the artifact, SBOM, and changelog.
++
++## Rollback
++
++- To withdraw a release, delete the GitHub Release and the tag
++  (`git push origin :refs/tags/<tag>`); do not retag the same version.
++- To fix a shipped release, cut a new patch tag from the corrected commit.
++
++## Scope and relationship to the audit
++
++The `repo-deep-dive` audit of `20261003-0018` (commit `99abf29`) found no release
++automation and no runtime build id (`FINAL-P1-001`, P1; also `SUPPLY-P2-002`,
++`OBS-P3-001`). This process addresses the release-integrity part. It does not by
++itself close the other P1 governance items (`CI-P1-001`, `CI-P1-002`): the release
++workflow is tag-driven and does not replace a required-checks CI gate on pull
++requests.
+diff --git a/docs/release-process.test.ts b/docs/release-process.test.ts
+new file mode 100644
+index 0000000..0f36be1
+--- /dev/null
++++ b/docs/release-process.test.ts
+@@ -0,0 +1,44 @@
++import { describe, it, expect } from 'vitest';
++import fs from 'fs';
++import path from 'path';
++
++// Documentation test for FINAL-P1-001: the repository must define a release process
++// that binds artifacts to a commit. The release workflow carries the build id
++// (full commit SHA), SBOM, changelog, and provenance attestation; the doc records
++// the process and how to verify an artifact's commit. This is the suggested
++// validation until a real tagged release produces the binding artifact.
++const docPath = path.join(process.cwd(), 'docs', 'release-process.md');
++const workflowPath = path.join(process.cwd(), '.github', 'workflows', 'release.yml');
++
++describe('release process binds artifacts to a commit', () => {
++  it('documents a tag-driven release process', () => {
++    expect(fs.existsSync(docPath)).toBe(true);
++    const doc = fs.readFileSync(docPath, 'utf8');
++
++    expect(doc).toMatch(/FINAL-P1-001/);
++    expect(doc).toMatch(/tag-driven/i);
++    expect(doc).toMatch(/release\.yml/);
++  });
++
++  it('records the build id as the commit SHA and generates an SBOM and changelog', () => {
++    const doc = fs.readFileSync(docPath, 'utf8');
++
++    expect(doc).toMatch(/build id/i);
++    expect(doc).toMatch(/git rev-parse HEAD|full commit SHA/i);
++    expect(doc).toMatch(/SBOM/i);
++    expect(doc).toMatch(/CHANGELOG-RELEASE\.md/);
++    expect(doc).toMatch(/attest-build-provenance/);
++  });
++
++  it('ships a release workflow triggered by version tags', () => {
++    expect(fs.existsSync(workflowPath)).toBe(true);
++    const workflow = fs.readFileSync(workflowPath, 'utf8');
++
++    expect(workflow).toMatch(/tags:\s*\n\s*-\s*"v\*"/);
++    expect(workflow).toMatch(/npm run build/);
++    expect(workflow).toMatch(/git rev-parse HEAD/);
++    expect(workflow).toMatch(/npm sbom/);
++    expect(workflow).toMatch(/attest-build-provenance/);
++    expect(workflow).toMatch(/softprops\/action-gh-release/);
++  });
++});
+diff --git a/lib/progression/lifecycle.test.ts b/lib/progression/lifecycle.test.ts
+index 8258b7b..8464f45 100644
+--- a/lib/progression/lifecycle.test.ts
++++ b/lib/progression/lifecycle.test.ts
+@@ -49,7 +49,7 @@ describe('Lifecycle System', () => {
+ 
+     it('returns all 6 lifecycle stages', () => {
+       const stages = [0, 30, 100, 300, 800, 2000].map(xp => calculateLifecycle(xp));
+-      const uniqueStages = [...new Set(stages)];
++      const uniqueStages = Array.from(new Set(stages));
+       expect(uniqueStages).toHaveLength(6);
+     });
+   });

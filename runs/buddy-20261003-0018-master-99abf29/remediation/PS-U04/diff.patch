@@ -1,0 +1,541 @@
+diff --git a/components/device/AdventureScreen.test.tsx b/components/device/AdventureScreen.test.tsx
+new file mode 100644
+index 0000000..f28f3d2
+--- /dev/null
++++ b/components/device/AdventureScreen.test.tsx
+@@ -0,0 +1,68 @@
++import 'fake-indexeddb/auto';
++import { describe, it, expect, beforeEach, afterEach } from 'vitest';
++import { render, screen, fireEvent, waitFor } from '@testing-library/react';
++import { AdventureScreen } from '@/components/device/AdventureScreen';
++import { useGameStore } from '@/lib/buddy/store';
++import { createInitialBuddyState } from '@/lib/generation/engine';
++import { BuddyState } from '@/lib/generation/types';
++
++function makeBuddy(energy: number): BuddyState {
++  const base = createInitialBuddyState('adventure-screen-test', 'Scout');
++  return {
++    ...base,
++    needs: { ...base.needs, energy, hunger: 80, happiness: 80 },
++  };
++}
++
++function resetStore() {
++  useGameStore.setState({
++    buddy: null,
++    screen: 'boot',
++    guestId: 'guest-adventure-test',
++    isOnline: true,
++    inventory: { coins: 0, items: [] },
++    currentAdventureResult: null,
++  });
++}
++
++beforeEach(resetStore);
++afterEach(resetStore);
++
++describe('AdventureScreen', () => {
++  it('disables every location when the buddy has no energy', () => {
++    useGameStore.setState({ buddy: makeBuddy(0) });
++
++    render(<AdventureScreen onBack={() => {}} />);
++
++    const buttons = screen.getAllByRole('button');
++    expect(buttons.length).toBeGreaterThan(0);
++    expect(buttons.every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
++    expect(screen.getByText(/Low energy/i)).toBeTruthy();
++  });
++
++  it('enables an affordable location when the buddy has energy', () => {
++    useGameStore.setState({ buddy: makeBuddy(100) });
++
++    render(<AdventureScreen onBack={() => {}} />);
++
++    const backyard = screen.getByRole('button', { name: /^Backyard/ }) as HTMLButtonElement;
++    expect(backyard.disabled).toBe(false);
++  });
++
++  it('applies the adventure result to the store and shows it', async () => {
++    const buddy = makeBuddy(100);
++    useGameStore.setState({ buddy });
++
++    render(<AdventureScreen onBack={() => {}} />);
++    fireEvent.click(screen.getByRole('button', { name: /^Backyard/ }));
++
++    // The component suspends for 1.5s before applying the result.
++    await waitFor(
++      () => expect(useGameStore.getState().currentAdventureResult).not.toBeNull(),
++      { timeout: 4000 }
++    );
++
++    expect(screen.getByText(/SUCCESS|FAILED/)).toBeTruthy();
++    expect(useGameStore.getState().buddy!.needs.energy).toBeLessThan(100);
++  });
++});
+diff --git a/components/device/MainDevice.test.tsx b/components/device/MainDevice.test.tsx
+new file mode 100644
+index 0000000..8ddaf4b
+--- /dev/null
++++ b/components/device/MainDevice.test.tsx
+@@ -0,0 +1,86 @@
++import 'fake-indexeddb/auto';
++import { describe, it, expect, beforeEach, afterEach } from 'vitest';
++import { render, screen, fireEvent, waitFor } from '@testing-library/react';
++import { MainDevice } from '@/components/device/MainDevice';
++import { useGameStore } from '@/lib/buddy/store';
++import { createInitialBuddyState } from '@/lib/generation/engine';
++import { BuddyState } from '@/lib/generation/types';
++
++function makeBuddy(overrides: Partial<BuddyState> = {}): BuddyState {
++  const base = createInitialBuddyState('main-device-test', 'Bud');
++  return {
++    ...base,
++    needs: { hunger: 40, happiness: 40, cleanliness: 40, energy: 40, social: 40 },
++    mood: 'neutral',
++    health: 100,
++    bond: 10,
++    ...overrides,
++  };
++}
++
++function resetStore() {
++  useGameStore.setState({
++    buddy: null,
++    screen: 'boot',
++    guestId: '',
++    isOnline: true,
++    inventory: { coins: 0, items: [] },
++    currentAdventureResult: null,
++  });
++}
++
++beforeEach(resetStore);
++afterEach(resetStore);
++
++describe('MainDevice', () => {
++  it('renders identity, level and the care action controls', () => {
++    const buddy = makeBuddy();
++    useGameStore.setState({ buddy });
++
++    render(<MainDevice buddy={buddy} />);
++
++    expect(screen.getByText('Lv.1')).toBeTruthy();
++    expect(screen.getByText('NEUTRAL')).toBeTruthy();
++    for (const label of ['Feed', 'Play', 'Wash', 'Rest', 'Talk', 'Train', 'Heal']) {
++      expect(screen.getByRole('button', { name: label })).toBeTruthy();
++    }
++  });
++
++  it('applies a care action to the device display and the store', async () => {
++    const buddy = makeBuddy();
++    useGameStore.setState({ buddy });
++    render(<MainDevice buddy={buddy} />);
++
++    fireEvent.click(screen.getByRole('button', { name: 'Feed' }));
++
++    await waitFor(() => {
++      expect(useGameStore.getState().buddy!.needs.hunger).toBeGreaterThan(40);
++    });
++
++    const status = screen.getByRole('status');
++    expect(status.textContent).toBeTruthy();
++    expect(screen.getByText(`ΓÖÑ ${useGameStore.getState().buddy!.bond}`)).toBeTruthy();
++  });
++
++  it('shows stat and need progressbars on the STATS tab', () => {
++    const buddy = makeBuddy();
++    useGameStore.setState({ buddy });
++    render(<MainDevice buddy={buddy} />);
++
++    fireEvent.click(screen.getByRole('button', { name: 'STATS' }));
++
++    // 5 stats + 5 needs
++    expect(screen.getAllByRole('progressbar')).toHaveLength(10);
++  });
++
++  it('renders the profile tab content', () => {
++    const buddy = makeBuddy();
++    useGameStore.setState({ buddy });
++    render(<MainDevice buddy={buddy} />);
++
++    fireEvent.click(screen.getByRole('button', { name: 'PROFILE' }));
++
++    expect(screen.getByText('Bud')).toBeTruthy();
++    expect(screen.getByText(`the ${buddy.identity.speciesName}`)).toBeTruthy();
++  });
++});
+diff --git a/components/hatch/HatchFlow.test.tsx b/components/hatch/HatchFlow.test.tsx
+new file mode 100644
+index 0000000..d9d58f3
+--- /dev/null
++++ b/components/hatch/HatchFlow.test.tsx
+@@ -0,0 +1,76 @@
++import 'fake-indexeddb/auto';
++import { describe, it, expect, beforeEach, afterEach } from 'vitest';
++import { render, screen, fireEvent, waitFor } from '@testing-library/react';
++import { HatchFlow } from '@/components/hatch/HatchFlow';
++import { useGameStore } from '@/lib/buddy/store';
++
++function resetStore() {
++  useGameStore.setState({
++    buddy: null,
++    screen: 'boot',
++    guestId: '',
++    isOnline: true,
++    inventory: { coins: 0, items: [] },
++    currentAdventureResult: null,
++  });
++}
++
++beforeEach(resetStore);
++afterEach(resetStore);
++
++async function hatchToNicknameStep() {
++  render(<HatchFlow />);
++  fireEvent.click(screen.getByRole('button', { name: 'Hatch your buddy' }));
++
++  // Hatching reveal is delayed by 2s in the component.
++  await waitFor(
++    () =>
++      expect(
++        screen.getByRole('button', { name: 'NAME YOUR BUDDY' })
++      ).toBeTruthy(),
++    { timeout: 4000 }
++  );
++  fireEvent.click(screen.getByRole('button', { name: 'NAME YOUR BUDDY' }));
++}
++
++describe('HatchFlow', () => {
++  it('caps the nickname at 16 characters', async () => {
++    await hatchToNicknameStep();
++
++    const input = screen.getByLabelText('Buddy nickname') as HTMLInputElement;
++    expect(input.maxLength).toBe(16);
++
++    fireEvent.change(input, { target: { value: 'x'.repeat(24) } });
++
++    expect(input.value).toHaveLength(16);
++  });
++
++  it('commits the hatched buddy, the chosen nickname and the screen transition', async () => {
++    await hatchToNicknameStep();
++
++    const input = screen.getByLabelText('Buddy nickname') as HTMLInputElement;
++    fireEvent.change(input, { target: { value: 'Pip' } });
++    fireEvent.click(screen.getByRole('button', { name: 'Start with your buddy' }));
++
++    await waitFor(() => {
++      expect(useGameStore.getState().screen).toBe('main');
++    });
++    expect(useGameStore.getState().buddy?.identity.nickname).toBe('Pip');
++    expect(useGameStore.getState().guestId).toMatch(/^guest-/);
++  });
++
++  it('defaults the nickname to the species name when left blank', async () => {
++    await hatchToNicknameStep();
++
++    const nicknameBefore = useGameStore.getState().buddy;
++    expect(nicknameBefore).toBeNull();
++
++    fireEvent.click(screen.getByRole('button', { name: 'Start with your buddy' }));
++
++    await waitFor(() => {
++      expect(useGameStore.getState().screen).toBe('main');
++    });
++    const buddy = useGameStore.getState().buddy!;
++    expect(buddy.identity.nickname).toBe(buddy.identity.speciesName);
++  });
++});
+diff --git a/components/ui/StatBars.test.tsx b/components/ui/StatBars.test.tsx
+new file mode 100644
+index 0000000..b532742
+--- /dev/null
++++ b/components/ui/StatBars.test.tsx
+@@ -0,0 +1,64 @@
++import { describe, it, expect } from 'vitest';
++import { render, screen } from '@testing-library/react';
++import { StatBars, NeedBars } from '@/components/ui/StatBars';
++import { BuddyStats, BuddyNeeds } from '@/lib/generation/types';
++
++const STATS: BuddyStats = {
++  courage: 10,
++  curiosity: 20,
++  playfulness: 30,
++  discipline: 40,
++  empathy: 50,
++};
++
++const NEEDS: BuddyNeeds = {
++  hunger: 90,
++  happiness: 60,
++  cleanliness: 10,
++  energy: 5,
++  social: 30,
++};
++
++describe('StatBars', () => {
++  it('renders one progressbar per stat with accessible values', () => {
++    render(<StatBars stats={STATS} />);
++
++    const bars = screen.getAllByRole('progressbar');
++    expect(bars).toHaveLength(5);
++
++    const courage = screen.getByRole('progressbar', { name: 'Courage: 10/100' });
++    expect(courage.getAttribute('aria-valuenow')).toBe('10');
++    expect(courage.getAttribute('aria-valuemin')).toBe('0');
++    expect(courage.getAttribute('aria-valuemax')).toBe('100');
++  });
++
++  it('clamps the rendered width to the 0-100 range', () => {
++    render(<StatBars stats={{ ...STATS, courage: 150 }} />);
++
++    const courage = screen.getByRole('progressbar', { name: 'Courage: 150/100' });
++    expect((courage as HTMLElement).style.width).toBe('100%');
++  });
++});
++
++describe('NeedBars', () => {
++  it('renders a bar per need with the numeric label', () => {
++    render(<NeedBars needs={NEEDS} />);
++
++    expect(screen.getByRole('progressbar', { name: 'Hunger: 90/100' })).toBeTruthy();
++    expect(screen.getByRole('progressbar', { name: 'Energy: 5/100' })).toBeTruthy();
++  });
++
++  it('uses the danger colour for needs below 20', () => {
++    render(<NeedBars needs={NEEDS} />);
++
++    const energy = screen.getByRole('progressbar', { name: 'Energy: 5/100' });
++    expect(energy.className).toContain('from-[#ff3366]');
++  });
++
++  it('uses the accent colour for healthy needs', () => {
++    render(<NeedBars needs={NEEDS} />);
++
++    const hunger = screen.getByRole('progressbar', { name: 'Hunger: 90/100' });
++    expect(hunger.className).toContain('from-[#00ff88]');
++  });
++});
+diff --git a/lib/progression/lifecycle.test.ts b/lib/progression/lifecycle.test.ts
+index 8258b7b..8464f45 100644
+--- a/lib/progression/lifecycle.test.ts
++++ b/lib/progression/lifecycle.test.ts
+@@ -49,7 +49,7 @@ describe('Lifecycle System', () => {
+ 
+     it('returns all 6 lifecycle stages', () => {
+       const stages = [0, 30, 100, 300, 800, 2000].map(xp => calculateLifecycle(xp));
+-      const uniqueStages = [...new Set(stages)];
++      const uniqueStages = Array.from(new Set(stages));
+       expect(uniqueStages).toHaveLength(6);
+     });
+   });
+diff --git a/lib/storage/indexeddb.test.ts b/lib/storage/indexeddb.test.ts
+new file mode 100644
+index 0000000..3fbb22d
+--- /dev/null
++++ b/lib/storage/indexeddb.test.ts
+@@ -0,0 +1,146 @@
++import 'fake-indexeddb/auto';
++import { describe, it, expect, beforeEach } from 'vitest';
++import {
++  saveGame,
++  loadGame,
++  hasSave,
++  deleteSave,
++  exportSave,
++  importSave,
++  getSaveMetadata,
++} from '@/lib/storage/indexeddb';
++import { createInitialBuddyState } from '@/lib/generation/engine';
++import { GameSave } from '@/lib/generation/types';
++
++function makeSave(overrides: Partial<GameSave> = {}): GameSave {
++  const buddy = createInitialBuddyState('storage-test-user', 'TestBuddy');
++  return {
++    version: 1,
++    buddy,
++    guestId: 'guest-test-1',
++    createdAt: 1000,
++    updatedAt: 2000,
++    inventory: { coins: 5, items: [] },
++    ...overrides,
++  };
++}
++
++beforeEach(async () => {
++  await deleteSave();
++});
++
++describe('Save round-trip', () => {
++  it('returns null when no save exists', async () => {
++    expect(await loadGame()).toBeNull();
++    expect(await hasSave()).toBe(false);
++  });
++
++  it('persists and reloads buddy, guestId and inventory intact', async () => {
++    await saveGame(makeSave());
++
++    const loaded = await loadGame();
++
++    expect(loaded).not.toBeNull();
++    expect(loaded!.guestId).toBe('guest-test-1');
++    expect(loaded!.buddy?.identity.nickname).toBe('TestBuddy');
++    expect(loaded!.inventory).toEqual({ coins: 5, items: [] });
++    expect(await hasSave()).toBe(true);
++  });
++
++  it('overwrites an existing save (last write wins)', async () => {
++    await saveGame(makeSave({ guestId: 'first' }));
++    await saveGame(makeSave({ guestId: 'second' }));
++
++    expect((await loadGame())!.guestId).toBe('second');
++  });
++
++  it('deletes the save', async () => {
++    await saveGame(makeSave());
++    await deleteSave();
++
++    expect(await hasSave()).toBe(false);
++    expect(await loadGame()).toBeNull();
++  });
++
++  it('keeps a v1 save at the supported schema version', async () => {
++    await saveGame(makeSave({ version: 1 }));
++
++    expect((await loadGame())!.version).toBe(1);
++  });
++
++  it('normalizes an unknown save version to the supported schema version', async () => {
++    await saveGame(makeSave({ version: 99 }));
++
++    // loadGame must not hand callers a schema version the app cannot read.
++    expect((await loadGame())!.version).toBe(1);
++  });
++});
++
++describe('Save metadata', () => {
++  it('reports non-existence when the store is empty', async () => {
++    expect(await getSaveMetadata()).toEqual({ exists: false });
++  });
++
++  it('reflects the stored save', async () => {
++    await saveGame(makeSave({ updatedAt: 1234 }));
++
++    const meta = await getSaveMetadata();
++
++    expect(meta?.exists).toBe(true);
++    expect(meta?.version).toBe(1);
++    expect(meta?.updatedAt).toBe(1234);
++    expect(meta?.nickname).toBe('TestBuddy');
++  });
++});
++
++describe('Export / import', () => {
++  it('throws when exporting with no save', async () => {
++    await expect(exportSave()).rejects.toThrow('No save to export');
++  });
++
++  it('exports a base64 payload that decodes to the saved json', async () => {
++    await saveGame(makeSave({ guestId: 'exp-1' }));
++
++    const encoded = await exportSave();
++    const decoded = JSON.parse(atob(encoded)) as GameSave;
++
++    expect(decoded.guestId).toBe('exp-1');
++  });
++
++  it('round-trips export -> delete -> import', async () => {
++    await saveGame(makeSave({ guestId: 'rt-1' }));
++    const encoded = await exportSave();
++    await deleteSave();
++
++    expect(await importSave(encoded)).toBe(true);
++    expect((await loadGame())!.guestId).toBe('rt-1');
++  });
++
++  it('rejects a payload that is not valid base64/json', async () => {
++    expect(await importSave('%%%not-base64%%%')).toBe(false);
++  });
++
++  it('rejects a JSON payload without a guestId', async () => {
++    const bad = btoa(
++      JSON.stringify({ version: 1, buddy: null, createdAt: 1, updatedAt: 1 })
++    );
++
++    expect(await importSave(bad)).toBe(false);
++  });
++
++  it('rejects a JSON payload without a version', async () => {
++    const bad = btoa(
++      JSON.stringify({ buddy: null, guestId: 'x', createdAt: 1, updatedAt: 1 })
++    );
++
++    expect(await importSave(bad)).toBe(false);
++  });
++
++  it('does not overwrite an existing save when an import is rejected', async () => {
++    await saveGame(makeSave({ guestId: 'keep-me' }));
++    const bad = btoa(JSON.stringify({ version: 0, buddy: null, guestId: '' }));
++
++    expect(await importSave(bad)).toBe(false);
++    expect((await loadGame())!.guestId).toBe('keep-me');
++  });
++});
+diff --git a/package-lock.json b/package-lock.json
+index ff98927..8459585 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -24,6 +24,7 @@
+         "autoprefixer": "^10.4.19",
+         "eslint": "^8.57.0",
+         "eslint-config-next": "^14.2.0",
++        "fake-indexeddb": "^6.2.5",
+         "jsdom": "^24.0.0",
+         "postcss": "^8.4.38",
+         "prettier": "^3.2.0",
+@@ -4269,6 +4270,16 @@
+         "url": "https://github.com/sindresorhus/execa?sponsor=1"
+       }
+     },
++    "node_modules/fake-indexeddb": {
++      "version": "6.2.5",
++      "resolved": "https://registry.npmjs.org/fake-indexeddb/-/fake-indexeddb-6.2.5.tgz",
++      "integrity": "sha512-CGnyrvbhPlWYMngksqrSSUT1BAVP49dZocrHuK0SvtR0D5TMs5wP0o3j7jexDJW01KSadjBp1M/71o/KR3nD1w==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/fast-deep-equal": {
+       "version": "3.1.3",
+       "resolved": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
+diff --git a/package.json b/package.json
+index 4f5f053..5e745d4 100644
+--- a/package.json
++++ b/package.json
+@@ -37,6 +37,7 @@
+     "tailwindcss": "^3.4.0",
+     "typescript": "^5.4.0",
+     "vitest": "^1.5.0",
+-    "@playwright/test": "^1.43.0"
++    "@playwright/test": "^1.43.0",
++    "fake-indexeddb": "^6.2.5"
+   }
+ }
+\ No newline at end of file
+diff --git a/vitest.config.ts b/vitest.config.ts
+index 310252a..a533aa1 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -2,6 +2,10 @@ import { defineConfig } from 'vitest/config';
+ import path from 'path';
+ 
+ export default defineConfig({
++  esbuild: {
++    jsx: 'automatic',
++    jsxImportSource: 'react',
++  },
+   test: {
+     environment: 'jsdom',
+     globals: true,

@@ -1,0 +1,71 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "patchSet": "PS-U01",
+  "title": "Unassigned ARCH findings (catch-all)",
+  "finding": "ARCH-P1-001",
+  "repo": "MaineCyberTech/buddy",
+  "base": "master",
+  "baseSha": "99abf294dae0d9de8770dfde257bdef5fae9ae1b",
+  "branch": "remediation/ps-u01-20261003-0018-master-99abf29",
+  "commit": "4c2cc7caee7437fe9a179c7d5b87c6c35a1e0b88",
+  "pr": "https://github.com/MaineCyberTech/buddy/pull/7",
+  "prMode": "draft",
+  "prDraft": true,
+  "findings": [
+    "ARCH-P1-001"
+  ],
+  "filesChanged": [
+    "docs/architecture.md",
+    "docs/architecture.test.ts",
+    "lib/progression/lifecycle.test.ts"
+  ],
+  "scopeCheck": {
+    "pass": true,
+    "note": "Catch-all set PS-U01 has no declared file list. ARCH-P1-001's recommended fix is to document the guest-only trust model now (server authority is future platform work, effort L, explicitly excluded from the release patch plan). Changes: new docs/architecture.md (the trust model) and its doc test docs/architecture.test.ts (the finding's suggested validation); plus the pre-existing TS2802 typecheck unblock in lib/progression/lifecycle.test.ts, identical to PS-01 and PS-03. No runtime/application logic changed."
+  },
+  "commands": [
+    {
+      "command": "git rev-parse HEAD && npm ci && npm run lint && npm run typecheck && npm run test",
+      "runner": "lab:ci-runner (172.23.128.51:/srv/work/buddy, wiped + re-synced via lab-sync.ps1, tree normalized with git checkout -- ., at 4c2cc7c)",
+      "exit": 0,
+      "result": "lint clean; typecheck clean; 6 test files / 111 tests passed (109 pre-existing + 2 new doc tests); __VERIFY_EXIT=0"
+    },
+    {
+      "command": "git archive HEAD | tar -x -C /tmp/glscan-psu01 && gitleaks detect --no-git --redact --source /tmp/glscan-psu01 -v",
+      "runner": "lab:ci-runner (172.23.128.51)",
+      "exit": 0,
+      "result": "scanned ~258695 bytes; no leaks found in tracked repository content at the commit"
+    },
+    {
+      "command": "npm run lint",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "No ESLint warnings or errors"
+    },
+    {
+      "command": "npm run typecheck",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "clean"
+    },
+    {
+      "command": "npm run test",
+      "runner": "local (Windows, node v24.19.0)",
+      "exit": 0,
+      "result": "6 files / 111 tests passed"
+    }
+  ],
+  "diff": {
+    "path": "remediation/PS-U01/diff.patch",
+    "sha256": "999fbe29ff16c3b9b8ceb861ae67e36ba6109786e57769b751e6972c5c3c4a37"
+  },
+  "verifyLog": {
+    "path": "remediation/PS-U01/verify.log",
+    "sha256": "76e18842fb2ce65566bcdfad3820920a42fa9869f927f9b0318b44db065e4ab5"
+  },
+  "prBody": {
+    "path": "remediation/PS-U01/pr_body.md",
+    "sha256": "d17686400d254904fd91857e369c1b6df83f5ada8d6c1befc866c2ec9449bd5e"
+  },
+  "generated": "2026-10-03T07:21:00Z"
+}

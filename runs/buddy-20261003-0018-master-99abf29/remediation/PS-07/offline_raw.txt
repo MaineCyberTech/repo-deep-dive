@@ -1,0 +1,29 @@
+=== current build id ===
+99abf29=== sw registration build id in bundle ===
+sw.js?v=
+=== third-party font refs in build (expect none) ===
+.next/server/chunks/682.js
+.next/server/pages/_error.js
+.next/standalone/.next/server/chunks/682.js
+.next/standalone/.next/server/pages/_error.js
+.next/standalone/node_modules/next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js
+.next/standalone/node_modules/next/dist/compiled/@next/font/dist/google/loader.js
+.next/standalone/node_modules/next/dist/compiled/next-server/pages.runtime.prod.js
+.next/standalone/node_modules/next/dist/compiled/next-server/pages-turbo.runtime.prod.js
+.next/standalone/node_modules/next/dist/shared/lib/constants.js
+.next/standalone/node_modules/next/dist/shared/lib/head.js
+.next/cache/webpack/server-production/0.pack
+.next/cache/webpack/client-production/0.pack
+.next/static/chunks/main-7d4b439b4be7e1c4.js
+=== local font files ===
+26d4368bf94c0ec4-s.p.woff2
+2801417b65625cf5-s.woff2
+28793f5c5e3d822d-s.woff2
+558ca1a6aa3cb55e-s.p.woff2
+=== cache name logic in public/sw.js ===
+7: * activate handler purges every older `buddy-cache-*` entry (ARCH-P2-001).
+12:    if (version) return 'buddy-cache-' + version;
+16:  return 'buddy-cache-dev';
+=== alternate build id rebuild ===
+verify-abc123sw.js?v=
+__OFFLINE_DONE

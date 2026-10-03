@@ -1,0 +1,39 @@
+=== HEAD / ===
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+Strict-Transport-Security: max-age=63072000; includeSubDomains
+Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding
+x-nextjs-cache: HIT
+X-Powered-By: Next.js
+Cache-Control: s-maxage=31536000, stale-while-revalidate
+ETag: "peydg1wjzu5gs"
+Content-Type: text/html; charset=utf-8
+Content-Length: 7098
+Date: Sat, 03 Oct 2026 07:48:02 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+=== HEAD /sw.js ===
+HTTP/1.1 200 OK
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+Strict-Transport-Security: max-age=63072000; includeSubDomains
+Cache-Control: public, max-age=0, must-revalidate
+Accept-Ranges: bytes
+Last-Modified: Sat, 03 Oct 2026 07:42:29 GMT
+ETag: W/"8fa-1a100b6e688"
+Content-Type: application/javascript; charset=UTF-8
+Content-Length: 2298
+Vary: Accept-Encoding
+Date: Sat, 03 Oct 2026 07:48:02 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
+__CURL_DONE

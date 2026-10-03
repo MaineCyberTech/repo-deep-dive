@@ -1,0 +1,10 @@
+SILENT_SBOM_EXIT=0
+{
+3:  "bomFormat": "CycloneDX",
+17
+===AUDIT===
+AUDIT_EXIT=1
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force

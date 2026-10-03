@@ -1,0 +1,10 @@
+System.Management.Automation.RemoteException
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+System.Management.Automation.RemoteException
+[90m7:50AM[0m [32mINF[0m [1mscanned ~371737 bytes (371.74 KB) in 321ms[0m
+[90m7:50AM[0m [32mINF[0m [1mno leaks found[0m
+GITLEAKS_EXIT=0
