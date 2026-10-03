@@ -1,13 +1,13 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T05:53:51Z
-# files: 407
+# generated: 2026-10-03T05:59:37Z
+# files: 408
 # format: sha256  path
 06ae19670ef32cf470931f55021e2647e86d9340826c8cfcc49acce60bea84f2  ./.github/workflows/deep-dive-deterministic.yml
 096232ac51992a3fd1ec14b54305cccc076275284427cbd0dc8fb9b1614b12f9  ./.github/workflows/remediation.yml
-f6a83927a0f0e8647c7833d6d2180f15cdaf5e1dca21f16405b41504968891d2  ./AGENTS.md
-3a92d223a0b66933a06633ae4bb91ed7a5afe757e5047229917282d2a276c2f5  ./CHANGELOG.md
+2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
+f9dadc72410d160930d7b5a9dea435e2d1742f465d9b7847ec7c53a234fbf96b  ./CHANGELOG.md
 80201f90f452b7b8e46377b5472e655461b0fa642972b208cd042a2b1bdc6692  ./CONTRIBUTING.md
-9ee9181ea425db0b19798182f31f1585e1f51ceded37f0d1abc102a810cabb68  ./README.md
+9f6d9a251243614b960c740544f89a9c0a2d86c619b7a40a05daeeef164647f8  ./README.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 7d072b48526b023950e4c48db01e8c273554a6401119f5691e7589ba9bc65d9d  ./VERSION
 f84e53ffca7c30b5c91f892e0136e9173ea795781d337b3df6ef254c85ac5008  ./ci/audit.yml
@@ -394,6 +394,7 @@ bf4038838de857e8eafaba5714ea915b08b08cb16a8e3d3fdcf34e3fd0c4ae30  ./tools/collec
 eab3d82d3ee1652a47893c095ff1404916bc93d5e70524c3045de66079af1cb6  ./tools/deterministic_checks.py
 a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
+5132a5843bd8b1cf8917485f830af0ccd9431d555172368cd72ba2fd7d346d22  ./tools/lab_runner.py
 add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_findings.py
 4f6ac381457e22b9ee4ec2e51c77cf78e95bb517ba306fbbf012657df9d8d500  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh

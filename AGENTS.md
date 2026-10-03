@@ -50,6 +50,7 @@ subagents or others) use it to audit repos and to open remediation PRs.
 | Machine chain | `tools/run_toolchain.py` (`check → collect → score → dashboard → diff → CSV`) |
 | Scaffold a run | `tools/new_run.py` |
 | Inventory | `tools/repo_inventory.py` |
+| Lab test dispatch (HTTP) | `tools/lab_runner.py` (ci-runner / edge-builder job API) |
 | Validate a run | `tools/check_run.sh <run>` |
 | Validate the pack | `tools/lint_pack.sh` / `tools/self_test.sh` |
 

@@ -20,6 +20,9 @@
 - **Docs**: README rewritten (capabilities, layout, deterministic checks, remediation, org runs);
   added `AGENTS.md` (agent rules) and `docs/REMEDIATION_GUIDE.md`; `REFERENCE_CARD.md` covers
   deterministic checks + remediation status mapping.
+- **Lab integration**: `tools/lab_runner.py` (HTTP client for the Proxmox lab job API —
+  `POST /run` on ci-runner / edge-builder) and `tools/normalize_register.py` (keeps
+  `risk_register.md` / `follow_up_register.md` tables consistent so `check_run` stays green).
 
 ## 2026-10-02 — Base edition v1.4.1 (verification feedback + vocabulary gate)
 

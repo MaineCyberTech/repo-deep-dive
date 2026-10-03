@@ -19,6 +19,7 @@ This edition merges the original pack, the falcon-lab layer, LLM-free **determin
 | **Org-wide deterministic run** | `.github/workflows/deep-dive-deterministic.yml` (schedule + dispatch) |
 | **Remediation → draft PRs** | `prompts/REMEDIATION_RUNNER.md` + `tools/remediation_plan.py` + `.github/workflows/remediation.yml` |
 | **Machine chain** (validate/score/render) | `tools/run_toolchain.py <run> --write --dashboard` |
+| **Lab test dispatch** (HTTP, token) | `tools/lab_runner.py` → ci-runner / edge-builder job API (`POST /run`) |
 
 ## Layout
 
@@ -36,7 +37,7 @@ This edition merges the original pack, the falcon-lab layer, LLM-free **determin
 | `runbooks/` | Quickstarts + `OPERATOR_TROUBLESHOOTING.md` |
 | `runs/` | Archived runs (9) + `INDEX.md` |
 | `wiring/` | `REPO_WIRING.md` + `SUGGESTED_TOOLING.md` |
-| `tools/` | `check_run.sh`, `lint_pack.sh`, `pack_digest.sh`, `new_run.py`, `repo_inventory.py`, `collect_findings.py`, `risk_score.py`, `render_dashboard.py`, `diff_runs.py`, `findings_to_csv.py`, `run_toolchain.py`, `live_snapshot.sh`, **`deterministic_checks.py`**, **`aggregate_findings.py`**, **`remediation_plan.py`**, **`remediation_status.py`**, `lib_findings.py`, `self_test.sh` |
+| `tools/` | `check_run.sh`, `lint_pack.sh`, `pack_digest.sh`, `new_run.py`, `repo_inventory.py`, `collect_findings.py`, `risk_score.py`, `render_dashboard.py`, `diff_runs.py`, `findings_to_csv.py`, `run_toolchain.py`, `live_snapshot.sh`, **`deterministic_checks.py`**, **`aggregate_findings.py`**, **`remediation_plan.py`**, **`remediation_status.py`**, **`normalize_register.py`**, **`lab_runner.py`**, `lib_findings.py`, `self_test.sh` |
 | `REFERENCE_CARD.md` | One-page scales and vocabularies |
 | `AGENTS.md` | Rules for AI agents working in this repo |
 | `CONTRIBUTING.md` | How to extend the pack |
