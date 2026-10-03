@@ -1,7 +1,8 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T03:35:11Z
-# files: 1030
+# generated: 2026-10-04T03:37:20Z
+# files: 1037
 # format: sha256  path
+4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 e2f28c2cc18d527e59763924a0315606dbe460e30f0c3dd239cd8666069d707a  ./.github/workflows/audit.yml
@@ -10,17 +11,22 @@ e2f28c2cc18d527e59763924a0315606dbe460e30f0c3dd239cd8666069d707a  ./.github/work
 d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
 096232ac51992a3fd1ec14b54305cccc076275284427cbd0dc8fb9b1614b12f9  ./.github/workflows/remediation.yml
 83ae827bb42049bae6e48ebdc44202425160d6918103bbbe85519f46a805753d  ./.github/workflows/verify-remediation.yml
+de68252b84988b12a83acc20a63210462362443c203bc89de93832814377fc4f  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
 9c883bfd0ea2426255986f9456a5c32bd4fe672debd17078d389e137337806fb  ./CHANGELOG.md
 6d0d4f121324b673fe85aa0502df10e8b7ec940a32e06b90b0747cb57d1f2402  ./CONTRIBUTING.md
+0886904dbbf64dbe39709dd725d06d87627ad397bca96a4013b310da077fdc42  ./LICENSE
 1035efcba2a3abfb920f83ff0d2ea3666c46a87f833241b5a7c20d9fa1cbedb0  ./README.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 5f7c72cc3258a110336b8b68907dfe78b38bfe6112597cca0b7f0c31379885f3  ./REVIEW_INDEX.md
+3e50a74a7332f00dd710375633a049911b7154148d92e919d29a9b7bff7373c5  ./SECURITY.md
 acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
 45e3d8c92ead3f8c35cc36be964698ca8b12abad0d803f26ae6b0f8d1f3fc8ab  ./ci/audit.yml
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
+8e8d4464abe5d3accb3cda5b9bba9c9e00fc8d64a90ebe2bdadf49a8e2e54c7a  ./docs/OBSERVABILITY.md
 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
+d62518d7d66a44f5bb092f960486e9839f49ac262265db579bb08b0823b752e6  ./docs/SUPPLY_CHAIN.md
 1925dc816657728fc8394d6273e8c005e54e9b759ef33e38b5432803628e5bd8  ./examples/audit_manifest.example.json
 fd544d6581e08d4faa36f309a3534c55c1d6613e67e320e2ef6b2d522557dc01  ./examples/audit_manifest.falcon-lab.example.json
 b54e2c8db738d91ddebed89b9ab10504f1ef6e3f29722c4d0c53d2a383dd8abe  ./lenses/README.md
@@ -177,6 +183,7 @@ f944f051b99542867c767698a51d2d2feccdcda3357ec2c0e87e63189df5ab7a  ./runs/2026093
 f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
 5d5da30d3e5e435d3786b12d4ae8c6497881a81e7fa84d9edd459e233df7cc3b  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/verification_log.md
 9a57ac063a8acf6704177e1ae55cbb19d7df8b7059f64f3af54358aa86954d40  ./runs/INDEX.md
+91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
 e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
 dff13525ee6904127ae63435b084f4b2b83cc672997f31b3187aecea8ed67e38  ./runs/buddy-20261003-0018-master-99abf29/03_feature_implementation_map.md

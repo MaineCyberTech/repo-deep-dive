@@ -1,0 +1,15 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*~
+*.swp
+.idea/
+.vscode/
+
+# Machine-local model / environment pins. `opencode.json` is intentionally
+# excluded from PACK_DIGEST.txt (see tools/pack_digest.sh); once untracked it
+# must stay out of the pack.
+opencode.json
+
+# Scratch output from tools/deterministic_checks.py (default -o deterministic-out)
+deterministic-out/
