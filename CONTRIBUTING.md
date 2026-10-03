@@ -54,6 +54,26 @@ Templates are the output contract. Keep them aligned with the shared rules' requ
 6. `./tools/check_run.sh <run-folder>` for any touched run — PASS.
 7. Mirror to the second tree (if maintained): `cp -a . /home/user/Prompts/repo-deep-dive/` and `diff -rq` both ways.
 
+## CI and required checks
+
+Every pull request and every push to `main` runs the pack CI
+(`.github/workflows/audit.yml`):
+
+| Check | What it runs |
+|---|---|
+| `pack lint + self-test` | `tools/lint_pack.sh` and `tools/self_test.sh` on Linux |
+| `changed-run gate` (PR only) | validates each run folder changed by the PR and fails on any P0 finding |
+
+`main` should require a pull request, at least one review (routing in
+`.github/CODEOWNERS`), and both checks above before merge. Branch protection,
+required reviews, and required status checks are GitHub server-side settings and
+must be enabled by a repository admin; the files here express the intent but
+cannot enforce it. Enumerate the checks by their workflow job names above.
+
+Bypass policy: force-pushing to `main` and admin-merging bypass the gate. Do not
+use them. If a bypass is unavoidable, record the reason and a follow-up in
+`CHANGELOG.md` so the exception is auditable.
+
 ## Post-run pack review
 
 After each audit run, ask: which prompts produced nothing? Where did auditors get stuck? Which checks were impossible without live access? Feed the answers back as prompt tweaks or new tools — the pack should get sharper with every run.

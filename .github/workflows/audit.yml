@@ -1,0 +1,91 @@
+name: repo-deep-dive audit
+
+# In-repo CI for the pack itself.
+#
+# - pack: lint the pack and run the end-to-end smoke harness on every pull
+#   request and every push to main (TEST-P1-001, TEST-P2-002).
+# - run-gate: on pull requests, validate each archived run folder changed by the
+#   PR and fail on any P0 finding. The run folder is derived from the pull-request
+#   diff, never a fixed "latest" path (CI-P2-006).
+#
+# The reusable vendored-layout example lives in ci/audit.yml.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  pack:
+    name: pack lint + self-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Lint pack
+        run: bash tools/lint_pack.sh
+
+      - name: Self-test
+        run: bash tools/self_test.sh
+
+  run-gate:
+    name: changed-run gate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate changed runs and enforce the P0 gate
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${BASE_REF}" >/dev/null 2>&1
+          mapfile -t runs < <(
+            git diff --name-only "origin/${BASE_REF}...HEAD" -- 'runs/**' \
+              | awk -F/ 'NF >= 3 { print $1 "/" $2 }' \
+              | sort -u
+          )
+          if [ "${#runs[@]}" -eq 0 ]; then
+            echo "No archived run folders changed; nothing to gate."
+            exit 0
+          fi
+          for run in "${runs[@]}"; do
+            if [ ! -d "${run}" ]; then
+              echo "skipped (run folder removed): ${run}"
+              continue
+            fi
+            echo "::group::audit ${run}"
+            python3 tools/run_toolchain.py "${run}" --write
+            python3 - "${run}/findings.json" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as fh:
+              doc = json.load(fh)
+          p0 = int(doc.get("counts", {}).get("bySeverity", {}).get("P0", 0))
+          if p0 > 0:
+              raise SystemExit("P0 findings present: %d" % p0)
+          print("P0 gate: no P0 findings")
+          PY
+            echo "::endgroup::"
+          done

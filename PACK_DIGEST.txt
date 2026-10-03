@@ -1,8 +1,10 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T03:24:43Z
-# files: 1028
+# generated: 2026-10-04T03:26:43Z
+# files: 1030
 # format: sha256  path
+3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
+e2f28c2cc18d527e59763924a0315606dbe460e30f0c3dd239cd8666069d707a  ./.github/workflows/audit.yml
 0e1be0acc0444cf450b01c1e5460fd4a527b69d9443994c7f47c1d457b93428e  ./.github/workflows/deep-dive-deterministic.yml
 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
 d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
@@ -11,12 +13,12 @@ d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/work
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
 f9dadc72410d160930d7b5a9dea435e2d1742f465d9b7847ec7c53a234fbf96b  ./CHANGELOG.md
-80201f90f452b7b8e46377b5472e655461b0fa642972b208cd042a2b1bdc6692  ./CONTRIBUTING.md
+6d0d4f121324b673fe85aa0502df10e8b7ec940a32e06b90b0747cb57d1f2402  ./CONTRIBUTING.md
 a16e75422c0d38c633f8be539f46d9124516a2419c0df4e3f7ba2cbb339fef1e  ./README.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 5f7c72cc3258a110336b8b68907dfe78b38bfe6112597cca0b7f0c31379885f3  ./REVIEW_INDEX.md
 7d072b48526b023950e4c48db01e8c273554a6401119f5691e7589ba9bc65d9d  ./VERSION
-f84e53ffca7c30b5c91f892e0136e9173ea795781d337b3df6ef254c85ac5008  ./ci/audit.yml
+45e3d8c92ead3f8c35cc36be964698ca8b12abad0d803f26ae6b0f8d1f3fc8ab  ./ci/audit.yml
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
 875320501d09dc55c55f29e7e6089fd8c43ee1b4f2f59b16d20d079ca784b4fa  ./examples/audit_manifest.example.json
