@@ -1,0 +1,295 @@
+{
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "repo": "mainecybertech",
+  "generated": "2026-10-03T05:22:52Z",
+  "patchSets": [
+    {
+      "id": "PATCH-001",
+      "title": "(P0) \u2014 Make orphan cleanup folder-aware and non-destructive",
+      "findings": [
+        "DATA-P0-001",
+        "TEST-P2-001"
+      ],
+      "files": [
+        "apps/worker/src/tasks/orphan-cleanup.ts",
+        "apps/worker/src/__tests__/orphan-cleanup.test.ts",
+        "organizations.id",
+        "orgs/<orgId>/",
+        "<uid>/",
+        "storage.remove",
+        "/",
+        "orgs/<org>/ref.pdf",
+        "orgs/<org>/orphan.pdf",
+        "ref.pdf",
+        "orphan.pdf"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P0",
+      "branch": "remediation/PATCH-001-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-002",
+      "title": "(P1) \u2014 Fail closed on PII encryption in production",
+      "findings": [
+        "SEC-P1-001"
+      ],
+      "files": [
+        "apps/api/src/config/env.ts",
+        "apps/api/src/lib/field-encryption.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`pnpm --filter=api test`.",
+      "verification": [
+        "`pnpm --filter=api test`."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-002-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-003",
+      "title": "(P1) \u2014 Require Turnstile in production",
+      "findings": [
+        "SEC-P2-002"
+      ],
+      "files": [
+        "apps/api/src/config/env.ts",
+        "apps/api/src/routes/public.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`pnpm --filter=api test`.",
+      "verification": [
+        "`pnpm --filter=api test`."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-003-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-004",
+      "title": "(P1) \u2014 Provision production environment and prove the deploy",
+      "findings": [
+        "CI-P1-001"
+      ],
+      "files": [
+        ".github/workflows/deploy-do.yml",
+        "docs/RELEASE.md",
+        "deploy-do.yml",
+        "gh api repos/:owner/:repo/environments"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`gh api repos/:owner/:repo/environments`; deploy run green.",
+      "verification": [
+        "`gh api repos/:owner/:repo/environments`; deploy run green."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-004-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-005",
+      "title": "(P2) \u2014 Fail-closed search",
+      "findings": [
+        "API-P2-001"
+      ],
+      "files": [
+        "apps/api/src/routes/search.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`pnpm --filter=api test`.",
+      "verification": [
+        "`pnpm --filter=api test`."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-005-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-006",
+      "title": "(P2) \u2014 Alert routing + watchdog",
+      "findings": [
+        "OBS-P2-001"
+      ],
+      "files": [
+        "infra/digitalocean/docker-compose.yml",
+        "infra/digitalocean/prometheus.yml",
+        "infra/digitalocean/prometheus.rules.yml"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "synthetic breach alert delivered; watchdog heartbeat observed.",
+      "verification": [
+        "synthetic breach alert delivered; watchdog heartbeat observed."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-006-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-007",
+      "title": "(P2) \u2014 Branch protection hardening",
+      "findings": [
+        "CI-P2-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`gh api` branch-protection dump; bypass merge blocked.",
+      "verification": [
+        "`gh api` branch-protection dump; bypass merge blocked."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-007-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-008",
+      "title": "(P2) \u2014 Demo data seed-only",
+      "findings": [
+        "FEAT-P2-002"
+      ],
+      "files": [
+        "supabase/migrations/5302119\u20265302126_demo*.sql"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "migrate an empty DB; assert no demo rows.",
+      "verification": [
+        "migrate an empty DB; assert no demo rows."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-008-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-009",
+      "title": "(P2) \u2014 API-key authentication or removal",
+      "findings": [
+        "FEAT-P2-001"
+      ],
+      "files": [
+        "apps/api/src/middleware/auth.ts",
+        "middleware/api-key.ts",
+        "apps/api/src/routes/api-keys.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "integration test with a real key; revoked/expired 401.",
+      "verification": [
+        "integration test with a real key; revoked/expired 401."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-009-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-010",
+      "title": "(P2) \u2014 Gate OpenAPI/docs and self-host Swagger",
+      "findings": [
+        "API-P2-002",
+        "FEAT-P3-001",
+        "SUPPLY-P2-002"
+      ],
+      "files": [
+        "apps/api/src/routes/docs.ts",
+        "apps/api/src/middleware/security-headers.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`/docs` initialises with no CSP violations; unauthenticated prod fetch denied.",
+      "verification": [
+        "`/docs` initialises with no CSP violations; unauthenticated prod fetch denied."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-010-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-011",
+      "title": "(P2) \u2014 Health/metrics minimisation",
+      "findings": [
+        "SEC-P2-003",
+        "API-P3-001"
+      ],
+      "files": [
+        "apps/api/src/routes/health.ts",
+        "apps/api/src/app.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "public responses contain no provider names/errors; external `/metrics` 404.",
+      "verification": [
+        "public responses contain no provider names/errors; external `/metrics` 404."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-011-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-012",
+      "title": "(P2) \u2014 License policy and generated-artifact freshness",
+      "findings": [
+        "SUPPLY-P2-001",
+        "INV-P2-001",
+        "HYG-P3-002"
+      ],
+      "files": [
+        "docs/LICENSE_POLICY.md",
+        ".github/workflows/test.yml",
+        "licenses.json"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "CI fails on a disallowed/untracked drift.",
+      "verification": [
+        "CI fails on a disallowed/untracked drift."
+      ],
+      "severity": "P2",
+      "branch": "remediation/PATCH-012-20261003-0018-fix-p2-batch-31-2295958d"
+    },
+    {
+      "id": "PATCH-013",
+      "title": "(P2/P3) \u2014 Hygiene batch",
+      "findings": [
+        "HYG-P2-001",
+        "HYG-P2-002",
+        "INV-P2-002",
+        "INV-P3-002",
+        "SUPPLY-P3-002",
+        "CI-P2-002",
+        "CI-P3-001",
+        "TEST-P2-002",
+        "TEST-P3-001",
+        "DATA-P2-002",
+        "ARCH-P2-001",
+        "OBS-P2-002",
+        "OBS-P3-001",
+        "SEC-P3-001",
+        "DATA-P2-001"
+      ],
+      "files": [
+        "review.md",
+        ".in()",
+        "\npnpm install --frozen-lockfile\npnpm lint && pnpm typecheck && pnpm test\nnode scripts/verify-rls.mjs\nnode scripts/generate-db-types.js --check\nnode scripts/openapi-audit.js\nnode scripts/sync-review-md.mjs --check\npnpm --filter=worker test\n",
+        "\n\n## Guardrails\n\n- Do not modify application code outside the files listed per patch without a separate review.\n- Keep all migrations idempotent and paired ",
+        "/"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-013-20261003-0018-fix-p2-batch-31-2295958d"
+    }
+  ],
+  "unassignedFindings": [
+    "ARCH-P2-002",
+    "ARCH-P2-003",
+    "ARCH-P3-001",
+    "FINAL-P1-001",
+    "FINAL-P2-001",
+    "FINAL-P2-002",
+    "HYG-P3-001",
+    "INV-P3-001",
+    "OBS-P2-003",
+    "SEC-P3-002",
+    "SUPPLY-P3-001"
+  ]
+}

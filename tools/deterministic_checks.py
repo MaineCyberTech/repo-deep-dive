@@ -205,6 +205,53 @@ def check_docs(root, add):
         add("DOC", "P3", "No README", "Add a README.", [])
 
 
+SHA40 = re.compile(r"^[0-9a-fA-F]{40}$")
+USE_RE = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)")
+
+
+def check_supply_chain(root, add):
+    """Unpinned GitHub Action refs and container images (falcon-style supply-chain checks)."""
+    wf_dir = os.path.join(root, ".github", "workflows")
+    unpinned = []
+    if os.path.isdir(wf_dir):
+        for f in os.listdir(wf_dir):
+            if not f.endswith((".yml", ".yaml")):
+                continue
+            p = os.path.join(wf_dir, f)
+            for n, line in enumerate(open(p, encoding="utf-8", errors="replace"), 1):
+                m = USE_RE.match(line)
+                if not m:
+                    continue
+                ref = m.group(1)
+                if ref.startswith("./") or ref.startswith("docker://") or "@" not in ref:
+                    continue
+                if not SHA40.match(ref.split("@", 1)[1]):
+                    unpinned.append("%s:%d %s" % (f, n, ref))
+    if unpinned:
+        add("SUPPLY", "P2", "%d GitHub Action ref(s) not pinned to a commit SHA" % len(unpinned),
+            "Pin `uses:` to a full 40-hex commit SHA (supply-chain hardening).", unpinned[:15])
+
+    imgs = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for f in filenames:
+            if not ((f.startswith("docker-compose") and f.endswith((".yml", ".yaml")))
+                    or f in ("compose.yml", "compose.yaml")):
+                continue
+            p = os.path.join(dirpath, f)
+            rel = os.path.relpath(p, root).replace(os.sep, "/")
+            for n, line in enumerate(open(p, encoding="utf-8", errors="replace"), 1):
+                s = line.strip()
+                if s.startswith("image:"):
+                    val = s.split(":", 1)[1].strip().strip('"').strip("'")
+                    if "@sha256:" not in val:
+                        imgs.append("%s:%d %s" % (rel, n, val))
+    if imgs:
+        add("SUPPLY", "P3", "%d container image(s) without a digest pin" % len(imgs),
+            "Pin images by digest (`image@sha256:...`) for reproducible, tamper-evident deploys.",
+            imgs[:15])
+
+
 # ---------------------------------------------------------------- driver ----
 
 def run_checks(root):
@@ -218,6 +265,7 @@ def run_checks(root):
     check_secrets(root, add)
     check_ci(root, add)
     check_dependencies(root, add)
+    check_supply_chain(root, add)
     check_hygiene(root, add)
     check_docs(root, add)
 

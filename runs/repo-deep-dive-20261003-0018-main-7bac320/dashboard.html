@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audit Dashboard - 20261003-0018-main-7bac320</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2em auto; }
+.score { font-size: 4em; font-weight: bold; text-align: center; }
+.score.high { color: #15803d; } .score.mid { color: #a16207; } .score.low { color: #b91c1c; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #999; padding: .5em; text-align: left; }
+</style></head>
+<body>
+<h1>Audit Dashboard - 20261003-0018-main-7bac320</h1>
+<div class="score low">0<small>/100</small></div>
+<p style="text-align:center"><strong>Advisory:</strong> GO WITH CONDITIONS (gate in RELEASE_GATE.md is authoritative)</p>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td>P0</td><td>0</td></tr>
+<tr><td>P1</td><td>9</td></tr>
+<tr><td>P2</td><td>20</td></tr>
+<tr><td>P3</td><td>12</td></tr>
+</table>
+<h2>Areas</h2>
+<table><tr><th>Area</th><th>Count</th></tr>
+<tr><td>API</td><td>2</td></tr>
+<tr><td>ARCH</td><td>2</td></tr>
+<tr><td>CI</td><td>6</td></tr>
+<tr><td>DATA</td><td>3</td></tr>
+<tr><td>EXEC</td><td>2</td></tr>
+<tr><td>FEAT</td><td>2</td></tr>
+<tr><td>FINAL</td><td>2</td></tr>
+<tr><td>HYG</td><td>3</td></tr>
+<tr><td>INV</td><td>3</td></tr>
+<tr><td>OBS</td><td>3</td></tr>
+<tr><td>SEC</td><td>5</td></tr>
+<tr><td>SUPPLY</td><td>4</td></tr>
+<tr><td>TEST</td><td>4</td></tr>
+</table>
+<h2>Top P0/P1</h2>
+<table><tr><th>Sev</th><th>ID</th><th>Title</th></tr>
+<tr><td>P1</td><td>CI-P1-001</td><td>The audit CI example is not under `.github/workflows/` and never runs</td></tr>
+<tr><td>P1</td><td>CI-P1-002</td><td>ci/audit.yml assumes a vendored PACK_DIR that does not match this repo</td></tr>
+<tr><td>P1</td><td>DATA-P1-001</td><td>findings.json violates its own schema (`sourceReports` array vs integer)</td></tr>
+<tr><td>P1</td><td>DATA-P1-002</td><td>Base-profile scaffold produces a manifest the pack&#x27;s own gate rejects</td></tr>
+<tr><td>P1</td><td>INV-P1-001</td><td>Run is bound to 7bac320 but the worktree is at 6cada03</td></tr>
+<tr><td>P1</td><td>SEC-P1-001</td><td>CI executes remotely downloaded scripts and archives as root without pinning</td></tr>
+<tr><td>P1</td><td>SEC-P1-002</td><td>PAT is embedded in the git clone URL, risking token exposure in logs</td></tr>
+<tr><td>P1</td><td>SUPPLY-P1-001</td><td>GitHub Actions and downloaded tools are unpinned (mutable tags/branches)</td></tr>
+<tr><td>P1</td><td>TEST-P1-001</td><td>No CI job runs the pack&#x27;s own lint/self-test or authorizes PRs</td></tr>
+</table>
+</body></html>

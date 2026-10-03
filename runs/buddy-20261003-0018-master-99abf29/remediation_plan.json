@@ -1,0 +1,251 @@
+{
+  "run": "20261003-0018-master-99abf29",
+  "repo": "C:\\temp\\buddy",
+  "generated": "2026-10-03T05:15:24Z",
+  "patchSets": [
+    {
+      "id": "PS-01",
+      "title": "CI + governance",
+      "findings": [
+        "CI-P1-001",
+        "CI-P1-002",
+        "CI-P2-001",
+        "TEST-P3-001",
+        "EXEC-P2-001"
+      ],
+      "files": [
+        ".github/workflows/ci.yml",
+        ".github/dependabot.yml",
+        ".github/CODEOWNERS",
+        "vitest.config.ts",
+        "package.json"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "CI runs lint/typecheck/test/build; failing PR is blocked; `test:coverage` script exists",
+      "verification": [
+        "`npm ci",
+        "npm run lint",
+        "npm run typecheck",
+        "npm run test",
+        "npm run build`"
+      ],
+      "severity": "P1",
+      "branch": "remediation/PS-01-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-02",
+      "title": "Licensing & provenance",
+      "findings": [
+        "SUPPLY-P1-001",
+        "SUPPLY-P2-003"
+      ],
+      "files": [
+        "LICENSE",
+        "NOTICE",
+        "docs/README.md"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "GitHub license detection; pack provenance documented",
+      "verification": [
+        "`test -f LICENSE",
+        "echo ok`",
+        "GitHub license badge"
+      ],
+      "severity": "P1",
+      "branch": "remediation/PS-02-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-03",
+      "title": "State & identity correctness",
+      "findings": [
+        "ARCH-P1-002",
+        "ARCH-P2-002",
+        "SEC-P3-001"
+      ],
+      "files": [
+        "components/device/MainDevice.tsx",
+        "components/device/AdventureScreen.tsx",
+        "app/page.tsx",
+        "lib/buddy/store.ts",
+        "components/hatch/HatchFlow.tsx"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "component test: adventure updates device; reload test preserves guestId",
+      "verification": [
+        "`npm run test -- MainDevice AdventureScreen`"
+      ],
+      "severity": "P1",
+      "branch": "remediation/PS-03-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-04",
+      "title": "Save integrity",
+      "findings": [
+        "DATA-P1-001",
+        "DATA-P1-002",
+        "DATA-P2-001",
+        "SEC-P2-001"
+      ],
+      "files": [
+        "lib/storage/indexeddb.ts",
+        "lib/storage/schema.ts",
+        "lib/storage/autosave.ts"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "migration fixtures + fuzz/malformed-import tests pass",
+      "verification": [
+        "`npm run test -- storage` (new tests)"
+      ],
+      "severity": "P1",
+      "branch": "remediation/PS-04-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-05",
+      "title": "Hygiene / dead code",
+      "findings": [
+        "ARCH-P2-003",
+        "HYG-P2-001",
+        "HYG-P2-002",
+        "HYG-P3-001"
+      ],
+      "files": [
+        "lib/storage/autosave.ts",
+        "lib/generation/rng.ts",
+        "lib/generation/hash.ts",
+        "data/items.ts",
+        "components/device/MainDevice.tsx"
+      ],
+      "dependsOn": [
+        "PS-03"
+      ],
+      "effort": "S",
+      "verificationText": "`knip`/no-unused clean; determinism tests pass; label fixed",
+      "verification": [
+        "`knip`/no-unused clean; determinism tests pass; label fixed"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-05-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-06",
+      "title": "Feature wiring",
+      "findings": [
+        "FEAT-P1-001",
+        "FEAT-P1-002",
+        "FEAT-P2-001"
+      ],
+      "files": [
+        "lib/actions/care.ts",
+        "lib/locations/adventure.ts",
+        "components/device/MainDevice.tsx",
+        "components/device/InventoryScreen.tsx",
+        "data/achievements.ts"
+      ],
+      "dependsOn": [
+        "PS-04"
+      ],
+      "effort": "M",
+      "verificationText": "integration tests: achievement once; lifecycle transition; item use",
+      "verification": [
+        "`npm run test -- achievements lifecycle items`"
+      ],
+      "severity": "P1",
+      "branch": "remediation/PS-06-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-07",
+      "title": "Operations, privacy, offline",
+      "findings": [
+        "OBS-P2-001",
+        "OBS-P2-002",
+        "OBS-P3-001",
+        "API-P2-001",
+        "API-P2-002",
+        "SEC-P2-002",
+        "ARCH-P2-001"
+      ],
+      "files": [
+        "app/error.tsx",
+        "next.config.js",
+        "public/sw.js",
+        "app/globals.css",
+        "app/layout.tsx"
+      ],
+      "dependsOn": [
+        "PS-03"
+      ],
+      "effort": "M",
+      "verificationText": "error-boundary test; header assertions; offline font load; cache name changes on build",
+      "verification": [
+        "`npm run build",
+        "npm run test -- error`",
+        "header curl"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-07-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-08",
+      "title": "Supply chain & inventory fidelity",
+      "findings": [
+        "SUPPLY-P2-001",
+        "SUPPLY-P2-002",
+        "API-P2-001",
+        "INV-P2-002"
+      ],
+      "files": [
+        "package.json",
+        "package-lock.json",
+        ".github/dependabot.yml",
+        "inventory.json"
+      ],
+      "dependsOn": [
+        "PS-01"
+      ],
+      "effort": "M",
+      "verificationText": "`npm audit` clean/triaged; SBOM artifact; inventory matches tree",
+      "verification": [
+        "`npm audit --production`",
+        "SBOM generation"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-08-20261003-0018-master-99abf29"
+    },
+    {
+      "id": "PS-09",
+      "title": "Documentation reconciliation",
+      "findings": [
+        "INV-P2-001",
+        "INV-P3-001",
+        "FINAL-P2-001",
+        "FINAL-P2-002",
+        "EXEC-P2-001"
+      ],
+      "files": [
+        "README.md",
+        "CHANGELOG.md",
+        "docs/README.md",
+        "risk_register.md"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "link check; claims match code; register has owner/status",
+      "verification": [
+        "docs link checker"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-09-20261003-0018-master-99abf29"
+    }
+  ],
+  "unassignedFindings": [
+    "ARCH-P1-001",
+    "EXEC-P1-001",
+    "FINAL-P1-001",
+    "TEST-P2-001",
+    "TEST-P2-002"
+  ]
+}

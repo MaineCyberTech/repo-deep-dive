@@ -1,0 +1,200 @@
+{
+  "repo": "C:\\temp\\snowride",
+  "generated_at": "2026-10-03T04:18:39.019891+00:00",
+  "git": {
+    "branch": "main",
+    "sha": "59e12b9",
+    "dirty": false
+  },
+  "totals": {
+    "files": 1496,
+    "lines": 496436,
+    "by_ext": {
+      ".css": 1,
+      ".csv": 56,
+      ".diff": 40,
+      ".digest": 3,
+      ".example": 2,
+      ".ico": 1,
+      ".js": 14,
+      ".json": 160,
+      ".jsonl": 2,
+      ".log": 94,
+      ".md": 450,
+      ".mjs": 40,
+      ".mts": 1,
+      ".out": 1,
+      ".p2runtime": 1,
+      ".pdf": 1,
+      ".png": 75,
+      ".py": 2,
+      ".reg": 1,
+      ".sh": 9,
+      ".sha256": 45,
+      ".sql": 77,
+      ".svg": 2,
+      ".template": 2,
+      ".ts": 238,
+      ".tsx": 51,
+      ".txt": 86,
+      ".xml": 27,
+      ".yaml": 1,
+      ".yml": 3,
+      ".zip": 1
+    }
+  },
+  "stacks": [
+    "github-actions",
+    "node",
+    "npm",
+    "supabase"
+  ],
+  "entry_points": [
+    "apps/realtime/src/index.ts",
+    "apps/realtime/src/server.ts",
+    "packages/contracts/src/index.ts",
+    "packages/game-core/src/index.ts"
+  ],
+  "routes": [],
+  "migrations": [
+    "evidence/phase11/20260910T0400Z-r50/09-migration-isolated/rb0016_exec.sql",
+    "evidence/phase13/20260910T0400Z-r52/09-migration-isolated/rb0018_exec.sql",
+    "supabase/migrations/0001_initial_schema.sql",
+    "supabase/migrations/0002_rls_and_grants.sql",
+    "supabase/migrations/0003_economy_and_submission.sql",
+    "supabase/migrations/0004_repair_idempotency_rls_and_audit.sql",
+    "supabase/migrations/0005_durable_admin_action_claims.sql",
+    "supabase/migrations/0006_submit_run_resume_semantics.sql",
+    "supabase/migrations/0007_submission_key_scoping_and_conversion.sql",
+    "supabase/migrations/0008_privilege_hardening_and_purchase_fix.sql",
+    "supabase/migrations/0009_purchase_item_conflict_pragma.sql",
+    "supabase/migrations/0010_submit_run_derived_facts.sql",
+    "supabase/migrations/0011_drop_superseded_submit_run_signature.sql",
+    "supabase/migrations/0012_run_ghost_hash.sql",
+    "supabase/migrations/0013_leaderboard_tiebreak.sql",
+    "supabase/migrations/0014_score_version_invariants.sql",
+    "supabase/migrations/0015_ratings_seasons.sql",
+    "supabase/migrations/0016_progression_retention.sql",
+    "supabase/migrations/0017_social_party_moderation.sql",
+    "supabase/migrations/0018_live_events.sql",
+    "supabase/migrations/0019_economy_catalog.sql",
+    "supabase/migrations/0020_creator_courses.sql",
+    "supabase/migrations/0021_replay_object_store.sql",
+    "supabase/migrations/0022_replay_shared_access_revocation.sql",
+    "supabase/migrations/0023_public_catalog_read.sql",
+    "supabase/migrations/0024_account_self_service.sql",
+    "supabase/migrations/0025_guest_detection_fix.sql",
+    "supabase/migrations/0026_creator_course_service_only.sql",
+    "supabase/migrations/0027_challenges.sql",
+    "supabase/migrations/0028_course_length.sql",
+    "supabase/migrations/0029_equipment_loadouts.sql",
+    "supabase/migrations/0030_equip_item.sql",
+    "supabase/migrations/0031_equipment_prices.sql",
+    "supabase/migrations/0033_season_pass.sql",
+    "supabase/migrations/0034_equipment_tier2.sql",
+    "supabase/migrations/0035_seasonal_leaderboards.sql",
+    "supabase/migrations/0036_pass_cosmetics.sql",
+    "supabase/migrations/0037_f1_score_version_v3.sql",
+    "supabase/migrations/0038_revoke_trigger_execute.sql",
+    "supabase/migrations/0039_friend_leaderboards.sql",
+    "supabase/migrations/0040_equipment_tier3.sql",
+    "supabase/migrations/0041_perf_samples.sql",
+    "supabase/migrations/0042_perf_timeseries.sql",
+    "supabase/migrations/0043_perf_filters.sql",
+    "supabase/migrations/0044_moderation_enforcement.sql",
+    "supabase/migrations/0045_perf_device.sql",
+    "supabase/migrations/0046_perf_recent.sql",
+    "supabase/migrations/0047_perf_netcode.sql",
+    "supabase/migrations/0048_perf_input_gameplay.sql",
+    "supabase/migrations/0049_perf_funnel.sql",
+    "supabase/migrations/0050_client_errors.sql",
+    "supabase/migrations/0051_admin_ops.sql",
+    "supabase/migrations/0052_client_error_hash.sql",
+    "supabase/migrations/0053_metrics_history.sql",
+    "supabase/migrations/0054_recover_run.sql",
+    "supabase/migrations/0055_perf_sample_rate.sql",
+    "supabase/migrations/0056_hash_legacy_gpu.sql",
+    "supabase/tests/0001_rls_negative_tests.sql",
+    "supabase/tests/0002_economy_negative_tests.sql",
+    "supabase/tests/0003_score_version_invariants_negative.sql",
+    "supabase/tests/0004_ratings_seasons_negative.sql",
+    "supabase/tests/0005_progression_negative.sql",
+    "supabase/tests/0006_social_negative.sql",
+    "supabase/tests/0007_live_events_negative.sql",
+    "supabase/tests/0008_economy_negative.sql",
+    "supabase/tests/0009_creator_negative.sql",
+    "supabase/tests/0010_replay_objects_negative.sql",
+    "supabase/tests/0011_creator_cascade_delete.sql",
+    "supabase/tests/0012_replay_shared_revocation.sql",
+    "supabase/tests/0013_replay_rate_window_boundary.sql",
+    "supabase/tests/0014_public_catalog_read.sql",
+    "supabase/tests/0015_account_self_service.sql",
+    "supabase/tests/0016_guest_detection.sql"
+  ],
+  "workflows": [
+    ".github/workflows/ci-foundation.yml"
+  ],
+  "containers": [
+    "apps/realtime/Dockerfile",
+    "apps/web/Dockerfile"
+  ],
+  "tests": {
+    "files": 138,
+    "dirs": []
+  },
+  "secret_adjacent_files": [
+    ".env.example",
+    "docs/source-pack/12-templates/.env.example",
+    "evidence/closeout/CREDENTIAL_ROTATION_PLAN.md",
+    "evidence/phase2/20260908T2110Z-p2/G16-supply-chain/digests_and_secrets.log",
+    "evidence/phase3/04-credential-lifecycle/CREDENTIAL_STANDARD.md",
+    "evidence/phase3/04-credential-lifecycle/SECRET_HANDLING_GUIDE.md",
+    "evidence/phase7/20260909T2213Z-r46/03-cicd/bundle_secret_gate_live.log",
+    "scripts/bundle-secret-gate.mjs"
+  ],
+  "largest_dirs": [
+    {
+      "dir": "evidence",
+      "files": 849
+    },
+    {
+      "dir": "apps",
+      "files": 270
+    },
+    {
+      "dir": "packages",
+      "files": 125
+    },
+    {
+      "dir": "docs",
+      "files": 88
+    },
+    {
+      "dir": "supabase",
+      "files": 72
+    },
+    {
+      "dir": "scripts",
+      "files": 62
+    },
+    {
+      "dir": "(root)",
+      "files": 21
+    },
+    {
+      "dir": ".github",
+      "files": 4
+    },
+    {
+      "dir": "infra",
+      "files": 4
+    },
+    {
+      "dir": "tests",
+      "files": 1
+    }
+  ],
+  "ci": [
+    "github-actions"
+  ]
+}

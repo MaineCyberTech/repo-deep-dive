@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audit Dashboard - 20261003-0018-master-99abf29</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2em auto; }
+.score { font-size: 4em; font-weight: bold; text-align: center; }
+.score.high { color: #15803d; } .score.mid { color: #a16207; } .score.low { color: #b91c1c; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #999; padding: .5em; text-align: left; }
+</style></head>
+<body>
+<h1>Audit Dashboard - 20261003-0018-master-99abf29</h1>
+<div class="score low">0<small>/100</small></div>
+<p style="text-align:center"><strong>Advisory:</strong> GO WITH CONDITIONS (gate in RELEASE_GATE.md is authoritative)</p>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td>P0</td><td>0</td></tr>
+<tr><td>P1</td><td>11</td></tr>
+<tr><td>P2</td><td>24</td></tr>
+<tr><td>P3</td><td>5</td></tr>
+</table>
+<h2>Areas</h2>
+<table><tr><th>Area</th><th>Count</th></tr>
+<tr><td>API</td><td>2</td></tr>
+<tr><td>ARCH</td><td>5</td></tr>
+<tr><td>CI</td><td>3</td></tr>
+<tr><td>DATA</td><td>3</td></tr>
+<tr><td>EXEC</td><td>2</td></tr>
+<tr><td>FEAT</td><td>3</td></tr>
+<tr><td>FINAL</td><td>3</td></tr>
+<tr><td>HYG</td><td>3</td></tr>
+<tr><td>INV</td><td>3</td></tr>
+<tr><td>OBS</td><td>3</td></tr>
+<tr><td>SEC</td><td>3</td></tr>
+<tr><td>SUPPLY</td><td>4</td></tr>
+<tr><td>TEST</td><td>3</td></tr>
+</table>
+<h2>Top P0/P1</h2>
+<table><tr><th>Sev</th><th>ID</th><th>Title</th></tr>
+<tr><td>P1</td><td>ARCH-P1-001</td><td>Entire game is client-authoritative with no server trust boundary</td></tr>
+<tr><td>P1</td><td>ARCH-P1-002</td><td>Adventure results update the store but not the device component&#x27;s local state</td></tr>
+<tr><td>P1</td><td>CI-P1-001</td><td>No CI workflows, so lint/typecheck/test/build never run automatically</td></tr>
+<tr><td>P1</td><td>CI-P1-002</td><td>No repository-enforced review/required checks (branch protection unverified)</td></tr>
+<tr><td>P1</td><td>DATA-P1-001</td><td>loadGame silently downgrades every save to version 1, contradicting writers</td></tr>
+<tr><td>P1</td><td>DATA-P1-002</td><td>No runtime schema validation for loaded or imported saves (zod unused)</td></tr>
+<tr><td>P1</td><td>EXEC-P1-001</td><td>Unresolved P1 findings preclude an unconditional GO</td></tr>
+<tr><td>P1</td><td>FEAT-P1-001</td><td>Achievement system is implemented but never invoked during gameplay</td></tr>
+<tr><td>P1</td><td>FEAT-P1-002</td><td>Lifecycle evolution and skill progression are not wired into the game loop</td></tr>
+<tr><td>P1</td><td>FINAL-P1-001</td><td>No release/versioning process binds artifacts to a commit</td></tr>
+<tr><td>P1</td><td>SUPPLY-P1-001</td><td>No LICENSE file; distribution/derivative rights are undefined</td></tr>
+</table>
+</body></html>

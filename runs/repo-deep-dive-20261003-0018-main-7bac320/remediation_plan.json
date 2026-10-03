@@ -1,0 +1,238 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "repo": "",
+  "generated": "2026-10-03T05:22:52Z",
+  "patchSets": [
+    {
+      "id": "PS-001",
+      "title": "P0 only (immediate)",
+      "findings": [],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "",
+      "branch": "remediation/PS-001-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-002",
+      "title": "Data contract alignment",
+      "findings": [
+        "DATA-P1-001",
+        "DATA-P1-002",
+        "TEST-P2-003"
+      ],
+      "files": [
+        "tools/collect_findings.py",
+        "schemas/findings.schema.json",
+        "examples/audit_manifest.example.json",
+        "examples/audit_manifest.falcon-lab.example.json",
+        "tools/new_run.py",
+        "tools/self_test.sh"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-002-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-003",
+      "title": "CI workflow hardening",
+      "findings": [
+        "SEC-P1-001",
+        "SEC-P1-002",
+        "SEC-P2-003",
+        "CI-P2-003",
+        "CI-P2-004",
+        "SUPPLY-P1-001",
+        "SUPPLY-P2-002",
+        "OBS-P2-002"
+      ],
+      "files": [
+        ".github/workflows/deep-dive-deterministic.yml",
+        ".gitleaks.toml",
+        ".github/dependabot.yml"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-003-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-004",
+      "title": "Wire the audit CI",
+      "findings": [
+        "CI-P1-001",
+        "CI-P1-002",
+        "CI-P2-005",
+        "CI-P2-006",
+        "TEST-P1-001",
+        "TEST-P2-002"
+      ],
+      "files": [
+        ".github/workflows/audit.yml",
+        "ci/audit.yml",
+        "ci/audit.yml",
+        ".github/CODEOWNERS"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-004-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-005",
+      "title": "Change control and docs",
+      "findings": [
+        "FEAT-P2-001",
+        "FEAT-P3-002"
+      ],
+      "files": [
+        "CHANGELOG.md",
+        "VERSION",
+        "README.md",
+        "REFERENCE_CARD.md"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-005-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-006",
+      "title": "Architecture: single source + strict gate",
+      "findings": [
+        "ARCH-P2-001",
+        "ARCH-P2-002"
+      ],
+      "files": [
+        "tools/run_toolchain.py",
+        "tools/lint_pack.sh",
+        "examples/*.json",
+        "profiles/falcon-lab.manifest.json"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-006-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-007",
+      "title": "Deterministic findings integration",
+      "findings": [
+        "API-P2-001",
+        "API-P2-002",
+        "DATA-P3-003"
+      ],
+      "files": [
+        "tools/deterministic_checks.py",
+        "tools/collect_findings.py"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-007-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-008",
+      "title": "Hygiene and standards",
+      "findings": [
+        "HYG-P2-001",
+        "HYG-P3-002",
+        "HYG-P3-003",
+        "SUPPLY-P2-003",
+        "SUPPLY-P3-004",
+        "SEC-P3-004",
+        "SEC-P3-005",
+        "OBS-P2-001",
+        "OBS-P3-003"
+      ],
+      "files": [
+        ".gitattributes",
+        ".gitignore",
+        "LICENSE",
+        "SECURITY.md",
+        "PACK_DIGEST.txt",
+        "runs/**"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-008-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-009",
+      "title": "Run binding and inventory",
+      "findings": [
+        "INV-P1-001",
+        "INV-P2-002",
+        "INV-P3-003"
+      ],
+      "files": [
+        "inventory.json",
+        "INDEX.md",
+        "audit_manifest.json"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-009-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-010",
+      "title": "Verification and tests",
+      "findings": [
+        "TEST-P3-004",
+        "FINAL-P2-001",
+        "FINAL-P3-002"
+      ],
+      "files": [
+        "tests/",
+        ".github/workflows/",
+        "runs/INDEX.md"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-010-20261003-0018-main-7bac320"
+    },
+    {
+      "id": "PS-011",
+      "title": "Ownership and gate",
+      "findings": [
+        "EXEC-P2-001",
+        "EXEC-P3-002"
+      ],
+      "files": [
+        ".github/CODEOWNERS",
+        "RELEASE_GATE.md"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-011-20261003-0018-main-7bac320"
+    }
+  ],
+  "unassignedFindings": []
+}

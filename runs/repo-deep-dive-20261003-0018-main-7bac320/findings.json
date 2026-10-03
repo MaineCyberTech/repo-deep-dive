@@ -1,0 +1,331 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "generated": "2026-10-03T05:14:12Z",
+  "sourceReports": [
+    "01_repository_inventory.md",
+    "02_architecture_runtime_topology.md",
+    "03_feature_implementation_map.md",
+    "06_security_authz_tenancy_audit.md",
+    "07_data_schema_migration_runtime_validation.md",
+    "08_api_contracts_realtime_integrations.md",
+    "09_testing_quality_release_confidence.md",
+    "10_github_actions_cicd_governance.md",
+    "11_supply_chain_dependency_secrets.md",
+    "14_observability_monitoring_incident_readiness.md",
+    "21_repo_hygiene_maintainability.md",
+    "22_final_risk_register_roadmap.md",
+    "23_executive_summary_release_gate.md"
+  ],
+  "counts": {
+    "bySeverity": {
+      "P1": 9,
+      "P2": 20,
+      "P3": 12
+    },
+    "byArea": {
+      "API": 2,
+      "ARCH": 2,
+      "CI": 6,
+      "DATA": 3,
+      "EXEC": 2,
+      "FEAT": 2,
+      "FINAL": 2,
+      "HYG": 3,
+      "INV": 3,
+      "OBS": 3,
+      "SEC": 5,
+      "SUPPLY": 4,
+      "TEST": 4
+    },
+    "total": 41
+  },
+  "findings": [
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "The audit CI example is not under `.github/workflows/` and never runs",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 65
+    },
+    {
+      "id": "CI-P1-002",
+      "severity": "P1",
+      "title": "ci/audit.yml assumes a vendored PACK_DIR that does not match this repo",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 85
+    },
+    {
+      "id": "DATA-P1-001",
+      "severity": "P1",
+      "title": "findings.json violates its own schema (`sourceReports` array vs integer)",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 52
+    },
+    {
+      "id": "DATA-P1-002",
+      "severity": "P1",
+      "title": "Base-profile scaffold produces a manifest the pack's own gate rejects",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 73
+    },
+    {
+      "id": "INV-P1-001",
+      "severity": "P1",
+      "title": "Run is bound to 7bac320 but the worktree is at 6cada03",
+      "report": "01_repository_inventory.md",
+      "line": 72
+    },
+    {
+      "id": "SEC-P1-001",
+      "severity": "P1",
+      "title": "CI executes remotely downloaded scripts and archives as root without pinning",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 52
+    },
+    {
+      "id": "SEC-P1-002",
+      "severity": "P1",
+      "title": "PAT is embedded in the git clone URL, risking token exposure in logs",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 72
+    },
+    {
+      "id": "SUPPLY-P1-001",
+      "severity": "P1",
+      "title": "GitHub Actions and downloaded tools are unpinned (mutable tags/branches)",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 55
+    },
+    {
+      "id": "TEST-P1-001",
+      "severity": "P1",
+      "title": "No CI job runs the pack's own lint/self-test or authorizes PRs",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 50
+    },
+    {
+      "id": "API-P2-001",
+      "severity": "P2",
+      "title": "Deterministic lens reuses domain area codes, risking duplicate finding IDs",
+      "report": "08_api_contracts_realtime_integrations.md",
+      "line": 49
+    },
+    {
+      "id": "API-P2-002",
+      "severity": "P2",
+      "title": "Deterministic findings never reach the run findings flow",
+      "report": "08_api_contracts_realtime_integrations.md",
+      "line": 70
+    },
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Orchestration truth is duplicated across four artifacts with no drift check",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 61
+    },
+    {
+      "id": "ARCH-P2-002",
+      "severity": "P2",
+      "title": "The primary run gate is silently skipped when bash is unavailable",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 83
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "The wired workflow installs mutable \"latest\" tools and fails silently",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 105
+    },
+    {
+      "id": "CI-P2-004",
+      "severity": "P2",
+      "title": "Org-wide PAT workflow lacks concurrency, timeouts, and environment protection",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 125
+    },
+    {
+      "id": "CI-P2-005",
+      "severity": "P2",
+      "title": "No branch protection, required-check, or CODEOWNERS evidence",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 145
+    },
+    {
+      "id": "CI-P2-006",
+      "severity": "P2",
+      "title": "pull_request runs pass an empty run_dir to the P0 gate",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 166
+    },
+    {
+      "id": "EXEC-P2-001",
+      "severity": "P2",
+      "title": "No accountable owner mapping for the pack",
+      "report": "23_executive_summary_release_gate.md",
+      "line": 47
+    },
+    {
+      "id": "FEAT-P2-001",
+      "severity": "P2",
+      "title": "New tools and the org workflow shipped without changelog, version bump, or docs",
+      "report": "03_feature_implementation_map.md",
+      "line": 57
+    },
+    {
+      "id": "FINAL-P2-001",
+      "severity": "P2",
+      "title": "No evidence the toolchain/self-test ran at the audited commit",
+      "report": "22_final_risk_register_roadmap.md",
+      "line": 49
+    },
+    {
+      "id": "HYG-P2-001",
+      "severity": "P2",
+      "title": "Missing `.gitignore` and `.gitattributes` create cross-platform and config-sprawl risk",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 52
+    },
+    {
+      "id": "INV-P2-002",
+      "severity": "P2",
+      "title": "inventory.json reports no CI/workflows while a workflow exists at HEAD",
+      "report": "01_repository_inventory.md",
+      "line": 92
+    },
+    {
+      "id": "OBS-P2-001",
+      "severity": "P2",
+      "title": "No structured output or freshness signal for the audit pipeline",
+      "report": "14_observability_monitoring_incident_readiness.md",
+      "line": 51
+    },
+    {
+      "id": "OBS-P2-002",
+      "severity": "P2",
+      "title": "Scheduled checks mask failures and never alert on regression",
+      "report": "14_observability_monitoring_incident_readiness.md",
+      "line": 71
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "CI security checks are non-gating and there is no secret-scan allowlist",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 91
+    },
+    {
+      "id": "SUPPLY-P2-002",
+      "severity": "P2",
+      "title": "No dependency-update automation",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 75
+    },
+    {
+      "id": "SUPPLY-P2-003",
+      "severity": "P2",
+      "title": "No SBOM or license policy is enforced despite prompt 35",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 94
+    },
+    {
+      "id": "TEST-P2-002",
+      "severity": "P2",
+      "title": "The smoke harness is bash-only and not exercised on the maintainer's platform",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 70
+    },
+    {
+      "id": "TEST-P2-003",
+      "severity": "P2",
+      "title": "Self-test schema check omits type/contract validation",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 90
+    },
+    {
+      "id": "DATA-P3-003",
+      "severity": "P3",
+      "title": "Deterministic findings use line 1 for every row and an en-dash separator",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 94
+    },
+    {
+      "id": "EXEC-P3-002",
+      "severity": "P3",
+      "title": "The gate cannot cite a machine-validated run until the scaffold defect is fixed",
+      "report": "23_executive_summary_release_gate.md",
+      "line": 67
+    },
+    {
+      "id": "FEAT-P3-002",
+      "severity": "P3",
+      "title": "README tool inventory is stale",
+      "report": "03_feature_implementation_map.md",
+      "line": 77
+    },
+    {
+      "id": "FINAL-P3-002",
+      "severity": "P3",
+      "title": "Archived run verdicts and register statuses were not re-verified after two tooling commits",
+      "report": "22_final_risk_register_roadmap.md",
+      "line": 69
+    },
+    {
+      "id": "HYG-P3-002",
+      "severity": "P3",
+      "title": "The integrity digest omits a tracked file and disagrees with the inventory count",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 72
+    },
+    {
+      "id": "HYG-P3-003",
+      "severity": "P3",
+      "title": "Archived runs commit sensitive environment snapshots",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 93
+    },
+    {
+      "id": "INV-P3-003",
+      "severity": "P3",
+      "title": "A tracked, environment-local pin is excluded from the integrity digest",
+      "report": "01_repository_inventory.md",
+      "line": 111
+    },
+    {
+      "id": "OBS-P3-003",
+      "severity": "P3",
+      "title": "Dashboards and diffs are generated but not bound to archived runs",
+      "report": "14_observability_monitoring_incident_readiness.md",
+      "line": 90
+    },
+    {
+      "id": "SEC-P3-004",
+      "severity": "P3",
+      "title": "No vulnerability-disclosure policy or code ownership file",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 111
+    },
+    {
+      "id": "SEC-P3-005",
+      "severity": "P3",
+      "title": "Internal org and repository identifiers are hardcoded as workflow defaults",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 130
+    },
+    {
+      "id": "SUPPLY-P3-004",
+      "severity": "P3",
+      "title": "No LICENSE file",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 114
+    },
+    {
+      "id": "TEST-P3-004",
+      "severity": "P3",
+      "title": "No unit tests for parsing, inventory, or deterministic logic",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 110
+    }
+  ]
+}

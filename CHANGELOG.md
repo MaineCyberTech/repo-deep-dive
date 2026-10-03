@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-03 — Remediation runner, deterministic checks, org runner (v1.4.1)
+
+- **Remediation runner**: `prompts/REMEDIATION_RUNNER.md` (branch → minimal change → lab tests →
+  gitleaks gate → draft PR → advisory review → reconcile), `tools/remediation_plan.py`
+  (patch_plan.md → `remediation_plan.json`; table + heading layouts), `tools/remediation_status.py`
+  (PR state → finding status in `follow_up_register.md` + `verification_log.md`),
+  `profiles/remediation.md` (policy), and `templates/{remediation_pr,review_report}.md`.
+- **Draft-PR discipline**: a remediation PR is always a draft; the implementer never auto-merges or
+  self-approves; a finding is only `verified-fixed` with a commit as evidence.
+- **Deterministic checks**: `tools/deterministic_checks.py` (portability/EOL/exec-bit, secrets via
+  gitleaks, CI via actionlint, deps, unpinned Actions, container digests, hygiene, docs) +
+  `tools/aggregate_findings.py` (org rollup); `.github/workflows/deep-dive-deterministic.yml`
+  (schedule + dispatch, artifacts + job summary).
+- **Remediation workflow**: `.github/workflows/remediation.yml` (dispatch: plan, or scaffold a
+  draft PR per patch set).
+- **Org runs archived**: buddy, chat, falcon, falcon-edge, mainecybertech, repo-deep-dive, snowride
+  (13 reports + finals each; `check_run` PASS, listed in `runs/INDEX.md`).
+
 ## 2026-10-02 — Base edition v1.4.1 (verification feedback + vocabulary gate)
 
 - **Gates**: `check_run.sh` also fails on finding statuses outside the shared vocabulary (all archived registers verified conforming first).

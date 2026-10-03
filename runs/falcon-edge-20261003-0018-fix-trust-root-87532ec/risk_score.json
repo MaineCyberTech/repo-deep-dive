@@ -1,0 +1,32 @@
+{
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "generated": "2026-10-03T05:21:35.540301+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 42,
+    "bySeverity": {
+      "P0": 0,
+      "P1": 3,
+      "P2": 27,
+      "P3": 12
+    },
+    "byArea": {
+      "API": 4,
+      "ARCH": 3,
+      "CI": 3,
+      "DATA": 4,
+      "EXEC": 2,
+      "FEAT": 3,
+      "FINAL": 2,
+      "HYG": 3,
+      "INV": 3,
+      "OBS": 3,
+      "SC": 4,
+      "SEC": 4,
+      "TEST": 4
+    }
+  },
+  "score": 0,
+  "advisoryDecision": "GO WITH CONDITIONS",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}

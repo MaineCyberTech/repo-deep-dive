@@ -1,0 +1,306 @@
+{
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "",
+  "generated": "2026-10-03T05:22:52Z",
+  "patchSets": [
+    {
+      "id": "PATCH-01",
+      "title": "Remove production RLS weakening (fixes SEC-P0-001, CI-P1-002, DATA-P1-001)",
+      "findings": [
+        "SEC-P0-001",
+        "CI-P1-002",
+        "DATA-P1-001"
+      ],
+      "files": [
+        ".github/workflows/deploy-production.yml",
+        ".github/workflows/deploy-development.yml"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`rg \"USING \\(true\\)|database/query\" .github/workflows/deploy-production.yml` returns nothing; `supabase db reset` yields `users_select_own`.",
+      "verification": [
+        "`rg \"USING \\(true\\)|database/query\" .github/workflows/deploy-production.yml` returns nothing; `supabase db reset` yields `users_select_own`."
+      ],
+      "severity": "P0",
+      "branch": "remediation/PATCH-01-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-02",
+      "title": "Rotate/remove committed credential (SEC-P1-002, SUPPLY-P1-001, INV-P2-002)",
+      "findings": [
+        "SEC-P1-002",
+        "SUPPLY-P1-001",
+        "INV-P2-002"
+      ],
+      "files": [
+        "test-signin.json",
+        ".gitignore"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`git ls-files | rg test-signin.json` empty; gitleaks passes.",
+      "verification": [
+        "`git ls-files | rg test-signin.json` empty; gitleaks passes."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-02-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-03",
+      "title": "Stop volume pruning (DATA-P1-002, CI-P1-004)",
+      "findings": [
+        "DATA-P1-002",
+        "CI-P1-004"
+      ],
+      "files": [
+        "deploy-production.yml:287",
+        "deploy-development.yml:219"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "deploy twice; `docker volume ls` retains `redis-data`.",
+      "verification": [
+        "deploy twice; `docker volume ls` retains `redis-data`."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-03-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-04",
+      "title": "Scope admin endpoints to caller's workspaces (SEC-P1-003/004/005/006)",
+      "findings": [
+        "SEC-P1-003"
+      ],
+      "files": [
+        "apps/api/src/modules/admin/routes.ts",
+        "apps/api/src/modules/import/routes.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "cross-tenant negative tests.",
+      "verification": [
+        "cross-tenant negative tests."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-04-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-05",
+      "title": "Correct Supabase client selection (ARCH-P1-001/002, FEAT-P1-002, FINAL-P1-001)",
+      "findings": [
+        "ARCH-P1-001",
+        "FEAT-P1-002",
+        "FINAL-P1-001"
+      ],
+      "files": [
+        "apps/api/src/modules/webhooks/service.ts",
+        "apps/api/src/lib/socket.ts",
+        "apps/api/src/modules/notifications/push-subscription-service.ts"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "integration test with real RLS; socket join for member vs non-member.",
+      "verification": [
+        "integration test with real RLS; socket join for member vs non-member."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-05-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-06",
+      "title": "Secure SSH (SEC-P1-007)",
+      "findings": [
+        "SEC-P1-007"
+      ],
+      "files": [
+        "infra/terraform/variables.tf",
+        "deploy-production.yml"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "`terraform plan` restricts port 22.",
+      "verification": [
+        "`terraform plan` restricts port 22."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-06-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-07",
+      "title": "Make quality/security gates blocking (CI-P1-003, TEST-P1-001, FINAL-P2-003)",
+      "findings": [
+        "CI-P1-003",
+        "TEST-P1-001",
+        "FINAL-P2-003"
+      ],
+      "files": [
+        ".github/workflows/validate.yml",
+        "build-push.yml"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "injected vulnerability/regression fails CI.",
+      "verification": [
+        "injected vulnerability/regression fails CI."
+      ],
+      "severity": "P1",
+      "branch": "remediation/PATCH-07-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-08",
+      "title": "Restrict `/metrics` and drop tenant labels (API-P1-001, OBS-P2-002)",
+      "findings": [
+        "API-P1-001",
+        "OBS-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PATCH-08-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-09",
+      "title": "Durable webhook retries via BullMQ + stable idempotency key (FEAT-P1-002/003)",
+      "findings": [
+        "FEAT-P1-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PATCH-09-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-10",
+      "title": "Execute migration up/down/up in CI (DATA-P2-004, TEST-P2-004, CI-P2-005)",
+      "findings": [
+        "DATA-P2-004",
+        "TEST-P2-004",
+        "CI-P2-005"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-10-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-11",
+      "title": "RLS integration test tier (TEST-P2-003)",
+      "findings": [
+        "TEST-P2-003"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-11-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-12",
+      "title": "Alerting + durable log aggregation (OBS-P1-001, OBS-P2-003)",
+      "findings": [
+        "OBS-P1-001",
+        "OBS-P2-003"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PATCH-12-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-13",
+      "title": "SHA-pin Actions, SBOM for all pushed images (SUPPLY-P2-002/004)",
+      "findings": [
+        "SUPPLY-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-13-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-14",
+      "title": "Remove generated artifacts/archives; normalize encoding (INV-P2-001, HYG-P2-001, SUPPLY-P3-005, INV-P3-001)",
+      "findings": [
+        "INV-P2-001",
+        "HYG-P2-001",
+        "SUPPLY-P3-005",
+        "INV-P3-001"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-14-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PATCH-15",
+      "title": "Cleanup: consolidate `requireAdmin`, duplicate migration, error envelopes, sanitizer (ARCH-P3-005, DATA-P2-003, API-P2-002/004, FEAT-P2-004)",
+      "findings": [
+        "ARCH-P3-005",
+        "DATA-P2-003",
+        "API-P2-002",
+        "FEAT-P2-004"
+      ],
+      "files": [
+        "bash\npnpm install --frozen-lockfile\npnpm lint && pnpm typecheck && pnpm test\npnpm vitest run --config vitest.config.ts --coverage\n# RLS/DB (requires local Supabase)\nsupabase start && supabase db reset\n"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-15-20261003-0018-develop-a72b8cc"
+    }
+  ],
+  "unassignedFindings": [
+    "API-P2-003",
+    "API-P2-004",
+    "API-P3-005",
+    "ARCH-P1-002",
+    "ARCH-P2-003",
+    "ARCH-P2-004",
+    "CI-P1-001",
+    "CI-P2-006",
+    "CI-P2-007",
+    "DATA-P2-005",
+    "EXEC-P1-001",
+    "EXEC-P2-002",
+    "FEAT-P1-001",
+    "FEAT-P2-003",
+    "FINAL-P1-002",
+    "HYG-P2-002",
+    "HYG-P3-003",
+    "HYG-P3-004",
+    "INV-P2-003",
+    "INV-P3-002",
+    "OBS-P2-004",
+    "SEC-P1-004",
+    "SEC-P1-005",
+    "SEC-P1-006",
+    "SEC-P1-008",
+    "SEC-P2-009",
+    "SEC-P2-010",
+    "SUPPLY-P2-003",
+    "SUPPLY-P2-004",
+    "TEST-P2-002"
+  ]
+}

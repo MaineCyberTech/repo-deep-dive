@@ -1,0 +1,212 @@
+{
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "repo": "",
+  "generated": "2026-10-03T05:22:52Z",
+  "patchSets": [
+    {
+      "id": "PATCH-1",
+      "title": "Abort-marker contract (ARCH-P1-002)",
+      "findings": [
+        "ARCH-P1-002"
+      ],
+      "files": [
+        "bootstrap/85-backup-job.sh",
+        "bootstrap/lib.sh",
+        "automation/validation/tests/abort_marker_test.sh",
+        "85-backup-job.sh",
+        "abort_marker_test.sh",
+        "falcon-backup.aborted"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PATCH-1-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PATCH-2",
+      "title": "Extend the abort trap to all long-running jobs (ARCH-P2-005)",
+      "findings": [
+        "ARCH-P2-005"
+      ],
+      "files": [
+        "bootstrap/80-offsite-backup.sh",
+        "automation/validation/r2_cold_copy.sh",
+        "automation/validation/wazuh_indexer_backup.sh",
+        "automation/validation/restore_rehearsal.sh",
+        "source bootstrap/lib.sh",
+        "abort_marker_test.sh"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-2-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PATCH-3",
+      "title": "Offsite retry/backoff + dead-letter (FEAT-P2-002)",
+      "findings": [
+        "FEAT-P2-002"
+      ],
+      "files": [
+        "bootstrap/85-backup-job.sh",
+        "bootstrap/80-offsite-backup.sh",
+        "automation/validation/export_monitor_metrics.sh"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PATCH-3-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PATCH-4",
+      "title": "Monitoring-death independence (OBS-P0-001)",
+      "findings": [
+        "OBS-P0-001"
+      ],
+      "files": [
+        "config/prometheus/prometheus.yml",
+        "bootstrap/90-alerting.sh",
+        "automation/validation/heartbeat.sh"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P0",
+      "branch": "remediation/PATCH-4-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PATCH-5",
+      "title": "Supply-chain gate scope + vuln gate (SUPPLY-P1-001, SUPPLY-P1-002)",
+      "findings": [
+        "SUPPLY-P1-001",
+        "SUPPLY-P1-002"
+      ],
+      "files": [
+        "ci/validate.py",
+        "automation/validation/check_compose_digests.py",
+        ".github/workflows/validate.yml",
+        "check_compose_digests.py",
+        "compose/",
+        "mct/compose/",
+        "automation/wazuh/",
+        "sbom_coverage_check.sh --require-vuln",
+        "automation/wazuh"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PATCH-5-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PATCH-6",
+      "title": "Release rebind + CI equality test (FINAL-P0-001, HYG-P0-001/002)",
+      "findings": [
+        "FINAL-P0-001",
+        "HYG-P0-001"
+      ],
+      "files": [
+        "closeout/FINAL_RESPONSE.json",
+        "PACKAGE_DIGEST.txt",
+        "PACKAGE_MANIFEST.sha256",
+        "ci/validate.py",
+        "automation/validation/tests/",
+        "FINAL_RESPONSE.json",
+        "PACKAGE_DIGEST.txt",
+        "verify_publication_chain.sh",
+        "bash automation/validation/verify_publication_chain.sh"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P0",
+      "branch": "remediation/PATCH-6-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PATCH-7",
+      "title": "Data retention (DATA-P1-001)",
+      "findings": [
+        "DATA-P1-001"
+      ],
+      "files": [
+        "bootstrap/61-search-policies.sh",
+        "automation/validation/ism_retention_metrics.sh",
+        "ism_retention_metrics.sh"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PATCH-7-20261003-0018-fix-backup-abort-markers-20b5e57"
+    },
+    {
+      "id": "PATCH-8",
+      "title": "Exposure edges (SEC-P1-001/002/003)",
+      "findings": [
+        "SEC-P1-001"
+      ],
+      "files": [
+        "config/nftables/falcon.nft",
+        "compose/mct/docker-compose.opencanary.yml",
+        "bootstrap/32-inbound-mode.sh",
+        "docs/architecture/PORT_PROTOCOL_MATRIX.md",
+        "32-inbound-mode.sh status",
+        "bash\npython3 ci/validate.py\nbash automation/validation/verify_publication_chain.sh\nbash automation/validation/tests/abort_marker_test.sh\nbash automation/validation/sbom_coverage_check.sh --require-vuln\n"
+      ],
+      "dependsOn": [],
+      "effort": "",
+      "verificationText": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PATCH-8-20261003-0018-fix-backup-abort-markers-20b5e57"
+    }
+  ],
+  "unassignedFindings": [
+    "API-P1-001",
+    "API-P2-001",
+    "API-P2-002",
+    "ARCH-P1-001",
+    "ARCH-P2-001",
+    "ARCH-P2-002",
+    "ARCH-P2-003",
+    "CI-P1-001",
+    "CI-P1-002",
+    "CI-P2-001",
+    "CI-P2-002",
+    "CI-P3-001",
+    "DATA-P2-001",
+    "EXEC-P1-001",
+    "FEAT-P2-001",
+    "FINAL-P1-001",
+    "HYG-P0-002",
+    "HYG-P1-001",
+    "HYG-P1-002",
+    "HYG-P2-001",
+    "INV-P2-001",
+    "INV-P3-001",
+    "OBS-P1-001",
+    "OBS-P1-002",
+    "OBS-P1-003",
+    "SEC-P1-002",
+    "SEC-P1-003",
+    "SEC-P2-001",
+    "SEC-P2-002",
+    "SEC-P3-001",
+    "SUPPLY-P2-001",
+    "SUPPLY-P2-002",
+    "SUPPLY-P3-001",
+    "TEST-P1-001",
+    "TEST-P1-002",
+    "TEST-P2-001"
+  ]
+}

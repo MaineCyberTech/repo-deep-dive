@@ -1,0 +1,133 @@
+{
+  "repo": "C:\\temp\\falcon-edge",
+  "generated_at": "2026-10-03T04:18:34.966946+00:00",
+  "git": {
+    "branch": "fix/trust-root",
+    "sha": "87532ec",
+    "dirty": false
+  },
+  "totals": {
+    "files": 1288,
+    "lines": 38359,
+    "by_ext": {
+      ".conf": 6,
+      ".csv": 3,
+      ".html": 1,
+      ".json": 493,
+      ".jsonl": 1,
+      ".lst": 1,
+      ".md": 153,
+      ".out": 447,
+      ".path": 2,
+      ".py": 101,
+      ".service": 9,
+      ".sh": 49,
+      ".sha256": 1,
+      ".timer": 1,
+      ".toml": 2,
+      ".txt": 2,
+      ".yaml": 3,
+      ".yml": 6
+    }
+  },
+  "stacks": [
+    "github-actions"
+  ],
+  "entry_points": [],
+  "routes": [],
+  "migrations": [],
+  "workflows": [
+    ".github/workflows/bake-image.yml",
+    ".github/workflows/boot-smoke.yml",
+    ".github/workflows/dependabot-merge.yml",
+    ".github/workflows/publish-release.yml",
+    ".github/workflows/validate.yml"
+  ],
+  "containers": [],
+  "tests": {
+    "files": 48,
+    "dirs": []
+  },
+  "secret_adjacent_files": [
+    "api/schemas/BootstrapToken.json",
+    "api/schemas/BootstrapTokenRequest.json",
+    "automation/validation/_drop_token.py",
+    "automation/validation/backup_edge_secrets.py",
+    "ci/secret_scan.py",
+    "docs/audits/repo-deep-dive/20261002-0630-edge-f6f1610/11_supply_chain_dependency_secrets.md",
+    "docs/audits/repo-deep-dive/20261002-0630-edge-f6f1610/38_env_secret_rotation.md",
+    "docs/audits/repo-deep-dive/20261002-0630-edge-f6f1610/secret_rotation_runbook.md",
+    "evidence/raw/P2-G01/20260929T045044Z_token-lifecycle-tests.meta.json",
+    "evidence/raw/P2-G01/20260929T045044Z_token-lifecycle-tests.out",
+    "evidence/raw/P6-G04/20260929T232421Z_kismet-credentials-test.meta.json",
+    "evidence/raw/P6-G04/20260929T232421Z_kismet-credentials-test.out",
+    "evidence/raw/P6-G04/20260929T235322Z_kismet-version-and-credentials-check.meta.json",
+    "evidence/raw/P6-G04/20260929T235322Z_kismet-version-and-credentials-check.out",
+    "src/falcon_control/tokens.py"
+  ],
+  "largest_dirs": [
+    {
+      "dir": "evidence",
+      "files": 900
+    },
+    {
+      "dir": "docs",
+      "files": 146
+    },
+    {
+      "dir": "tests",
+      "files": 49
+    },
+    {
+      "dir": "automation",
+      "files": 44
+    },
+    {
+      "dir": "api",
+      "files": 33
+    },
+    {
+      "dir": "src",
+      "files": 23
+    },
+    {
+      "dir": "image",
+      "files": 22
+    },
+    {
+      "dir": "profiles",
+      "files": 21
+    },
+    {
+      "dir": "deploy",
+      "files": 12
+    },
+    {
+      "dir": ".github",
+      "files": 8
+    },
+    {
+      "dir": "ledgers",
+      "files": 8
+    },
+    {
+      "dir": "ci",
+      "files": 7
+    },
+    {
+      "dir": "(root)",
+      "files": 6
+    },
+    {
+      "dir": "closeout",
+      "files": 6
+    },
+    {
+      "dir": "config",
+      "files": 2
+    }
+  ],
+  "ci": [
+    "github-actions"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "repo": "C:\\temp\\buddy",
+  "generated_at": "2026-10-03T04:18:30.003499+00:00",
+  "git": {
+    "branch": "master",
+    "sha": "99abf29",
+    "dirty": false
+  },
+  "totals": {
+    "files": 152,
+    "lines": 14274,
+    "by_ext": {
+      ".css": 1,
+      ".js": 3,
+      ".json": 6,
+      ".md": 98,
+      ".svg": 2,
+      ".ts": 31,
+      ".tsx": 10
+    }
+  },
+  "stacks": [
+    "node",
+    "npm"
+  ],
+  "entry_points": [],
+  "routes": [],
+  "migrations": [],
+  "workflows": [],
+  "containers": [],
+  "tests": {
+    "files": 7,
+    "dirs": []
+  },
+  "secret_adjacent_files": [],
+  "largest_dirs": [
+    {
+      "dir": "docs",
+      "files": 99
+    },
+    {
+      "dir": "lib",
+      "files": 19
+    },
+    {
+      "dir": "(root)",
+      "files": 10
+    },
+    {
+      "dir": "data",
+      "files": 9
+    },
+    {
+      "dir": "components",
+      "files": 8
+    },
+    {
+      "dir": "public",
+      "files": 4
+    },
+    {
+      "dir": "app",
+      "files": 3
+    }
+  ],
+  "ci": []
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audit Dashboard - 20261003-0018-fix-backup-abort-markers-20b5e57</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2em auto; }
+.score { font-size: 4em; font-weight: bold; text-align: center; }
+.score.high { color: #15803d; } .score.mid { color: #a16207; } .score.low { color: #b91c1c; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #999; padding: .5em; text-align: left; }
+</style></head>
+<body>
+<h1>Audit Dashboard - 20261003-0018-fix-backup-abort-markers-20b5e57</h1>
+<div class="score low">0<small>/100</small></div>
+<p style="text-align:center"><strong>Advisory:</strong> NO-GO (gate in RELEASE_GATE.md is authoritative)</p>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td>P0</td><td>4</td></tr>
+<tr><td>P1</td><td>20</td></tr>
+<tr><td>P2</td><td>18</td></tr>
+<tr><td>P3</td><td>4</td></tr>
+</table>
+<h2>Areas</h2>
+<table><tr><th>Area</th><th>Count</th></tr>
+<tr><td>API</td><td>3</td></tr>
+<tr><td>ARCH</td><td>6</td></tr>
+<tr><td>CI</td><td>5</td></tr>
+<tr><td>DATA</td><td>2</td></tr>
+<tr><td>EXEC</td><td>1</td></tr>
+<tr><td>FEAT</td><td>2</td></tr>
+<tr><td>FINAL</td><td>2</td></tr>
+<tr><td>HYG</td><td>5</td></tr>
+<tr><td>INV</td><td>2</td></tr>
+<tr><td>OBS</td><td>4</td></tr>
+<tr><td>SEC</td><td>6</td></tr>
+<tr><td>SUPPLY</td><td>5</td></tr>
+<tr><td>TEST</td><td>3</td></tr>
+</table>
+<h2>Top P0/P1</h2>
+<table><tr><th>Sev</th><th>ID</th><th>Title</th></tr>
+<tr><td>P0</td><td>FINAL-P0-001</td><td>Production-readiness claim is unsupportable at this commit (release integrity)</td></tr>
+<tr><td>P0</td><td>HYG-P0-001</td><td>Publication digest and closeout declare commits that do not match the audited tree</td></tr>
+<tr><td>P0</td><td>HYG-P0-002</td><td>The mandated publication-chain verifier could not be reproduced and the chain is not bound to HEAD</td></tr>
+<tr><td>P0</td><td>OBS-P0-001</td><td>Prometheus scrapes only 3 targets; nearly all `falcon_*` signals hinge on the node-exporter textfile collector</td></tr>
+<tr><td>P1</td><td>API-P1-001</td><td>Cross-repo pairing contract cannot be verified in this environment</td></tr>
+<tr><td>P1</td><td>ARCH-P1-001</td><td>Single-host concentration: host loss is total pipeline loss</td></tr>
+<tr><td>P1</td><td>ARCH-P1-002</td><td>Abort-marker contract is self-contradictory and normal failure exits leave no marker</td></tr>
+<tr><td>P1</td><td>CI-P1-001</td><td>CI tool downloads did not fail fast</td></tr>
+<tr><td>P1</td><td>CI-P1-002</td><td>Branch protection and required checks are not enforced server-side</td></tr>
+<tr><td>P1</td><td>DATA-P1-001</td><td>Wazuh and IRIS data have no retention (unbounded index growth)</td></tr>
+<tr><td>P1</td><td>EXEC-P1-001</td><td>Lab &quot;GO&quot; can be misread as a production approval</td></tr>
+<tr><td>P1</td><td>FINAL-P1-001</td><td>Operational resilience remains incomplete across the backup lifecycle</td></tr>
+<tr><td>P1</td><td>HYG-P1-001</td><td>Committed `review-package/` is a stale snapshot duplicate of the source tree</td></tr>
+<tr><td>P1</td><td>HYG-P1-002</td><td>Secret-scanner path allowlist was not separator-portable</td></tr>
+<tr><td>P1</td><td>OBS-P1-001</td><td>Alert expressions mix `bool` and raw comparison forms with no linter</td></tr>
+<tr><td>P1</td><td>OBS-P1-002</td><td>Duplicate/overlapping rules and a self-contradictory firing-proof coverage total</td></tr>
+<tr><td>P1</td><td>OBS-P1-003</td><td>Relay failure counter is all-or-nothing; partial-path degradation is caught only by the weekly canary</td></tr>
+<tr><td>P1</td><td>SEC-P1-001</td><td>OpenCanary publishes six decoy services on all interfaces</td></tr>
+<tr><td>P1</td><td>SEC-P1-002</td><td>Blanket `iifname &quot;wg0&quot; accept` grants every WireGuard peer host-wide access</td></tr>
+<tr><td>P1</td><td>SEC-P1-003</td><td>Owner-directed open-inbound override state is contradictory across records</td></tr>
+</table>
+</body></html>

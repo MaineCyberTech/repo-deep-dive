@@ -1,0 +1,93 @@
+{
+  "repo": "C:\\temp\\repo-deep-dive",
+  "generated_at": "2026-10-03T04:18:38.552184+00:00",
+  "git": {
+    "branch": "main",
+    "sha": "7bac320",
+    "dirty": false
+  },
+  "totals": {
+    "files": 195,
+    "lines": 6847,
+    "by_ext": {
+      ".json": 9,
+      ".md": 168,
+      ".py": 9,
+      ".sh": 5,
+      ".txt": 2,
+      ".yml": 1
+    }
+  },
+  "stacks": [],
+  "entry_points": [],
+  "routes": [],
+  "migrations": [],
+  "workflows": [],
+  "containers": [],
+  "tests": {
+    "files": 0,
+    "dirs": []
+  },
+  "secret_adjacent_files": [
+    "prompts/11_supply_chain_dependency_secrets.md",
+    "prompts/38_env_secret_rotation.md",
+    "runs/20260930-0701-falcon-8282d3f_edge-45dfed0/11_supply_chain_dependency_secrets.md",
+    "runs/20260930-0701-falcon-8282d3f_edge-45dfed0/38_env_secret_rotation.md",
+    "runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md"
+  ],
+  "largest_dirs": [
+    {
+      "dir": "runs",
+      "files": 92
+    },
+    {
+      "dir": "prompts",
+      "files": 49
+    },
+    {
+      "dir": "templates",
+      "files": 15
+    },
+    {
+      "dir": "tools",
+      "files": 14
+    },
+    {
+      "dir": "(root)",
+      "files": 7
+    },
+    {
+      "dir": "lenses",
+      "files": 6
+    },
+    {
+      "dir": "runbooks",
+      "files": 3
+    },
+    {
+      "dir": "examples",
+      "files": 2
+    },
+    {
+      "dir": "profiles",
+      "files": 2
+    },
+    {
+      "dir": "wiring",
+      "files": 2
+    },
+    {
+      "dir": "ci",
+      "files": 1
+    },
+    {
+      "dir": "docs",
+      "files": 1
+    },
+    {
+      "dir": "schemas",
+      "files": 1
+    }
+  ],
+  "ci": []
+}

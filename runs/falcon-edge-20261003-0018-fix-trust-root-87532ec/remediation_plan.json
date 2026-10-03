@@ -1,0 +1,371 @@
+{
+  "run": "20261003-0018-fix-trust-root-87532ec",
+  "repo": "",
+  "generated": "2026-10-03T05:21:48Z",
+  "patchSets": [
+    {
+      "id": "PS-001",
+      "title": "",
+      "findings": [
+        "SEC-P1-001",
+        "FINAL-P1-001",
+        "EXEC-P1-001",
+        "TEST-P2-002"
+      ],
+      "files": [
+        "src/falcon_control/service.py",
+        "tests/phase2/test_service_integration.py"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "`python -m unittest tests.phase2.test_service_integration`; re-enroll REVOKED returns 403/409",
+      "verification": [
+        "SEC-P1-001, FINAL-P1-001, EXEC-P1-001, TEST-P2-002"
+      ],
+      "severity": "P1",
+      "branch": "remediation/PS-001-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-002",
+      "title": "",
+      "findings": [
+        "CI-P2-002"
+      ],
+      "files": [
+        ".github/workflows/dependabot-merge.yml"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "workflow test where PR head changes mid-check",
+      "verification": [
+        "CI-P2-002"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-002-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-003",
+      "title": "",
+      "findings": [
+        "SC-P2-002"
+      ],
+      "files": [
+        ".github/workflows/validate.yml"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "`gitleaks detect --source .` (git mode) finds an injected dummy secret",
+      "verification": [
+        "SC-P2-002"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-003-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-004",
+      "title": "",
+      "findings": [
+        "SC-P2-001",
+        "SC-P2-003"
+      ],
+      "files": [
+        ".github/workflows/validate.yml",
+        "requirements-dev.txt"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "corrupted tool download fails; unpinned install rejected",
+      "verification": [
+        "SC-P2-001, SC-P2-003"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-004-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-005",
+      "title": "",
+      "findings": [
+        "TEST-P2-001",
+        "HYG-P2-001",
+        "CI-P3-001"
+      ],
+      "files": [
+        "docs/GITHUB_CI.md",
+        "docs/CURRENT_STATE.md",
+        "docs/security/BRANCH_PROTECTION.md"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "counts match CI job summary; cadence matches cron",
+      "verification": [
+        "TEST-P2-001, HYG-P2-001, CI-P3-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-005-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-006",
+      "title": "",
+      "findings": [
+        "DATA-P2-001",
+        "DATA-P3-001"
+      ],
+      "files": [
+        "src/falcon_control/store.py",
+        "src/falcon_agent/runner.py"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "TTL prune test; queue purge-on-cycle test",
+      "verification": [
+        "DATA-P2-001, DATA-P3-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-006-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-007",
+      "title": "",
+      "findings": [
+        "DATA-P2-002",
+        "DATA-P2-003"
+      ],
+      "files": [
+        "src/falcon_control/store.py",
+        "migrations/"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "migration round-trip test; FK violation test",
+      "verification": [
+        "DATA-P2-002, DATA-P2-003"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-007-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-008",
+      "title": "",
+      "findings": [
+        "OBS-P2-001",
+        "OBS-P2-002"
+      ],
+      "files": [
+        "config/prometheus/edge-alerts.yaml",
+        "automation/validation/inventory_metrics.py"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "synthetic critical alert delivered end-to-end",
+      "verification": [
+        "OBS-P2-001, OBS-P2-002"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-008-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-009",
+      "title": "",
+      "findings": [
+        "SEC-P2-002",
+        "HYG-P3-001"
+      ],
+      "files": [
+        "automation/validation/inventory_metrics.py"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "wrong host key fails closed; sensors loaded from config",
+      "verification": [
+        "SEC-P2-002, HYG-P3-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-009-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-010",
+      "title": "",
+      "findings": [
+        "SEC-P2-003"
+      ],
+      "files": [
+        "automation/validation/fleet_inventory.py"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "DB mode/ownership test",
+      "verification": [
+        "SEC-P2-003"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-010-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-011",
+      "title": "",
+      "findings": [
+        "ARCH-P2-001",
+        "HYG-P2-002",
+        "INV-P3-001"
+      ],
+      "files": [
+        "deploy/edge-control-plane.service",
+        "ci/validate.sh",
+        "closeout/"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "dirty-tree alarm; regen guard fails on mutation",
+      "verification": [
+        "ARCH-P2-001, HYG-P2-002, INV-P3-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-011-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-012",
+      "title": "",
+      "findings": [
+        "FEAT-P2-001",
+        "API-P2-002"
+      ],
+      "files": [
+        "src/falcon_control/service.py",
+        "api/openapi/falcon-edge-v1.yaml"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "response schema test asserts `queueDepth`",
+      "verification": [
+        "FEAT-P2-001, API-P2-002"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-012-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-013",
+      "title": "",
+      "findings": [
+        "API-P2-001"
+      ],
+      "files": [
+        "src/falcon_control/service.py",
+        "store.py",
+        "api/openapi/falcon-edge-v1.yaml"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": ">500 sensor fixture returns `nextCursor`",
+      "verification": [
+        "API-P2-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-013-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-014",
+      "title": "",
+      "findings": [
+        "API-P3-001",
+        "API-P3-002",
+        "FEAT-P3-001",
+        "FEAT-P3-002"
+      ],
+      "files": [
+        "src/falcon_control/service.py",
+        "src/falcon_cli/__main__.py"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verificationText": "error `instance` = path; ingest replay; token absent without `--out`",
+      "verification": [
+        "API-P3-001, API-P3-002, FEAT-P3-001, FEAT-P3-002"
+      ],
+      "severity": "P3",
+      "branch": "remediation/PS-014-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-015",
+      "title": "",
+      "findings": [
+        "SEC-P2-001",
+        "ARCH-P3-001"
+      ],
+      "files": [
+        "src/falcon_control/http_server.py"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "N-connection bound; security-header assertion",
+      "verification": [
+        "SEC-P2-001, ARCH-P3-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-015-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-016",
+      "title": "",
+      "findings": [
+        "INV-P2-001"
+      ],
+      "files": [
+        "evidence/",
+        "ci/validate.sh"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "evidence byte-budget gate",
+      "verification": [
+        "INV-P2-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-016-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-017",
+      "title": "",
+      "findings": [
+        "INV-P2-002"
+      ],
+      "files": [
+        "repo-deep-dive/tools/repo_inventory.py"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "routes/tables/entry points non-empty",
+      "verification": [
+        "INV-P2-002"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-017-20261003-0018-fix-trust-root-87532ec"
+    },
+    {
+      "id": "PS-018",
+      "title": "",
+      "findings": [
+        "OBS-P3-001",
+        "TEST-P3-001",
+        "TEST-P3-002",
+        "CI-P2-001",
+        "SC-P2-004",
+        "ARCH-P2-002",
+        "HYG-P3-002",
+        "EXEC-P2-001",
+        "FINAL-P2-001"
+      ],
+      "files": [
+        "risk_register.md"
+      ],
+      "dependsOn": [],
+      "effort": "M",
+      "verificationText": "per-item validation in the owning domain report",
+      "verification": [
+        "OBS-P3-001, TEST-P3-001, TEST-P3-002, CI-P2-001, SC-P2-004, ARCH-P2-002, HYG-P3-002, EXEC-P2-001, FINAL-P2-001"
+      ],
+      "severity": "P2",
+      "branch": "remediation/PS-018-20261003-0018-fix-trust-root-87532ec"
+    }
+  ],
+  "unassignedFindings": []
+}

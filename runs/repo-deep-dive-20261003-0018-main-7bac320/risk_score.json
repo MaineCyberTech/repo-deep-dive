@@ -1,0 +1,32 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "generated": "2026-10-03T05:14:12.733402+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 41,
+    "bySeverity": {
+      "P0": 0,
+      "P1": 9,
+      "P2": 20,
+      "P3": 12
+    },
+    "byArea": {
+      "API": 2,
+      "ARCH": 2,
+      "CI": 6,
+      "DATA": 3,
+      "EXEC": 2,
+      "FEAT": 2,
+      "FINAL": 2,
+      "HYG": 3,
+      "INV": 3,
+      "OBS": 3,
+      "SEC": 5,
+      "SUPPLY": 4,
+      "TEST": 4
+    }
+  },
+  "score": 0,
+  "advisoryDecision": "GO WITH CONDITIONS",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}

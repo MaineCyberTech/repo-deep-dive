@@ -1,0 +1,32 @@
+{
+  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
+  "generated": "2026-10-03T05:21:33.894515+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 46,
+    "bySeverity": {
+      "P0": 4,
+      "P1": 20,
+      "P2": 18,
+      "P3": 4
+    },
+    "byArea": {
+      "API": 3,
+      "ARCH": 6,
+      "CI": 5,
+      "DATA": 2,
+      "EXEC": 1,
+      "FEAT": 2,
+      "FINAL": 2,
+      "HYG": 5,
+      "INV": 2,
+      "OBS": 4,
+      "SEC": 6,
+      "SUPPLY": 5,
+      "TEST": 3
+    }
+  },
+  "score": 0,
+  "advisoryDecision": "NO-GO",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}
