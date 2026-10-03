@@ -31,8 +31,24 @@ import sys
 sys.dont_write_bytecode = True
 
 FINDING = re.compile(r"\b([A-Z]+-P[0-3]-\d{3})\b")
+SHORT = re.compile(r"([A-Z]+-P[0-3]-)(\d{3})((?:/\d{3})+)")
 PS_ID = re.compile(r"\bPS-?\d{1,3}\b", re.I)
 BACKTICK = re.compile(r"`([^`]+)`")
+
+
+def expand_findings(text):
+    """Expand finding IDs including shorthand like `SEC-P1-003/004/005` -> 3 IDs."""
+    ids = FINDING.findall(text)
+    for m in SHORT.finditer(text):
+        prefix, first, rest = m.group(1), m.group(2), m.group(3)
+        for n in [first] + re.findall(r"\d{3}", rest):
+            ids.append(prefix + n)
+    seen, out = set(), []
+    for i in ids:
+        if i not in seen:
+            seen.add(i)
+            out.append(i)
+    return out
 
 
 def cells(line):
@@ -67,7 +83,7 @@ def parse_patch_table(md):
             ps = {
                 "id": c[i_set].upper().replace("PS", "PS-").replace("PS--", "PS-"),
                 "title": c[i_title] if i_title is not None and len(c) > i_title else "",
-                "findings": FINDING.findall(c[i_find]) if len(c) > i_find else [],
+                "findings": expand_findings(c[i_find]) if len(c) > i_find else [],
                 "files": BACKTICK.findall(c[i_files]) if i_files is not None and len(c) > i_files else [],
                 "dependsOn": [] if i_dep is None or len(c) <= i_dep else
                              [x.upper() for x in FINDING.findall(c[i_dep])] or
@@ -122,7 +138,7 @@ def parse_heading_sets(md):
             if cur:
                 out.append(cur)
             cur = {"id": m.group(1).upper().replace(" ", "-"), "title": m.group(2).strip(),
-                   "findings": FINDING.findall(ln), "files": [], "dependsOn": [],
+                   "findings": expand_findings(ln), "files": [], "dependsOn": [],
                    "effort": "", "verificationText": "", "_block": []}
             continue
         if cur is not None:
@@ -133,7 +149,7 @@ def parse_heading_sets(md):
                 if key.startswith("file"):
                     cur["files"] += BACKTICK.findall(val)
                 elif key.startswith(("closes", "fixes", "finding")):
-                    cur["findings"] += FINDING.findall(val)
+                    cur["findings"] += expand_findings(val)
                 elif key.startswith(("validation", "validate", "verify")):
                     cur["verificationText"] = val
                 elif key.startswith("effort"):

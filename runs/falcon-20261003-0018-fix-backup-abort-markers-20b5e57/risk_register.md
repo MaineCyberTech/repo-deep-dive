@@ -55,3 +55,54 @@ Run `20261003-0018-fix-backup-abort-markers-20b5e57` — `falcon` @ `20b5e57`. O
 
 - P3 risk rows are informational; P3 findings are unpenalized in the advisory score.
 - IDs and statuses are the machine-readable source for `tools/collect_findings.py`.
+
+## Finding index
+
+| ID | Severity | Title |
+|---|---|---|
+| FINAL-P0-001 | P0 | Production-readiness claim is unsupportable at this commit (release integrity) |
+| HYG-P0-001 | P0 | Publication digest and closeout declare commits that do not match the audited tree |
+| HYG-P0-002 | P0 | The mandated publication-chain verifier could not be reproduced and the chain is not bound to HEAD |
+| OBS-P0-001 | P0 | Prometheus scrapes only 3 targets; nearly all `falcon_*` signals hinge on the node-exporter textfile collector |
+| API-P1-001 | P1 | Cross-repo pairing contract cannot be verified in this environment |
+| ARCH-P1-001 | P1 | Single-host concentration: host loss is total pipeline loss |
+| ARCH-P1-002 | P1 | Abort-marker contract is self-contradictory and normal failure exits leave no marker |
+| CI-P1-001 | P1 | CI tool downloads did not fail fast |
+| CI-P1-002 | P1 | Branch protection and required checks are not enforced server-side |
+| DATA-P1-001 | P1 | Wazuh and IRIS data have no retention (unbounded index growth) |
+| EXEC-P1-001 | P1 | Lab "GO" can be misread as a production approval |
+| FINAL-P1-001 | P1 | Operational resilience remains incomplete across the backup lifecycle |
+| HYG-P1-001 | P1 | Committed `review-package/` is a stale snapshot duplicate of the source tree |
+| HYG-P1-002 | P1 | Secret-scanner path allowlist was not separator-portable |
+| OBS-P1-001 | P1 | Alert expressions mix `bool` and raw comparison forms with no linter |
+| OBS-P1-002 | P1 | Duplicate/overlapping rules and a self-contradictory firing-proof coverage total |
+| OBS-P1-003 | P1 | Relay failure counter is all-or-nothing; partial-path degradation is caught only by the weekly canary |
+| SEC-P1-001 | P1 | OpenCanary publishes six decoy services on all interfaces |
+| SEC-P1-002 | P1 | Blanket `iifname "wg0" accept` grants every WireGuard peer host-wide access |
+| SEC-P1-003 | P1 | Owner-directed open-inbound override state is contradictory across records |
+| SUPPLY-P1-001 | P1 | Container digest gate scope hole: vendored `mct/compose` and `automation/wazuh` are ungated |
+| SUPPLY-P1-002 | P1 | Vulnerability scanning is not gated and coverage is partial |
+| TEST-P1-001 | P1 | Repo-local test ledger points at an out-of-repo, pre-rename lab tree |
+| TEST-P1-002 | P1 | The full gate does not complete within a short bounded run and shell suites are not executable off a bash host |
+| API-P2-001 | P2 | Enrollment API tokens have no expiry field |
+| API-P2-002 | P2 | Ingest contract relies on a shared secret header, not request signing or idempotency keys |
+| ARCH-P2-001 | P2 | Declared container hardening lags the running containers |
+| ARCH-P2-002 | P2 | Wazuh and vendored MCT stacks run tag-only images outside pin/SBOM scope |
+| ARCH-P2-003 | P2 | Live ingest authentication is a shared secret header, not mTLS |
+| ARCH-P2-005 | P2 | Only the backup job installs the abort trap; other long-running jobs lack it |
+| CI-P2-001 | P2 | `ci/validate.py` did not implement the evidence-index verification its docstring promises |
+| CI-P2-002 | P2 | Auto-merge workflow holds `contents: write` with no environment protection |
+| DATA-P2-001 | P2 | Index template and `event_time` ownership are split with no consistency check |
+| FEAT-P2-001 | P2 | Vendored MCT services are present in Compose while the subtree policy calls the tree archive-only |
+| FEAT-P2-002 | P2 | Backup/offsite delivery is single-attempt with no retry, backoff, or dead-letter |
+| HYG-P2-001 | P2 | Large generated SBOM/vulnerability JSON committed (39 files, up to ~122 KB each) |
+| INV-P2-001 | P2 | Repository is majority generated/derived content with no in-repo regeneration or drift check |
+| SEC-P2-001 | P2 | Public-facing routers have no origin authentication; `ntfy-auth` is dead config |
+| SEC-P2-002 | P2 | Cloudflare API token is passed on the `curl` command line |
+| SUPPLY-P2-001 | P2 | `.gitleaks.toml` allowlists are broader than the documented classified set |
+| SUPPLY-P2-002 | P2 | Image lock freshness is not gated |
+| TEST-P2-001 | P2 | No backup/offsite/restore end-to-end test runs in the standard gate |
+| CI-P3-001 | P3 | Local and CI shellcheck semantics diverged |
+| INV-P3-001 | P3 | Legacy host-absolute evidence paths require manual rewrite to resolve in a clone |
+| SEC-P3-001 | P3 | Default-deny `forward`/`output` policies are inert at the managed-table level |
+| SUPPLY-P3-001 | P3 | `pins/verify-digests.sh` compares only the first RepoDigest entry |
