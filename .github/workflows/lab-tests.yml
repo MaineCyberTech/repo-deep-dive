@@ -1,0 +1,51 @@
+name: Lab tests
+
+# Runs a repo's tests/build on the Proxmox lab (self-hosted runners), so GitHub-hosted
+# workflows can execute on the lab without inbound network access.
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: Target repository name (org repo)
+        required: true
+        default: repo-deep-dive
+      ref:
+        description: Branch, tag, or SHA (default: repo default)
+        required: false
+        default: ''
+      command:
+        description: Command to run in the repo
+        required: true
+        default: 'bash tools/lint_pack.sh'
+      runner:
+        description: Lab runner label (ci-runner | edge-builder)
+        required: false
+        default: 'ci-runner'
+
+permissions:
+  contents: read
+
+jobs:
+  lab:
+    runs-on: [self-hosted, linux, x64, "${{ inputs.runner }}"]
+    env:
+      GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
+    steps:
+      - name: Run on the lab
+        run: |
+          set -euo pipefail
+          REPO="${{ inputs.repo }}"; REF="${{ inputs.ref }}"
+          OWNER="${{ github.repository_owner }}"
+          ROOT="$HOME/lab-repos"; mkdir -p "$ROOT"
+          DEST="$ROOT/$REPO"
+          if [ ! -d "$DEST/.git" ]; then
+            git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${REPO}.git" "$DEST"
+          fi
+          cd "$DEST"
+          git fetch -q --all || true
+          if [ -n "$REF" ]; then git checkout -q "$REF"; fi
+          echo "runner: $RUNNER_NAME  repo: $REPO  head: $(git rev-parse --short HEAD)"
+          echo "== command: ${{ inputs.command }} =="
+          bash -o pipefail -c "${{ inputs.command }}"
+          echo "LAB_TEST_PASS"
