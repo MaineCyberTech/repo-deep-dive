@@ -27,18 +27,37 @@ def load_findings(run):
     return json.load(open(p, encoding="utf-8")).get("findings", [])
 
 
+VALID_STATUS = {"", "open", "partially-fixed", "verified-fixed", "still-open",
+                "regressed", "owner-accepted"}
+
+
 def existing_status(run):
-    """ID -> (status, note) from an existing follow_up_register.md."""
+    """ID -> (status, note) from an existing follow_up_register.md, parsed by header name."""
     out = {}
     p = os.path.join(run, "follow_up_register.md")
     if not os.path.isfile(p):
         return out
     lines = open(p, encoding="utf-8").read().splitlines()
+    idx = None
+    for ln in lines:
+        if ln.startswith("|"):
+            cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+            if "Status" in cells:
+                idx = {c: i for i, c in enumerate(cells)}
+                break
+    if not idx:
+        return out
+    si, ni = idx.get("Status"), idx.get("Post-audit note")
     for ln in lines:
         m = ROW.match(ln)
-        if m:
-            cells = [c.strip() for c in ln.strip().strip("|").split("|")]
-            out[m.group(1)] = (cells[5] if len(cells) > 5 else "", cells[6] if len(cells) > 6 else "")
+        if not m:
+            continue
+        cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+        st = cells[si] if si is not None and len(cells) > si else ""
+        note = cells[ni] if ni is not None and len(cells) > ni else ""
+        if st not in VALID_STATUS:
+            st = ""
+        out[m.group(1)] = (st, note)
     return out
 
 

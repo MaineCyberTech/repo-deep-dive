@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T06:04:56Z
+# generated: 2026-10-03T06:06:24Z
 # files: 409
 # format: sha256  path
 06ae19670ef32cf470931f55021e2647e86d9340826c8cfcc49acce60bea84f2  ./.github/workflows/deep-dive-deterministic.yml
@@ -246,7 +246,7 @@ a606d33dbde5ccd5ba3679a26d96e2f35f3437e2f09805219027ff06fca90de3  ./runs/falcon-
 00b77b74af3dc4c033bc2cefc94617378462942f05f112f954f45103f2a1e881  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/dashboard.html
 360632d45d901215b29154cd21ba58f2fe643819bb5d45fa289660e5cf0d6265  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/dashboard.md
 9dccb36177fef0fcc774b11b9f9379b24e53bd2b6ff363608e4e2146d3bcd42d  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/findings.json
-3985749ad5e82593ea72eacef4f74dea0bf8157832de0aca7b77b7700f05019e  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/follow_up_register.md
+5ecd903f58e481a324ddac77699d76a62f68110010a20cdc38f9a3afdc5002ba  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/follow_up_register.md
 9093e9a43b6c105abfd4a324ff78dc989d6ff176ca31896d7fa66e4b80bdd255  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/inventory.json
 50585f3321b358b81c502f6640f1b392e6b9a41a80a19741e4b37702a5ed3cac  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/patch_plan.md
 fc6af9b1edcc587bce45c648b309ea7f0742e750389479dcaf99202c7d0b5afa  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/pr_comment.md
@@ -254,7 +254,7 @@ b89eb2b8496a5aea6daf3ea9d0ba489a5afd814020090b56e5b595e3b5f44d89  ./runs/falcon-
 dae02c835ebc9225c638b1a18b5c29a6acdf38d5dc5ed7bb642c210118c050a6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/risk_register.md
 4539311b7335758f72c9a2f87b578e1ca6dd3f3ebf362ee4289afbbb7ed6b10c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/risk_score.json
 1388bcedc1322bce125dd629ed512600ff45159d913e116d496efd1f78c1472a  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/roadmap.md
-99559efaeb147d54e885a2a033b29f501ffd150c4aadae88d0cf65334a3262b5  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/verification_log.md
+f4af67d94b7d1b2c9fcc2c0d86215a5df7a6223b2166e716f5737b4df96cebf4  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/verification_log.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md
@@ -400,7 +400,7 @@ add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_fi
 4f6ac381457e22b9ee4ec2e51c77cf78e95bb517ba306fbbf012657df9d8d500  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
 81050470d1d8a4bf5a988512ae4a787b3f1321f4b2052d94059bd706b47c3ff8  ./tools/new_run.py
-f27ffe570314e4a3ecd73b3ef762bb364184b3391ed042f1b9885007dd0264ca  ./tools/normalize_register.py
+86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
 e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_digest.sh
 2ab0e297f012e51a1f196fe01ba90dfd29b1f429b1a41404a4b7eed619116c70  ./tools/remediation_plan.py
 2e560d8a73ad4bdcc62c59205bceb7dcf0ba09d416328c1d791b7ce2bc207e64  ./tools/remediation_status.py
