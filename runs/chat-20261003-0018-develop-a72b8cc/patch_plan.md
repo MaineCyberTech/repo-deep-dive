@@ -69,3 +69,12 @@ supabase start && supabase db reset
 - Zero P0; all P1 either fixed with an artifact or explicitly owner-accepted.
 - Deploy pipeline performs no DDL/DML; migrations are the only schema channel.
 - Cross-tenant negative tests pass; E2E and security scans gate the build.
+
+## P1 — this week (lab)
+
+### PATCH-16 — Fix /install SSR prerender (navigator is not defined)
+- Files: `apps/web/lib/pwa/install-state.ts`, `apps/web/app/install/page.tsx`
+- Change: guard `navigator` in getPlatform()/getInstallInstructions() (SSR-safe default "unknown"/generic instructions) so the /install prerender does not crash; keep client behavior unchanged.
+- Validation: `corepack pnpm --filter web build` succeeds; /install prerenders.
+- Closes: BLD-P1-001.
+- Effort: S

@@ -1,6 +1,6 @@
 {
   "run": "20261003-0018-develop-a72b8cc",
-  "generated": "2026-10-03T05:14:08Z",
+  "generated": "2026-10-03T05:50:31Z",
   "sourceReports": [
     "01_repository_inventory.md",
     "02_architecture_runtime_topology.md",
@@ -14,18 +14,20 @@
     "14_observability_monitoring_incident_readiness.md",
     "21_repo_hygiene_maintainability.md",
     "22_final_risk_register_roadmap.md",
-    "23_executive_summary_release_gate.md"
+    "23_executive_summary_release_gate.md",
+    "lens_lab_verification.md"
   ],
   "counts": {
     "bySeverity": {
       "P0": 1,
-      "P1": 24,
+      "P1": 25,
       "P2": 31,
       "P3": 7
     },
     "byArea": {
       "API": 5,
       "ARCH": 5,
+      "BLD": 1,
       "CI": 7,
       "DATA": 5,
       "EXEC": 2,
@@ -38,7 +40,7 @@
       "SUPPLY": 5,
       "TEST": 4
     },
-    "total": 63
+    "total": 64
   },
   "findings": [
     {
@@ -46,441 +48,704 @@
       "severity": "P0",
       "title": "Production deploy creates `users_select USING (true)`, exposing all users' PII to any authenticated user",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 49
+      "line": 49,
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows."
     },
     {
       "id": "API-P1-001",
       "severity": "P1",
       "title": "`/metrics` is readable by any authenticated user",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 44
+      "line": 44,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "ARCH-P1-001",
       "severity": "P1",
       "title": "Webhook service uses the anonymous Supabase client, so RLS denies all operations",
       "report": "02_architecture_runtime_topology.md",
-      "line": 51
+      "line": 51,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "ARCH-P1-002",
       "severity": "P1",
       "title": "Socket.io authorization and presence use the anonymous client; membership checks fail/bypass",
       "report": "02_architecture_runtime_topology.md",
-      "line": 72
+      "line": 72,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
+    },
+    {
+      "id": "BLD-P1-001",
+      "severity": "P1",
+      "title": "Web build fails prerendering /install (navigator is not defined)",
+      "report": "lens_lab_verification.md",
+      "line": 40,
+      "owner": "",
+      "target": "",
+      "status": "",
+      "note": ""
     },
     {
       "id": "CI-P1-001",
       "severity": "P1",
       "title": "Production auto-deploys on push to `main` without a required review gate in-repo",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 40
+      "line": 40,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "CI-P1-002",
       "severity": "P1",
       "title": "Deploy workflow mutates production schema and data from CI",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 60
+      "line": 60,
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows."
     },
     {
       "id": "CI-P1-003",
       "severity": "P1",
       "title": "Security scans are non-blocking",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 79
+      "line": 79,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "CI-P1-004",
       "severity": "P1",
       "title": "Deploy prunes all Docker volumes (data loss)",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 99
+      "line": 99,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "DATA-P1-001",
       "severity": "P1",
       "title": "Deploy workflows seed production with test users and a hardcoded password",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 44
+      "line": 44,
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows."
     },
     {
       "id": "DATA-P1-002",
       "severity": "P1",
       "title": "Deploy runs `docker system prune -af --volumes`, destroying the Redis named volume",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 64
+      "line": 64,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "EXEC-P1-001",
       "severity": "P1",
       "title": "Release gate must be conditional on P0/P1 remediation",
       "report": "23_executive_summary_release_gate.md",
-      "line": 31
+      "line": 31,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "FEAT-P1-001",
       "severity": "P1",
       "title": "`/v1/auth/magic-link` does not send a magic link",
       "report": "03_feature_implementation_map.md",
-      "line": 44
+      "line": 44,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "FEAT-P1-002",
       "severity": "P1",
       "title": "Webhook retries are in-process `setTimeout`, not durable",
       "report": "03_feature_implementation_map.md",
-      "line": 64
+      "line": 64,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "FINAL-P1-001",
       "severity": "P1",
       "title": "Systemic Supabase client/role mismatch",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 32
+      "line": 32,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "FINAL-P1-002",
       "severity": "P1",
       "title": "Deploy pipeline mutates schema/policies/data outside migrations",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 52
+      "line": 52,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "OBS-P1-001",
       "severity": "P1",
       "title": "No alerting is wired despite metrics and a TODO",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 45
+      "line": 45,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P1-002",
       "severity": "P1",
       "title": "Tracked credential file `test-signin.json`",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 72
+      "line": 72,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P1-003",
       "severity": "P1",
       "title": "Admin `/v1/admin/users` returns all platform users (including email) to any workspace admin",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 91
+      "line": 91,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P1-004",
       "severity": "P1",
       "title": "Admin `/v1/admin/audit-logs` leaks other tenants' logs when `workspaceId` omitted",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 111
+      "line": 111,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P1-005",
       "severity": "P1",
       "title": "Admin compliance exports are not tenant-scoped on list/download",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 130
+      "line": 130,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P1-006",
       "severity": "P1",
       "title": "Bulk import endpoints operate globally with only \"admin of anything\" authorization",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 151
+      "line": 151,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P1-007",
       "severity": "P1",
       "title": "SSH is open to the internet by default",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 170
+      "line": 170,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P1-008",
       "severity": "P1",
       "title": "Webhook secrets are optional and signature can be omitted",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 191
+      "line": 191,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SUPPLY-P1-001",
       "severity": "P1",
       "title": "Credential committed to the repository",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 42
+      "line": 42,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "TEST-P1-001",
       "severity": "P1",
       "title": "E2E tests skip without `test-signin.json` and are non-blocking",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 42
+      "line": 42,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "API-P2-002",
       "severity": "P2",
       "title": "Inconsistent error response shapes in parts of the API",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 64
+      "line": 64,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "API-P2-003",
       "severity": "P2",
       "title": "User input interpolated into PostgREST filters (`.or(...)`)",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 84
+      "line": 84,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "API-P2-004",
       "severity": "P2",
       "title": "`PATCH /v1/auth/status` accepts unvalidated `customStatus`",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 103
+      "line": 103,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "ARCH-P2-003",
       "severity": "P2",
       "title": "Single-node, no-high-availability topology",
       "report": "02_architecture_runtime_topology.md",
-      "line": 93
+      "line": 93,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "ARCH-P2-004",
       "severity": "P2",
       "title": "Worker `/metrics` and health endpoints are unauthenticated",
       "report": "02_architecture_runtime_topology.md",
-      "line": 113
+      "line": 113,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "CI-P2-005",
       "severity": "P2",
       "title": "Migration validation and order checks are non-blocking",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 119
+      "line": 119,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "CI-P2-006",
       "severity": "P2",
       "title": "`build-push` pushes images on pull requests",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 138
+      "line": 138,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "CI-P2-007",
       "severity": "P2",
       "title": "Branch-protection check cannot fail the build and uses an outdated API shape",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 157
+      "line": 157,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "DATA-P2-003",
       "severity": "P2",
       "title": "Duplicate `add_user_groups` migrations",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 84
+      "line": 84,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "DATA-P2-004",
       "severity": "P2",
       "title": "Rollback scripts are only proven to exist, never executed",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 103
+      "line": 103,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "DATA-P2-005",
       "severity": "P2",
       "title": "`gdpr_delete_user` is a hard multi-table delete with partial coverage and coupled auth deletion",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 122
+      "line": 122,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "EXEC-P2-002",
       "severity": "P2",
       "title": "Documentation materially overstates readiness",
       "report": "23_executive_summary_release_gate.md",
-      "line": 49
+      "line": 49,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "FEAT-P2-003",
       "severity": "P2",
       "title": "Webhook idempotency key is regenerated per attempt",
       "report": "03_feature_implementation_map.md",
-      "line": 84
+      "line": 84,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "FEAT-P2-004",
       "severity": "P2",
       "title": "Naive input sanitizer blocks legitimate content",
       "report": "03_feature_implementation_map.md",
-      "line": 103
+      "line": 103,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "FINAL-P2-003",
       "severity": "P2",
       "title": "Release confidence limited by advisory gates",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 70
+      "line": 70,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "HYG-P2-001",
       "severity": "P2",
       "title": "Generated outputs and audit artifacts committed",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 42
+      "line": 42,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "HYG-P2-002",
       "severity": "P2",
       "title": "One-off remediation scripts and duplicated logic/schema remain",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 62
+      "line": 62,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "INV-P2-001",
       "severity": "P2",
       "title": "Committed audit/generated artifacts bloat the repository",
       "report": "01_repository_inventory.md",
-      "line": 44
+      "line": 44,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "INV-P2-002",
       "severity": "P2",
       "title": "Credential file `test-signin.json` is tracked",
       "report": "01_repository_inventory.md",
-      "line": 65
+      "line": 65,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "INV-P2-003",
       "severity": "P2",
       "title": "Documentation self-contradicts repository state",
       "report": "01_repository_inventory.md",
-      "line": 84
+      "line": 84,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "OBS-P2-002",
       "severity": "P2",
       "title": "`/metrics` authorization is weak and label cardinality is risky",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 64
+      "line": 64,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "OBS-P2-003",
       "severity": "P2",
       "title": "Error tracking is optional and admin log buffer is in-memory only",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 84
+      "line": 84,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "OBS-P2-004",
       "severity": "P2",
       "title": "No distributed tracing / correlation to a collector",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 103
+      "line": 103,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P2-009",
       "severity": "P2",
       "title": "`timingSafeEqual` can throw on length mismatch (unhandled 500) in CSRF middleware",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 211
+      "line": 211,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SEC-P2-010",
       "severity": "P2",
       "title": "Socket typing/leave events can be sent to arbitrary channel rooms",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 230
+      "line": 230,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SUPPLY-P2-002",
       "severity": "P2",
       "title": "GitHub Actions are not pinned to commit SHAs",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 61
+      "line": 61,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SUPPLY-P2-003",
       "severity": "P2",
       "title": "Dependency vulnerability scanning is advisory-only",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 81
+      "line": 81,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SUPPLY-P2-004",
       "severity": "P2",
       "title": "SBOM is generated only for develop and not for production artifacts",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 101
+      "line": 101,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "TEST-P2-002",
       "severity": "P2",
       "title": "Low coverage thresholds and non-blocking diff coverage",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 62
+      "line": 62,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "TEST-P2-003",
       "severity": "P2",
       "title": "No real-database/RLS integration test tier",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 81
+      "line": 81,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "TEST-P2-004",
       "severity": "P2",
       "title": "Migration rollback is validated by file existence only",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 100
+      "line": 100,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "API-P3-005",
       "severity": "P3",
       "title": "OpenAPI spec coverage/consistency needs verification",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 121
+      "line": 121,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "ARCH-P3-005",
       "severity": "P3",
       "title": "Duplicated `requireAdmin` implementations",
       "report": "02_architecture_runtime_topology.md",
-      "line": 133
+      "line": 133,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "HYG-P3-003",
       "severity": "P3",
       "title": "Unresolved TODO in operational metrics",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 82
+      "line": 82,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "HYG-P3-004",
       "severity": "P3",
       "title": "Encoding artifacts and inconsistent comments",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 101
+      "line": 101,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "INV-P3-001",
       "severity": "P3",
       "title": "Character-encoding (mojibake) artifacts in docs and config",
       "report": "01_repository_inventory.md",
-      "line": 104
+      "line": 104,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "INV-P3-002",
       "severity": "P3",
       "title": "Overlapping and inconsistent environment example files",
       "report": "01_repository_inventory.md",
-      "line": 124
+      "line": 124,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     },
     {
       "id": "SUPPLY-P3-005",
       "severity": "P3",
       "title": "Large binary archives committed to the repo",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 120
+      "line": 120,
+      "owner": "",
+      "target": "",
+      "status": "open",
+      "note": ""
     }
   ]
 }
