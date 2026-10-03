@@ -1,0 +1,247 @@
+diff --git a/PACK_DIGEST.txt b/PACK_DIGEST.txt
+index 3b5f3ca..cc3152f 100644
+--- a/PACK_DIGEST.txt
++++ b/PACK_DIGEST.txt
+@@ -1,5 +1,5 @@
+ # repo-deep-dive pack digest
+-# generated: 2026-10-03T12:27:12Z
++# generated: 2026-10-03T14:50:18Z
+ # files: 906
+ # format: sha256  path
+ 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
+@@ -887,8 +887,8 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
+ 595248ecceebf3703836e06f36c65aadb4cac7f1fae9267a65cb3a184c50bd3e  ./templates/verification_log_template.md
+ 4b77ad57ba5a912dc55bd0a3a93fd10327b4856a39088bb91c81fe60280fb477  ./tools/aggregate_findings.py
+ 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
+-bf4038838de857e8eafaba5714ea915b08b08cb16a8e3d3fdcf34e3fd0c4ae30  ./tools/collect_findings.py
+-63a3f145b0e8beeea8c4bcbc42856a4c267677ffdf14a0c1002e984f4b5296ff  ./tools/deterministic_checks.py
++138c95f2d064e8dc4f75603e5042d129129f7487fa8c01183568c7eeeabdcc4b  ./tools/collect_findings.py
++ab4f22c9afadfb9c4bf5fd326239ff9bcdc0d0d0a9adaf04228f8497970e390a  ./tools/deterministic_checks.py
+ a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
+ afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
+ 1bb87facd85a7d836ebd3f2cddf084b107c112f4029b915579e2d58d65594407  ./tools/lab_runner.py
+diff --git a/tools/collect_findings.py b/tools/collect_findings.py
+index bd844ff..93457d2 100644
+--- a/tools/collect_findings.py
++++ b/tools/collect_findings.py
+@@ -8,6 +8,10 @@ Read-only by default (prints a summary). --write emits findings.json into the ru
+ folder; --update-manifest syncs the findings counts in audit_manifest.json.
+ Findings are enriched with status/owner/target/note from follow_up_register.md
+ when that register is present.
++
++Machine findings from `deterministic-findings.json` (written by
++`deterministic_checks.py --run-folder <dir>`) are merged in too, so the
++deterministic lens participates in the run's findings flow (API-P2-002).
+ """
+ 
+ import argparse
+@@ -20,6 +24,35 @@ sys.dont_write_bytecode = True
+ import lib_findings
+ 
+ 
++def merge_deterministic(run, findings):
++    """Merge machine findings from deterministic-findings.json into the run list.
++
++    Lets the deterministic lens participate in the run's findings flow even when
++    only the machine JSON is present. IDs already supplied by a markdown lens are
++    skipped, so no duplicate-ID warnings are emitted. Returns the count added.
++    """
++    path = run / "deterministic-findings.json"
++    if not path.exists():
++        return 0
++    try:
++        doc = json.loads(path.read_text(encoding="utf-8"))
++    except (json.JSONDecodeError, OSError) as exc:
++        print(f"warning: could not read {path.name}: {exc}", file=sys.stderr)
++        return 0
++    known = {f["id"] for f in findings}
++    added = 0
++    for f in doc.get("findings", []):
++        fid = f.get("id")
++        if fid and fid not in known:
++            findings.append(f)
++            known.add(fid)
++            added += 1
++    if added:
++        findings.sort(key=lambda f: (f["severity"], f["id"]))
++        lib_findings.merge_register(findings, run)
++    return added
++
++
+ def main():
+     ap = argparse.ArgumentParser(description=__doc__)
+     ap.add_argument("run_dir")
+@@ -28,6 +61,7 @@ def main():
+     args = ap.parse_args()
+ 
+     run, findings, dupes = lib_findings.collect_with_dupes(args.run_dir)
++    det_added = merge_deterministic(run, findings)
+     c = lib_findings.counts(findings)
+     reports = lib_findings.run_reports(run)
+     for fid, reps in sorted(dupes.items()):
+@@ -37,6 +71,8 @@ def main():
+     print(f"reports scanned: {len(reports)}")
+     print(f"findings: {c['total']} ({', '.join(f'{k} x{v}' for k, v in c['bySeverity'].items())})")
+     print(f"areas: {', '.join(f'{k} x{v}' for k, v in c['byArea'].items())}")
++    if det_added:
++        print(f"deterministic findings merged: {det_added}")
+ 
+     by_status = {}
+     for f in findings:
+diff --git a/tools/deterministic_checks.py b/tools/deterministic_checks.py
+index 9738699..85406cb 100644
+--- a/tools/deterministic_checks.py
++++ b/tools/deterministic_checks.py
+@@ -20,8 +20,14 @@ Checks:
+ 
+ Usage:
+   tools/deterministic_checks.py <repo-root> [-o OUTDIR] [--run NAME] [--deep]
++  tools/deterministic_checks.py <repo-root> --run-folder <run-dir>
+ 
+ Writes OUTDIR/deterministic-findings.json and OUTDIR/lens_deterministic.md.
++Deterministic findings use the distinct `DET` area (with the check subcode kept
++in the title), so their IDs can never collide with the domain reports' areas
++such as SEC/CI (API-P2-001). With `--run-folder`, the lens + JSON are written
++into the run folder and merged into its findings.json via collect_findings.py
++(API-P2-002).
+ Read-only against the target repo (gitleaks is run with --no-git --redact).
+ """
+ 
+@@ -330,8 +336,11 @@ def check_deep(root, add):
+ def run_checks(root, deep=False):
+     raw = []
+ 
+-    def add(area, sev, title, detail, evidence):
+-        raw.append({"area": area, "severity": sev, "title": title,
++    # `subcode` is the check family (SEC/CI/PORT/...); it is rendered into the
++    # title only. Every deterministic ID uses the single `DET` area so it can
++    # never collide with a domain report's own area counter (API-P2-001).
++    def add(subcode, sev, title, detail, evidence):
++        raw.append({"subcode": subcode, "severity": sev, "title": title,
+                     "detail": detail, "evidence": list(evidence)})
+ 
+     check_portability(root, add)
+@@ -344,15 +353,16 @@ def run_checks(root, deep=False):
+     if deep:
+         check_deep(root, add)
+ 
+-    # assign stable IDs: group by area, order by severity then title
+-    raw.sort(key=lambda f: (f["area"], f["severity"], f["title"]))
++    # assign stable IDs: one namespaced DET area, ordered by subcode/severity/title
++    raw.sort(key=lambda f: (f["subcode"], f["severity"], f["title"]))
+     counters = {}
+     findings = []
+     for f in raw:
+-        area = f["area"]
++        area = "DET"
+         counters[area] = counters.get(area, 0) + 1
+         fid = "%s-%s-%03d" % (area, f["severity"], counters[area])
+-        findings.append({"id": fid, "severity": f["severity"], "title": f["title"],
++        findings.append({"id": fid, "severity": f["severity"],
++                         "title": "[%s] %s" % (f["subcode"], f["title"]),
+                          "report": "lens_deterministic.md", "line": 1,
+                          "detail": f["detail"], "evidence": f["evidence"]})
+     return findings
+@@ -368,15 +378,25 @@ def counts(findings):
+             "byArea": dict(sorted(by_area.items())), "total": len(findings)}
+ 
+ 
+-def write_markdown(path, name, findings):
+-    lines = ["# Deterministic checks — %s" % name, "",
+-             "Machine checks (no LLM). Findings use the repo-deep-dive vocabulary.",
+-             "", "## Findings", "", "| ID | Severity | Title |", "|---|---|---|"]
++def render_markdown(name, findings):
++    """Render the deterministic lens and set each finding's real heading line.
++
++    Each finding records the 1-based line of its `### Finding ID:` heading
++    (DATA-P3-003) and the heading uses the shared ASCII ` - ` separator so the
++    same parser that reads the domain reports reads this lens.
++    """
++    # The summary table deliberately puts Title before Severity: the shared
++    # table parser (lib_findings.ROW) expects `| ID | Px | ...`, so this keeps
++    # the lens from being counted twice (table row + detail heading).
++    lines = ["# Deterministic checks - %s" % name, "",
++             "Machine checks (no LLM). Findings use the repo-deep-dive `DET` area.",
++             "", "## Findings", "", "| ID | Title | Severity |", "|---|---|---|"]
+     for f in findings:
+-        lines.append("| %s | %s | %s |" % (f["id"], f["severity"], f["title"]))
++        lines.append("| %s | %s | %s |" % (f["id"], f["title"], f["severity"]))
+     lines += ["", "## Detail", ""]
+     for f in findings:
+-        lines.append("### Finding ID: %s – %s" % (f["id"], f["title"]))
++        f["line"] = len(lines) + 1
++        lines.append("### Finding ID: %s - %s" % (f["id"], f["title"]))
+         lines.append("")
+         lines.append(f["detail"])
+         if f["evidence"]:
+@@ -386,7 +406,7 @@ def write_markdown(path, name, findings):
+             for e in f["evidence"]:
+                 lines.append("- `%s`" % e)
+         lines.append("")
+-    open(path, "w", encoding="utf-8").write("\n".join(lines) + "\n")
++    return "\n".join(lines) + "\n"
+ 
+ 
+ def main():
+@@ -396,6 +416,9 @@ def main():
+     ap.add_argument("--run", default=None, help="run name (default: repo basename)")
+     ap.add_argument("--deep", action="store_true",
+                     help="also run hadolint/trivy (only when installed)")
++    ap.add_argument("--run-folder", default=None,
++                    help="import path: write the lens + JSON into an audit run "
++                         "folder and merge them into its findings.json")
+     args = ap.parse_args()
+ 
+     if not os.path.isdir(args.repo):
+@@ -404,7 +427,14 @@ def main():
+ 
+     root = os.path.abspath(args.repo)
+     name = args.run or os.path.basename(root)
+-    outdir = args.outdir or os.path.join(root, "deterministic-out")
++    if args.run_folder:
++        outdir = os.path.abspath(args.run_folder)
++        if not os.path.isdir(outdir):
++            print("error: --run-folder not a directory: %s" % args.run_folder,
++                  file=sys.stderr)
++            raise SystemExit(2)
++    else:
++        outdir = args.outdir or os.path.join(root, "deterministic-out")
+     os.makedirs(outdir, exist_ok=True)
+ 
+     findings = run_checks(root, deep=args.deep)
+@@ -413,10 +443,12 @@ def main():
+     doc = {"run": name, "generated": now, "sourceReports": 1,
+            "counts": c, "findings": findings}
+ 
++    # Render first: it assigns each finding the real line of its heading.
++    markdown = render_markdown(name, findings)
+     jpath = os.path.join(outdir, "deterministic-findings.json")
+     open(jpath, "w", encoding="utf-8").write(json.dumps(doc, indent=2) + "\n")
+     mpath = os.path.join(outdir, "lens_deterministic.md")
+-    write_markdown(mpath, name, findings)
++    open(mpath, "w", encoding="utf-8").write(markdown)
+ 
+     print("repo: %s" % name)
+     print("findings: %d %s" % (c["total"], c["bySeverity"]))
+@@ -424,6 +456,21 @@ def main():
+     print("wrote %s" % jpath)
+     print("wrote %s" % mpath)
+ 
++    if args.run_folder:
++        collect = os.path.join(os.path.dirname(os.path.abspath(__file__)),
++                               "collect_findings.py")
++        if os.path.exists(collect):
++            r = subprocess.run([sys.executable, collect, outdir, "--write"],
++                               capture_output=True, text=True)
++            sys.stdout.write(r.stdout)
++            if r.returncode != 0:
++                sys.stderr.write(r.stderr)
++                print("warning: deterministic lens written, but collect_findings.py "
++                      "failed; run it manually to merge into findings.json",
++                      file=sys.stderr)
++            elif not r.stdout.strip():
++                print("merged into %s/findings.json" % outdir)
++
+ 
+ if __name__ == "__main__":
+     main()

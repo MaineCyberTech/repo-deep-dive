@@ -45,3 +45,49 @@ Commit: worktree `6cada03` (recorded `7bac320`) · Total findings: 41 (P0 0 · P
 | FINAL-P3-002 | P3 | FINAL | Archived verdicts not re-verified after two tooling commits | pack maintainer | this quarter | open |
 | EXEC-P2-001 | P2 | EXEC | No accountable owner mapping | repo admin | this month | open |
 | EXEC-P3-002 | P3 | EXEC | Gate cannot cite machine-validated run until scaffold fixed | pack maintainer | this quarter | open |
+
+## Finding index
+
+| ID | Severity | Title |
+|---|---|---|
+| CI-P1-001 | P1 | The audit CI example is not under `.github/workflows/` and never runs |
+| CI-P1-002 | P1 | ci/audit.yml assumes a vendored PACK_DIR that does not match this repo |
+| DATA-P1-001 | P1 | findings.json violates its own schema (`sourceReports` array vs integer) |
+| DATA-P1-002 | P1 | Base-profile scaffold produces a manifest the pack's own gate rejects |
+| INV-P1-001 | P1 | Run is bound to 7bac320 but the worktree is at 6cada03 |
+| SEC-P1-001 | P1 | CI executes remotely downloaded scripts and archives as root without pinning |
+| SEC-P1-002 | P1 | PAT is embedded in the git clone URL, risking token exposure in logs |
+| SUPPLY-P1-001 | P1 | GitHub Actions and downloaded tools are unpinned (mutable tags/branches) |
+| TEST-P1-001 | P1 | No CI job runs the pack's own lint/self-test or authorizes PRs |
+| API-P2-001 | P2 | Deterministic lens reuses domain area codes, risking duplicate finding IDs |
+| API-P2-002 | P2 | Deterministic findings never reach the run findings flow |
+| ARCH-P2-001 | P2 | Orchestration truth is duplicated across four artifacts with no drift check |
+| ARCH-P2-002 | P2 | The primary run gate is silently skipped when bash is unavailable |
+| CI-P2-003 | P2 | The wired workflow installs mutable "latest" tools and fails silently |
+| CI-P2-004 | P2 | Org-wide PAT workflow lacks concurrency, timeouts, and environment protection |
+| CI-P2-005 | P2 | No branch protection, required-check, or CODEOWNERS evidence |
+| CI-P2-006 | P2 | pull_request runs pass an empty run_dir to the P0 gate |
+| EXEC-P2-001 | P2 | No accountable owner mapping for the pack |
+| FEAT-P2-001 | P2 | New tools and the org workflow shipped without changelog, version bump, or docs |
+| FINAL-P2-001 | P2 | No evidence the toolchain/self-test ran at the audited commit |
+| HYG-P2-001 | P2 | Missing `.gitignore` and `.gitattributes` create cross-platform and config-sprawl risk |
+| INV-P2-002 | P2 | inventory.json reports no CI/workflows while a workflow exists at HEAD |
+| OBS-P2-001 | P2 | No structured output or freshness signal for the audit pipeline |
+| OBS-P2-002 | P2 | Scheduled checks mask failures and never alert on regression |
+| SEC-P2-003 | P2 | CI security checks are non-gating and there is no secret-scan allowlist |
+| SUPPLY-P2-002 | P2 | No dependency-update automation |
+| SUPPLY-P2-003 | P2 | No SBOM or license policy is enforced despite prompt 35 |
+| TEST-P2-002 | P2 | The smoke harness is bash-only and not exercised on the maintainer's platform |
+| TEST-P2-003 | P2 | Self-test schema check omits type/contract validation |
+| DATA-P3-003 | P3 | Deterministic findings use line 1 for every row and an en-dash separator |
+| EXEC-P3-002 | P3 | The gate cannot cite a machine-validated run until the scaffold defect is fixed |
+| FEAT-P3-002 | P3 | README tool inventory is stale |
+| FINAL-P3-002 | P3 | Archived run verdicts and register statuses were not re-verified after two tooling commits |
+| HYG-P3-002 | P3 | The integrity digest omits a tracked file and disagrees with the inventory count |
+| HYG-P3-003 | P3 | Archived runs commit sensitive environment snapshots |
+| INV-P3-003 | P3 | A tracked, environment-local pin is excluded from the integrity digest |
+| OBS-P3-003 | P3 | Dashboards and diffs are generated but not bound to archived runs |
+| SEC-P3-004 | P3 | No vulnerability-disclosure policy or code ownership file |
+| SEC-P3-005 | P3 | Internal org and repository identifiers are hardcoded as workflow defaults |
+| SUPPLY-P3-004 | P3 | No LICENSE file |
+| TEST-P3-004 | P3 | No unit tests for parsing, inventory, or deterministic logic |

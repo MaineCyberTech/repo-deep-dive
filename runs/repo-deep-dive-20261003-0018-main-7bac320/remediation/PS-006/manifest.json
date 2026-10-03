@@ -1,0 +1,78 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "patchSet": "PS-006",
+  "title": "Architecture: single source + strict gate",
+  "findings": [
+    "ARCH-P2-001",
+    "ARCH-P2-002"
+  ],
+  "base": "main",
+  "baseCommit": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-006-20261003-0018-main-7bac320",
+  "commit": "20f7a3d47f6f1dc4ecf8e2f9d5dae1d35cffec8c",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/6",
+  "prMode": "draft",
+  "files": [
+    "tools/lint_pack.sh",
+    "tools/run_toolchain.py",
+    "PACK_DIGEST.txt"
+  ],
+  "commands": [
+    {
+      "command": "bash tools/self_test.sh",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS; 46 prompts covered by order/status/waves; PACK_DIGEST.txt is current"
+    },
+    {
+      "command": "env PATH=/nonexistent /usr/bin/python3 tools/run_toolchain.py runs/repo-deep-dive-20261003-0018-main-7bac320",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 2,
+      "result": "FAILED: check_run.sh requested but no bash found on PATH (install bash, or pass --no-check to skip validation)"
+    },
+    {
+      "command": "env PATH=/nonexistent /usr/bin/python3 tools/run_toolchain.py runs/repo-deep-dive-20261003-0018-main-7bac320 --no-check",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "TOOLCHAIN: PASS (explicit opt-out)"
+    },
+    {
+      "command": "python3 tools/run_toolchain.py runs/repo-deep-dive-20261003-0018-main-7bac320",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "check_run.sh RESULT: PASS; TOOLCHAIN: PASS"
+    },
+    {
+      "command": "negative test: bash tools/lint_pack.sh in a throwaway copy with one executionOrder entry removed",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 1,
+      "result": "FAIL execution order/status drift (base example executionOrder set != base prompt set missing=['21']) - gate fires as intended"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact",
+      "runner": "-",
+      "exit": null,
+      "result": "not run - gitleaks binary not installed on the remediation host; manual regex scan (AKIA, PEM private key, secret/password/token/api_key assignments) of the staged diff found no matches; diff is code + digest only"
+    }
+  ],
+  "evidence": {
+    "verifyLog": "remediation/PS-006/verify.log",
+    "diff": "remediation/PS-006/diff.patch",
+    "prBody": "remediation/PS-006/pr_body.md",
+    "verifyScript": "remediation/PS-006/verify_ps006.sh"
+  },
+  "sha256": {
+    "diff.patch": "7459d4f9759e29ccb4b6107d961be071f143788582c5272c9b51adccb595320f",
+    "verify.log": "712d86c8bddec544468d31ee924878c5d5660b5770e5a3be30e0f53bb398ed62",
+    "pr_body.md": "2e058e284ef4b90a41af617b14bb03f8c57b69c90ee9fe0c1dcd4740265fb390",
+    "verify_ps006.sh": "c04537e8faa43a22583c588a3e273280f393af0c25320df088507185ba5ce808"
+  },
+  "generatedAt": "2026-10-03T14:41:25Z"
+}

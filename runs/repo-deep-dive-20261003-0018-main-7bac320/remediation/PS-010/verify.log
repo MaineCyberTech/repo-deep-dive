@@ -1,0 +1,218 @@
+PS-010 verification
+date: 2026-10-03T15:14:00Z
+host: Linux 6.18.40.1-microsoft-standard-WSL2 x86_64  bash: 5.2.21(1)-release  python: Python 3.12.3
+clone: /tmp/ps010_verify
+branch: remediation/ps-010-20261003-0018-main-7bac320
+commit: bfbb0e005880f28e77892650a548e9817dd78924
+worktree checkout modes:
+100644 3b4c9f3ffe41d39c0d5e8a8621dc6fcc6df08603 0	.github/workflows/pack-tests.yml
+100755 bd844ff2965da7546972eaa29b2d0247420ec034 0	tools/collect_findings.py
+100755 dbb39e8c1f0ba25e269d024e19232b8e9c6bbf4f 0	tools/self_test.sh
+
+==================================================================
+$ python3 -m unittest discover -s tests -v
+------------------------------------------------------------------
+test_no_license (test_deterministic_checks.CheckUnitsTest.test_no_license) ... ok
+test_no_readme (test_deterministic_checks.CheckUnitsTest.test_no_readme) ... ok
+test_no_workflows (test_deterministic_checks.CheckUnitsTest.test_no_workflows) ... ok
+test_pinned_action_ok (test_deterministic_checks.CheckUnitsTest.test_pinned_action_ok) ... /tmp/ps010_verify/tools/deterministic_checks.py:225: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpcdzbvc_9/.github/workflows/ci.yml' mode='r' encoding='utf-8'>
+  for n, line in enumerate(open(p, encoding="utf-8", errors="replace"), 1):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_unpinned_action_flagged (test_deterministic_checks.CheckUnitsTest.test_unpinned_action_flagged) ... /tmp/ps010_verify/tools/deterministic_checks.py:225: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpeipvd1z3/.github/workflows/ci.yml' mode='r' encoding='utf-8'>
+  for n, line in enumerate(open(p, encoding="utf-8", errors="replace"), 1):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_crlf_in_index_flagged (test_deterministic_checks.CrlfDetectionTest.test_crlf_in_index_flagged) ... ok
+test_missing_gitattributes_flagged (test_deterministic_checks.CrlfDetectionTest.test_missing_gitattributes_flagged) ... ok
+test_counts_match (test_deterministic_checks.RunChecksTest.test_counts_match) ... ok
+test_ids_are_well_formed_and_unique (test_deterministic_checks.RunChecksTest.test_ids_are_well_formed_and_unique) ... ok
+test_run_is_deterministic (test_deterministic_checks.RunChecksTest.test_run_is_deterministic) ... ok
+test_counts_by_severity_and_area (test_lib_findings.CountsTest.test_counts_by_severity_and_area) ... ok
+test_merge_register_attaches_fields (test_lib_findings.RegisterTest.test_merge_register_attaches_fields) ... ok
+test_register_absent_returns_empty (test_lib_findings.RegisterTest.test_register_absent_returns_empty) ... ok
+test_register_fields_by_name (test_lib_findings.RegisterTest.test_register_fields_by_name) ... ok
+test_collect_with_dupes_first_wins (test_lib_findings.RunReportsTest.test_collect_with_dupes_first_wins) ... ok
+test_run_reports_selection (test_lib_findings.RunReportsTest.test_run_reports_selection) ... ok
+test_full_heading_en_dash (test_lib_findings.ScanReportTest.test_full_heading_en_dash) ... ok
+test_full_heading_hyphen (test_lib_findings.ScanReportTest.test_full_heading_hyphen) ... ok
+test_non_finding_lines_ignored (test_lib_findings.ScanReportTest.test_non_finding_lines_ignored) ... ok
+test_table_row (test_lib_findings.ScanReportTest.test_table_row) ... ok
+test_false_positive_guarded (test_repo_inventory.IsTestPathTest.test_false_positive_guarded) ... ok
+test_true_positives (test_repo_inventory.IsTestPathTest.test_true_positives) ... ok
+test_app_router_not_app (test_repo_inventory.RouteDerivationTest.test_app_router_not_app) ... ok
+test_app_router_route (test_repo_inventory.RouteDerivationTest.test_app_router_route) ... ok
+test_app_router_route_group (test_repo_inventory.RouteDerivationTest.test_app_router_route_group) ... ok
+test_pages_api_route (test_repo_inventory.RouteDerivationTest.test_pages_api_route) ... ok
+test_pages_api_route_not_pages (test_repo_inventory.RouteDerivationTest.test_pages_api_route_not_pages) ... ok
+test_pages_api_route_plain (test_repo_inventory.RouteDerivationTest.test_pages_api_route_plain) ... ok
+test_scan_detects_stack_routes_tables_tests (test_repo_inventory.ScanRepoTest.test_scan_detects_stack_routes_tables_tests) ... /tmp/ps010_verify/tools/repo_inventory.py:284: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpjxniaos8/app.py' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/ps010_verify/tools/repo_inventory.py:304: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpjxniaos8/app.py' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/ps010_verify/tools/repo_inventory.py:304: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpjxniaos8/schema.sql' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_scan_isolated_from_git (test_repo_inventory.ScanRepoTest.test_scan_isolated_from_git) ... /tmp/ps010_verify/tools/repo_inventory.py:284: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpr1g3z0d4/app.py' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/ps010_verify/tools/repo_inventory.py:304: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpr1g3z0d4/app.py' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/ps010_verify/tools/repo_inventory.py:304: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpr1g3z0d4/schema.sql' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_scan_output_is_json_serializable (test_repo_inventory.ScanRepoTest.test_scan_output_is_json_serializable) ... /tmp/ps010_verify/tools/repo_inventory.py:284: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpimt2feg7/app.py' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/ps010_verify/tools/repo_inventory.py:304: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpimt2feg7/app.py' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/tmp/ps010_verify/tools/repo_inventory.py:304: ResourceWarning: unclosed file <_io.TextIOWrapper name='/tmp/tmpimt2feg7/schema.sql' mode='r' encoding='utf-8'>
+  content = open(path, "r", encoding="utf-8", errors="replace").read()
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 0.351s
+
+OK
+------------------------------------------------------------------
+EXIT: 0
+
+==================================================================
+$ bash tools/lint_pack.sh
+------------------------------------------------------------------
+Linting pack: /tmp/ps010_verify
+
+  OK   VERSION = 1.4.1
+  OK   README references v1.4.1
+  OK   JSON version fields match VERSION
+  OK   141 JSON files parse
+  OK   area codes unique
+  OK   prompt structure complete
+  OK   prompt counts (actual 46 = base 42 + falcon 4)
+  OK   profile manifest references resolve
+  OK   run validates: runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   run validates: runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   run validates: runs/buddy-20261003-0018-master-99abf29
+  OK   run validates: runs/chat-20261003-0018-develop-a72b8cc
+  OK   run validates: runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   run validates: runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   run validates: runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   run validates: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   run validates: runs/snowride-20261003-0018-main-59e12b9
+  OK   PACK_DIGEST.txt is current
+  OK   runs/INDEX.md lists all archived runs
+  OK   report structures include Verification Performed
+
+RESULT: PASS
+------------------------------------------------------------------
+EXIT: 0
+
+==================================================================
+$ bash tools/self_test.sh
+------------------------------------------------------------------
+Self-test: /tmp/ps010_verify
+
+  OK   lint_pack.sh
+  OK   check_run.sh runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   collect_findings.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (90 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (90 rows)
+  OK   risk_score.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (0/100)
+  OK   render_dashboard.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   check_run.sh runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   collect_findings.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (264 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (264 rows)
+  OK   risk_score.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (0/100)
+  OK   render_dashboard.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   check_run.sh runs/buddy-20261003-0018-master-99abf29
+  OK   collect_findings.py runs/buddy-20261003-0018-master-99abf29 (40 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (40 rows)
+  OK   risk_score.py runs/buddy-20261003-0018-master-99abf29 (0/100)
+  OK   render_dashboard.py runs/buddy-20261003-0018-master-99abf29 (read-only render)
+  OK   findings.schema.json conformance runs/buddy-20261003-0018-master-99abf29
+  OK   check_run.sh runs/chat-20261003-0018-develop-a72b8cc
+  OK   collect_findings.py runs/chat-20261003-0018-develop-a72b8cc (64 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (64 rows)
+  OK   risk_score.py runs/chat-20261003-0018-develop-a72b8cc (0/100)
+  OK   render_dashboard.py runs/chat-20261003-0018-develop-a72b8cc (read-only render)
+  OK   findings.schema.json conformance runs/chat-20261003-0018-develop-a72b8cc
+  OK   check_run.sh runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   collect_findings.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (0/100)
+  OK   render_dashboard.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (read-only render)
+  OK   findings.schema.json conformance runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   check_run.sh runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   collect_findings.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (42 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (42 rows)
+  OK   risk_score.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (0/100)
+  OK   render_dashboard.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (read-only render)
+  OK   findings.schema.json conformance runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   check_run.sh runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   collect_findings.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (44 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (44 rows)
+  OK   risk_score.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (0/100)
+  OK   render_dashboard.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (read-only render)
+  OK   findings.schema.json conformance runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   collect_findings.py runs/repo-deep-dive-20261003-0018-main-7bac320 (41 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (41 rows)
+  OK   risk_score.py runs/repo-deep-dive-20261003-0018-main-7bac320 (0/100)
+  OK   render_dashboard.py runs/repo-deep-dive-20261003-0018-main-7bac320 (read-only render)
+  OK   findings.schema.json conformance runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   check_run.sh runs/snowride-20261003-0018-main-59e12b9
+  OK   collect_findings.py runs/snowride-20261003-0018-main-59e12b9 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/snowride-20261003-0018-main-59e12b9 (0/100)
+  OK   render_dashboard.py runs/snowride-20261003-0018-main-59e12b9 (read-only render)
+  OK   findings.schema.json conformance runs/snowride-20261003-0018-main-59e12b9
+  OK   repo_inventory.py (self-scan)
+  OK   run_toolchain.py (read-only chain)
+  OK   new_run.py (TMP scaffold)
+  OK   live_snapshot.sh (read-only capture)
+
+RESULT: PASS
+------------------------------------------------------------------
+EXIT: 0
+
+==================================================================
+$ actionlint -no-color .github/workflows/pack-tests.yml
+------------------------------------------------------------------
+actionlint not available on this host
+EXIT: not run
+
+PACK_DIGEST freshness is covered by lint_pack.sh check 8.
+==================================================================
+$ actionlint -no-color .github/workflows/pack-tests.yml   (re-run; tool fetched from the release page)
+------------------------------------------------------------------
+------------------------------------------------------------------
+EXIT: 0
+actionlint version: 1.7.12
+commit: bfbb0e005880f28e77892650a548e9817dd78924
+==================================================================
+$ gitleaks detect --no-git --redact   (secret gate)
+------------------------------------------------------------------
+gitleaks: not installed on the verification host (lab images include it).
+Fallback: basic secret-pattern scan of the diff:
+74: f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
+Interpretation: the single match is a SHA-256 digest line in PACK_DIGEST.txt for the
+tracked filename runs/20260930-0701-falcon-.../secret_rotation_runbook.md (a path, not a value).
+No committed secret-like values in the diff.
+EXIT: not run (gitleaks unavailable)

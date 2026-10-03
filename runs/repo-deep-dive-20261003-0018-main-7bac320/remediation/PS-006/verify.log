@@ -1,0 +1,185 @@
+
+===== 1. bash tools/self_test.sh =====
+Self-test: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   lint_pack.sh
+  OK   check_run.sh runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   collect_findings.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (90 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (90 rows)
+  OK   risk_score.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (0/100)
+  OK   render_dashboard.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   check_run.sh runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   collect_findings.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (264 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (264 rows)
+  OK   risk_score.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (0/100)
+  OK   render_dashboard.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   check_run.sh runs/buddy-20261003-0018-master-99abf29
+  OK   collect_findings.py runs/buddy-20261003-0018-master-99abf29 (40 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (40 rows)
+  OK   risk_score.py runs/buddy-20261003-0018-master-99abf29 (0/100)
+  OK   render_dashboard.py runs/buddy-20261003-0018-master-99abf29 (read-only render)
+  OK   findings.schema.json conformance runs/buddy-20261003-0018-master-99abf29
+  OK   check_run.sh runs/chat-20261003-0018-develop-a72b8cc
+  OK   collect_findings.py runs/chat-20261003-0018-develop-a72b8cc (64 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (64 rows)
+  OK   risk_score.py runs/chat-20261003-0018-develop-a72b8cc (0/100)
+  OK   render_dashboard.py runs/chat-20261003-0018-develop-a72b8cc (read-only render)
+  OK   findings.schema.json conformance runs/chat-20261003-0018-develop-a72b8cc
+  OK   check_run.sh runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   collect_findings.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (0/100)
+  OK   render_dashboard.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (read-only render)
+  OK   findings.schema.json conformance runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   check_run.sh runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   collect_findings.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (42 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (42 rows)
+  OK   risk_score.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (0/100)
+  OK   render_dashboard.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (read-only render)
+  OK   findings.schema.json conformance runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   check_run.sh runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   collect_findings.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (44 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (44 rows)
+  OK   risk_score.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (0/100)
+  OK   render_dashboard.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (read-only render)
+  OK   findings.schema.json conformance runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   collect_findings.py runs/repo-deep-dive-20261003-0018-main-7bac320 (41 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (41 rows)
+  OK   risk_score.py runs/repo-deep-dive-20261003-0018-main-7bac320 (0/100)
+  OK   render_dashboard.py runs/repo-deep-dive-20261003-0018-main-7bac320 (read-only render)
+  OK   findings.schema.json conformance runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   check_run.sh runs/snowride-20261003-0018-main-59e12b9
+  OK   collect_findings.py runs/snowride-20261003-0018-main-59e12b9 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/snowride-20261003-0018-main-59e12b9 (0/100)
+  OK   render_dashboard.py runs/snowride-20261003-0018-main-59e12b9 (read-only render)
+  OK   findings.schema.json conformance runs/snowride-20261003-0018-main-59e12b9
+  OK   repo_inventory.py (self-scan)
+  OK   run_toolchain.py (read-only chain)
+  OK   new_run.py (TMP scaffold)
+  OK   live_snapshot.sh (read-only capture)
+
+RESULT: PASS
+EXIT=0
+
+===== 2. bash tools/lint_pack.sh =====
+Linting pack: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   VERSION = 1.4.1
+  OK   README references v1.4.1
+  OK   JSON version fields match VERSION
+  OK   141 JSON files parse
+  OK   area codes unique
+  OK   prompt structure complete
+  OK   prompt counts (actual 46 = base 42 + falcon 4)
+46 prompts covered by order/status/waves
+  OK   execution order/status/waves cover the prompt set
+  OK   profile manifest references resolve
+  OK   run validates: runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   run validates: runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   run validates: runs/buddy-20261003-0018-master-99abf29
+  OK   run validates: runs/chat-20261003-0018-develop-a72b8cc
+  OK   run validates: runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   run validates: runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   run validates: runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   run validates: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   run validates: runs/snowride-20261003-0018-main-59e12b9
+  OK   PACK_DIGEST.txt is current
+  OK   runs/INDEX.md lists all archived runs
+  OK   report structures include Verification Performed
+
+RESULT: PASS
+EXIT=0
+
+===== 3. ARCH-P2-002: run_toolchain.py without bash (expect exit 2, FAILED) =====
+FAILED: check_run.sh requested but no bash found on PATH (install bash, or pass --no-check to skip validation)
+EXIT=2
+
+===== 4. ARCH-P2-002: run_toolchain.py without bash + --no-check (expect exit 0, TOOLCHAIN: PASS) =====
+run: repo-deep-dive-20261003-0018-main-7bac320
+reports scanned: 13
+findings: 41 (P1 x9, P2 x20, P3 x12)
+areas: API x2, ARCH x2, CI x6, DATA x3, EXEC x2, FEAT x2, FINAL x2, HYG x3, INV x3, OBS x3, SEC x5, SUPPLY x4, TEST x4
+run: repo-deep-dive-20261003-0018-main-7bac320
+findings: 41 (P0 x0, P1 x9, P2 x20, P3 x12)
+score: 0/100
+advisory: GO WITH CONDITIONS (advisory only; see RELEASE_GATE.md)
+wrote /tmp/toolchain_findings.csv (41 rows)
+== collect_findings.py ==
+== risk_score.py ==
+== findings_to_csv.py ==
+csv rows at /tmp/toolchain_findings.csv
+TOOLCHAIN: PASS
+EXIT=0
+
+===== 5. ARCH-P2-002: run_toolchain.py with bash available (expect exit 0) =====
+Checking run: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   INDEX.md
+  OK   EXECUTIVE_SUMMARY.md
+  OK   RELEASE_GATE.md
+  OK   risk_register.md
+  OK   roadmap.md
+  OK   patch_plan.md
+  OK   audit_manifest.json
+  OK   manifest parses (run=20261003-0018-main-7bac320 profile=base findings=41)
+  OK   finding IDs unique (41 unique IDs)
+  OK   finding statuses use the shared vocabulary (0 statuses ok)
+
+RESULT: PASS
+run: repo-deep-dive-20261003-0018-main-7bac320
+reports scanned: 13
+findings: 41 (P1 x9, P2 x20, P3 x12)
+areas: API x2, ARCH x2, CI x6, DATA x3, EXEC x2, FEAT x2, FINAL x2, HYG x3, INV x3, OBS x3, SEC x5, SUPPLY x4, TEST x4
+run: repo-deep-dive-20261003-0018-main-7bac320
+findings: 41 (P0 x0, P1 x9, P2 x20, P3 x12)
+score: 0/100
+advisory: GO WITH CONDITIONS (advisory only; see RELEASE_GATE.md)
+wrote /tmp/toolchain_findings.csv (41 rows)
+== check_run.sh ==
+== collect_findings.py ==
+== risk_score.py ==
+== findings_to_csv.py ==
+csv rows at /tmp/toolchain_findings.csv
+TOOLCHAIN: PASS
+EXIT=0
+
+===== 6. ARCH-P2-001 negative test: perturbed executionOrder must FAIL the lint =====
+Linting pack: /tmp/ps006-neg
+
+  OK   VERSION = 1.4.1
+  OK   README references v1.4.1
+  OK   JSON version fields match VERSION
+  OK   141 JSON files parse
+  OK   area codes unique
+  OK   prompt structure complete
+  OK   prompt counts (actual 46 = base 42 + falcon 4)
+base example executionOrder set != base prompt set (missing=['21'] extra=[])
+  FAIL execution order/status drift
+  OK   profile manifest references resolve
+  OK   run validates: runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   run validates: runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   run validates: runs/buddy-20261003-0018-master-99abf29
+  OK   run validates: runs/chat-20261003-0018-develop-a72b8cc
+  OK   run validates: runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   run validates: runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   run validates: runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   run validates: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   run validates: runs/snowride-20261003-0018-main-59e12b9
+  OK   PACK_DIGEST.txt is current
+  OK   runs/INDEX.md lists all archived runs
+  OK   report structures include Verification Performed
+
+RESULT: FAIL (1 check(s))
+EXIT=1

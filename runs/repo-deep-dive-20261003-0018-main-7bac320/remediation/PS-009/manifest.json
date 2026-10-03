@@ -1,0 +1,67 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "patchSet": "PS-009",
+  "title": "Run binding and inventory",
+  "findings": [
+    "INV-P1-001",
+    "INV-P2-002",
+    "INV-P3-003"
+  ],
+  "base": "main",
+  "baseCommit": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-009-20261003-0018-main-7bac320",
+  "commit": "c7f59f8c375b9bf649ce6b452352ede37fd8a10b",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/4",
+  "prMode": "draft",
+  "files": [
+    "runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json",
+    "runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md",
+    "runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json",
+    "opencode.json (untracked)",
+    "PACK_DIGEST.txt"
+  ],
+  "commands": [
+    {
+      "command": "bash tools/self_test.sh",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS; PACK_DIGEST.txt is current"
+    },
+    {
+      "command": "bash tools/check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "binding assertions: inventory.git.sha==6cada03; manifest sha/recordedSha; workflows; py==11; opencode.json untracked; digest vs tracked tree",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "all OK; tracked=907 digest=906 missing=[] extra=[]"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact",
+      "runner": "-",
+      "exit": null,
+      "result": "not run - gitleaks binary not installed on the remediation host; diff is JSON/Markdown/digest only"
+    }
+  ],
+  "evidence": {
+    "verifyLog": "remediation/PS-009/verify.log",
+    "diff": "remediation/PS-009/diff.patch",
+    "prBody": "remediation/PS-009/pr_body.md"
+  },
+  "sha256": {
+    "diff.patch": "dcfa652385ae33d6237d26bdd6a4444d07bc242b29003b863e7a26ce1eab4a8a",
+    "verify.log": "14ad353856516cd771efc8b4a363f03ad6b374465c6981824a4a1c9002540659",
+    "pr_body.md": "0847ad12bcee707c434f352f1db3fc4fd4026b8032212bd077f8543d15707822"
+  },
+  "generatedAt": "2026-10-03T14:24:00Z"
+}

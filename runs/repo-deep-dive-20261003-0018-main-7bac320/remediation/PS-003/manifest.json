@@ -1,0 +1,93 @@
+{
+  "patchSet": "PS-003",
+  "title": "CI workflow hardening",
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "baseBranch": "main",
+  "baseCommit": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-003-20261003-0018-main-7bac320",
+  "commit": "e03c1168a4fb99e1f6ab49fa0d9f224d82150e31",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/2",
+  "prDraft": true,
+  "findings": [
+    "SEC-P1-001",
+    "SEC-P1-002",
+    "SEC-P2-003",
+    "CI-P2-003",
+    "CI-P2-004",
+    "SUPPLY-P1-001",
+    "SUPPLY-P2-002",
+    "OBS-P2-002"
+  ],
+  "files": [
+    ".github/workflows/deep-dive-deterministic.yml",
+    ".gitleaks.toml",
+    ".github/dependabot.yml",
+    "PACK_DIGEST.txt"
+  ],
+  "artifacts": {
+    "diff.patch": {
+      "sha256": "f22c38b4e8c1cc0f8abc6aea74d1755789b7f0f08da6a18ef28afe960470f609",
+      "bytes": 22944
+    },
+    "verify.log": {
+      "sha256": "11d7b705c176bad47d2d2167928a5d7fc96751b740ddbcb99d743429f22bd89b",
+      "bytes": 8600
+    }
+  },
+  "toolVersions": {
+    "actionlint": "1.7.12",
+    "gitleaks": "8.30.1",
+    "hadolint": "2.15.1",
+    "trivy": "0.75.0"
+  },
+  "actionsPinned": {
+    "actions/checkout": "11bd71901bbe5b1630ceea73d27597364c9af683",
+    "actions/upload-artifact": "5d5d22a31266ced268874388b861e4b58bb5c2f3"
+  },
+  "verification": [
+    {
+      "command": "actionlint -no-color .github/workflows/deep-dive-deterministic.yml",
+      "runner": "lab actionlint 1.7.12 (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "bash tools/self_test.sh",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (real-format ghp_ + 36 [A-Za-z0-9] fixture, src/leak.txt)",
+      "runner": "lab gitleaks 8.30.1",
+      "exit": 1,
+      "result": "leak found: github-pat (expected detection)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (same secret under allowlisted examples/*.example.json)",
+      "runner": "lab gitleaks 8.30.1",
+      "exit": 0,
+      "result": "suppressed by .gitleaks.toml allowlist"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (changed files with new config)",
+      "runner": "lab gitleaks 8.30.1",
+      "exit": 0,
+      "result": "no leaks found"
+    },
+    {
+      "command": "P1-SEC gate logic (P1 finding -> exit 1; clean -> exit 0)",
+      "runner": "python3 (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS (assertion)"
+    }
+  ],
+  "verificationOverall": "PS-003 VERIFY RESULT: PASS"
+}

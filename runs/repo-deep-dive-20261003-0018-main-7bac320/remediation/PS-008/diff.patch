@@ -1,0 +1,335 @@
+diff --git a/.gitattributes b/.gitattributes
+new file mode 100644
+index 0000000..6945b3b
+--- /dev/null
++++ b/.gitattributes
+@@ -0,0 +1,6 @@
++# Line-ending policy for the pack.
++# The bash tools and PACK_DIGEST.txt sha256 hashes assume LF; a CRLF working
++# tree breaks Linux CI and the digest. Normalize text to LF in the index and in
++# checkouts. See HYG-P2-001 and docs/OBSERVABILITY.md.
++* text=auto eol=lf
++*.sh text eol=lf
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..7324486
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,15 @@
++# OS / editor junk
++.DS_Store
++Thumbs.db
++*~
++*.swp
++.idea/
++.vscode/
++
++# Machine-local model / environment pins. `opencode.json` is intentionally
++# excluded from PACK_DIGEST.txt (see tools/pack_digest.sh); once untracked it
++# must stay out of the pack.
++opencode.json
++
++# Scratch output from tools/deterministic_checks.py (default -o deterministic-out)
++deterministic-out/
+diff --git a/LICENSE b/LICENSE
+new file mode 100644
+index 0000000..d9f210b
+--- /dev/null
++++ b/LICENSE
+@@ -0,0 +1,18 @@
++LICENSE - PENDING
++
++Copyright (c) 2026 Maine CyberTech. All rights reserved.
++
++This repository does not yet carry a chosen license. Absent an explicit
++license grant, all rights are reserved by default: no permission is granted to
++use, copy, modify, or distribute this software or its contents.
++
++This file records the current, unlicensed status so that the pack is not
++mistaken for one that grants reuse rights. It is intentionally not a final
++license. The copyright holder must select and publish the project license
++(for example MIT or Apache-2.0 for an open-source release, or a proprietary /
++internal-only license) and replace this file.
++
++The license choice is a product/legal decision and is tracked as an open
++question under finding SUPPLY-P3-004 in audit run
++20261003-0018-main-7bac320. See docs/SUPPLY_CHAIN.md for the license and SBOM
++policy that applies in the meantime.
+diff --git a/PACK_DIGEST.txt b/PACK_DIGEST.txt
+index 3b5f3ca..c61a901 100644
+--- a/PACK_DIGEST.txt
++++ b/PACK_DIGEST.txt
+@@ -1,21 +1,27 @@
+ # repo-deep-dive pack digest
+-# generated: 2026-10-03T12:27:12Z
+-# files: 906
++# generated: 2026-10-03T14:59:38Z
++# files: 913
+ # format: sha256  path
++4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
+ 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
+ 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
+ d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
+ 096232ac51992a3fd1ec14b54305cccc076275284427cbd0dc8fb9b1614b12f9  ./.github/workflows/remediation.yml
+ 83ae827bb42049bae6e48ebdc44202425160d6918103bbbe85519f46a805753d  ./.github/workflows/verify-remediation.yml
++de68252b84988b12a83acc20a63210462362443c203bc89de93832814377fc4f  ./.gitignore
+ 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
+ f9dadc72410d160930d7b5a9dea435e2d1742f465d9b7847ec7c53a234fbf96b  ./CHANGELOG.md
+ 80201f90f452b7b8e46377b5472e655461b0fa642972b208cd042a2b1bdc6692  ./CONTRIBUTING.md
++0886904dbbf64dbe39709dd725d06d87627ad397bca96a4013b310da077fdc42  ./LICENSE
+ a16e75422c0d38c633f8be539f46d9124516a2419c0df4e3f7ba2cbb339fef1e  ./README.md
+ 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
++3e50a74a7332f00dd710375633a049911b7154148d92e919d29a9b7bff7373c5  ./SECURITY.md
+ 7d072b48526b023950e4c48db01e8c273554a6401119f5691e7589ba9bc65d9d  ./VERSION
+ f84e53ffca7c30b5c91f892e0136e9173ea795781d337b3df6ef254c85ac5008  ./ci/audit.yml
+ 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
++8e8d4464abe5d3accb3cda5b9bba9c9e00fc8d64a90ebe2bdadf49a8e2e54c7a  ./docs/OBSERVABILITY.md
+ 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
++d62518d7d66a44f5bb092f960486e9839f49ac262265db579bb08b0823b752e6  ./docs/SUPPLY_CHAIN.md
+ b09c03125010bd86df4ce1f98b27cb85f53f2d97defc266a2eee7e2714a6cbcd  ./examples/audit_manifest.example.json
+ f7c083bfcdb7a78f637b03cae9da64f17326f9260bc1ba11a90a1cf63513d2e1  ./examples/audit_manifest.falcon-lab.example.json
+ b54e2c8db738d91ddebed89b9ab10504f1ef6e3f29722c4d0c53d2a383dd8abe  ./lenses/README.md
+@@ -172,6 +178,7 @@ f944f051b99542867c767698a51d2d2feccdcda3357ec2c0e87e63189df5ab7a  ./runs/2026093
+ f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
+ 5d5da30d3e5e435d3786b12d4ae8c6497881a81e7fa84d9edd459e233df7cc3b  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/verification_log.md
+ 9a57ac063a8acf6704177e1ae55cbb19d7df8b7059f64f3af54358aa86954d40  ./runs/INDEX.md
++91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
+ 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
+ e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
+ dff13525ee6904127ae63435b084f4b2b83cc672997f31b3187aecea8ed67e38  ./runs/buddy-20261003-0018-master-99abf29/03_feature_implementation_map.md
+diff --git a/SECURITY.md b/SECURITY.md
+new file mode 100644
+index 0000000..8be421a
+--- /dev/null
++++ b/SECURITY.md
+@@ -0,0 +1,48 @@
++# Security Policy
++
++This repository is the **repo-deep-dive** audit/remediation pack: prompts,
++lenses, profiles, templates, docs, and small Python/bash tooling. It ships no
++runtime service and no package dependencies, but vulnerabilities in the tooling
++or in committed content (for example a leaked secret in an archived run) are in
++scope.
++
++## Reporting a vulnerability
++
++Please report suspected vulnerabilities **privately**, using GitHub private
++vulnerability reporting for this repository:
++
++1. Go to the repository's **Security** tab → **Report a vulnerability**
++   (<https://github.com/MaineCyberTech/repo-deep-dive/security/advisories/new>).
++2. Include: affected path/version, impact, reproduction steps, and any suggested
++   fix. Redact secret values; reference path and secret type only.
++
++Do **not** open a public issue for a suspected vulnerability, and do not include
++live credentials or personal data in a report.
++
++## What not to do
++
++- Do not run destructive or state-mutating tooling found in the repo
++  (`prompts/00_SHARED_AUDIT_RULES.md`).
++- Do not commit secrets. Every remediation diff is expected to pass a
++  `gitleaks` scan before push.
++
++## Response
++
++Reports are triaged by the pack maintainers on a best-effort basis. Findings are
++tracked in the audit run's `follow_up_register.md` with one of the standard
++statuses (`open`, `partially-fixed`, `verified-fixed`, `still-open`,
++`regressed`, `owner-accepted`). A finding is only `verified-fixed` with an
++artifact captured at the fixing commit.
++
++## Supported versions
++
++The pack is developed on `main`. Only the current `main` (and the latest tagged
++`VERSION`) is supported; older archived runs are historical records and are not
++patched in place.
++
++## Related
++
++- `docs/SUPPLY_CHAIN.md` — license and SBOM policy.
++- `runs/README.md` — sensitivity of archived run content.
++- `.github/CODEOWNERS` — review ownership (tracked separately; see finding
++  SEC-P3-004).
+diff --git a/docs/OBSERVABILITY.md b/docs/OBSERVABILITY.md
+new file mode 100644
+index 0000000..dde5e6f
+--- /dev/null
++++ b/docs/OBSERVABILITY.md
+@@ -0,0 +1,64 @@
++# Observability contract for the pack
++
++The audit pipeline is only trustworthy if a failed or stale run is observable.
++This page defines the machine-readable outputs, exit codes, and freshness signal
++for the **repo-deep-dive** tools. Findings referenced here are from audit run
++`20261003-0018-main-7bac320`.
++
++## Exit-code taxonomy
++
++| Command | `0` | non-zero |
++|---|---|---|
++| `tools/lint_pack.sh` | every pack check passed | one or more checks failed (fail closed) |
++| `tools/self_test.sh` | every tool check passed | one or more failed |
++| `tools/check_run.sh <run>` | prints `PASS` | prints `FAIL` and exits non-zero |
++| `tools/deterministic_checks.py <repo>` | checks ran; findings written | `2` = bad repo path |
++| `tools/collect_findings.py <run>` | findings aggregated | non-zero on unreadable input |
++| `tools/risk_score.py <run>` | score printed | non-zero on unreadable input |
++| `tools/render_dashboard.py <run>` | summary printed | non-zero on unreadable input |
++
++Note: `deterministic_checks.py` exits `0` even when it finds issues — findings
++are **data**, not a process failure. Gate on the produced JSON, not the exit
++code, when you want to fail on a finding class.
++
++## Structured output
++
++- `tools/deterministic_checks.py <repo> -o <outdir>` writes
++  `deterministic-findings.json` (`run`, `generated` UTC timestamp, `counts`,
++  `findings[]`) plus `lens_deterministic.md`. Parse the JSON instead of scraping
++  stdout.
++- Each run's `audit_manifest.json` records `run` and `scaffolded_at`
++  (ISO-8601 UTC), the binding used for freshness.
++- `tools/render_dashboard.py <run> --write` emits `dashboard.md`,
++  `dashboard.html`, and `pr_comment.md` into the run folder.
++
++## Freshness signal
++
++The scheduled/archived runs must not silently go stale. Compute the age of the
++newest archived run from its manifest:
++
++```bash
++python3 - <<'PY'
++import glob, json, datetime
++manifests = [json.load(open(p, encoding="utf-8-sig")) for p in glob.glob("runs/*/audit_manifest.json")]
++newest = max(manifests, key=lambda r: r.get("scaffolded_at", ""))
++ts = datetime.datetime.fromisoformat(newest["scaffolded_at"])
++age = (datetime.datetime.now(datetime.timezone.utc) - ts).days
++print("newest run: %s age_days: %d" % (newest.get("run"), age))
++raise SystemExit(0 if age <= 7 else 1)
++PY
++```
++
++A non-zero exit means no run has completed within the freshness window and
++should raise an external alert. (This complements, and does not replace, the
++fail-closed workflow change for finding **OBS-P2-002** in patch set PS-003.)
++
++## Dashboard and delta retention
++
++- A completed run commits its dashboard and PR-comment snippet with the reports
++  (see `runs/README.md`).
++- Run-over-run diffs are ephemeral: regenerate with
++  `tools/diff_runs.py <previous-run> <current-run>`; do not commit the delta.
++
++This closes finding **OBS-P3-003** by making the retention rule explicit; the
++two `runs/20260930-*` runs predate the policy and are noted in `runs/README.md`.
+diff --git a/docs/SUPPLY_CHAIN.md b/docs/SUPPLY_CHAIN.md
+new file mode 100644
+index 0000000..0788765
+--- /dev/null
++++ b/docs/SUPPLY_CHAIN.md
+@@ -0,0 +1,67 @@
++# Supply chain, license, and SBOM policy
++
++This page records how the **repo-deep-dive** pack itself handles provenance,
++licensing, and its own dependencies. It applies the pack's own prompt 35
++(`prompts/35_sbom_license_policy.md`) to the pack.
++
++## Dependency inventory
++
++| Component | Where | Pin | Notes |
++|---|---|---|---|
++| Python tools | `tools/*.py` | standard library only | no third-party Python packages |
++| Shell tools | `tools/*.sh` | bash | coreutils/bash only |
++| GitHub Actions | `.github/workflows/*.yml` | tracked by tag | pinning to full commit SHAs is **SUPPLY-P1-001** |
++| Downloaded scanners | `.github/workflows/deep-dive-deterministic.yml` | versioned releases | checksum-verify downloads (SUPPLY-P1-001) |
++
++Because the pack ships no `package.json`, lockfile, container image, or published
++binary, there is **no build artifact to attach an SBOM to**. That is a
++deliberate N/A, not an omission:
++
++- **SBOM (pack):** N/A — the pack is source (Markdown + Python stdlib + bash).
++  If a package dependency is ever added, an SPDX/CycloneDX SBOM step and an
++  allow-list (`LicenseRef-Proprietary` fails the build) must be added to CI in
++  the same change.
++- **SBOM (targets):** required output of prompt 35 for every audited repository;
++  see `examples/*.json` for the expected artifact name
++  (`sbom_license_policy_recommendation.md`).
++
++## License status
++
++- The repository currently ships **no chosen license**; `LICENSE` records the
++  pending **all-rights-reserved** status so the pack is not mistaken for one
++  that grants reuse rights.
++- Choosing the final license (open-source, proprietary/internal-only, or
++  otherwise) is a product/legal decision and is tracked as an **open question**
++  under finding **SUPPLY-P3-004** (audit run `20261003-0018-main-7bac320`).
++- Third-party components (GitHub Actions, `actionlint`, `gitleaks`, GitHub CLI)
++  retain their own upstream licenses; none are vendored into this repository.
++- Sibling MaineCyberTech repositories are not consistent (`mainecybertech` ISC,
++  `chat` MIT, `snowride` proprietary), which is exactly why the pack does not
++  guess a license here.
++
++## CI pinning (tracked under SUPPLY-P1-001)
++
++Workflow `uses:` references and downloaded scanner binaries are pinned by
++commit SHA and version+sha256 under finding **SUPPLY-P1-001** (patch set PS-003),
++with **SUPPLY-P2-002** adding `.github/dependabot.yml` for `github-actions`.
++Those edits live in `.github/` and are intentionally not duplicated here.
++
++## Portability: org / repository identifiers (SEC-P3-005)
++
++The scheduled workflow currently defaults `org` to `MaineCyberTech` and
++`exclude` to `soc,infra,AWS-WWW,www,www-dev`
++(`.github/workflows/deep-dive-deterministic.yml`). Those defaults leak internal
++structure and make the pack non-portable. Until they move to repository
++variables or a config file, **override them explicitly** when running the
++workflow (`workflow_dispatch` inputs):
++
++- `org` — target GitHub organization (default `MaineCyberTech`)
++- `repos` — comma-separated repo names (blank = all org repos)
++- `exclude` — comma-separated repos to skip
++- `runner` — runner label (`ubuntu-latest` or a self-hosted label)
++- `deep` — run hadolint/trivy checks
++
++Removing the hardcoded literals is tracked under finding **SEC-P3-005**. This
++page documents the override contract; the literal move to repository variables
++or a config file is deferred because the same workflow file is being edited for
++pinning under patch set PS-003, and the edits must not conflict.
+diff --git a/runs/README.md b/runs/README.md
+new file mode 100644
+index 0000000..b05259b
+--- /dev/null
++++ b/runs/README.md
+@@ -0,0 +1,33 @@
++# Archived audit runs — sensitive content
++
++Everything under `runs/` is an **archive of audit output** for a target
++repository. Per the shared audit rules (`prompts/00_SHARED_AUDIT_RULES.md`),
++repository exports, logs, `.env`-adjacent files, test artifacts, and generated
++outputs are **sensitive** and may contain host topology, service/socket
++inventory, paths, and findings that aid reconnaissance.
++
++## Handling
++
++- Treat this directory as internal. Review it before sharing the repository
++  outside the organization.
++- Do **not** commit a live-host snapshot (`live_snapshot.txt`) that names
++  hosts, users, or sensitive paths. Redact host-identifying fields first, or
++  store the snapshot outside the repository and commit only a redacted summary.
++- Keep the raw capture and any secret-like values out of PR bodies and evidence;
++  reference path and secret type only.
++
++## Generated artifacts and retention
++
++- A completed run commits its generated `dashboard.md`, `dashboard.html`, and
++  `pr_comment.md` alongside the reports so reviewers can see the score and
++  severity mix in-repo.
++- Run-over-run diffs are **ephemeral**: regenerate on demand with
++  `tools/diff_runs.py <previous-run> <current-run>` rather than committing a
++  delta file, because the delta is only meaningful relative to another run.
++
++## Known state
++
++The `runs/20260930-*` runs predate this policy; `runs/20260930-0701-falcon-8282d3f_edge-45dfed0/live_snapshot.txt`
++is retained in place under this documented policy. Redacting or relocating
++existing snapshots is tracked as a follow-up under finding HYG-P3-003 in audit
++run `20261003-0018-main-7bac320`.

@@ -1,0 +1,92 @@
+{
+  "patchSet": "PS-004",
+  "title": "Wire the audit CI",
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "baseBranch": "main",
+  "baseCommit": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-004-20261003-0018-main-7bac320",
+  "commit": "ca641962f156f8320923e555ce1b8374f695b06a",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/3",
+  "prDraft": true,
+  "findings": [
+    "CI-P1-001",
+    "CI-P1-002",
+    "CI-P2-005",
+    "CI-P2-006",
+    "TEST-P1-001",
+    "TEST-P2-002"
+  ],
+  "files": [
+    ".github/workflows/audit.yml",
+    "ci/audit.yml",
+    ".github/CODEOWNERS",
+    "CONTRIBUTING.md",
+    "PACK_DIGEST.txt"
+  ],
+  "artifacts": {
+    "diff.patch": {
+      "sha256": "f89b685c5f2caa5a7c7cca5e8e31627834f3be40e6a995308667d5e55480682e",
+      "bytes": 23852
+    },
+    "verify.log": {
+      "sha256": "695dc37dbd32884ac4556a9bae12e96037ba05749ba697e9b1173b669f38da18",
+      "bytes": 9423
+    }
+  },
+  "toolVersions": {
+    "actionlint": "1.7.12",
+    "gitleaks": "8.30.1"
+  },
+  "verification": [
+    {
+      "command": "actionlint -no-color .github/workflows/audit.yml",
+      "runner": "lab actionlint 1.7.12 (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "actionlint -no-color ci/audit.yml",
+      "runner": "lab actionlint 1.7.12 (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "bash tools/self_test.sh",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "extract workflow run: scripts from YAML (pyyaml) && bash -n",
+      "runner": "python3 + bash (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS (heredoc integrity of the P0-gate step)"
+    },
+    {
+      "command": "changed-run diff filter unit check (awk, same as workflow)",
+      "runner": "awk (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS (runs/<run>/... -> runs/<run>; INDEX.md excluded)"
+    },
+    {
+      "command": "P0 gate logic (P0 -> exit 1; clean -> exit 0)",
+      "runner": "python3 (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS (assertion)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (changed files, default rules)",
+      "runner": "lab gitleaks 8.30.1",
+      "exit": 0,
+      "result": "no leaks found"
+    }
+  ],
+  "verificationOverall": "PS-004 VERIFY RESULT: PASS"
+}

@@ -1,0 +1,47 @@
+# Follow-up register
+
+Owner/Target/Status columns drive tools/collect_findings.py enrichment.
+
+| ID | Severity | Title | Owner | Target | Status | Post-audit note |
+|---|---|---|---|---|---|---|
+| CI-P1-001 | P1 | The audit CI example is not under `.github/workflows/` and never runs |  |  | open |  |
+| CI-P1-002 | P1 | ci/audit.yml assumes a vendored PACK_DIR that does not match this repo |  |  | open |  |
+| DATA-P1-001 | P1 | findings.json violates its own schema (`sourceReports` array vs integer) |  |  | partially-fixed | remediation PS-002 open 979777da9e758ed595b81c8c236201882994dd07 https://github.com/MaineCyberTech/repo-deep-dive/pull/1 |
+| DATA-P1-002 | P1 | Base-profile scaffold produces a manifest the pack's own gate rejects |  |  | partially-fixed | remediation PS-002 open 979777da9e758ed595b81c8c236201882994dd07 https://github.com/MaineCyberTech/repo-deep-dive/pull/1 |
+| INV-P1-001 | P1 | Run is bound to 7bac320 but the worktree is at 6cada03 |  |  | partially-fixed | remediation PS-009 open c7f59f8c375b9bf649ce6b452352ede37fd8a10b https://github.com/MaineCyberTech/repo-deep-dive/pull/4 |
+| SEC-P1-001 | P1 | CI executes remotely downloaded scripts and archives as root without pinning |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| SEC-P1-002 | P1 | PAT is embedded in the git clone URL, risking token exposure in logs |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| SUPPLY-P1-001 | P1 | GitHub Actions and downloaded tools are unpinned (mutable tags/branches) |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| TEST-P1-001 | P1 | No CI job runs the pack's own lint/self-test or authorizes PRs |  |  | open |  |
+| API-P2-001 | P2 | Deterministic lens reuses domain area codes, risking duplicate finding IDs |  |  | partially-fixed | remediation PS-007 open c661a6c8d71381345cf0662183fbba453f229fe3 https://github.com/MaineCyberTech/repo-deep-dive/pull/7 |
+| API-P2-002 | P2 | Deterministic findings never reach the run findings flow |  |  | partially-fixed | remediation PS-007 open c661a6c8d71381345cf0662183fbba453f229fe3 https://github.com/MaineCyberTech/repo-deep-dive/pull/7 |
+| ARCH-P2-001 | P2 | Orchestration truth is duplicated across four artifacts with no drift check |  |  | partially-fixed | remediation PS-006 open 20f7a3d47f6f1dc4ecf8e2f9d5dae1d35cffec8c https://github.com/MaineCyberTech/repo-deep-dive/pull/6 |
+| ARCH-P2-002 | P2 | The primary run gate is silently skipped when bash is unavailable |  |  | partially-fixed | remediation PS-006 open 20f7a3d47f6f1dc4ecf8e2f9d5dae1d35cffec8c https://github.com/MaineCyberTech/repo-deep-dive/pull/6 |
+| CI-P2-003 | P2 | The wired workflow installs mutable "latest" tools and fails silently |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| CI-P2-004 | P2 | Org-wide PAT workflow lacks concurrency, timeouts, and environment protection |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| CI-P2-005 | P2 | No branch protection, required-check, or CODEOWNERS evidence |  |  | open |  |
+| CI-P2-006 | P2 | pull_request runs pass an empty run_dir to the P0 gate |  |  | open |  |
+| EXEC-P2-001 | P2 | No accountable owner mapping for the pack |  |  | partially-fixed | remediation PS-011 open fd9cf670164dba78f5a9fee8635da9c7d95f5725 https://github.com/MaineCyberTech/repo-deep-dive/pull/10 |
+| FEAT-P2-001 | P2 | New tools and the org workflow shipped without changelog, version bump, or docs |  |  | open |  |
+| FINAL-P2-001 | P2 | No evidence the toolchain/self-test ran at the audited commit |  |  | open |  |
+| HYG-P2-001 | P2 | Missing `.gitignore` and `.gitattributes` create cross-platform and config-sprawl risk |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| INV-P2-002 | P2 | inventory.json reports no CI/workflows while a workflow exists at HEAD |  |  | partially-fixed | remediation PS-009 open c7f59f8c375b9bf649ce6b452352ede37fd8a10b https://github.com/MaineCyberTech/repo-deep-dive/pull/4 |
+| OBS-P2-001 | P2 | No structured output or freshness signal for the audit pipeline |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| OBS-P2-002 | P2 | Scheduled checks mask failures and never alert on regression |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| SEC-P2-003 | P2 | CI security checks are non-gating and there is no secret-scan allowlist |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| SUPPLY-P2-002 | P2 | No dependency-update automation |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
+| SUPPLY-P2-003 | P2 | No SBOM or license policy is enforced despite prompt 35 |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| TEST-P2-002 | P2 | The smoke harness is bash-only and not exercised on the maintainer's platform |  |  | open |  |
+| TEST-P2-003 | P2 | Self-test schema check omits type/contract validation |  |  | partially-fixed | remediation PS-002 open 979777da9e758ed595b81c8c236201882994dd07 https://github.com/MaineCyberTech/repo-deep-dive/pull/1 |
+| DATA-P3-003 | P3 | Deterministic findings use line 1 for every row and an en-dash separator |  |  | partially-fixed | remediation PS-007 open c661a6c8d71381345cf0662183fbba453f229fe3 https://github.com/MaineCyberTech/repo-deep-dive/pull/7 |
+| EXEC-P3-002 | P3 | The gate cannot cite a machine-validated run until the scaffold defect is fixed |  |  | partially-fixed | remediation PS-011 open fd9cf670164dba78f5a9fee8635da9c7d95f5725 https://github.com/MaineCyberTech/repo-deep-dive/pull/10 |
+| FEAT-P3-002 | P3 | README tool inventory is stale |  |  | open |  |
+| FINAL-P3-002 | P3 | Archived run verdicts and register statuses were not re-verified after two tooling commits |  |  | open |  |
+| HYG-P3-002 | P3 | The integrity digest omits a tracked file and disagrees with the inventory count |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| HYG-P3-003 | P3 | Archived runs commit sensitive environment snapshots |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| INV-P3-003 | P3 | A tracked, environment-local pin is excluded from the integrity digest |  |  | partially-fixed | remediation PS-009 open c7f59f8c375b9bf649ce6b452352ede37fd8a10b https://github.com/MaineCyberTech/repo-deep-dive/pull/4 |
+| OBS-P3-003 | P3 | Dashboards and diffs are generated but not bound to archived runs |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| SEC-P3-004 | P3 | No vulnerability-disclosure policy or code ownership file |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| SEC-P3-005 | P3 | Internal org and repository identifiers are hardcoded as workflow defaults |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| SUPPLY-P3-004 | P3 | No LICENSE file |  |  | partially-fixed | remediation PS-008 open 50c3d2407193923cc9acfbfb8c015f6f226e9e98 https://github.com/MaineCyberTech/repo-deep-dive/pull/8 |
+| TEST-P3-004 | P3 | No unit tests for parsing, inventory, or deterministic logic |  |  | open |  |

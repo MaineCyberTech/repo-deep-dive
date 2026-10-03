@@ -1,0 +1,21 @@
+{
+  "patchSet": "PS-010",
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "base": "main",
+  "branch": "remediation/ps-010-20261003-0018-main-7bac320",
+  "commit": "bfbb0e005880f28e77892650a548e9817dd78924",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/9",
+  "findings": ["TEST-P3-004", "FINAL-P2-001", "FINAL-P3-002"],
+  "generated": "2026-10-03T15:20:00Z",
+  "commands": [
+    {"command": "python3 -m unittest discover -s tests -v", "runner": "WSL Ubuntu 24.04 (native Linux checkout)", "exit": 0, "result": "Ran 31 tests - OK"},
+    {"command": "bash tools/lint_pack.sh", "runner": "WSL Ubuntu 24.04 (native Linux checkout)", "exit": 0, "result": "RESULT: PASS"},
+    {"command": "bash tools/self_test.sh", "runner": "WSL Ubuntu 24.04 (native Linux checkout)", "exit": 0, "result": "RESULT: PASS"},
+    {"command": "actionlint -no-color .github/workflows/pack-tests.yml", "runner": "actionlint 1.7.12", "exit": 0, "result": "no diagnostics"}
+  ],
+  "diff": "diff.patch",
+  "diffSha256": "da9e5606bbf91aeab9cb9136ab0485fb2d04392003db7078da5cac2cd204a991",
+  "verifyLog": "verify.log",
+  "notes": "Pack self-test fails on a clean Linux checkout at the audited SHA 6cada03 (tools/*.py tracked 100644 -> Permission denied); this patch sets the exec bit so FINAL-P2-001's PASS is reproducible. No secrets; draft PR only."
+}

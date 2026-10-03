@@ -1,0 +1,62 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "patchSet": "PS-002",
+  "title": "Data contract alignment",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "base": "main",
+  "baseSha": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-002-20261003-0018-main-7bac320",
+  "commit": "979777da9e758ed595b81c8c236201882994dd07",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/1",
+  "findings": [
+    "DATA-P1-001",
+    "DATA-P1-002",
+    "TEST-P2-003"
+  ],
+  "files": [
+    "tools/collect_findings.py",
+    "schemas/findings.schema.json",
+    "examples/audit_manifest.example.json",
+    "tools/new_run.py",
+    "tools/self_test.sh",
+    "PACK_DIGEST.txt"
+  ],
+  "commands": [
+    {
+      "command": "bash tools/pack_digest.sh",
+      "runner": "WSL Ubuntu-24.04",
+      "exit": 0
+    },
+    {
+      "command": "bash tools/self_test.sh",
+      "runner": "WSL Ubuntu-24.04",
+      "exit": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "runner": "WSL Ubuntu-24.04",
+      "exit": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "python3 tools/new_run.py --run t --root $TMP && bash tools/check_run.sh $TMP/repo-deep-dive/t",
+      "runner": "WSL Ubuntu-24.04",
+      "exit": 0,
+      "result": "PASS"
+    },
+    {
+      "command": "python3 -m jsonschema -i <regenerated>/findings.json schemas/findings.schema.json",
+      "runner": "WSL Ubuntu-24.04",
+      "exit": 0
+    }
+  ],
+  "gitleaks": "not run (binary not installed in WSL guest; no lab job-API token provided); manual diff scan only",
+  "diffSha256": "aaae8cf6137456a2508ccbe72cdddfc4a8835d3f8319ab074c83e5e4ca35498a",
+  "evidence": {
+    "verifyLog": "remediation/PS-002/verify.log",
+    "diffPatch": "remediation/PS-002/diff.patch",
+    "manifest": "remediation/PS-002/manifest.json"
+  },
+  "generated": "2026-10-03T12:39:41Z"
+}

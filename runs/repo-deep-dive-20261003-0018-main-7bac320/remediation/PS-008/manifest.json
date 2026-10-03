@@ -1,0 +1,85 @@
+{
+  "patchSet": "PS-008",
+  "title": "Hygiene and standards",
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "baseBranch": "main",
+  "baseSha": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "auditedSha": "7bac320",
+  "branch": "remediation/ps-008-20261003-0018-main-7bac320",
+  "commit": "50c3d2407193923cc9acfbfb8c015f6f226e9e98",
+  "tree": "9af572a9b0b6ea120d67733083e7c2a80a757e23",
+  "commitMessage": "chore: close PS-008 hygiene/supply findings [PS-008]",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/8",
+  "prDraft": true,
+  "findings": [
+    "HYG-P2-001",
+    "HYG-P3-002",
+    "HYG-P3-003",
+    "SUPPLY-P2-003",
+    "SUPPLY-P3-004",
+    "SEC-P3-004",
+    "SEC-P3-005",
+    "OBS-P2-001",
+    "OBS-P3-003"
+  ],
+  "files": [
+    ".gitattributes",
+    ".gitignore",
+    "LICENSE",
+    "SECURITY.md",
+    "docs/SUPPLY_CHAIN.md",
+    "docs/OBSERVABILITY.md",
+    "runs/README.md",
+    "PACK_DIGEST.txt"
+  ],
+  "diff": {
+    "path": "remediation/PS-008/diff.patch",
+    "sha256": "152a08a835c86a30218ba9c38be90616f876ac6d3dd12eddb3667d38dab9c8e7"
+  },
+  "verifyLog": "remediation/PS-008/verify.log",
+  "runner": "WSL Ubuntu-24.04 (local fallback; lab job API not available in this environment)",
+  "commands": [
+    {
+      "command": "bash tools/self_test.sh",
+      "exit": 0,
+      "result": "RESULT: PASS",
+      "evidence": "remediation/PS-008/verify.log"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "exit": 0,
+      "result": "RESULT: PASS (PACK_DIGEST.txt is current)",
+      "evidence": "remediation/PS-008/verify.log"
+    },
+    {
+      "command": "python3 tools/deterministic_checks.py . -o /tmp/det-ps008",
+      "exit": 0,
+      "result": "GIT-P3-001 (No LICENSE) and PORT-P3 (.gitattributes missing) no longer emitted",
+      "evidence": "remediation/PS-008/verify.log"
+    },
+    {
+      "command": "git ls-files --eol | grep -cE 'i/(crlf|mixed)'",
+      "exit": 0,
+      "result": "0 committed CRLF",
+      "evidence": "remediation/PS-008/verify.log"
+    },
+    {
+      "command": "python3 <freshness signal from docs/OBSERVABILITY.md>",
+      "exit": 0,
+      "result": "newest run: 20261003-0018-main-59e12b9 age_days: 0",
+      "evidence": "remediation/PS-008/verify.log"
+    }
+  ],
+  "secretScan": {
+    "tool": "gitleaks",
+    "status": "not-run",
+    "reason": "gitleaks is not installed in this environment; the diff adds only docs/config files and touches no .env/key/credential path."
+  },
+  "scopeCheck": {
+    "status": "pass",
+    "note": "8 files, all within the PS-008 file set plus docs and runs/README.md."
+  },
+  "rollback": "git revert 50c3d2407193923cc9acfbfb8c015f6f226e9e98",
+  "generated": "2026-10-03T15:05:00Z"
+}

@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T12:27:12Z
-# files: 906
+# generated: 2026-10-03T15:28:04Z
+# files: 959
 # format: sha256  path
 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
@@ -730,13 +730,66 @@ edc4f81c7ae61f9898df9ea8e66049dd67a6402f84b4dc3fed253223af5f9082  ./runs/repo-de
 e9d74900c2feb0a78c5ff92c0b04e93bcf3eb66fa0695458fd3132d2ce914666  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.html
 cbc20e976700c6f8e807bb1bba5d3e52f04ca50f68dfdf3e996436ff7f2c1af3  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.md
 0b82b38ab6580a956bc2dd6b675f3cd01a64350ef359cd0811f83cedabb4ab2b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/findings.json
+20c8e663ec92ad13ca5ac0e10647ebbc0633463fda4f71aa1f10806efade5cf1  ./runs/repo-deep-dive-20261003-0018-main-7bac320/follow_up_register.md
 4a8891b78e9e3a9e73d02575518d909a6177051ff46190cc7cfa56dc6cb7ffa0  ./runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
 1c31ca56048f5a4bb05e89162376b58c24262b6a37754838588c278d45a69d2b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/patch_plan.md
 636cae2e0a0933d9044068e9268cec8ec72686d69068f42c6e57b10957d7ca5e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/pr_comment.md
+aaae8cf6137456a2508ccbe72cdddfc4a8835d3f8319ab074c83e5e4ca35498a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-002/diff.patch
+823415c28cfecdba247343547811d16b42c890b9d81dd4d49fa4a1f98c6e23a0  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-002/manifest.json
+369ebaa671160d29c217dde85f04543a619fe6c46412ec6d76ae60ee2b8e1476  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-002/verify.log
+f22c38b4e8c1cc0f8abc6aea74d1755789b7f0f08da6a18ef28afe960470f609  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/diff.patch
+f61953cf94a567edf2d1070f9efaf52d16534b7520db383b03e8d80c32734d1d  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/manifest.json
+9d56af1c79e8b324581171c13e3b315927e04d9a89b8ea2d106d28cbd467ad4e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/pr_body.md
+c872d6db8c6bf83a8eaa704fc93999f027d55dffbc63b8a6abdccb47df5f4cd4  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/tools/actionlint
+88f91962aa2f93ac6ab281d553b9e125f5197bbbce38f9f2437f7299c32e5509  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/tools/gitleaks
+11d7b705c176bad47d2d2167928a5d7fc96751b740ddbcb99d743429f22bd89b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/verify.log
+8a09d5784d5eaaaa4b3a1a335ed45d1e67e9a2bb92bc3129f5534e2edda3e96f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/verify.sh
+f89b685c5f2caa5a7c7cca5e8e31627834f3be40e6a995308667d5e55480682e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-004/diff.patch
+8d683a5620d3827f0f0a9909c2c6202bbb4556c53932538fbb6150fe78b449cb  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-004/manifest.json
+e30c5a03f2ad1aea115a5f14b63b728d702e9608a3ae4eff72c02b6d7eda67ca  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-004/pr_body.md
+695dc37dbd32884ac4556a9bae12e96037ba05749ba697e9b1173b669f38da18  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-004/verify.log
+d87a8eb280cfcc42b85ae6162e09d4962da5bf8433d241e7155c3fd90881b1c0  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-004/verify.sh
+a298a068fad7498fb76c433872adb43c70c3c006c9a26128be82aeae4ea9c1a8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-005/binding_ps005.sh
+511d9d97037da5451ef3b1a4ae6472129cf6d9efacff8fd3b61f78a7a11c95e2  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-005/diff.patch
+96a52db3e580e2c41be172fe14fbf963ab3f8f03e7e416f4470422bc54da1eca  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-005/manifest.json
+1b30e565ee455a0a532b80699cfd22af454f1971374f809d44830970e3279e81  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-005/pr_body.md
+363f6d05e2d58d1ec5d9173e96c3d15d6d0176718dc4afe47714ed72f8032911  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-005/verify.log
+e0bcf8cf735986cb75a052615ffc7f20a136f5e80a0e94d479f25f727ef57bc1  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-005/verify_ps005.sh
+7459d4f9759e29ccb4b6107d961be071f143788582c5272c9b51adccb595320f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-006/diff.patch
+8d5c34b82bbf90b93bd5079388442339fddc13126c4dd4986495f9a4bc2b1d7d  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-006/manifest.json
+2e058e284ef4b90a41af617b14bb03f8c57b69c90ee9fe0c1dcd4740265fb390  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-006/pr_body.md
+712d86c8bddec544468d31ee924878c5d5660b5770e5a3be30e0f53bb398ed62  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-006/verify.log
+c04537e8faa43a22583c588a3e273280f393af0c25320df088507185ba5ce808  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-006/verify_ps006.sh
+44b128184ccd103f4dd6ea6c3756993720d6e9713ef3986aa8b111b59a236666  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-007/diff.patch
+247004c1bb7ade29c137ddf21bcac156f2283130e990c33caa5715a9ab13da5b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-007/manifest.json
+2423d44c80adadba759f49be1ed9d269fd616e9d1957cbb40aabd3ef7ddf3055  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-007/pr_body.md
+8d585ee631c25a281ed036f3570f4385ea5dd496304f229a04f8d5b93e8d4cd2  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-007/verify.log
+152a08a835c86a30218ba9c38be90616f876ac6d3dd12eddb3667d38dab9c8e7  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-008/diff.patch
+c06b14b775b36be7372a47768c22db02e9a9bb3496dc86bda297ec63b1b9586e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-008/manifest.json
+430e918ab934ce07dec26e9e1fd87ada3f1c3ecc8494db91bf8ac8256c728056  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-008/verify.log
+ebfba115f4a9087144e5217ee4310812b0f605068a9dc08463e3316f8ef0e87a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-009/binding_ps009.sh
+dcfa652385ae33d6237d26bdd6a4444d07bc242b29003b863e7a26ce1eab4a8a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-009/diff.patch
+a1c43a05c4117d555a59933e5751ff85435b5372d20742a158805f5c9ac78bbb  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-009/manifest.json
+0847ad12bcee707c434f352f1db3fc4fd4026b8032212bd077f8543d15707822  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-009/pr_body.md
+14ad353856516cd771efc8b4a363f03ad6b374465c6981824a4a1c9002540659  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-009/verify.log
+da56d26706a3f40802f6daec03edc3bcc0a641a9a362b299b78db9a808291e54  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-009/verify_ps009.sh
+da9e5606bbf91aeab9cb9136ab0485fb2d04392003db7078da5cac2cd204a991  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-010/diff.patch
+7c8ff7406eed71c41a82530427eed43fa87c165791c40bd163ce008f3ad371f3  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-010/manifest.json
+8fbd39f159fb0d3e1252fba516d808f419b4f680b068f6a99f6be8d8033fd679  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-010/pr_body.md
+14eb34e37fae13a09e290cdc0c237f76d1f817d454cc585325f0e89ec67cb32b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-010/verify.log
+cf253da20b0ca1e0f68de1e98ee31a4995bbb0161cbc9a71a1318aab66a7eb06  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/check_pr.ps1
+e1e989bf00bc172f8783ebc832f0e20ee363d7f97fb3aadbcc2c115e18895539  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/commit_msg.txt
+5b3fc268f2bad167e4e1eac5062eaf9ba7510b27024c1f39e61548bbbf72e3e5  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/diff.patch
+0b05bbdb99a928e3dfdb4daadaffe1c17677def033a9dd122a1b63755dd3606f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/manifest.json
+d2def048275cb3752d8657fcff6e6c843d7aff9567799c2ffa04f58fa198b930  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/pr_body.md
+6d1d2897e6fc830cb9b82f533263d8de2475f4966bca2159dec8c1249b84d95a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/reconcile.sh
+9d72fa6d2fb0509c1db46651e4960f4b1953104accf3dcb656288da10a080734  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/verify.log
+1e6fee96c89c30ba6c760a6e929f51d6c7f02d6bdb5971a4ba5daf57f4b8ecf6  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/verify.sh
 07ef8952b4cd2314dc2990d07fad7127a6f7a459f1f389cd665f2ce141fd3f1a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation_plan.json
-bbdd4b6386598ce7119fd66f1b7987731060cb33883253b2f87424bce8f217a9  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_register.md
+2db411f98943aa19b86b860171d255ce1637ce8113f28fe6404fdbff2232751f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_register.md
 6b835d7c6ba3a55b90bd01d4dbfd50f691b27c508bf5984d11922af0a8b55f17  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_score.json
 3466393320c5890b43823e6ab801bb52e9b8bf4776936b7942c9281f6c820e1f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/roadmap.md
+68511d081d82aebd7b1ce8246e7f526c13f66ba53198962d96a9ff7c105f1d83  ./runs/repo-deep-dive-20261003-0018-main-7bac320/verification_log.md
 45ecde918fd81cc0ee7b200b0c4a65041580a8622056d8062a8fc797405e17a0  ./runs/snowride-20261003-0018-main-59e12b9/01_repository_inventory.md
 d2cceb8b1fb3a748d6fb0a95aac69a0fae361b0fbc1621413c459241f5a3fb14  ./runs/snowride-20261003-0018-main-59e12b9/02_architecture_runtime_topology.md
 901f6b0339fc7f304c9dcb1bf8451438ce1610480be420643b34af22bc474190  ./runs/snowride-20261003-0018-main-59e12b9/03_feature_implementation_map.md

@@ -1,0 +1,90 @@
+diff --git a/.github/CODEOWNERS b/.github/CODEOWNERS
+new file mode 100644
+index 0000000..963ccdd
+--- /dev/null
++++ b/.github/CODEOWNERS
+@@ -0,0 +1,17 @@
++# Review routing for the repo-deep-dive pack.
++#
++# This file routes review requests only; it does not enforce them. To make review
++# and the pack CI required, a repository admin must enable branch protection on
++# `main` (require a pull request, at least one review, and the checks below).
++# See CONTRIBUTING.md § "CI and required checks" for the required checks and the
++# bypass policy.
++
++# Default owner for everything.
++*                       @JulianB-MCT
++
++# The gates themselves and the contract they protect.
++/.github/               @JulianB-MCT
++/ci/                    @JulianB-MCT
++/tools/                 @JulianB-MCT
++/schemas/               @JulianB-MCT
++/profiles/              @JulianB-MCT
+diff --git a/PACK_DIGEST.txt b/PACK_DIGEST.txt
+index 3b5f3ca..d5e391a 100644
+--- a/PACK_DIGEST.txt
++++ b/PACK_DIGEST.txt
+@@ -1,7 +1,8 @@
+ # repo-deep-dive pack digest
+-# generated: 2026-10-03T12:27:12Z
+-# files: 906
++# generated: 2026-10-03T15:25:36Z
++# files: 907
+ # format: sha256  path
++3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
+ 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
+ 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
+ d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
+@@ -725,7 +726,7 @@ b6341c35c73d25e7abde6d188fc419bc5d5878d9bc099e0cb7cfe0b5a2a3165c  ./runs/repo-de
+ 6cf272291912f8b673e250dd9877630af6970a083e7b68a28d606d2bc61cc8df  ./runs/repo-deep-dive-20261003-0018-main-7bac320/23_executive_summary_release_gate.md
+ 0a96209cf92a8b621bb8de5e707f77aeb89d673e1cbf1c2d60145ff93d1c012a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/EXECUTIVE_SUMMARY.md
+ edc4f81c7ae61f9898df9ea8e66049dd67a6402f84b4dc3fed253223af5f9082  ./runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
+-84f0a41892b4989d02c48b5dc3ed0ba6b3610daeb9844477a990b8c31a878c85  ./runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
++cd1610175896b22385e5868c869c6b39c66c8158d32579a865f3a13fba28639a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
+ 168e02a254a970d5e8703a899086540a3daa346ec4b8e21c7c281004d0d38908  ./runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
+ e9d74900c2feb0a78c5ff92c0b04e93bcf3eb66fa0695458fd3132d2ce914666  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.html
+ cbc20e976700c6f8e807bb1bba5d3e52f04ca50f68dfdf3e996436ff7f2c1af3  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.md
+diff --git a/runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md b/runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
+index 5b9dafa..b7a2bc1 100644
+--- a/runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
++++ b/runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
+@@ -31,7 +31,37 @@ No P0 exists: the pack holds no production data, no tenant boundary, and no runn
+ 
+ Existing falcon-lab program verdicts are **not** modified. This gate is a pack-level audit opinion at the audited commit and does not grant or revoke any product gate.
+ 
++## Ownership
++
++Review routing is declared in `.github/CODEOWNERS`: default `*` plus per-path
++owners for `/.github/`, `/ci/`, `/tools/`, `/schemas/`, and `/profiles/`.
++
++- Resolved owner: `@JulianB-MCT`
++- Patch-set ownership for this run's remediation (see `patch_plan.md`):
++
++| Patch set | Owner |
++|---|---|
++| PS-001 … PS-011 | `@JulianB-MCT` |
++
++## Machine validation (EXEC-P3-002)
++
++This gate is bound to the audited commit (recorded `7bac320`; generating worktree
++`6cada03`). Condition 1's machine-validated capture requires the base-profile
++scaffold fix (`DATA-P1-002`, patch set PS-002). At this commit the defect remains:
++`tools/new_run.py --profile base` seeds a manifest that `tools/check_run.sh`
++rejects, so no PASS capture can be attached here. Once PS-002 lands, capture the
++round-trip and attach it to this gate:
++
++```
++python3 tools/new_run.py <new-run-dir> --profile base
++bash tools/check_run.sh <new-run-dir>   # expect: RESULT: PASS
++```
++
++The wired pack CI (PS-004) runs `tools/lint_pack.sh` and `tools/self_test.sh`
++(which includes the scaffold round-trip) on every pull request and push to
++`main`, supplying the machine-validated run for this gate.
++
+ ## Sign-off
+ 
+-- Gate owner: `Unknown` (no CODEOWNERS; see EXEC-P2-001)
++- Gate owner: `@JulianB-MCT` (`.github/CODEOWNERS`; resolves EXEC-P2-001)
+ - Next review: after conditions 1–4 land, re-run the owning prompts and refresh this gate.

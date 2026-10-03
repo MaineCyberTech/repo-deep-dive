@@ -1,0 +1,14 @@
+docs: close PS-011 release governance [EXEC-P2-001]
+
+Findings: EXEC-P2-001, EXEC-P3-002 (run 20261003-0018-main-7bac320).
+
+- EXEC-P2-001: add `.github/CODEOWNERS` review routing and resolve the
+  release-gate owner; map this run's patch sets to an owner. The file is
+  byte-identical to PS-004 (#3), which adds the same file, so either merge
+  order is conflict-free (overlap noted in the PR).
+- EXEC-P3-002: update `RELEASE_GATE.md` with the resolved owner and an explicit
+  machine-validation binding. The base-profile scaffold PASS capture remains
+  blocked by the seed defect (DATA-P1-002, PS-002 #1); reproduced in
+  `remediation/PS-011/verify.log`, so this finding stays partially-fixed.
+
+Regenerate PACK_DIGEST.txt for the changed files.

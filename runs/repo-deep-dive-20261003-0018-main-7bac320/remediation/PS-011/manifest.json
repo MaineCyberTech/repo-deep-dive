@@ -1,0 +1,83 @@
+{
+  "patchSet": "PS-011",
+  "title": "Ownership and gate",
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "baseBranch": "main",
+  "baseCommit": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-011-20261003-0018-main-7bac320",
+  "commit": "fd9cf670164dba78f5a9fee8635da9c7d95f5725",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/10",
+  "prDraft": true,
+  "findings": [
+    "EXEC-P2-001",
+    "EXEC-P3-002"
+  ],
+  "files": [
+    ".github/CODEOWNERS",
+    "runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md",
+    "PACK_DIGEST.txt"
+  ],
+  "overlap": {
+    "patchSet": "PS-004",
+    "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/3",
+    "file": ".github/CODEOWNERS",
+    "resolution": "byte-identical to the PS-004 branch copy; either merge order is conflict-free"
+  },
+  "artifacts": {
+    "diff.patch": {
+      "sha256": "5b3fc268f2bad167e4e1eac5062eaf9ba7510b27024c1f39e61548bbbf72e3e5",
+      "bytes": 4761
+    },
+    "verify.log": {
+      "sha256": "9d72fa6d2fb0509c1db46651e4960f4b1953104accf3dcb656288da10a080734",
+      "bytes": 8575
+    }
+  },
+  "toolVersions": {
+    "gitleaks": "8.30.1"
+  },
+  "verification": [
+    {
+      "command": "bash tools/self_test.sh",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "RESULT: PASS (includes 'PACK_DIGEST.txt is current')"
+    },
+    {
+      "command": "tools/pack_digest.sh (idempotent inventory check)",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "PASS (inventory sha256 stable)"
+    },
+    {
+      "command": "python3 tools/new_run.py --profile base && bash tools/check_run.sh <dir>",
+      "runner": "repo gate (WSL Ubuntu-24.04)",
+      "exit": 1,
+      "result": "EXPECTED FAIL: seed manifest missing profile,scope,findings (DATA-P1-002 / PS-002 dependency)"
+    },
+    {
+      "command": "diff PS-011 .github/CODEOWNERS vs PS-004 branch",
+      "runner": "git (WSL Ubuntu-24.04)",
+      "exit": 0,
+      "result": "identical (overlap coordinated)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (changed files, default rules)",
+      "runner": "lab gitleaks 8.30.1",
+      "exit": 0,
+      "result": "no leaks found"
+    }
+  ],
+  "verificationOverall": "PS-011 VERIFY RESULT: PASS",
+  "findingsStatus": {
+    "EXEC-P2-001": "partially-fixed",
+    "EXEC-P3-002": "partially-fixed"
+  }
+}

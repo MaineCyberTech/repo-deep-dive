@@ -1,0 +1,152 @@
+diff --git a/PACK_DIGEST.txt b/PACK_DIGEST.txt
+index 3b5f3ca..5fd7b66 100644
+--- a/PACK_DIGEST.txt
++++ b/PACK_DIGEST.txt
+@@ -1,5 +1,5 @@
+ # repo-deep-dive pack digest
+-# generated: 2026-10-03T12:27:12Z
++# generated: 2026-10-03T14:18:44Z
+ # files: 906
+ # format: sha256  path
+ 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
+@@ -724,13 +724,13 @@ b6341c35c73d25e7abde6d188fc419bc5d5878d9bc099e0cb7cfe0b5a2a3165c  ./runs/repo-de
+ 32a15bf97dc93cf1b87e54bfe289ed1353fb0cb761cfe005a59b17d75d7ddca2  ./runs/repo-deep-dive-20261003-0018-main-7bac320/22_final_risk_register_roadmap.md
+ 6cf272291912f8b673e250dd9877630af6970a083e7b68a28d606d2bc61cc8df  ./runs/repo-deep-dive-20261003-0018-main-7bac320/23_executive_summary_release_gate.md
+ 0a96209cf92a8b621bb8de5e707f77aeb89d673e1cbf1c2d60145ff93d1c012a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/EXECUTIVE_SUMMARY.md
+-edc4f81c7ae61f9898df9ea8e66049dd67a6402f84b4dc3fed253223af5f9082  ./runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
++0ef133457e81bbb3a865c9402ded2b3df06bfa60de0b8f69fea9428afad30073  ./runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
+ 84f0a41892b4989d02c48b5dc3ed0ba6b3610daeb9844477a990b8c31a878c85  ./runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
+-168e02a254a970d5e8703a899086540a3daa346ec4b8e21c7c281004d0d38908  ./runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
++eca0ab4f22322360925dd2bf9722a41f38c91deddb3c36b3f57fb089a581de73  ./runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
+ e9d74900c2feb0a78c5ff92c0b04e93bcf3eb66fa0695458fd3132d2ce914666  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.html
+ cbc20e976700c6f8e807bb1bba5d3e52f04ca50f68dfdf3e996436ff7f2c1af3  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.md
+ 0b82b38ab6580a956bc2dd6b675f3cd01a64350ef359cd0811f83cedabb4ab2b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/findings.json
+-4a8891b78e9e3a9e73d02575518d909a6177051ff46190cc7cfa56dc6cb7ffa0  ./runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
++37b7454c983e3e5939a5047b19b9c99e4eddce7c9b26c4cc7a286bab94b75702  ./runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
+ 1c31ca56048f5a4bb05e89162376b58c24262b6a37754838588c278d45a69d2b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/patch_plan.md
+ 636cae2e0a0933d9044068e9268cec8ec72686d69068f42c6e57b10957d7ca5e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/pr_comment.md
+ 07ef8952b4cd2314dc2990d07fad7127a6f7a459f1f389cd665f2ce141fd3f1a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation_plan.json
+diff --git a/opencode.json b/opencode.json
+deleted file mode 100644
+index 7a12c96..0000000
+--- a/opencode.json
++++ /dev/null
+@@ -1,4 +0,0 @@
+-{
+-  "$schema": "https://opencode.ai/config.json",
+-  "model": "ollama/qwen3:8b"
+-}
+\ No newline at end of file
+diff --git a/runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md b/runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
+index f5356e6..e37e03f 100644
+--- a/runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
++++ b/runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
+@@ -7,7 +7,7 @@
+ - Profile: base
+ - Target repo: C:\temp\repo-deep-dive (the audit pack itself — pack self-audit)
+ - Branch: main
+-- Commit: recorded `7bac320`; **worktree HEAD `6cada03`** (see INV-P1-001)
++- Commit: `6cada03` (audited worktree; run id retains legacy `7bac320`; resolves INV-P1-001)
+ - Generated: 2026-10-03
+ 
+ ## Reports
+diff --git a/runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json b/runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
+index 241294f..95e84e8 100644
+--- a/runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
++++ b/runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
+@@ -62,7 +62,7 @@
+         "sha": "6cada03",
+         "recordedSha": "7bac320",
+         "dirty": false,
+-        "notes": "inventory.json and run id record 7bac320; worktree HEAD is 6cada03 (2 commits ahead). See INV-P1-001."
++        "notes": "Audited worktree bound to 6cada03; run id and recordedSha retain legacy 7bac320. inventory.json regenerated at 6cada03 (INV-P1-001/INV-P2-002 resolved)."
+       }
+     ],
+     "reportsProduced": [
+diff --git a/runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json b/runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
+index 05e66f3..5c5fae5 100644
+--- a/runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
++++ b/runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
+@@ -1,28 +1,32 @@
+ {
+   "repo": "C:\\temp\\repo-deep-dive",
+-  "generated_at": "2026-10-03T04:18:38.552184+00:00",
++  "generated_at": "2026-10-03T14:17:45.675711+00:00",
+   "git": {
+     "branch": "main",
+-    "sha": "7bac320",
++    "sha": "6cada03",
+     "dirty": false
+   },
+   "totals": {
+-    "files": 195,
+-    "lines": 6847,
++    "files": 199,
++    "lines": 7334,
+     "by_ext": {
+       ".json": 9,
+       ".md": 168,
+-      ".py": 9,
++      ".py": 11,
+       ".sh": 5,
+       ".txt": 2,
+-      ".yml": 1
++      ".yml": 2
+     }
+   },
+-  "stacks": [],
++  "stacks": [
++    "github-actions"
++  ],
+   "entry_points": [],
+   "routes": [],
+   "migrations": [],
+-  "workflows": [],
++  "workflows": [
++    ".github/workflows/deep-dive-deterministic.yml"
++  ],
+   "containers": [],
+   "tests": {
+     "files": 0,
+@@ -45,16 +49,16 @@
+       "files": 49
+     },
+     {
+-      "dir": "templates",
+-      "files": 15
++      "dir": "tools",
++      "files": 16
+     },
+     {
+-      "dir": "tools",
+-      "files": 14
++      "dir": "templates",
++      "files": 15
+     },
+     {
+       "dir": "(root)",
+-      "files": 7
++      "files": 8
+     },
+     {
+       "dir": "lenses",
+@@ -76,6 +80,10 @@
+       "dir": "wiring",
+       "files": 2
+     },
++    {
++      "dir": ".github",
++      "files": 1
++    },
+     {
+       "dir": "ci",
+       "files": 1
+@@ -89,5 +97,7 @@
+       "files": 1
+     }
+   ],
+-  "ci": []
++  "ci": [
++    "github-actions"
++  ]
+ }

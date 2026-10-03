@@ -1,0 +1,162 @@
+diff --git a/PACK_DIGEST.txt b/PACK_DIGEST.txt
+index 3b5f3ca..e1077b6 100644
+--- a/PACK_DIGEST.txt
++++ b/PACK_DIGEST.txt
+@@ -1,5 +1,5 @@
+ # repo-deep-dive pack digest
+-# generated: 2026-10-03T12:27:12Z
++# generated: 2026-10-03T14:37:15Z
+ # files: 906
+ # format: sha256  path
+ 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
+@@ -893,7 +893,7 @@ a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_r
+ afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
+ 1bb87facd85a7d836ebd3f2cddf084b107c112f4029b915579e2d58d65594407  ./tools/lab_runner.py
+ add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_findings.py
+-99451c2ca60a4c82411e6112d188d3379082783f3c73b9ee148529180480a4a0  ./tools/lint_pack.sh
++48135c586e0f554bf190bfeb13d33428b08a84b16ef0a5f82e18e10490af16af  ./tools/lint_pack.sh
+ 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
+ 81050470d1d8a4bf5a988512ae4a787b3f1321f4b2052d94059bd706b47c3ff8  ./tools/new_run.py
+ 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
+@@ -904,7 +904,7 @@ e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_d
+ 8d23ac69e0792a65a386b054da66b004bd6c32b9bf6324581ea363c2ad0623a3  ./tools/render_dashboard.py
+ f17648cfd68e4108add83223190dc485ed40d00cf639f881ca454c4000e1d66b  ./tools/repo_inventory.py
+ 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
+-6844a691f52f73a7ebca8f0cabc19670d12df785c3d779d863dd7f9ac4160338  ./tools/run_toolchain.py
++c6bbcbb8b9d12407dff5182473169814b2b915b80a2b0868d73e793b3632ee14  ./tools/run_toolchain.py
+ f1bef7b3443feafabbbd7335167da8f05044d706302afd439137819c63edbaf1  ./tools/self_test.sh
+ 94b75cad96cd3c97734134f4ef60fd1c916843b08a3185c60d3f8d4c0087254d  ./wiring/REPO_WIRING.md
+ b0ed61e5a481f2c949a10a7870a1acf1f75c2003d9f2db4840c66d06a6280280  ./wiring/SUGGESTED_TOOLING.md
+diff --git a/tools/lint_pack.sh b/tools/lint_pack.sh
+index bd16e6c..016721b 100755
+--- a/tools/lint_pack.sh
++++ b/tools/lint_pack.sh
+@@ -73,6 +73,70 @@ if errs:
+ PY
+ then ok "prompt counts (actual $actual = base $base + falcon $falcon)"; else bad "prompt count mismatch"; fi
+ 
++# --- 5b. Execution order covers every prompt (ARCH-P2-001) ----------------------
++# The execution order / prompt status is duplicated across the example manifests
++# and the profile manifest; this asserts every prompt file is referenced by
++# exactly the right manifest (base vs falcon-lab) so coverage cannot silently drift.
++if python3 - <<'PY'
++import json, pathlib, re
++
++prompts = sorted(
++    p.name for p in pathlib.Path("prompts").glob("[0-9][0-9]_*.md")
++    if not p.name.endswith("SHARED_AUDIT_RULES.md")
++)
++all_nums = {f[:2] for f in prompts}
++profile = json.load(open("profiles/falcon-lab.manifest.json", encoding="utf-8-sig"))
++falcon_nums = {e["id"] for e in profile.get("addedPrompts", [])}
++errs = []
++
++
++def nums(paths):
++    out = set()
++    for p in paths:
++        m = re.match(r"^(\d\d)_", p)
++        if m:
++            out.add(m.group(1))
++    return out
++
++
++base = json.load(open("examples/audit_manifest.example.json", encoding="utf-8-sig"))
++base_order = nums(base.get("executionOrder", []))
++expected_base = all_nums - falcon_nums
++if base_order != expected_base:
++    errs.append("base example executionOrder set != base prompt set "
++                "(missing=%s extra=%s)" % (sorted(expected_base - base_order),
++                                           sorted(base_order - expected_base)))
++
++falcon = json.load(open("examples/audit_manifest.falcon-lab.example.json",
++                        encoding="utf-8-sig"))
++falcon_covered = nums(falcon.get("executionOrder", [])) | nums(falcon.get("naReports", []))
++if falcon_covered != all_nums:
++    errs.append("falcon example executionOrder+naReports != prompt set "
++                "(missing=%s extra=%s)" % (sorted(all_nums - falcon_covered),
++                                           sorted(falcon_covered - all_nums)))
++
++ps = profile.get("promptStatus", {})
++profile_covered = set(ps.get("run", [])) | set(ps.get("adapted", {})) | set(ps.get("na", {}))
++if profile_covered != all_nums:
++    errs.append("profile promptStatus != prompt set "
++                "(missing=%s extra=%s)" % (sorted(all_nums - profile_covered),
++                                           sorted(profile_covered - all_nums)))
++
++wave_refs = set()
++for w in profile.get("waves", []):
++    wave_refs |= set(w.get("prompts", [])) | set(w.get("na", []))
++if wave_refs != all_nums:
++    errs.append("profile waves != prompt set "
++                "(missing=%s extra=%s)" % (sorted(all_nums - wave_refs),
++                                           sorted(wave_refs - all_nums)))
++
++if errs:
++    print("; ".join(errs))
++    raise SystemExit(1)
++print("%d prompts covered by order/status/waves" % len(all_nums))
++PY
++then ok "execution order/status/waves cover the prompt set"; else bad "execution order/status drift"; fi
++
+ # --- 6. Referenced files exist --------------------------------------------------
+ if python3 - <<'PY'
+ import json, pathlib
+diff --git a/tools/run_toolchain.py b/tools/run_toolchain.py
+index 3439ddb..30c0554 100644
+--- a/tools/run_toolchain.py
++++ b/tools/run_toolchain.py
+@@ -8,14 +8,15 @@ delta (diff_runs.py), and CSV export (findings_to_csv.py).
+ 
+ Usage:
+   python3 tools/run_toolchain.py <run-folder> [--write] [--dashboard]
+-      [--diff <old-run-folder>] [--no-check] [--strict]
++      [--diff <old-run-folder>] [--no-check]
+ 
+ Read-only by default (every step prints a summary; CSV goes to a temp
+ file). --write lets each step emit its artifacts into the run folder.
+ --dashboard also renders dashboard.md/html + pr_comment.md (with --write).
+---diff compares against an older run. --no-check skips check_run.sh.
+---strict turns a skipped check (no bash) into a failure.
+-Fails fast: the first failing step aborts the chain. ASCII-only output.
++--diff compares against an older run. The check_run.sh validation step is
++mandatory and strict by default: when bash is unavailable the chain fails
++(exit 2) unless --no-check is passed explicitly. Fails fast: the first
++failing step aborts the chain. ASCII-only output.
+ """
+ 
+ import argparse
+@@ -53,9 +54,9 @@ def main():
+     ap.add_argument("--diff", default=None, metavar="OLD_RUN",
+                     help="record the delta against an older run folder")
+     ap.add_argument("--no-check", action="store_true",
+-                    help="skip check_run.sh validation")
++                    help="skip check_run.sh validation (explicit opt-out)")
+     ap.add_argument("--strict", action="store_true",
+-                    help="fail when the check step must be skipped (no bash)")
++                    help="deprecated: strict checking is now the default")
+     args = ap.parse_args()
+ 
+     py = sys.executable
+@@ -64,16 +65,13 @@ def main():
+ 
+     if not args.no_check:
+         bash = shutil.which("bash")
+-        if bash:
+-            ok = step("check_run.sh",
+-                      [bash, os.path.join(TOOLS, "check_run.sh"), args.run_dir]) and ok
+-        elif args.strict:
+-            print("FAILED: check requested but no bash found (--strict)",
++        if not bash:
++            print("FAILED: check_run.sh requested but no bash found on PATH "
++                  "(install bash, or pass --no-check to skip validation)",
+                   file=sys.stderr)
+             raise SystemExit(2)
+-        else:
+-            print("== check_run.sh ==")
+-            print("skipped: no bash on PATH (use --strict to fail, --no-check to silence)")
++        ok = step("check_run.sh",
++                  [bash, os.path.join(TOOLS, "check_run.sh"), args.run_dir]) and ok
+ 
+     ok = step("collect_findings.py",
+               [py, os.path.join(TOOLS, "collect_findings.py"), args.run_dir] + write) and ok

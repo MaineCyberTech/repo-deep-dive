@@ -1,0 +1,27 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "patchSet": "PS-007",
+  "title": "Deterministic findings integration",
+  "findings": ["API-P2-001", "API-P2-002", "DATA-P3-003"],
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "base": "main@b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-007-20261003-0018-main-7bac320",
+  "commit": "c661a6c8d71381345cf0662183fbba453f229fe3",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/7",
+  "generated": "2026-10-03T14:50:31Z",
+  "diffSha256": "44b128184ccd103f4dd6ea6c3756993720d6e9713ef3986aa8b111b59a236666",
+  "commands": [
+    { "command": "bash tools/pack_digest.sh", "runner": "WSL Ubuntu-24.04", "exit": 0 },
+    { "command": "bash tools/lint_pack.sh", "runner": "WSL Ubuntu-24.04", "exit": 0, "result": "PASS" },
+    { "command": "bash tools/self_test.sh", "runner": "WSL Ubuntu-24.04", "exit": 0, "result": "PASS" },
+    { "command": "python3 tools/deterministic_checks.py <fixture> -o <out> --run fixture", "runner": "WSL Ubuntu-24.04", "exit": 0 },
+    { "command": "python3 tools/deterministic_checks.py <fixture> --run-folder <run>", "runner": "WSL Ubuntu-24.04", "exit": 0 },
+    { "command": "python3 tools/collect_findings.py <run>", "runner": "WSL Ubuntu-24.04", "exit": 0 }
+  ],
+  "secretGate": {
+    "gitleaks": "not run - binary not installed on the verification host",
+    "supplementary_diff_regex_scan": "no secret-like patterns in the diff"
+  },
+  "evidence": ["verify.log", "diff.patch", "manifest.json", "pr_body.md"],
+  "rollback": "git revert c661a6c8d71381345cf0662183fbba453f229fe3"
+}

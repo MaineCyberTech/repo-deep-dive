@@ -1,0 +1,157 @@
+repo:    /mnt/c/temp/repo-deep-dive-rem
+head:    b3d038250f5437490df21e1d25a1ea1297530559
+branch:  remediation/ps-003-20261003-0018-main-7bac320
+date:    2026-10-03T13:58:10Z
+gitleaks: 8.30.1
+actionlint: 1.7.12
+
+### 1. actionlint -no-color .github/workflows/deep-dive-deterministic.yml
+== [PASS] actionlint ==
+
+### 2. Every uses: ref in the changed workflow is pinned to a 40-hex SHA
+60:        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+188:        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+== [PASS] uses-sha-pinned ==
+
+### 3. Tool downloads are versioned + sha256-verified (>= 4 of each)
+pinned-version env vars: 4 ; download URLs: 4 ; sha256 checks: 4
+81:            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+86:            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+92:              "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-x86_64"
+96:              "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+== [PASS] downloads-pinned-checksummed ==
+
+### 4. Token is not embedded in the clone URL (SEC-P1-002)
+125:          echo "::add-mask::${GH_TOKEN}"
+141:            if git -c credential.helper= \
+142:                 -c http.extraheader="AUTHORIZATION: bearer ${GH_TOKEN}" \
+== [PASS] no-token-in-url ==
+
+### 5. bash tools/lint_pack.sh
+Linting pack: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   VERSION = 1.4.1
+  OK   README references v1.4.1
+  OK   JSON version fields match VERSION
+  OK   141 JSON files parse
+  OK   area codes unique
+  OK   prompt structure complete
+  OK   prompt counts (actual 46 = base 42 + falcon 4)
+  OK   profile manifest references resolve
+  OK   run validates: runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   run validates: runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   run validates: runs/buddy-20261003-0018-master-99abf29
+  OK   run validates: runs/chat-20261003-0018-develop-a72b8cc
+  OK   run validates: runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   run validates: runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   run validates: runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   run validates: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   run validates: runs/snowride-20261003-0018-main-59e12b9
+  OK   PACK_DIGEST.txt is current
+  OK   runs/INDEX.md lists all archived runs
+  OK   report structures include Verification Performed
+
+RESULT: PASS
+== [PASS] lint_pack.sh ==
+
+### 6. bash tools/self_test.sh
+Self-test: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   lint_pack.sh
+  OK   check_run.sh runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   collect_findings.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (90 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (90 rows)
+  OK   risk_score.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (0/100)
+  OK   render_dashboard.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   check_run.sh runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   collect_findings.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (264 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (264 rows)
+  OK   risk_score.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (0/100)
+  OK   render_dashboard.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   check_run.sh runs/buddy-20261003-0018-master-99abf29
+  OK   collect_findings.py runs/buddy-20261003-0018-master-99abf29 (40 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (40 rows)
+  OK   risk_score.py runs/buddy-20261003-0018-master-99abf29 (0/100)
+  OK   render_dashboard.py runs/buddy-20261003-0018-master-99abf29 (read-only render)
+  OK   findings.schema.json conformance runs/buddy-20261003-0018-master-99abf29
+  OK   check_run.sh runs/chat-20261003-0018-develop-a72b8cc
+  OK   collect_findings.py runs/chat-20261003-0018-develop-a72b8cc (64 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (64 rows)
+  OK   risk_score.py runs/chat-20261003-0018-develop-a72b8cc (0/100)
+  OK   render_dashboard.py runs/chat-20261003-0018-develop-a72b8cc (read-only render)
+  OK   findings.schema.json conformance runs/chat-20261003-0018-develop-a72b8cc
+  OK   check_run.sh runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   collect_findings.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (0/100)
+  OK   render_dashboard.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (read-only render)
+  OK   findings.schema.json conformance runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   check_run.sh runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   collect_findings.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (42 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (42 rows)
+  OK   risk_score.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (0/100)
+  OK   render_dashboard.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (read-only render)
+  OK   findings.schema.json conformance runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   check_run.sh runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   collect_findings.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (44 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (44 rows)
+  OK   risk_score.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (0/100)
+  OK   render_dashboard.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (read-only render)
+  OK   findings.schema.json conformance runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   collect_findings.py runs/repo-deep-dive-20261003-0018-main-7bac320 (41 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (41 rows)
+  OK   risk_score.py runs/repo-deep-dive-20261003-0018-main-7bac320 (0/100)
+  OK   render_dashboard.py runs/repo-deep-dive-20261003-0018-main-7bac320 (read-only render)
+  OK   findings.schema.json conformance runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   check_run.sh runs/snowride-20261003-0018-main-59e12b9
+  OK   collect_findings.py runs/snowride-20261003-0018-main-59e12b9 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/snowride-20261003-0018-main-59e12b9 (0/100)
+  OK   render_dashboard.py runs/snowride-20261003-0018-main-59e12b9 (read-only render)
+  OK   findings.schema.json conformance runs/snowride-20261003-0018-main-59e12b9
+  OK   repo_inventory.py (self-scan)
+  OK   run_toolchain.py (read-only chain)
+  OK   new_run.py (TMP scaffold)
+  OK   live_snapshot.sh (read-only capture)
+
+RESULT: PASS
+== [PASS] self_test.sh ==
+
+### 7. .gitleaks.toml proof: real-format GitHub PAT (ghp_ + 36 [A-Za-z0-9])
+[7a] non-allowlisted path src/leak.txt must be DETECTED (expect exit 1)
+9:59AM INF scanned ~56 bytes (56 bytes) in 259ms
+9:59AM WRN leaks found: 1
+   rules detected: ['github-pat']
+== [PASS] gitleaks-detects-real-pat ==
+[7b] allowlisted examples/*.example.json must be SUPPRESSED (expect exit 0)
+9:59AM INF scanned ~0 bytes (0) in 219ms
+9:59AM INF no leaks found
+== [PASS] gitleaks-allowlist-suppresses ==
+
+### 8. Changed-file secret scan with the new config (CI gate parity)
+9:59AM INF scanned ~8548 bytes (8.55 KB) in 286ms
+9:59AM INF no leaks found
+== [PASS] changed-files-no-secrets ==
+
+### 9. Gate logic: P1 SEC finding fails, clean passes (SEC-P2-003 / OBS-P2-002)
+::error::P1 secret finding(s) detected; failing closed:
+  out/orgrepo/deterministic-findings.json: SEC-P1-001 - gitleaks: github-pat (1 hit(s))
+no P1 secret findings
+P1 finding -> gate exit 1 (expect 1); clean -> gate exit 0 (expect 0)
+== [PASS] gate-p1-secret ==
+
+================================
+PS-003 VERIFY RESULT: PASS
+================================

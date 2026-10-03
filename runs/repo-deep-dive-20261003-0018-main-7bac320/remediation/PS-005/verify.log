@@ -1,0 +1,143 @@
+# PS-005 verification log
+
+run:      20261003-0018-main-7bac320
+patch set: PS-005
+findings:  FEAT-P2-001, FEAT-P3-002
+branch:   remediation/ps-005-20261003-0018-main-7bac320
+base:     origin/main @ b3d0382
+date:     2026-10-03T14:29:42Z
+
+===== COMMAND: bash tools/self_test.sh =====
+Self-test: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   lint_pack.sh
+  OK   check_run.sh runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   collect_findings.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (90 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (90 rows)
+  OK   risk_score.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (0/100)
+  OK   render_dashboard.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   check_run.sh runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   collect_findings.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (264 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (264 rows)
+  OK   risk_score.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (0/100)
+  OK   render_dashboard.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   check_run.sh runs/buddy-20261003-0018-master-99abf29
+  OK   collect_findings.py runs/buddy-20261003-0018-master-99abf29 (40 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (40 rows)
+  OK   risk_score.py runs/buddy-20261003-0018-master-99abf29 (0/100)
+  OK   render_dashboard.py runs/buddy-20261003-0018-master-99abf29 (read-only render)
+  OK   findings.schema.json conformance runs/buddy-20261003-0018-master-99abf29
+  OK   check_run.sh runs/chat-20261003-0018-develop-a72b8cc
+  OK   collect_findings.py runs/chat-20261003-0018-develop-a72b8cc (64 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (64 rows)
+  OK   risk_score.py runs/chat-20261003-0018-develop-a72b8cc (0/100)
+  OK   render_dashboard.py runs/chat-20261003-0018-develop-a72b8cc (read-only render)
+  OK   findings.schema.json conformance runs/chat-20261003-0018-develop-a72b8cc
+  OK   check_run.sh runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   collect_findings.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (0/100)
+  OK   render_dashboard.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (read-only render)
+  OK   findings.schema.json conformance runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   check_run.sh runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   collect_findings.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (42 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (42 rows)
+  OK   risk_score.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (0/100)
+  OK   render_dashboard.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (read-only render)
+  OK   findings.schema.json conformance runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   check_run.sh runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   collect_findings.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (44 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (44 rows)
+  OK   risk_score.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (0/100)
+  OK   render_dashboard.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (read-only render)
+  OK   findings.schema.json conformance runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   collect_findings.py runs/repo-deep-dive-20261003-0018-main-7bac320 (41 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (41 rows)
+  OK   risk_score.py runs/repo-deep-dive-20261003-0018-main-7bac320 (0/100)
+  OK   render_dashboard.py runs/repo-deep-dive-20261003-0018-main-7bac320 (read-only render)
+  OK   findings.schema.json conformance runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   check_run.sh runs/snowride-20261003-0018-main-59e12b9
+  OK   collect_findings.py runs/snowride-20261003-0018-main-59e12b9 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/snowride-20261003-0018-main-59e12b9 (0/100)
+  OK   render_dashboard.py runs/snowride-20261003-0018-main-59e12b9 (read-only render)
+  OK   findings.schema.json conformance runs/snowride-20261003-0018-main-59e12b9
+  OK   repo_inventory.py (self-scan)
+  OK   run_toolchain.py (read-only chain)
+  OK   new_run.py (TMP scaffold)
+  OK   live_snapshot.sh (read-only capture)
+
+RESULT: PASS
+[exit=0]
+
+===== COMMAND: bash tools/lint_pack.sh =====
+Linting pack: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   VERSION = 1.5.0
+  OK   README references v1.5.0
+  OK   JSON version fields match VERSION
+  OK   141 JSON files parse
+  OK   area codes unique
+  OK   prompt structure complete
+  OK   prompt counts (actual 46 = base 42 + falcon 4)
+  OK   profile manifest references resolve
+  OK   run validates: runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   run validates: runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   run validates: runs/buddy-20261003-0018-master-99abf29
+  OK   run validates: runs/chat-20261003-0018-develop-a72b8cc
+  OK   run validates: runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   run validates: runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   run validates: runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   run validates: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   run validates: runs/snowride-20261003-0018-main-59e12b9
+  OK   PACK_DIGEST.txt is current
+  OK   runs/INDEX.md lists all archived runs
+  OK   report structures include Verification Performed
+
+RESULT: PASS
+[exit=0]
+
+===== COMMAND: bash tools/check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320 =====
+Checking run: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   INDEX.md
+  OK   EXECUTIVE_SUMMARY.md
+  OK   RELEASE_GATE.md
+  OK   risk_register.md
+  OK   roadmap.md
+  OK   patch_plan.md
+  OK   audit_manifest.json
+  OK   manifest parses (run=20261003-0018-main-7bac320 profile=base findings=41)
+  OK   finding IDs unique (41 unique IDs)
+  OK   finding statuses use the shared vocabulary (0 statuses ok)
+
+RESULT: PASS
+[exit=0]
+
+===== gitleaks: NOT RUN (binary not installed on this host) =====
+
+===== FINDING-SPECIFIC BINDING CHECKS =====
+
+--- FEAT-P2-001: VERSION bumped and version fields in sync ---
+VERSION=1.5.0; README=v1.5.0; 3 JSON version fields=1.5.0 -> OK
+[exit=0]
+
+--- FEAT-P2-001: CHANGELOG names the shipped capabilities at the bumped version ---
+top entry: ## 2026-10-03 — Remediation runner, deterministic checks, org runner (v1.5.0)
+capabilities named: deterministic_checks.py, aggregate_findings.py, deep-dive-deterministic.yml, remediation_plan.py -> OK
+[exit=0]
+
+--- FEAT-P3-002: README tools row lists every tools/* basename ---
+all 21 tool basenames appear in README.md -> OK
+[exit=0]

@@ -1,0 +1,164 @@
+# PS-007 verification
+# date: 2026-10-03T14:50:31Z
+# commit: c661a6c8d71381345cf0662183fbba453f229fe3
+# branch: remediation/ps-007-20261003-0018-main-7bac320
+# host: Linux 6.18.40.1-microsoft-standard-WSL2 x86_64 GNU/Linux
+
+$ bash tools/pack_digest.sh
+wrote PACK_DIGEST.txt (906 files)
+exit=0
+
+$ bash tools/lint_pack.sh
+Linting pack: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   VERSION = 1.4.1
+  OK   README references v1.4.1
+  OK   JSON version fields match VERSION
+  OK   141 JSON files parse
+  OK   area codes unique
+  OK   prompt structure complete
+  OK   prompt counts (actual 46 = base 42 + falcon 4)
+  OK   profile manifest references resolve
+  OK   run validates: runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   run validates: runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   run validates: runs/buddy-20261003-0018-master-99abf29
+  OK   run validates: runs/chat-20261003-0018-develop-a72b8cc
+  OK   run validates: runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   run validates: runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   run validates: runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   run validates: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   run validates: runs/snowride-20261003-0018-main-59e12b9
+  OK   PACK_DIGEST.txt is current
+  OK   runs/INDEX.md lists all archived runs
+  OK   report structures include Verification Performed
+
+RESULT: PASS
+exit=0
+
+$ bash tools/self_test.sh
+Self-test: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   lint_pack.sh
+  OK   check_run.sh runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   collect_findings.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (90 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (90 rows)
+  OK   risk_score.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (0/100)
+  OK   render_dashboard.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   check_run.sh runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   collect_findings.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (264 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (264 rows)
+  OK   risk_score.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (0/100)
+  OK   render_dashboard.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   check_run.sh runs/buddy-20261003-0018-master-99abf29
+  OK   collect_findings.py runs/buddy-20261003-0018-master-99abf29 (40 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (40 rows)
+  OK   risk_score.py runs/buddy-20261003-0018-master-99abf29 (0/100)
+  OK   render_dashboard.py runs/buddy-20261003-0018-master-99abf29 (read-only render)
+  OK   findings.schema.json conformance runs/buddy-20261003-0018-master-99abf29
+  OK   check_run.sh runs/chat-20261003-0018-develop-a72b8cc
+  OK   collect_findings.py runs/chat-20261003-0018-develop-a72b8cc (64 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (64 rows)
+  OK   risk_score.py runs/chat-20261003-0018-develop-a72b8cc (0/100)
+  OK   render_dashboard.py runs/chat-20261003-0018-develop-a72b8cc (read-only render)
+  OK   findings.schema.json conformance runs/chat-20261003-0018-develop-a72b8cc
+  OK   check_run.sh runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   collect_findings.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (0/100)
+  OK   render_dashboard.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (read-only render)
+  OK   findings.schema.json conformance runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   check_run.sh runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   collect_findings.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (42 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (42 rows)
+  OK   risk_score.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (0/100)
+  OK   render_dashboard.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (read-only render)
+  OK   findings.schema.json conformance runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   check_run.sh runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   collect_findings.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (44 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (44 rows)
+  OK   risk_score.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (0/100)
+  OK   render_dashboard.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (read-only render)
+  OK   findings.schema.json conformance runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   collect_findings.py runs/repo-deep-dive-20261003-0018-main-7bac320 (41 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (41 rows)
+  OK   risk_score.py runs/repo-deep-dive-20261003-0018-main-7bac320 (0/100)
+  OK   render_dashboard.py runs/repo-deep-dive-20261003-0018-main-7bac320 (read-only render)
+  OK   findings.schema.json conformance runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   check_run.sh runs/snowride-20261003-0018-main-59e12b9
+  OK   collect_findings.py runs/snowride-20261003-0018-main-59e12b9 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/snowride-20261003-0018-main-59e12b9 (0/100)
+  OK   render_dashboard.py runs/snowride-20261003-0018-main-59e12b9 (read-only render)
+  OK   findings.schema.json conformance runs/snowride-20261003-0018-main-59e12b9
+  OK   repo_inventory.py (self-scan)
+  OK   run_toolchain.py (read-only chain)
+  OK   new_run.py (TMP scaffold)
+  OK   live_snapshot.sh (read-only capture)
+
+RESULT: PASS
+exit=0
+
+# Functional run: deterministic_checks.py on a throwaway fixture
+$ python3 tools/deterministic_checks.py /tmp/tmp.iD28RgJ4qD/repo -o /tmp/tmp.iD28RgJ4qD/out --run fixture
+repo: fixture
+findings: 8 {'P1': 1, 'P2': 2, 'P3': 5}
+areas: {'DET': 8}
+wrote /tmp/tmp.iD28RgJ4qD/out/deterministic-findings.json
+wrote /tmp/tmp.iD28RgJ4qD/out/lens_deterministic.md
+exit=0
+
+# IDs, real line numbers, and ASCII separator from the fixture lens:
+20:### Finding ID: DET-P3-001 - [CI] No GitHub Actions workflows
+24:### Finding ID: DET-P2-002 - [DEP] package.json with no lockfile
+28:### Finding ID: DET-P3-003 - [DOC] No README
+32:### Finding ID: DET-P3-004 - [GIT] No LICENSE file
+36:### Finding ID: DET-P2-005 - [PORT] 1 tracked shell script(s) without the exec bit
+44:### Finding ID: DET-P3-006 - [PORT] .gitattributes missing (no line-ending policy)
+48:### Finding ID: DET-P1-007 - [SEC] 1 tracked secret-adjacent file(s)
+56:### Finding ID: DET-P3-008 - [SEC] gitleaks not installed (secret scan skipped)
+
+# Import path: deterministic_checks.py --run-folder + collect_findings.py
+$ python3 tools/deterministic_checks.py /tmp/tmp.iD28RgJ4qD/repo --run-folder /tmp/tmp.iD28RgJ4qD/run
+repo: repo
+findings: 8 {'P1': 1, 'P2': 2, 'P3': 5}
+areas: {'DET': 8}
+wrote /tmp/tmp.iD28RgJ4qD/run/deterministic-findings.json
+wrote /tmp/tmp.iD28RgJ4qD/run/lens_deterministic.md
+run: run
+reports scanned: 2
+findings: 9 (P1 x2, P2 x2, P3 x5)
+areas: DET x8, SEC x1
+wrote /tmp/tmp.iD28RgJ4qD/run/findings.json
+exit=0
+
+# Run findings.json after import (SEC domain finding + DET deterministic findings):
+total 9
+byArea {'DET': 8, 'SEC': 1}
+['DET-P1-007', 'SEC-P1-001', 'DET-P2-002', 'DET-P2-005', 'DET-P3-001', 'DET-P3-003', 'DET-P3-004', 'DET-P3-006', 'DET-P3-008']
+exit=0
+
+# Secret gate:
+gitleaks: NOT RUN (binary not installed on this host)
+# diff-scope secret-like regex scan (supplementary, not a gitleaks substitute):
+no secret-like patterns in the diff
+
+# Duplicate-ID gate across the deterministic lens + domain report:
+check_run.sh exit=1 (expected nonzero: throwaway run omits the final reports)
+  OK   finding IDs unique (9 unique IDs)
+
+# Direct duplicate scan via lib_findings:
+unique_ids 9
+dupes []
+exit=0

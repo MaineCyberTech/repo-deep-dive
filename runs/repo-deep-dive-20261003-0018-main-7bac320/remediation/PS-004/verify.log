@@ -1,0 +1,196 @@
+repo:    /mnt/c/temp/repo-deep-dive-rem
+head:    ca641962f156f8320923e555ce1b8374f695b06a
+branch:  remediation/ps-004-20261003-0018-main-7bac320
+date:    2026-10-03T14:08:22Z
+actionlint: 1.7.12
+gitleaks:   8.30.1
+
+### 1. actionlint -no-color .github/workflows/audit.yml
+== [PASS] actionlint-audit.yml ==
+
+### 2. actionlint -no-color ci/audit.yml
+== [PASS] actionlint-ci-audit.yml ==
+
+### 3. CI-P1-001: the audit workflow is wired under .github/workflows
+audit.yml
+deep-dive-deterministic.yml
+lab-tests.yml
+remediation-board.yml
+remediation.yml
+verify-remediation.yml
+== [PASS] workflow-wired ==
+
+### 4. CI-P1-002: PACK_DIR matches the in-repo layout (root, not vendored)
+12:# - PACK_DIR: where the pack lives. Use `.` for an in-repo checkout (this repo),
+35:  PACK_DIR: .
+62:        working-directory: ${{ env.PACK_DIR }}
+66:        working-directory: ${{ env.PACK_DIR }}
+70:        working-directory: ${{ env.PACK_DIR }}
+74:        working-directory: ${{ env.PACK_DIR }}
+== [PASS] pack-dir-root ==
+
+### 5. CI-P2-006: PR events do not use a fixed 'latest' run path
+-- [5a] example is workflow_dispatch only (no PR empty-input path)
+== [PASS] example-no-pr-trigger ==
+-- [5b] no bogus fixed run-path fallback anywhere
+== [PASS] no-latest-path ==
+-- [5c] wired workflow derives changed runs from the PR diff
+63:          mapfile -t runs < <(
+64:            git diff --name-only "origin/${BASE_REF}...HEAD" -- 'runs/**' \
+== [PASS] diff-derived-run-dir ==
+
+### 6. Changed-run detection logic (unit check of the diff filter)
+input paths -> detected run folders:
+  in : runs/repo-deep-dive-20261003-0018-main-7bac320/findings.json
+  in : runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
+  in : runs/INDEX.md
+  in : tools/self_test.sh
+  in : 
+  out: runs/repo-deep-dive-20261003-0018-main-7bac320
+== [PASS] changed-run-filter ==
+-- pathspec 'runs/**' matches tracked run files:
+git ls-files 'runs/**' -> 787 files
+-- current PR diff (remediation/ps-004-20261003-0018-main-7bac320 vs origin/main):
+== [PASS] pathspec-matches-runs ==
+
+### 7. P0 gate logic (same python as the wired workflow)
+P0 gate: no P0 findings
+P0 findings present: 1
+P0 absent -> exit 0 (expect 0); P0 present -> exit 1 (expect 1)
+== [PASS] p0-gate-logic ==
+
+### 8. bash tools/lint_pack.sh
+Linting pack: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   VERSION = 1.4.1
+  OK   README references v1.4.1
+  OK   JSON version fields match VERSION
+  OK   141 JSON files parse
+  OK   area codes unique
+  OK   prompt structure complete
+  OK   prompt counts (actual 46 = base 42 + falcon 4)
+  OK   profile manifest references resolve
+  OK   run validates: runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   run validates: runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   run validates: runs/buddy-20261003-0018-master-99abf29
+  OK   run validates: runs/chat-20261003-0018-develop-a72b8cc
+  OK   run validates: runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   run validates: runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   run validates: runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   run validates: runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   run validates: runs/snowride-20261003-0018-main-59e12b9
+  OK   PACK_DIGEST.txt is current
+  OK   runs/INDEX.md lists all archived runs
+  OK   report structures include Verification Performed
+
+RESULT: PASS
+== [PASS] lint_pack.sh ==
+
+### 9. bash tools/self_test.sh
+Self-test: /mnt/c/temp/repo-deep-dive-rem
+
+  OK   lint_pack.sh
+  OK   check_run.sh runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   collect_findings.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (90 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (90 rows)
+  OK   risk_score.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (0/100)
+  OK   render_dashboard.py runs/20260930-0320-falcon-794ba31_edge-2b5bc8b (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0320-falcon-794ba31_edge-2b5bc8b
+  OK   check_run.sh runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   collect_findings.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (264 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (264 rows)
+  OK   risk_score.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (0/100)
+  OK   render_dashboard.py runs/20260930-0701-falcon-8282d3f_edge-45dfed0 (read-only render)
+  OK   findings.schema.json conformance runs/20260930-0701-falcon-8282d3f_edge-45dfed0
+  OK   check_run.sh runs/buddy-20261003-0018-master-99abf29
+  OK   collect_findings.py runs/buddy-20261003-0018-master-99abf29 (40 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (40 rows)
+  OK   risk_score.py runs/buddy-20261003-0018-master-99abf29 (0/100)
+  OK   render_dashboard.py runs/buddy-20261003-0018-master-99abf29 (read-only render)
+  OK   findings.schema.json conformance runs/buddy-20261003-0018-master-99abf29
+  OK   check_run.sh runs/chat-20261003-0018-develop-a72b8cc
+  OK   collect_findings.py runs/chat-20261003-0018-develop-a72b8cc (64 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (64 rows)
+  OK   risk_score.py runs/chat-20261003-0018-develop-a72b8cc (0/100)
+  OK   render_dashboard.py runs/chat-20261003-0018-develop-a72b8cc (read-only render)
+  OK   findings.schema.json conformance runs/chat-20261003-0018-develop-a72b8cc
+  OK   check_run.sh runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   collect_findings.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (0/100)
+  OK   render_dashboard.py runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57 (read-only render)
+  OK   findings.schema.json conformance runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57
+  OK   check_run.sh runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   collect_findings.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (42 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (42 rows)
+  OK   risk_score.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (0/100)
+  OK   render_dashboard.py runs/falcon-edge-20261003-0018-fix-trust-root-87532ec (read-only render)
+  OK   findings.schema.json conformance runs/falcon-edge-20261003-0018-fix-trust-root-87532ec
+  OK   check_run.sh runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   collect_findings.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (44 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (44 rows)
+  OK   risk_score.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (0/100)
+  OK   render_dashboard.py runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d (read-only render)
+  OK   findings.schema.json conformance runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d
+  OK   check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   collect_findings.py runs/repo-deep-dive-20261003-0018-main-7bac320 (41 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (41 rows)
+  OK   risk_score.py runs/repo-deep-dive-20261003-0018-main-7bac320 (0/100)
+  OK   render_dashboard.py runs/repo-deep-dive-20261003-0018-main-7bac320 (read-only render)
+  OK   findings.schema.json conformance runs/repo-deep-dive-20261003-0018-main-7bac320
+  OK   check_run.sh runs/snowride-20261003-0018-main-59e12b9
+  OK   collect_findings.py runs/snowride-20261003-0018-main-59e12b9 (46 findings)
+  OK   diff_runs.py self-compare (all zero)
+  OK   findings_to_csv.py (46 rows)
+  OK   risk_score.py runs/snowride-20261003-0018-main-59e12b9 (0/100)
+  OK   render_dashboard.py runs/snowride-20261003-0018-main-59e12b9 (read-only render)
+  OK   findings.schema.json conformance runs/snowride-20261003-0018-main-59e12b9
+  OK   repo_inventory.py (self-scan)
+  OK   run_toolchain.py (read-only chain)
+  OK   new_run.py (TMP scaffold)
+  OK   live_snapshot.sh (read-only capture)
+
+RESULT: PASS
+== [PASS] self_test.sh ==
+
+### 10. Secret scan of the changed tree (gitleaks defaults)
+10:09AM INF scanned ~10507 bytes (10.51 KB) in 238ms
+10:09AM INF no leaks found
+== [PASS] changed-files-no-secrets ==
+
+### 11. CI-P2-005: CODEOWNERS + documented required checks/bypass policy
+-rwxrwxrwx 1 root root 697 Oct  3 10:03 .github/CODEOWNERS
+10:*                       @JulianB-MCT
+13:/.github/               @JulianB-MCT
+14:/ci/                    @JulianB-MCT
+15:/tools/                 @JulianB-MCT
+16:/schemas/               @JulianB-MCT
+17:/profiles/              @JulianB-MCT
+57:## CI and required checks
+69:required reviews, and required status checks are GitHub server-side settings and
+73:Bypass policy: force-pushing to `main` and admin-merging bypass the gate. Do not
+== [PASS] codeowners-and-policy ==
+
+### 12. TEST-P1-001: push/PR job runs lint_pack + self_test
+14:  pull_request:
+15:  push:
+38:        run: bash tools/lint_pack.sh
+41:        run: bash tools/self_test.sh
+== [PASS] pack-ci-on-pr-and-push ==
+
+### 13. Extracted workflow shell scripts pass bash -n (YAML heredoc integrity)
+== [PASS] bash-syntax-.github_workflows_audit.yml ==
+== [PASS] bash-syntax-ci_audit.yml ==
+
+================================
+PS-004 VERIFY RESULT: PASS
+================================
+EXIT=0

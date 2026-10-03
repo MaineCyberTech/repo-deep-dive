@@ -1,0 +1,68 @@
+{
+  "run": "20261003-0018-main-7bac320",
+  "repo": "MaineCyberTech/repo-deep-dive",
+  "patchSet": "PS-005",
+  "title": "Change control and docs",
+  "findings": [
+    "FEAT-P2-001",
+    "FEAT-P3-002"
+  ],
+  "base": "main",
+  "baseCommit": "b3d038250f5437490df21e1d25a1ea1297530559",
+  "branch": "remediation/ps-005-20261003-0018-main-7bac320",
+  "commit": "c07a49a4b1a0001b5d6f38b4b2504d9a1a2c5289",
+  "pr": "https://github.com/MaineCyberTech/repo-deep-dive/pull/5",
+  "prMode": "draft",
+  "files": [
+    "VERSION",
+    "CHANGELOG.md",
+    "README.md",
+    "examples/audit_manifest.example.json",
+    "examples/audit_manifest.falcon-lab.example.json",
+    "profiles/falcon-lab.manifest.json",
+    "PACK_DIGEST.txt"
+  ],
+  "commands": [
+    {
+      "command": "bash tools/self_test.sh",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "bash tools/lint_pack.sh",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS; VERSION = 1.5.0; README references v1.5.0; JSON version fields match VERSION; PACK_DIGEST.txt is current"
+    },
+    {
+      "command": "bash tools/check_run.sh runs/repo-deep-dive-20261003-0018-main-7bac320",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "RESULT: PASS"
+    },
+    {
+      "command": "binding asserts: VERSION/README/3 JSON version fields == 1.5.0; CHANGELOG top entry (v1.5.0) names deterministic_checks.py/aggregate_findings.py/deep-dive-deterministic.yml/remediation_plan.py; all 21 tools/* basenames in README.md",
+      "runner": "local WSL Ubuntu 24.04 / Python 3.12.3",
+      "exit": 0,
+      "result": "all OK"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact",
+      "runner": "-",
+      "exit": null,
+      "result": "not run - gitleaks binary not installed on the remediation host; diff is version strings + changelog/README prose + digest only"
+    }
+  ],
+  "evidence": {
+    "verifyLog": "remediation/PS-005/verify.log",
+    "diff": "remediation/PS-005/diff.patch",
+    "prBody": "remediation/PS-005/pr_body.md"
+  },
+  "sha256": {
+    "diff.patch": "511d9d97037da5451ef3b1a4ae6472129cf6d9efacff8fd3b61f78a7a11c95e2",
+    "verify.log": "363f6d05e2d58d1ec5d9173e96c3d15d6d0176718dc4afe47714ed72f8032911",
+    "pr_body.md": "1b30e565ee455a0a532b80699cfd22af454f1971374f809d44830970e3279e81"
+  },
+  "generatedAt": "2026-10-03T14:31:46Z"
+}
