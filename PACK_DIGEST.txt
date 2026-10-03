@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T16:34:14Z
+# generated: 2026-10-03T16:36:20Z
 # files: 1024
 # format: sha256  path
 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
@@ -795,7 +795,7 @@ edc4f81c7ae61f9898df9ea8e66049dd67a6402f84b4dc3fed253223af5f9082  ./runs/repo-de
 e9d74900c2feb0a78c5ff92c0b04e93bcf3eb66fa0695458fd3132d2ce914666  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.html
 cbc20e976700c6f8e807bb1bba5d3e52f04ca50f68dfdf3e996436ff7f2c1af3  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.md
 0b82b38ab6580a956bc2dd6b675f3cd01a64350ef359cd0811f83cedabb4ab2b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/findings.json
-20c8e663ec92ad13ca5ac0e10647ebbc0633463fda4f71aa1f10806efade5cf1  ./runs/repo-deep-dive-20261003-0018-main-7bac320/follow_up_register.md
+027c8b9f426e5364b7af0c468515fea541472dc58cb460429eb984baca3bf236  ./runs/repo-deep-dive-20261003-0018-main-7bac320/follow_up_register.md
 4a8891b78e9e3a9e73d02575518d909a6177051ff46190cc7cfa56dc6cb7ffa0  ./runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
 1c31ca56048f5a4bb05e89162376b58c24262b6a37754838588c278d45a69d2b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/patch_plan.md
 636cae2e0a0933d9044068e9268cec8ec72686d69068f42c6e57b10957d7ca5e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/pr_comment.md
@@ -850,11 +850,11 @@ d2def048275cb3752d8657fcff6e6c843d7aff9567799c2ffa04f58fa198b930  ./runs/repo-de
 6d1d2897e6fc830cb9b82f533263d8de2475f4966bca2159dec8c1249b84d95a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/reconcile.sh
 9d72fa6d2fb0509c1db46651e4960f4b1953104accf3dcb656288da10a080734  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/verify.log
 1e6fee96c89c30ba6c760a6e929f51d6c7f02d6bdb5971a4ba5daf57f4b8ecf6  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/verify.sh
-07ef8952b4cd2314dc2990d07fad7127a6f7a459f1f389cd665f2ce141fd3f1a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation_plan.json
+95376115229b6dc3c3f102276bc1176331829f06ced8bdaadf2913620cc81850  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation_plan.json
 2db411f98943aa19b86b860171d255ce1637ce8113f28fe6404fdbff2232751f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_register.md
 6b835d7c6ba3a55b90bd01d4dbfd50f691b27c508bf5984d11922af0a8b55f17  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_score.json
 3466393320c5890b43823e6ab801bb52e9b8bf4776936b7942c9281f6c820e1f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/roadmap.md
-68511d081d82aebd7b1ce8246e7f526c13f66ba53198962d96a9ff7c105f1d83  ./runs/repo-deep-dive-20261003-0018-main-7bac320/verification_log.md
+7409f4efaf45501d1783eb638635348cf5d6f493b654863801e5063016447e9c  ./runs/repo-deep-dive-20261003-0018-main-7bac320/verification_log.md
 45ecde918fd81cc0ee7b200b0c4a65041580a8622056d8062a8fc797405e17a0  ./runs/snowride-20261003-0018-main-59e12b9/01_repository_inventory.md
 d2cceb8b1fb3a748d6fb0a95aac69a0fae361b0fbc1621413c459241f5a3fb14  ./runs/snowride-20261003-0018-main-59e12b9/02_architecture_runtime_topology.md
 901f6b0339fc7f304c9dcb1bf8451438ce1610480be420643b34af22bc474190  ./runs/snowride-20261003-0018-main-59e12b9/03_feature_implementation_map.md
