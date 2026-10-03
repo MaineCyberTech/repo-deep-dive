@@ -52,11 +52,12 @@ def ensure_register(run):
     findings = load_json(os.path.join(run, "findings.json"), {}).get("findings", [])
     lines = ["# Follow-up register", "",
              "Auto-created by tools/remediation_status.py. Owner/Target/Status columns drive "
-             "tools/collect_findings.py enrichment.", "", HEADER, SEP]
+             "tools/collect_findings.py enrichment.", "",
+             HEADER.rstrip("\n"), SEP.rstrip("\n")]
     for f in findings:
-        lines.append("| %s | %s | %s |  |  | %s |  |\n" % (
+        lines.append("| %s | %s | %s |  |  | %s |  |" % (
             f["id"], f["severity"], f.get("title", "").replace("|", "/"), f.get("status") or "open"))
-    open(path, "w", encoding="utf-8").write("".join(lines))
+    open(path, "w", encoding="utf-8").write("\n".join(lines) + "\n")
     return path
 
 
