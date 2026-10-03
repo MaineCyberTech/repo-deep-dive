@@ -15,7 +15,10 @@ optional `findings.json`, and writes `remediation_plan.json`:
 }
 
 Usage:
-  tools/remediation_plan.py <run-folder> [-o remediation_plan.json] [--json]
+  tools/remediation_plan.py <run-folder> [-o remediation_plan.json] [--json] [--include-unassigned]
+
+With --include-unassigned, findings not mapped by patch_plan.md are grouped by area into
+catch-all sets (PS-U01, PS-U02, ...) so every finding is covered by some patch set.
 
 If the run already contains a valid `remediation_plan.json`, it is validated and echoed.
 Read-only against the repo; only the plan output is written.
@@ -189,6 +192,8 @@ def main():
     ap.add_argument("run_dir")
     ap.add_argument("-o", "--output", default=None)
     ap.add_argument("--json", action="store_true", help="print the plan JSON to stdout")
+    ap.add_argument("--include-unassigned", action="store_true",
+                    help="add catch-all patch sets covering findings not mapped in patch_plan.md")
     args = ap.parse_args()
 
     run = os.path.abspath(args.run_dir)
@@ -200,7 +205,7 @@ def main():
     if os.path.exists(out_path):
         try:
             doc = json.load(open(out_path, encoding="utf-8"))
-            if doc.get("patchSets"):
+            if doc.get("patchSets") and not (args.include_unassigned and not doc.get("catchAllSets")):
                 print("existing remediation_plan.json is valid (%d patch sets); echoing"
                       % len(doc["patchSets"]))
                 if args.json:
@@ -240,6 +245,32 @@ def main():
         ps["branch"] = "remediation/%s-%s" % (ps["id"], os.path.basename(run))
 
     unassigned = sorted(set(findings) - assigned)
+    catch_all = []
+    if args.include_unassigned and unassigned:
+        by_area = {}
+        for fid in unassigned:
+            by_area.setdefault(fid.split("-")[0], []).append(fid)
+        n = 0
+        for area in sorted(by_area):
+            n += 1
+            fs = sorted(by_area[area])
+            sevs = [findings.get(fid, {}).get("severity") or fid.split("-")[1] for fid in fs]
+            pid = "PS-U%02d" % n
+            catch_all.append({
+                "id": pid,
+                "title": "Unassigned %s findings (catch-all)" % area,
+                "findings": fs,
+                "files": [],
+                "dependsOn": [],
+                "effort": "",
+                "verification": [],
+                "severity": min(sevs, key=sev_rank) if sevs else "",
+                "branch": "remediation/%s-%s" % (pid, os.path.basename(run)),
+                "catchAll": True,
+            })
+        patch_sets.extend(catch_all)
+    unassigned_out = [] if catch_all else unassigned
+
     repo = ""
     m = re.search(r"Repository:\s*`([^`]+)`", md) or re.search(r"Repo:\s*`([^`]+)`", md)
     if m:
@@ -250,8 +281,10 @@ def main():
         "repo": repo,
         "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "patchSets": patch_sets,
-        "unassignedFindings": unassigned,
+        "unassignedFindings": unassigned_out,
     }
+    if catch_all:
+        doc["catchAllSets"] = [c["id"] for c in catch_all]
     open(out_path, "w", encoding="utf-8").write(json.dumps(doc, indent=2) + "\n")
 
     print("run: %s" % doc["run"])
@@ -260,8 +293,12 @@ def main():
         print("  %s [%s] %s — %d finding(s), %d file(s), verify: %s" % (
             ps["id"], ps["severity"] or "?", ps["title"], len(ps["findings"]),
             len(ps["files"]), "; ".join(ps["verification"]) or "—"))
-    if unassigned:
-        print("unassigned findings: %s" % ", ".join(unassigned))
+    if unassigned_out:
+        print("unassigned findings: %s" % ", ".join(unassigned_out))
+    if catch_all:
+        print("catch-all sets: %s (%d finding(s) covered)" % (
+            ", ".join(c["id"] for c in catch_all),
+            sum(len(c["findings"]) for c in catch_all)))
     print("wrote %s" % out_path)
     if args.json:
         print(json.dumps(doc, indent=2))
