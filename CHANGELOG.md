@@ -17,6 +17,9 @@
   draft PR per patch set).
 - **Org runs archived**: buddy, chat, falcon, falcon-edge, mainecybertech, repo-deep-dive, snowride
   (13 reports + finals each; `check_run` PASS, listed in `runs/INDEX.md`).
+- **Docs**: README rewritten (capabilities, layout, deterministic checks, remediation, org runs);
+  added `AGENTS.md` (agent rules) and `docs/REMEDIATION_GUIDE.md`; `REFERENCE_CARD.md` covers
+  deterministic checks + remediation status mapping.
 
 ## 2026-10-02 — Base edition v1.4.1 (verification feedback + vocabulary gate)
 

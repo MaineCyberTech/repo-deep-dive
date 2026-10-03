@@ -51,6 +51,19 @@ Audit Metadata · Scope · Evidence Reviewed · Verification Performed · Execut
 - One-command chain: `tools/run_toolchain.py <run> [--write]` (check → collect → score → dashboard → diff → CSV; read-only by default).
 - `tools/lint_pack.sh` validates the pack itself.
 
+## Deterministic checks (LLM-free)
+
+`tools/deterministic_checks.py <repo>` → `AREA-Px-NNN` findings (PORT / SEC / CI / DEP / SUPPLY / GIT / DOC),
+including committed-CRLF, missing exec bits, `gitleaks`, `actionlint`, unpinned Actions and container
+digests. Roll up across repos with `tools/aggregate_findings.py`.
+
+## Remediation
+
+- `tools/remediation_plan.py <run>` compiles `patch_plan.md` → `remediation_plan.json` (patch sets → findings → files → verification).
+- `prompts/REMEDIATION_RUNNER.md` + `profiles/remediation.md`: branch → minimal fix → lab tests → `gitleaks` → **draft PR**. Never auto-merge; never self-approve.
+- `tools/remediation_status.py` maps PR state → finding status: `merged` → `verified-fixed`; `open`/`draft` → `partially-fixed`; `closed` → `still-open`.
+- Guide: `docs/REMEDIATION_GUIDE.md`. Agent rules: `AGENTS.md`.
+
 ## The loop
 
 run → review (exec summary, gate, register, patch plan) → remediate → **verify** (verification mode; update statuses with evidence) → refresh `22` / `23` / `40`.
