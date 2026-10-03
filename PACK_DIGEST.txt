@@ -1,12 +1,14 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T02:48:38Z
-# files: 1026
+# generated: 2026-10-04T03:24:43Z
+# files: 1028
 # format: sha256  path
-2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
+b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
+0e1be0acc0444cf450b01c1e5460fd4a527b69d9443994c7f47c1d457b93428e  ./.github/workflows/deep-dive-deterministic.yml
 2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
 d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
 096232ac51992a3fd1ec14b54305cccc076275284427cbd0dc8fb9b1614b12f9  ./.github/workflows/remediation.yml
 83ae827bb42049bae6e48ebdc44202425160d6918103bbbe85519f46a805753d  ./.github/workflows/verify-remediation.yml
+365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
 f9dadc72410d160930d7b5a9dea435e2d1742f465d9b7847ec7c53a234fbf96b  ./CHANGELOG.md
 80201f90f452b7b8e46377b5472e655461b0fa642972b208cd042a2b1bdc6692  ./CONTRIBUTING.md
