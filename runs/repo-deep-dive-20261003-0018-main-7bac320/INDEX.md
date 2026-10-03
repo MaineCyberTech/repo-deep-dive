@@ -7,7 +7,7 @@
 - Profile: base
 - Target repo: C:\temp\repo-deep-dive (the audit pack itself — pack self-audit)
 - Branch: main
-- Commit: recorded `7bac320`; **worktree HEAD `6cada03`** (see INV-P1-001)
+- Commit: `6cada03` (audited worktree; run id retains legacy `7bac320`; resolves INV-P1-001)
 - Generated: 2026-10-03
 
 ## Reports

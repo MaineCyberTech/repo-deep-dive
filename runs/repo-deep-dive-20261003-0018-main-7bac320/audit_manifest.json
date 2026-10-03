@@ -62,7 +62,7 @@
         "sha": "6cada03",
         "recordedSha": "7bac320",
         "dirty": false,
-        "notes": "inventory.json and run id record 7bac320; worktree HEAD is 6cada03 (2 commits ahead). See INV-P1-001."
+        "notes": "Audited worktree bound to 6cada03; run id and recordedSha retain legacy 7bac320. inventory.json regenerated at 6cada03 (INV-P1-001/INV-P2-002 resolved)."
       }
     ],
     "reportsProduced": [
