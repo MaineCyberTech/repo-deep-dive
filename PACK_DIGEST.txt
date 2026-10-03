@@ -1,9 +1,9 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T06:15:26Z
+# generated: 2026-10-03T06:19:21Z
 # files: 410
 # format: sha256  path
 06ae19670ef32cf470931f55021e2647e86d9340826c8cfcc49acce60bea84f2  ./.github/workflows/deep-dive-deterministic.yml
-11f4e70db11b1156f726bc9b226ec00a86c4f9bc2145e7c47db666c3eebd4e20  ./.github/workflows/lab-tests.yml
+2e9d05cd3ebd2dd39f82d6e4f35e6be5dc9398bdc751a7f8ab33a4db85e8344c  ./.github/workflows/lab-tests.yml
 096232ac51992a3fd1ec14b54305cccc076275284427cbd0dc8fb9b1614b12f9  ./.github/workflows/remediation.yml
 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
 f9dadc72410d160930d7b5a9dea435e2d1742f465d9b7847ec7c53a234fbf96b  ./CHANGELOG.md

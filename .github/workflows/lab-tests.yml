@@ -43,8 +43,14 @@ jobs:
             git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${REPO}.git" "$DEST"
           fi
           cd "$DEST"
-          git fetch -q --all || true
-          if [ -n "$REF" ]; then git checkout -q "$REF"; fi
+          git fetch -q --all --tags || true
+          git fetch -q origin "${{ github.ref_name }}" || true
+          git reset -q --hard
+          if [ -n "$REF" ]; then
+            git checkout -q "$REF"
+          else
+            git checkout -q "${{ github.sha }}"
+          fi
           echo "runner: $RUNNER_NAME  repo: $REPO  head: $(git rev-parse --short HEAD)"
           echo "== command: ${{ inputs.command }} =="
           bash -o pipefail -c "${{ inputs.command }}"
