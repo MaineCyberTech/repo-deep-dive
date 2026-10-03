@@ -125,6 +125,15 @@ def pages_api_route(rel):
     return "/api/" + rest if rest else "/api"
 
 
+PY_ROUTE = re.compile(
+    r'\(\s*["\'](GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)["\']\s*,\s*["\']([^"\']+)["\']',
+    re.I,
+)
+SCHEMA_TABLE_RE = re.compile(
+    r'CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+["\'`]?([A-Za-z0-9_.]+)', re.I
+)
+
+
 def run_git(root, args):
     try:
         r = subprocess.run(
@@ -157,6 +166,7 @@ def scan_repo(root):
         "entry_points": [],
         "routes": [],
         "migrations": [],
+        "schema_tables": [],
         "workflows": [],
         "containers": [],
         "tests": {"files": 0, "dirs": []},
@@ -263,6 +273,44 @@ def scan_repo(root):
             if len(inv["routes"]) >= 500:
                 break
 
+    # Python stacks: method+path tuples (e.g. ROUTES tables) and __main__ entries.
+    for path in iter_files(root):
+        if not path.endswith(".py"):
+            continue
+        rel = rel_posix(root, path)
+        if is_test_path(rel):
+            continue
+        try:
+            content = open(path, "r", encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        for m in PY_ROUTE.finditer(content):
+            inv["routes"].append({"file": rel, "path": m.group(2),
+                                  "method": m.group(1).upper()})
+            if len(inv["routes"]) >= 500:
+                break
+        if ('if __name__ == "__main__"' in content
+                or "if __name__ == '__main__'" in content):
+            inv["entry_points"].append(rel)
+
+    # Schema tables (SQL/py CREATE TABLE), independent of filename heuristics.
+    for path in iter_files(root):
+        if not path.endswith((".sql", ".py")):
+            continue
+        rel = rel_posix(root, path)
+        if is_test_path(rel):
+            continue
+        try:
+            content = open(path, "r", encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        for m in SCHEMA_TABLE_RE.finditer(content):
+            name = m.group(1).strip('"`')
+            if name.upper() in {"AS", "IF", "SELECT", "VALUES", "ONLY", "TEMP",
+                                "TEMPORARY", "UNLOGGED", "LIKE", "WITH"}:
+                continue
+            inv["schema_tables"].append({"file": rel, "table": name})
+
     for path in iter_files(root):
         rel = rel_posix(root, path)
         low = rel.lower()
@@ -283,6 +331,15 @@ def scan_repo(root):
     inv["workflows"] = sorted(set(inv["workflows"]))
     inv["containers"] = sorted(set(inv["containers"]))
     inv["tests"]["dirs"] = sorted(set(inv["tests"]["dirs"]))
+    inv["entry_points"] = sorted(set(inv["entry_points"]))[:50]
+    seen_tables, tables = set(), []
+    for t in inv["schema_tables"]:
+        key = (t["table"], t["file"])
+        if key in seen_tables:
+            continue
+        seen_tables.add(key)
+        tables.append(t)
+    inv["schema_tables"] = sorted(tables, key=lambda t: (t["table"], t["file"]))[:500]
 
     return inv
 
@@ -310,9 +367,9 @@ def main():
     print("files: %d lines: %d" % (inv["totals"]["files"], inv["totals"]["lines"]))
     print("stacks: %s" % (", ".join(inv["stacks"]) or "none detected"))
     print("ci systems: %s" % (", ".join(inv["ci"]) or "none detected"))
-    print("routes: %d migrations: %d workflows: %d containers: %d test_files: %d" % (
-        len(inv["routes"]), len(inv["migrations"]), len(inv["workflows"]),
-        len(inv["containers"]), inv["tests"]["files"]))
+    print("routes: %d migrations: %d tables: %d workflows: %d containers: %d test_files: %d" % (
+        len(inv["routes"]), len(inv["migrations"]), len(inv["schema_tables"]),
+        len(inv["workflows"]), len(inv["containers"]), inv["tests"]["files"]))
     print("secret-adjacent filenames (names only): %d" % len(inv["secret_adjacent_files"]))
 
 

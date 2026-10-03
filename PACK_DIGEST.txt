@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-03T09:11:58Z
+# generated: 2026-10-03T09:17:36Z
 # files: 595
 # format: sha256  path
 2bacdbbd15f905d3a8e33832e522a9059d8fdbeaa7a5bd3ae5a2a3c540ada374  ./.github/workflows/deep-dive-deterministic.yml
@@ -591,7 +591,7 @@ e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_d
 061ef83b0702787d3b20b4a3b9edddc011ee1ee37d5ba2e0642d8854536cd0e5  ./tools/remediation_report.py
 24f0caf806120622d322f54d4b1e919091266115d17f2229ccd3e035dc8e9224  ./tools/remediation_status.py
 8d23ac69e0792a65a386b054da66b004bd6c32b9bf6324581ea363c2ad0623a3  ./tools/render_dashboard.py
-96b5af0fd518bea51c5a2f33144c73967d5187567f8a129e3b185194b2494677  ./tools/repo_inventory.py
+f17648cfd68e4108add83223190dc485ed40d00cf639f881ca454c4000e1d66b  ./tools/repo_inventory.py
 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
 6844a691f52f73a7ebca8f0cabc19670d12df785c3d779d863dd7f9ac4160338  ./tools/run_toolchain.py
 f1bef7b3443feafabbbd7335167da8f05044d706302afd439137819c63edbaf1  ./tools/self_test.sh
