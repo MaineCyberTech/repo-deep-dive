@@ -1,0 +1,87 @@
+# PATCH-12 verification log
+
+- repo: C:\temp\chat (lab copy: /srv/work/chat)
+- base: origin/develop a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+- branch: remediation/patch-12-20261003-0018-develop-a72b8cc
+- findings: OBS-P1-001, OBS-P2-003
+- generated: 2026-10-03T10:00:00Z
+- runner: Proxmox ci-runner via lab-run.ps1 (172.23.128.51)
+- note: working tree (fix + tests + rules) synced to the lab before running; raw captures
+  kept alongside as raw-api.txt / raw-checks.txt / gitleaks-raw.txt
+
+## Command 1 (profile): corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test
+
+exit: 0
+
+```
+ ✓ apps/api/src/modules/admin/__tests__/error-buffer.test.ts (6 tests) 11ms
+ ✓ apps/api/src/lib/__tests__/sentry.test.ts (1 test) 11ms
+ Test Files  64 passed (64)
+      Tests  492 passed (492)
+   Start at  09:56:04
+   Duration  19.68s (transform 2.50s, setup 14.95s, collect 8.99s, tests 6.64s, environment 10.71s, prepare 5.69s)
+```
+
+New coverage for OBS-P2-003: error-buffer persistence tests (write, rehydrate, redact,
+corrupt-file, unwritable-path) and the "SENTRY_DSN unset warns" test all pass.
+
+## Command 2 (config gate): yq parse + required alert rules present
+
+exit: 0
+
+```
+YAML_OK
+ChatApiDown
+ChatHealthcheckFailing
+ChatApiHighErrorRate
+ChatApiHighLatency
+ChatCircuitBreakerOpen
+ChatWorkerQueueBacklog
+ChatWorkerQueueFailures
+promtool-unavailable
+amtool-unavailable
+```
+
+Both `infra/prometheus/rules/chat.rules.yml` and `infra/prometheus/alertmanager.yml`
+parse as YAML and every required alert rule is present. `promtool` / `amtool` are
+not installed in the lab image, so `promtool check rules` / `amtool check-config`
+were recorded as not run (unavailable), not as passing.
+
+## Command 3 (gates): build workspace packages && api typecheck && api lint
+
+exit: 0
+
+```
+> @chat/config@0.0.0 build /srv/work/chat/packages/config
+> tsc
+
+> @chat/db@0.0.0 build /srv/work/chat/packages/db
+> tsc
+
+> @chat/sdk@0.0.0 build /srv/work/chat/packages/sdk
+> tsc
+
+> @chat/api@0.0.0 typecheck /srv/work/chat/apps/api
+> tsc --noEmit
+
+> @chat/api@0.0.0 lint /srv/work/chat/apps/api
+> eslint .
+
+BUILD_TYPECHECK_LINT_OK
+```
+
+The workspace `dist/` directories are excluded from the lab sync, so the packages
+are built first (a bare `--filter api typecheck` fails on pre-existing workspace
+imports until then, unrelated to this patch).
+
+## Command 4 (secret gate): gitleaks dir (changed file set) --redact --exit-code 1
+
+exit: 0 (no leaks found)
+
+```
+9:57AM INF scanned ~38010 bytes (38.01 KB) in 32.1ms
+9:57AM INF no leaks found
+```
+
+Scanned exactly the PATCH-12 changed files/dirs (copied to /tmp/gl) to avoid
+node_modules noise; see gitleaks.log and gitleaks-raw.txt.

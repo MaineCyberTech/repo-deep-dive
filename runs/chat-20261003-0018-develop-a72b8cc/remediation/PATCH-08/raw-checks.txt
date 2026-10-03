@@ -1,0 +1,28 @@
+
+> @chat/config@0.0.0 build /srv/work/chat/packages/config
+> tsc
+
+
+> @chat/db@0.0.0 build /srv/work/chat/packages/db
+> tsc
+
+
+> @chat/sdk@0.0.0 build /srv/work/chat/packages/sdk
+> tsc
+
+
+> @chat/api@0.0.0 typecheck /srv/work/chat/apps/api
+> tsc --noEmit
+
+
+> @chat/worker@0.0.0 typecheck /srv/work/chat/apps/worker
+> tsc --noEmit
+
+
+> @chat/api@0.0.0 lint /srv/work/chat/apps/api
+> eslint .
+
+
+> @chat/worker@0.0.0 lint /srv/work/chat/apps/worker
+> eslint .
+

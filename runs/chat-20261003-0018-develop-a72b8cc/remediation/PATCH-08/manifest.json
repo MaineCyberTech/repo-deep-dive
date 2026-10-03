@@ -1,0 +1,61 @@
+{
+  "patchSet": "PATCH-08",
+  "title": "Restrict /metrics and drop tenant labels",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "chat",
+  "base": "origin/develop",
+  "baseCommit": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-08-20261003-0018-develop-a72b8cc",
+  "commit": "9feae529cc04e0f53e87abb1539b7307dbf62dbf",
+  "pr": "https://github.com/MaineCyberTech/chat/pull/65",
+  "prDraft": true,
+  "findings": ["API-P1-001", "OBS-P2-002"],
+  "files": [
+    "apps/api/src/app.ts",
+    "apps/api/src/config/env.ts",
+    "apps/api/src/lib/metrics.ts",
+    "apps/api/src/lib/__tests__/metrics.test.ts",
+    "apps/api/src/middleware/metrics-auth.ts",
+    "apps/api/src/middleware/__tests__/metrics-auth.test.ts",
+    "apps/worker/src/main.ts",
+    "apps/worker/src/lib/metrics-auth.ts",
+    "apps/worker/src/__tests__/metrics-auth.test.ts",
+    ".env.example",
+    "apps/api/.env.example",
+    "apps/worker/.env.example",
+    "infra/docker/.env.prod.example",
+    "infra/docker/docker-compose.prod.yml"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-08/diff.patch",
+    "sha256": "48f222eca3e7cac202f11df17e2baf17d7be27c9579dc41993c4cf2dea26352b"
+  },
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "Test Files 65 passed (65); Tests 497 passed (497); new: metrics-auth api=6, worker=5, metrics.test=1",
+      "evidence": "remediation/PATCH-08/verify.log"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/config build && corepack pnpm --filter @chat/db build && corepack pnpm --filter @chat/sdk build && corepack pnpm --filter api typecheck && corepack pnpm --filter worker typecheck && corepack pnpm --filter api lint && corepack pnpm --filter worker lint",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "tsc --noEmit clean (api + worker); eslint clean (api + worker)",
+      "evidence": "remediation/PATCH-08/verify.log"
+    },
+    {
+      "command": "gitleaks protect --staged --redact --exit-code 1",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "no leaks found (staged diff)",
+      "evidence": "remediation/PATCH-08/gitleaks.log"
+    }
+  ],
+  "scopeCheck": "pass - metrics/API source, tests, env examples, and prod compose wiring only",
+  "openQuestions": [
+    "Provision METRICS_TOKEN (>=16 chars) in the deployment secret store and add it to the Prometheus scrape job's headers; /metrics intentionally returns 404 until then."
+  ],
+  "generated": "2026-10-03T09:49:00Z"
+}

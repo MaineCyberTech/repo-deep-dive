@@ -1,0 +1,313 @@
+=== PS-U10 gitleaks 2026-10-03T07:32:32.9821953-04:00 ===
+Command: gitleaks detect --no-git --redact --source . --verbose
+Runner: lab-run.ps1 -Repo chat
+
+RuleID:      jwt
+Entropy:     5.493746
+File:        .github/workflows/validate.yml
+Line:        396
+Fingerprint: .github/workflows/validate.yml:jwt:396
+
+Finding:     { keys: "[1;3;mREDACTED[0m", labelKey: "nextCha...
+Secret:      [1;3;mREDACTED[0m
+RuleID:      generic-api-key
+Entropy:     3.640224
+File:        apps/web/components/shared/keyboard-shortcuts.tsx
+Line:        15
+Fingerprint: apps/web/components/shared/keyboard-shortcuts.tsx:generic-api-key:15
+
+Finding:     SUPABASE_ANON_KEY=[1;3;mREDACTED[0m
+Secret:      [1;3;mREDACTED[0m
+RuleID:      jwt
+Entropy:     5.493746
+File:        infra/docker/.env.dev.example
+Line:        6
+Fingerprint: infra/docker/.env.dev.example:jwt:6
+
+Finding:     ...SE_SERVICE_ROLE_KEY=[1;3;mREDACTED[0m
+Secret:      [1;3;mREDACTED[0m
+RuleID:      jwt
+Entropy:     5.444986
+File:        infra/docker/.env.dev.example
+Line:        7
+Fingerprint: infra/docker/.env.dev.example:jwt:7
+
+Finding:     ...C_SUPABASE_ANON_KEY=[1;3;mREDACTED[0m
+Secret:      [1;3;mREDACTED[0m
+RuleID:      jwt
+Entropy:     5.493746
+File:        infra/docker/.env.dev.example
+Line:        22
+Fingerprint: infra/docker/.env.dev.example:jwt:22
+
+[90m11:32AM[0m [32mINF[0m [1mscanned ~10838660 bytes (10.84 MB) in 967ms[0m
+[90m11:32AM[0m [33mWRN[0m [1mleaks found: 5[0m
+GITLEAKS_EXIT:1
+
+SSH_EXIT=0
+
+=== PS-U10 gitleaks on staged diff 2026-10-03T07:32:45.6745184-04:00 ===
+Command: git add -A apps/api && gitleaks protect --staged --redact
+powershell : warning: in the working copy of 'apps/api/.env.example', CRLF will be replaced by LF the next time Git 
+touches it
+At line:1 char:269
++ ... -q"; $out = powershell -ExecutionPolicy Bypass -File C:\temp\proxmox- ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of 'apps/api/Dockerfile', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/Dockerfile.dev', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/package.json', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/scripts/generate-vapid-keys.js', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/app.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/config/env.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/config/validators.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/__tests__/app-error.test.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/lib/app-error.ts', CRLF will be replaced by LF the next time Git touches 
+it
+warning: in the working copy of 'apps/api/src/lib/async-handler.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/circuit-breaker.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/csv.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/lib/db-timeout.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/feature-flags.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/http-client.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/idempotency.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/logger.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/lib/membership.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/mentions/parser.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/metrics.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/lib/pagination.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/lib/response.ts', CRLF will be replaced by LF the next time Git touches 
+it
+warning: in the working copy of 'apps/api/src/lib/sentry.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/lib/socket.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/lib/supabase.ts', CRLF will be replaced by LF the next time Git touches 
+it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/authenticate.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/csrf.test.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/error-handler.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/rate-limit.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/require-admin.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/require-membership.test.ts', CRLF will be replaced 
+by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/require-permission.test.ts', CRLF will be replaced 
+by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/__tests__/security-headers.test.ts', CRLF will be replaced by 
+LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/authenticate.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/middleware/cache.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/middleware/csrf.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/middleware/deprecation.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/middleware/error-handler.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/middleware/input-sanitizer.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/rate-limit.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/middleware/request-timeout.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/require-admin.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/middleware/require-membership.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/require-permission.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/security-headers.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/validate-string-key.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/middleware/validate-uuid.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/admin/__tests__/admin.test.ts', CRLF will be replaced by LF the 
+next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/admin/error-buffer.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/admin/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/ai/__tests__/ai.test.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/ai/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/announcements/__tests__/announcements.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/announcements/routes.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/audit/__tests__/audit.test.ts', CRLF will be replaced by LF the 
+next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/audit/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/auth/__tests__/auth.service.test.ts', CRLF will be replaced by 
+LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/auth/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/auth/service.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/channels/__tests__/channel.service.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/channels/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/channels/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/consent/__tests__/consent.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/consent/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/emoji/__tests__/emoji.test.ts', CRLF will be replaced by LF the 
+next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/emoji/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/export/__tests__/export.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/export/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/feature-flags/routes.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/groups/__tests__/groups.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/groups/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/health/__tests__/health.service.test.ts', CRLF will be replaced 
+by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/health/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/health/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/import/__tests__/import.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/import/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/livekit/__tests__/livekit.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/livekit/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/livekit/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/messages/__tests__/message.service.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/messages/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/messages/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/notifications/__tests__/notification.service.test.ts', CRLF will 
+be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/notifications/push-subscription-service.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/notifications/routes.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/notifications/service.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/openapi/__tests__/openapi.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/openapi/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/preferences/__tests__/preferences.service.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/preferences/routes.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/preferences/service.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/reactions/__tests__/reaction.service.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/reactions/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/reactions/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/read-receipts/__tests__/read-receipts.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/read-receipts/routes.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/read-receipts/service.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/scheduled-posts/__tests__/scheduled-posts.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/scheduled-posts/routes.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/sidebar/__tests__/sidebar.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/sidebar/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/status/__tests__/status.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/status/routes.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/modules/threads/__tests__/threads.test.ts', CRLF will be replaced by LF 
+the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/threads/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/threads/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/user-groups/__tests__/user-groups.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/user-groups/routes.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/webhooks/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/webhooks/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/workspaces/__tests__/workspace.service.test.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/workspaces/routes.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/modules/workspaces/service.ts', CRLF will be replaced by LF the next 
+time Git touches it
+warning: in the working copy of 'apps/api/src/route-registry.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/server.ts', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/services/audit.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/validators/auth.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/validators/channel.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/validators/index.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/validators/message.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/validators/preferences.ts', CRLF will be replaced by LF the next time 
+Git touches it
+warning: in the working copy of 'apps/api/src/validators/sidebar.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/validators/upload.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/src/validators/workspace.ts', CRLF will be replaced by LF the next time Git 
+touches it
+warning: in the working copy of 'apps/api/tsconfig.json', CRLF will be replaced by LF the next time Git touches it
+
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+
+[90m11:32AM[0m [32mINF[0m [1m0 commits scanned.[0m
+[90m11:32AM[0m [32mINF[0m [1mscanned ~7387 bytes (7.39 KB) in 240ms[0m
+[90m11:32AM[0m [32mINF[0m [1mno leaks found[0m
+STAGED_GITLEAKS_EXIT:0
+
+SSH_EXIT=0

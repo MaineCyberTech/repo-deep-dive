@@ -1,0 +1,154 @@
+# PS-U09 lab verification (findings INV-P2-003, INV-P3-002)
+run: 20261003-0018-develop-a72b8cc
+runner: lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + scripts/lab-run.ps1; ssh root@172.23.128.51:/srv/work/chat)
+base: a72b8cc43590848b052bd5e8954dbbc726b3d7fd (origin/develop)
+branch: remediation/ps-u09-20261003-0018-develop-a72b8cc
+change type: docs-only (no application code changed)
+
+## Scope of this verification
+
+PS-U09 is a docs-only inventory fix, so the application test suite is not required. The gates
+exercised are: lockfile/install health, Prettier conformance of the touched docs, the concrete
+in-repo claims each finding rests on, and the gitleaks secret gate.
+
+## 1. Lab sync
+
+cmd: powershell -File C:\temp\proxmox-vm\scripts\lab-sync.ps1 -Repo chat
+output (tail):
+  tarball: 110.2 MB
+  ssh.exe : tar: Ignoring unknown extended header keyword 'SCHILY.fflags'
+  ... NativeCommandError ...
+  Exited with code 1
+note: lab-sync.ps1 sets $ErrorActionPreference='Stop', and Windows PowerShell turns the remote
+tar stderr warning ("Ignoring unknown extended header keyword 'SCHILY.fflags'") into a
+terminating NativeCommandError, so the wrapper reports exit 1 AFTER the tar extraction has
+completed. The sync is effective: the branch content is present in /srv/work/chat (proven by the
+content checks in section 4). This is a harness quirk, not a repository failure. Raw log:
+remediation/PS-U09/lab-sync.log
+
+## 2. Install / lockfile health
+
+cmd: corepack pnpm install --frozen-lockfile
+exit: 0
+output:
+  Scope: all 8 workspace projects
+  Lockfile is up to date, resolution step is skipped
+  Packages: +883
+  Progress: resolved 0, reused 1, downloaded 0, added 0
+  Progress: resolved 0, reused 861, downloaded 0, added 676
+  Progress: resolved 0, reused 861, downloaded 0, added 883, done
+
+  . prepare$ husky
+  . prepare: Done
+  Done in 2.4s
+
+## 3. Prettier conformance of the touched docs
+
+cmd: corepack pnpm exec prettier --check docs/audits/README.md docs/audits/compare/audit_final_testing_20260724.md docs/environments/env-vars.md
+exit: 1
+output:
+  Checking formatting...
+  [warn] docs/environments/env-vars.md
+  [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+
+Split result (same files):
+cmd: corepack pnpm exec prettier --check docs/audits/README.md docs/audits/compare/audit_final_testing_20260724.md
+exit: 0
+output:
+  Checking formatting...
+  All matched files use Prettier code style!
+
+Pre-existing baseline for the one warning:
+cmd: corepack pnpm exec prettier --check zz-ps-u09-base-env-vars.md
+  (zz-ps-u09-base-env-vars.md is the unmodified base file `git show HEAD:docs/environments/env-vars.md`,
+   placed inside the repo so the repo Prettier config applies; removed after the check)
+exit: 1
+output:
+  Checking formatting...
+  [warn] zz-ps-u09-base-env-vars.md
+  [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+
+conclusion: `docs/environments/env-vars.md` is ALREADY non-conformant at base a72b8cc (the
+baseline run reproduces exit 1). PS-U09 only APPENDS rows and a section to that file and does not
+reformat the pre-existing table; the other two touched docs are Prettier-clean. Not a regression.
+
+## 4. In-repo claims (the evidence the findings rest on)
+
+cmd:
+  echo ==git-ls-files-test-signin==; git ls-files test-signin.json
+  echo ==webhook-throw-line==; grep -n WEBHOOK_ENCRYPTION_KEY.must.be.set apps/api/src/modules/webhooks/service.ts
+  echo ==stale-not-present-count==; grep -c not.present.in.repo docs/audits/compare/audit_final_testing_20260724.md || true
+  echo ==correction-count==; grep -c tracked.in.the.repo docs/audits/compare/audit_final_testing_20260724.md
+  echo ==env-section-count==; grep -c Canonical.schema.and.example.consistency docs/environments/env-vars.md
+  echo ==templates-with-key==; grep -l WEBHOOK_ENCRYPTION_KEY .env.example apps/api/.env.example infra/docker/.env.prod.example infra/docker/.env.devremote.example || true
+  echo ==readme-section-count==; grep -c Authoritativeness docs/audits/README.md
+exit: 0
+output:
+  ==git-ls-files-test-signin==
+  test-signin.json
+  ==webhook-throw-line==
+  22:    throw new Error("WEBHOOK_ENCRYPTION_KEY must be set for webhook secret encryption");
+  ==stale-not-present-count==
+  0
+  ==correction-count==
+  1
+  ==env-section-count==
+  2
+  ==templates-with-key==
+  ==readme-section-count==
+  1
+  ==done==
+
+interpretation (INV-P2-003): `test-signin.json` IS tracked in the repo at the audited commit
+(`git ls-files` lists it), while the stale audit report claimed it was absent; the stale phrasing
+now occurs 0 times and the correction is present.
+interpretation (INV-P3-002): the webhook service throws when WEBHOOK_ENCRYPTION_KEY is unset
+(service.ts:22), yet `grep -l` finds the key in NONE of `.env.example`,
+`apps/api/.env.example`, `infra/docker/.env.prod.example`, `infra/docker/.env.devremote.example`
+— confirming the templates omit a key that is required for webhook secret encryption. The
+canonical env doc now records this.
+
+## 5. Secret gate (gitleaks 8.30.1)
+
+cmd: gitleaks version
+output: 8.30.1
+
+cmd: gitleaks detect --no-git --redact --no-banner --source /tmp/ps-u09-diff.patch
+exit: 0
+output:
+  INF scanned ~9221 bytes (9.22 KB) in 231ms
+  INF no leaks found
+
+cmd: gitleaks detect --no-git --redact --no-banner --source docs/audits/README.md
+exit: 0
+output:
+  INF scanned ~1130 bytes (1.13 KB) in 195ms
+  INF no leaks found
+
+cmd: gitleaks detect --no-git --redact --no-banner --source docs/environments/env-vars.md
+exit: 0
+output:
+  INF scanned ~9954 bytes (9.95 KB) in 235ms
+  INF no leaks found
+
+cmd: gitleaks detect --no-git --redact --no-banner --source docs/audits/compare/audit_final_testing_20260724.md
+exit: 0
+output:
+  INF scanned ~53200 bytes (53.20 KB) in 206ms
+  INF no leaks found
+
+## Diff artifact
+
+remediation/PS-U09/diff.patch
+bytes: 9221
+sha256: 8678127C2F01301310C8C6141D6B080D33ED94B4F2BC41C8CC7FE0595CFF0C51
+files changed: 3 (docs/audits/README.md, docs/audits/compare/audit_final_testing_20260724.md,
+docs/environments/env-vars.md); 50 insertions, 3 deletions.
+
+## Not run (and why)
+
+- `corepack pnpm --filter @chat/api test`: not required — no application, config, workflow,
+  dependency, schema, or lockfile change; this set is docs-only (inventory findings).
+- `.env*.example` template edits: NOT performed. Those paths are on the remediation profile's
+  blocked-paths list (`**/.env*`), so the example files are left untouched and the canonical
+  schema doc is corrected instead. Recorded as a deferred follow-up in the PR.

@@ -1,0 +1,101 @@
+{
+  "patch_set": "PS-U03",
+  "title": "Unassigned CI findings (catch-all) - blocking main branch-rules gate; no PR image publish",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/ps-u03-20261003-0018-develop-a72b8cc",
+  "commit": "8e5ab8a47a84f97d6e77847d0a33d4c70ca20fb3",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/68",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["CI-P1-001", "CI-P2-006", "CI-P2-007"],
+  "finding_status": {
+    "CI-P1-001": "partially-fixed",
+    "CI-P2-006": "partially-fixed",
+    "CI-P2-007": "partially-fixed"
+  },
+  "overlap": {
+    "PATCH-07": "PR #63 made pnpm-audit/Trivy/E2E blocking (CI-P1-003, TEST-P1-001, FINAL-P2-003) and explicitly left the branch-protection job continue-on-error out of scope. CI-P1-001 and CI-P2-007 are therefore NOT covered by #63; their shared branch-rules fix is implemented once here.",
+    "notes": "Disjoint hunks in validate.yml/build-push.yml; note for merge ordering."
+  },
+  "files": [
+    ".github/workflows/validate.yml",
+    ".github/workflows/build-push.yml"
+  ],
+  "in_scope_files": [
+    ".github/workflows/validate.yml",
+    ".github/workflows/build-push.yml"
+  ],
+  "companion_files": [],
+  "test_files": [],
+  "diff": {
+    "path": "remediation/PS-U03/diff.patch",
+    "sha256": "7B658AB9352C2D92A0983416B38F462292066128B075B1EB3E426B397392CD79",
+    "files_changed": 2,
+    "insertions": 49,
+    "deletions": 26
+  },
+  "verification": [
+    {
+      "command": "actionlint .github/workflows/validate.yml",
+      "runner": "ci-runner (actionlint 1.7.12)",
+      "exit_code": 1,
+      "result": "12 diagnostics, identical to base a72b8cc (pre-existing shellcheck info/style only); no new diagnostics"
+    },
+    {
+      "command": "actionlint .github/workflows/build-push.yml",
+      "runner": "ci-runner (actionlint 1.7.12)",
+      "exit_code": 1,
+      "result": "1 diagnostic, identical to base a72b8cc (pre-existing shellcheck); no new diagnostics"
+    },
+    {
+      "command": "yq -e '.jobs | keys' .github/workflows/validate.yml .github/workflows/build-push.yml",
+      "runner": "ci-runner (yq 4.54.1)",
+      "exit_code": 0,
+      "result": "both workflows parse; job keys unchanged"
+    },
+    {
+      "command": "branch-protection job assertions (continue-on-error, rules/branches, getBranchProtection)",
+      "runner": "ci-runner (yq/grep)",
+      "exit_code": 0,
+      "result": "continue-on-error: null; rules/branches used in code; getBranchProtection only in explanatory comment"
+    },
+    {
+      "command": "build-push publish assertions (bare push:true, conditional push, load)",
+      "runner": "ci-runner (grep)",
+      "exit_code": 0,
+      "result": "0 bare push:true; 3 conditional push; 3 load"
+    },
+    {
+      "command": "CI-P2-007 executable gate logic test (extract github-script body; node with mocked github/context/core; negative + positive)",
+      "runner": "ci-runner (node 20.20.2)",
+      "exit_code": 0,
+      "result": "negative case (missing pull_request/required_status_checks) calls setFailed; positive case passes (negative_failed_closed=true, positive_passed=true)"
+    },
+    {
+      "command": "git diff a72b8cc..HEAD | gitleaks stdin --redact --exit-code 1",
+      "runner": "ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "no secrets added by the diff"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source <changed file>",
+      "runner": "ci-runner (gitleaks 8.30.1)",
+      "exit_code": 1,
+      "result": "build-push.yml clean (0); validate.yml pre-existing jwt fixture (base line 396 -> branch line 411, content unchanged). Delta: none."
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . (full worktree, JSON)",
+      "runner": "ci-runner (gitleaks 8.30.1)",
+      "exit_code": 1,
+      "result": "5 pre-existing findings: .github/workflows/validate.yml:jwt:411, apps/web/components/shared/keyboard-shortcuts.tsx:generic-api-key:15, infra/docker/.env.dev.example:jwt x3. None introduced by this diff."
+    }
+  ],
+  "verify_log": "remediation/PS-U03/verify.log",
+  "pr_body": "remediation/PS-U03/pr_body.md",
+  "generated_at": "2026-10-03T10:20:00Z"
+}

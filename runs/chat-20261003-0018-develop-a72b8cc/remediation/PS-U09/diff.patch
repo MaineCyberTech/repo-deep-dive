@@ -1,0 +1,110 @@
+diff --git a/docs/audits/README.md b/docs/audits/README.md
+index f1a125a..80ed780 100644
+--- a/docs/audits/README.md
++++ b/docs/audits/README.md
+@@ -17,3 +17,14 @@ Store audit runs, parsed summaries, diffs, dashboards, release reports, PR summa
+ 2. `principal_audit`
+ 3. `quality_confirmation`
+ 4. `frontend_release_gate`
++
++## Authoritativeness
++
++Artifacts under `docs/audits/**` are **historical snapshots** captured at the commit and date
++recorded inside each report. They describe what was observed then — they are not a statement
++about the current repository state. Do not read a report's "ALL CLEAN" / "0 P0, 0 P1" verdict as
++the current status.
++
++The current status must be derived from the audit pipeline's machine-readable output
++(`findings.json` plus the run's `RELEASE_GATE.md`) and must record the commit it was generated
++from. Hand-written status claims that are not stamped with a commit are non-authoritative.
+diff --git a/docs/audits/compare/audit_final_testing_20260724.md b/docs/audits/compare/audit_final_testing_20260724.md
+index 2375228..5542e09 100644
+--- a/docs/audits/compare/audit_final_testing_20260724.md
++++ b/docs/audits/compare/audit_final_testing_20260724.md
+@@ -2,6 +2,14 @@
+ 
+ **Verdict:** 7.2/10 — Solid unit/integration test base; significant gaps in component tests, E2E coverage, worker tests, and chaos engineering.
+ 
++> **Correction (remediation `PS-U09`, finding `INV-P2-003`).** This report described the
++> `test-signin.json` credentials file as absent from the repository. That is incorrect:
++> `test-signin.json` **is tracked** at the audited commit (`git ls-files test-signin.json` lists
++> it). Finding `E2E-002` (and the track of it in this report) remains valid — E2E tests should not
++> depend on a committed credential file — but the reason is that the file is committed (see
++> `INV-P2-002`), not that it is missing. This artifact is a historical snapshot; see
++> `docs/audits/README.md` for authoritativeness.
++
+ ---
+ 
+ ## 1. Executive Summary
+@@ -215,7 +223,7 @@ Two separate Playwright configurations exist:
+ | ID      | Severity | Finding                                                                                                                                                                                                            | Fix                                                                                                                     |
+ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+ | E2E-001 | **P1**   | **Dual playwright configs**: Root `playwright.config.ts` and `apps/web/playwright.config.ts` define different test dirs, browser matrices, and webServer configs. Running `pnpm test:e2e` may execute wrong config | Consolidate to single `playwright.config.ts` at root. Remove `apps/web/playwright.config.ts`                            |
+-| E2E-002 | **P1**   | **Most E2E tests require `test-signin.json`** credentials file not present in repo. 50%+ of tests skip at runtime on fresh checkout                                                                                | Implement auth via API token or mock Supabase auth handler in Playwright setup; remove file-based credential dependency |
++| E2E-002 | **P1**   | **Most E2E tests require `test-signin.json`** — credentials file **tracked in the repo** (should be removed; see `INV-P2-002`). 50%+ of tests skip at runtime on fresh checkout                                                                                | Implement auth via API token or mock Supabase auth handler in Playwright setup; remove file-based credential dependency |
+ | E2E-003 | **P1**   | `apps/web/e2e/comprehensive.spec.ts` has **17 of 20 tests permanently skipped** (`test.skip(true, ...)`) — dead test code requiring Supabase project setup                                                         | Either implement proper Supabase test project setup in CI or remove dead tests                                          |
+ | E2E-004 | **P1**   | `apps/web/e2e/auth-workspace-chat.spec.ts` has **all 3 tests permanently skipped** — entire file is dead code                                                                                                      | Remove or implement                                                                                                     |
+ | E2E-005 | P2       | No E2E test for: notification preferences, settings page changes, user profile editing, admin bulk operations, channel mute/unmute, emoji reactions, file preview, channel bookmarks, slash commands               | Add E2E scenarios for these critical user flows                                                                         |
+@@ -405,7 +413,7 @@ lines: 50%, functions: 40%, branches: 40%, statements: 50%
+ | PKG-001 | Packages   | packages/ui has zero tests                                  |
+ | WEB-001 | Components | 43/55 web components (78%) have no tests                    |
+ | E2E-001 | E2E        | Dual playwright config files — conflicting                  |
+-| E2E-002 | E2E        | E2E tests require test-signin.json not in repo              |
++| E2E-002 | E2E        | E2E tests require committed test-signin.json (tracked; see INV-P2-002) |
+ | E2E-003 | E2E        | 17 of 20 tests in comprehensive.spec.ts permanently skipped |
+ | E2E-004 | E2E        | auth-workspace-chat.spec.ts entirely skipped                |
+ | WKR-001 | Worker     | Zero tests for 6 BullMQ worker processors                   |
+diff --git a/docs/environments/env-vars.md b/docs/environments/env-vars.md
+index c9a48f5..6d6ef45 100644
+--- a/docs/environments/env-vars.md
++++ b/docs/environments/env-vars.md
+@@ -1,6 +1,10 @@
+ # Environment Variables
+ 
+-All services validate environment variables via Zod schemas in `packages/config/env-schema.ts`. The root `.env.example` file at the repo root documents all variables; service-specific `.env.example` files in `apps/<service>/` show only what each service needs.
++All services validate environment variables via Zod schemas. The **source of truth** is the code:
++`packages/config/env-schema.ts` (base schema, shared by API and Worker) and
++`apps/api/src/config/env.ts` (API additions). The tracked `*.env*.example` templates are **not**
++authoritative and are currently incomplete/inconsistent — see
++[Canonical schema and example consistency](#canonical-schema-and-example-consistency).
+ 
+ ## Validation Schema
+ 
+@@ -40,6 +44,9 @@ Base schema (`packages/config/env-schema.ts`) is shared by API and Worker. Each
+ | `RATE_LIMIT_MAX_REQUESTS`   | No       | `100`                   | Max requests per window                  |
+ | `MAX_FILE_SIZE_MB`          | No       | `50`                    | Max upload file size in MB               |
+ | `UPLOAD_TTL_SECONDS`        | No       | `3600`                  | Signed upload URL TTL                    |
++| `WEBHOOK_ENCRYPTION_KEY`    | **Yes**  | —                       | Webhook secret AES-256-GCM key (min 32)  |
++| `SHOW_STACK_TRACES`         | No       | `false`                 | Include stack traces in error responses  |
++| `EMAIL_FROM`                | No       | —                       | Sender address alias for `SMTP_FROM`     |
+ 
+ ### Web (`apps/web/.env.example`)
+ 
+@@ -73,6 +80,27 @@ Base schema (`packages/config/env-schema.ts`) is shared by API and Worker. Each
+ | `SMTP_PASS`                 | No       | —       | SMTP password                       |
+ | `SMTP_FROM`                 | No       | —       | Sender email                        |
+ 
++## Canonical schema and example consistency
++
++The authoritative definitions are the Zod schemas referenced above. The tracked example
++templates are **incomplete and inconsistent** and must not be relied on as the schema:
++
++- The root `.env.example` does **not** document `WEBHOOK_ENCRYPTION_KEY`,
++  `SHOW_STACK_TRACES`, or `EMAIL_FROM`.
++- `apps/api/.env.example` omits `JWT_SECRET`, `WEBHOOK_ENCRYPTION_KEY`,
++  `SHOW_STACK_TRACES`, `LIVEKIT_*`, and `REDIS_TLS`.
++- `infra/docker/.env.devremote.example` and `infra/docker/.env.prod.example` omit
++  `WEBHOOK_ENCRYPTION_KEY` and `JWT_SECRET`. `docker-compose.prod.yml` likewise does not pass
++  `WEBHOOK_ENCRYPTION_KEY` to the API service.
++- `WEBHOOK_ENCRYPTION_KEY` is **required for webhook secret encryption**:
++  `apps/api/src/modules/webhooks/service.ts:22` throws
++  `WEBHOOK_ENCRYPTION_KEY must be set for webhook secret encryption` when it is unset, so a
++  Docker/prod deployment that omits it fails at the first webhook secret operation.
++
++Operators deploying from the Docker templates must add `WEBHOOK_ENCRYPTION_KEY` (and, if custom
++JWT signing is used, `JWT_SECRET`) out of band. Generating the templates from the canonical
++schema is tracked as a follow-up; this document is the reference until then.
++
+ ## Infrastructure Variables
+ 
+ These are only needed for CI/CD and Terraform, not for local development:

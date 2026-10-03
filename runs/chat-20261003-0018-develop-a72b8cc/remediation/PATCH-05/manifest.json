@@ -1,0 +1,69 @@
+{
+  "patchSet": "PATCH-05",
+  "title": "Correct Supabase client selection (ARCH-P1-001/002, FEAT-P1-002, FINAL-P1-001)",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "chat",
+  "base": "origin/develop",
+  "baseCommit": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-05-20261003-0018-develop-a72b8cc",
+  "commit": "9bd4f88f22cbee0f2de45c635fcdfc6f04deb052",
+  "pr": "https://github.com/MaineCyberTech/chat/pull/59",
+  "prDraft": true,
+  "findings": ["ARCH-P1-001", "FEAT-P1-002", "FINAL-P1-001", "ARCH-P1-002"],
+  "files": [
+    "apps/api/src/modules/webhooks/service.ts",
+    "apps/api/src/lib/socket.ts",
+    "apps/api/src/modules/notifications/push-subscription-service.ts"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-05/diff.patch",
+    "sha256": "be37da17a178f2574d81e95170cdeeb0ce385d579df4c7ef311024caf0543882"
+  },
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test",
+      "runner": "ci-runner (Proxmox, lab job API)",
+      "exit": 0,
+      "result": "Test Files 62 passed (62); Tests 485 passed (485)",
+      "evidence": "remediation/PATCH-05/verify.log"
+    },
+    {
+      "command": "corepack pnpm --filter api typecheck",
+      "runner": "ci-runner (Proxmox, lab job API)",
+      "exit": 0,
+      "result": "tsc --noEmit clean",
+      "evidence": "remediation/PATCH-05/verify.log"
+    },
+    {
+      "command": "corepack pnpm --filter api exec vitest run src/modules/webhooks src/modules/notifications",
+      "runner": "ci-runner (Proxmox, lab job API)",
+      "exit": 0,
+      "result": "Test Files 2 passed (2); Tests 18 passed (18)",
+      "evidence": "remediation/PATCH-05/verify.log"
+    },
+    {
+      "command": "corepack pnpm lint && corepack pnpm typecheck",
+      "runner": "ci-runner (Proxmox, lab job API)",
+      "exit": 0,
+      "result": "lint 6 successful/6 total; typecheck 11 successful/11 total",
+      "evidence": "remediation/PATCH-05/verify.log"
+    },
+    {
+      "command": "gitleaks protect --staged --redact --exit-code 1",
+      "runner": "ci-runner (Proxmox, lab job API)",
+      "exit": 0,
+      "result": "no leaks found",
+      "evidence": "remediation/PATCH-05/gitleaks.log"
+    },
+    {
+      "command": "corepack pnpm format:check",
+      "runner": "ci-runner (Proxmox, lab job API)",
+      "exit": 1,
+      "result": "informational: 597 files pre-existing Prettier non-compliance on develop (including the 3 patch files); not introduced by this patch",
+      "evidence": "remediation/PATCH-05/verify.log (not run as a gate)"
+    }
+  ],
+  "scopeCheck": "pass - only the three patch-set source files (git diff --stat: 3 files, +37 / -20)",
+  "findingsNote": "FEAT-P1-002 dependency (ARCH-P1-001) resolved; durable BullMQ retries deferred to PATCH-09",
+  "generated": "2026-10-03T06:50:00Z"
+}

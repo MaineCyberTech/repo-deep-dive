@@ -1,0 +1,79 @@
+PATCH-02 verification log
+Run: 20261003-0018-develop-a72b8cc  Repo: MaineCyberTech/chat (local C:\temp\chat)
+Base: origin/develop a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+Date: 2026-10-03T06:55Z
+Runner: local Windows + Proxmox ci-runner (172.23.128.51) via ssh/lab-run
+======================================================================
+
+### CHECK 1: credential file no longer tracked
+$ git ls-files | Select-String test-signin.json -SimpleMatch | Measure-Object
+Count = 0
+RESULT: PASS (file no longer tracked)
+
+Lab (clean patched tracked tree, git archive of the working tree):
+$ git ls-files | grep -c test-signin.json
+0
+RESULT: PASS
+
+### CHECK 2: local file removed from the working tree
+$ Remove-Item test-signin.json; Test-Path test-signin.json
+False
+RESULT: PASS (removed from disk so no local copy can be re-committed or leaked)
+
+### CHECK 3: .gitignore coverage
+$ git check-ignore -v test-signin.json
+.gitignore:46:test-signin*.json	test-signin.json
+exit=0 (ignored)
+$ git check-ignore -v test-signin.example.json
+exit=1 (NOT ignored; the committed template stays tracked)
+RESULT: PASS
+
+### CHECK 4: gitleaks diff/staged gate (Proxmox ci-runner)
+$ gitleaks protect --staged --redact --exit-code 1
+staged_exit=0
+INF 0 commits scanned.
+INF no leaks found
+RESULT: PASS (no leaks introduced by the staged diff)
+
+### CHECK 5: gitleaks working-tree scan, full lab tree (no-git, redacted)
+$ gitleaks detect --no-git --redact --exit-code 1 -f json
+gitleaks_exit=1
+findings=47
+All 47 are generic-api-key hits under generated apps/web/.next/** build caches.
+Any finding for test-signin?: (none)
+RESULT: credential not detected; residual findings are pre-existing generated
+build artifacts, unrelated to this patch (same class as PATCH-04).
+
+### CHECK 6: gitleaks clean tracked tree (no build artifacts) vs base
+Clean archive of the patched tracked tree (git archive of the working tree):
+test-signin.json present: no
+patched findings=5:
+  jwt                .github/workflows/validate.yml:396
+  generic-api-key    apps/web/components/shared/keyboard-shortcuts.tsx:15
+  jwt                infra/docker/.env.dev.example:6
+  jwt                infra/docker/.env.dev.example:7
+  jwt                infra/docker/.env.dev.example:22
+Base tree (git archive HEAD a72b8cc) findings=5:
+  jwt                .github/workflows/validate.yml:396
+  generic-api-key    apps/web/components/shared/keyboard-shortcuts.tsx:15
+  jwt                infra/docker/.env.dev.example:6
+  jwt                infra/docker/.env.dev.example:7
+  jwt                infra/docker/.env.dev.example:22
+The patched finding set is IDENTICAL to base (same rules, files, lines and
+fingerprints); no new secret is introduced and no test-signin finding exists.
+RESULT: no new gitleaks findings (net-zero).
+
+### CHECK 7: scope
+$ git diff --cached --name-status
+D  test-signin.json
+M  .gitignore
+M  SECURITY.md
+RESULT: PASS (patch-set files + SECURITY.md doc note only)
+
+### NOTE (honesty / deviation)
+The task's literal gate `gitleaks detect --no-git --redact` is NOT zero on the
+full lab working tree because of pre-existing, unrelated findings (47 under
+generated .next build caches; 5 in the clean tracked tree). Those exist
+identically at base develop and none is test-signin*. The credential-specific
+result is clean: the file is untracked, absent from the working tree, ignored,
+and produces no gitleaks finding. No output above prints any secret value.

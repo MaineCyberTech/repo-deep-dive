@@ -1,0 +1,83 @@
+{
+  "patch_set": "PATCH-02",
+  "title": "Remove committed credential and ignore local credential files",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-02-20261003-0018-develop-a72b8cc",
+  "commit": "3fc2091f6cea856e90d492220b926bbf0da73801",
+  "tree": "ef094cc474d988d35f3de62d511774941510d3fd",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/60",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["SEC-P1-002", "SUPPLY-P1-001", "INV-P2-002"],
+  "files": [
+    "test-signin.json",
+    ".gitignore",
+    "SECURITY.md"
+  ],
+  "rotation_required": true,
+  "rotation_note": "The committed credential MUST be rotated out-of-band by an owner. A file removal cannot rotate a leaked secret and this PR does not print the value.",
+  "diff": {
+    "path": "remediation/PATCH-02/diff.patch",
+    "sha256": "d7063afc4d928c5333d86822572c01ab1440a2a94b16404497a6abdc52f54054",
+    "insertions": 12,
+    "deletions": 1,
+    "note": "deleted line is the credential; its content is intentionally omitted from diff.patch"
+  },
+  "verification": [
+    {
+      "command": "git ls-files | grep -c test-signin.json",
+      "runner": "local+ci-runner",
+      "exit_code": 0,
+      "result": "count = 0 (no longer tracked)"
+    },
+    {
+      "command": "Test-Path test-signin.json",
+      "runner": "local",
+      "exit_code": null,
+      "result": "False (removed from working tree)"
+    },
+    {
+      "command": "git check-ignore -v test-signin.json",
+      "runner": "ci-runner",
+      "exit_code": 0,
+      "result": "ignored by .gitignore:46 test-signin*.json"
+    },
+    {
+      "command": "git check-ignore -v test-signin.example.json",
+      "runner": "ci-runner",
+      "exit_code": 1,
+      "result": "not ignored (template stays tracked) - expected"
+    },
+    {
+      "command": "gitleaks protect --staged --redact --exit-code 1",
+      "runner": "ci-runner",
+      "exit_code": 0,
+      "result": "no leaks found (diff gate pass)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (full lab tree)",
+      "runner": "ci-runner",
+      "exit_code": 1,
+      "result": "47 pre-existing generic-api-key hits under generated apps/web/.next/** build caches; 0 test-signin"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact (clean tracked tree) vs base archive",
+      "runner": "ci-runner",
+      "exit_code": 0,
+      "result": "patched finding set identical to base (5 pre-existing: validate.yml jwt, keyboard-shortcuts generic-api-key, .env.dev.example jwt x3); no new secret; 0 test-signin"
+    },
+    {
+      "command": "git diff --cached --name-status",
+      "runner": "local",
+      "exit_code": 0,
+      "result": "D test-signin.json; M .gitignore; M SECURITY.md (scope pass)"
+    }
+  ],
+  "verify_log": "remediation/PATCH-02/verify.log",
+  "generated_at": "2026-10-03T07:00:00Z"
+}

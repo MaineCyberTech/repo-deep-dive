@@ -1,0 +1,134 @@
+# PATCH-09 verification log — durable webhook retries via BullMQ + stable idempotency key
+
+- Run: 20261003-0018-develop-a72b8cc
+- Repo: chat (MaineCyberTech), base: origin/develop @ a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+- Branch: remediation/patch-09-20261003-0018-develop-a72b8cc
+- Runner: Proxmox lab via scripts/lab-sync.ps1 + scripts/lab-run.ps1 (ssh root@172.23.128.51)
+- Generated: 2026-10-03 (UTC times as reported by the lab)
+- Findings: FEAT-P1-002 (durable retries), FEAT-P2-003 (stable idempotency key; referenced by
+  the plan as "FEAT-P1-003", an id that does not exist in findings.json)
+- Working tree synced uncommitted from the local clone (content identical to the commit below).
+
+## 0) Sync
+
+```
+$ scripts/lab-sync.ps1 -Repo chat
+synced:chat
+a72b8cc
+```
+
+## 1) corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test
+
+EXIT: 0
+
+```
+Scope: all 8 workspace projects
+Lockfile is up to date, resolution step is skipped
+Packages: +883
+
+. prepare$ husky
+. prepare: Done
+Done in 5s
+
+> @chat/api@0.0.0 test /srv/work/chat/apps/api
+> vitest run
+
+ RUN  v3.2.6 /srv/work/chat
+
+ ... (full per-file output captured in the run; unchanged files pass as on develop) ...
+
+ Test Files  64 passed (64)
+      Tests  491 passed (491)
+   Start at  08:36:03
+   Duration  22.92s (transform 3.68s, setup 18.23s, collect 12.58s, tests 6.95s, environment 10.79s, prepare 6.39s)
+```
+
+Notes:
+- "Lockfile is up to date" confirms the added `bullmq` dependency and the single importer entry
+  in `pnpm-lock.yaml` satisfy `--frozen-lockfile`.
+- Baseline on develop was 62 files / 485 tests; this patch adds 2 test files / 6 tests
+  (64 files / 491 tests).
+
+## 2) Targeted tests (new + affected)
+
+EXIT: 0
+
+```
+$ corepack pnpm exec vitest run \
+    apps/api/src/lib/__tests__/webhook-queue.test.ts \
+    apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts \
+    apps/worker/src/__tests__/webhook-delivery.test.ts
+
+ RUN  v3.2.6 /srv/work/chat
+
+ ✓ apps/worker/src/__tests__/webhook-delivery.test.ts (3 tests) 328ms
+   ✓ webhook-delivery processor (durable retries) > signs with the decrypted secret and reuses the provided idempotency key  318ms
+ ✓ apps/api/src/lib/__tests__/webhook-queue.test.ts (2 tests) 8ms
+ ✓ apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts (13 tests) 119ms
+
+ Test Files  3 passed (3)
+      Tests  18 passed (18)
+   Start at  08:36:35
+   Duration  1.93s (transform 794ms, setup 2.25s, collect 885ms, tests 455ms, environment 1ms, prepare 639ms)
+```
+
+## 3) Typecheck (local clone, after building workspace deps)
+
+EXIT: 0
+
+```
+$ corepack pnpm --filter api typecheck      # tsc --noEmit clean
+$ corepack pnpm --filter worker typecheck    # tsc --noEmit clean
+```
+
+## 4) Lint (local clone)
+
+EXIT: 0
+
+```
+$ corepack pnpm --filter api lint     # eslint . clean
+$ corepack pnpm --filter worker lint   # eslint . clean
+```
+
+## 5) gitleaks (staged diff = this patch)
+
+EXIT: 0
+
+```
+$ git add -A && gitleaks protect --staged --redact --exit-code 1
+8:37AM INF 0 commits scanned.
+8:37AM INF scanned ~13726 bytes (13.73 KB) in 248ms
+8:37AM INF no leaks found
+```
+
+No secret-like values in the patch diff.
+
+### Whole-tree scan (informational, pre-existing on develop)
+
+```
+$ gitleaks detect --no-git --redact --report-format json --report-path /tmp/gl.json
+8:36AM WRN leaks found: 5
+```
+
+All 5 are pre-existing on `develop` and in files NOT touched by this patch:
+
+- `.github/workflows/validate.yml:396` (jwt)
+- `apps/web/components/shared/keyboard-shortcuts.tsx:15` (generic-api-key)
+- `infra/docker/.env.dev.example:6,7,22` (jwt)
+
+None of the 5 are in a changed file. The staged-diff gate above is clean.
+
+## Scope
+
+Changed files (9):
+
+- `apps/api/package.json` (add `bullmq` dependency)
+- `apps/api/src/lib/webhook-queue.ts` (new: durable BullMQ producer)
+- `apps/api/src/lib/__tests__/webhook-queue.test.ts` (new)
+- `apps/api/src/modules/webhooks/service.ts` (replace `setTimeout` retry with durable enqueue; stable key)
+- `apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts` (new test)
+- `apps/worker/src/processors/webhook-delivery.ts` (consume retry jobs, cumulative retry count,
+  decrypt secret, stable idempotency key)
+- `apps/worker/src/__tests__/webhook-delivery.test.ts` (new)
+- `packages/config/webhook-utils.ts` (shared `decryptWebhookSecret`)
+- `pnpm-lock.yaml` (3-line importer entry for `bullmq`)

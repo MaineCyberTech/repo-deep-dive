@@ -1,0 +1,201 @@
+# PS-U03 (chat) verification - unassigned CI findings (CI-P1-001/CI-P2-006/CI-P2-007)
+date_utc: 2026-10-03T10:15:10Z
+commit:   8e5ab8a47a84f97d6e77847d0a33d4c70ca20fb3
+branch:   remediation/ps-u03-20261003-0018-develop-a72b8cc
+base:     a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+actionlint: 1.7.12
+yq:         yq (https://github.com/mikefarah/yq/) version v4.54.1
+gitleaks:   8.30.1
+node:       v20.20.2
+
+########## 1. changed files (candidate vs base) ##########
+M	.github/workflows/build-push.yml
+M	.github/workflows/validate.yml
+stat:
+ .github/workflows/build-push.yml | 14 +++++++--
+ .github/workflows/validate.yml   | 61 +++++++++++++++++++++++++---------------
+ 2 files changed, 49 insertions(+), 26 deletions(-)
+
+########## 2. actionlint on changed workflows ##########
+.github/workflows/validate.yml:21:9: shellcheck reported issue in this script: SC2086:info:1:41: Double quote to prevent globbing and word splitting [shellcheck]
+   |
+21 |         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+   |         ^~~~
+.github/workflows/validate.yml:76:9: shellcheck reported issue in this script: SC2086:info:1:41: Double quote to prevent globbing and word splitting [shellcheck]
+   |
+76 |         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+   |         ^~~~
+.github/workflows/validate.yml:98:9: shellcheck reported issue in this script: SC2006:style:15:19: Use $(...) notation instead of legacy backticks `...` [shellcheck]
+   |
+98 |         run: |
+   |         ^~~~
+.github/workflows/validate.yml:98:9: shellcheck reported issue in this script: SC2086:info:15:20: Double quote to prevent globbing and word splitting [shellcheck]
+   |
+98 |         run: |
+   |         ^~~~
+.github/workflows/validate.yml:98:9: shellcheck reported issue in this script: SC2086:info:15:28: Double quote to prevent globbing and word splitting [shellcheck]
+   |
+98 |         run: |
+   |         ^~~~
+.github/workflows/validate.yml:98:9: shellcheck reported issue in this script: SC2086:info:15:41: Double quote to prevent globbing and word splitting [shellcheck]
+   |
+98 |         run: |
+   |         ^~~~
+.github/workflows/validate.yml:131:9: shellcheck reported issue in this script: SC2086:info:1:41: Double quote to prevent globbing and word splitting [shellcheck]
+    |
+131 |         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+    |         ^~~~
+.github/workflows/validate.yml:154:9: shellcheck reported issue in this script: SC2086:info:1:41: Double quote to prevent globbing and word splitting [shellcheck]
+    |
+154 |         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+    |         ^~~~
+.github/workflows/validate.yml:216:9: shellcheck reported issue in this script: SC2086:info:1:41: Double quote to prevent globbing and word splitting [shellcheck]
+    |
+216 |         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+    |         ^~~~
+.github/workflows/validate.yml:329:9: shellcheck reported issue in this script: SC2011:warning:7:10: Use 'find .. -print0 | xargs -0 ..' or 'find .. -exec .. +' to allow non-alphanumeric filenames [shellcheck]
+    |
+329 |         run: |
+    |         ^~~~
+.github/workflows/validate.yml:383:9: shellcheck reported issue in this script: SC2086:info:1:41: Double quote to prevent globbing and word splitting [shellcheck]
+    |
+383 |         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+    |         ^~~~
+.github/workflows/validate.yml:417:9: shellcheck reported issue in this script: SC2086:info:1:41: Double quote to prevent globbing and word splitting [shellcheck]
+    |
+417 |         run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+    |         ^~~~
+actionlint_validate_exit=1
+.github/workflows/build-push.yml:40:9: shellcheck reported issue in this script: SC2086:info:1:42: Double quote to prevent globbing and word splitting [shellcheck]
+   |
+40 |         run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+   |         ^~~~
+actionlint_buildpush_exit=1
+
+########## 3. yq parse + job keys ##########
+yq_validate_exit=0
+yq_buildpush_exit=0
+validate jobs: test,diff-coverage,lint,typecheck,openapi-validate,security-audit,branch-protection,migration-test,build,e2e
+build-push jobs: build-images
+
+########## 4. blocking-gate assertions ##########
+-- CI-P2-007: branch-protection job must not be continue-on-error --
+continue-on-error: null
+if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+-- CI-P2-007: aggregated rules API used, legacy getBranchProtection absent --
+rules/branches occurrences: 2
+getBranchProtection occurrences: 1
+-- CI-P2-006: build-push must not publish on pull_request --
+bare 'push: true' in build-push.yml: 0 (expect 0)
+conditional push occurrences: 3 (expect 3)
+load occurrences: 3 (expect 3)
+
+########## 5. CI-P2-007 branch-rules gate: executable logic test ##########
+Extracting the exact github-script body from validate.yml and evaluating it
+under node with mocked github/context/core (negative + positive cases).
+extracted_script_bytes=1313
+NEGATIVE (missing pull_request + required_status_checks):
+  setFailed=["Branch rules for 'main' are incomplete. Missing: require pull request reviews before merging; require status checks to pass before merging"]
+  info=[]
+POSITIVE (all three rules present):
+  setFailed=[]
+  info=["Branch rules for 'main' satisfy the required gates: non_fast_forward, pull_request, required_status_checks"]
+negative_failed_closed=true
+positive_passed=true
+bp_logic_test_exit=0
+
+########## 6. gitleaks ##########
+-- 6a. changed files, no allowlist config --
+gitleaks .github/workflows/validate.yml exit=1
+gitleaks .github/workflows/build-push.yml exit=0
+-- 6b. diff gate: git diff base..HEAD | gitleaks stdin --exit-code 1 --
+gitleaks_diff_exit=0
+-- 6c. full worktree (documents pre-existing findings) --
+gitleaks_full_exit=1
+full_findings=5
+hit files (pre-existing: validate.yml jwt fixture expected):
+changed-file hits in full scan:
+none
+
+PS_U03_CHAT_DONE
+
+########## base-vs-branch diagnostics + pre-existing gitleaks classification ##########
+
+=== full json first 1500 bytes ===
+[
+ {
+  "RuleID": "jwt",
+  "Description": "Uncovered a JSON Web Token, which may lead to unauthorized access to web applications and sensitive user data.",
+  "StartLine": 411,
+  "EndLine": 411,
+  "StartColumn": 73,
+  "EndColumn": 226,
+  "Match": "REDACTED'",
+  "Secret": "REDACTED",
+  "File": ".github/workflows/validate.yml",
+  "SymlinkFile": "",
+  "Commit": "",
+  "Entropy": 5.4937463,
+  "Author": "",
+  "Email": "",
+  "Date": "",
+  "Message": "",
+  "Tags": [],
+  "Fingerprint": ".github/workflows/validate.yml:jwt:411"
+ },
+ {
+  "RuleID": "generic-api-key",
+  "Description": "Detected a Generic API Key, potentially exposing access to various services and sensitive operations.",
+  "StartLine": 15,
+  "EndLine": 15,
+  "StartColumn": 10,
+  "EndColumn": 32,
+  "Match": "keys: \"REDACTED\"",
+  "Secret": "REDACTED",
+  "File": "apps/web/components/shared/keyboard-shortcuts.tsx",
+  "SymlinkFile": "",
+  "Commit": "",
+  "Entropy": 3.640224,
+  "Author": "",
+  "Email": "",
+  "Date": "",
+  "Message": "",
+  "Tags": [],
+  "Fingerprint": "apps/web/components/shared/keyboard-shortcuts.tsx:generic-api-key:15"
+ },
+ {
+  "RuleID": "jwt",
+  "Description": "Uncovered a JSON Web Token, which may lead to unauthorized access to web applications and sensitive user data.",
+  "StartLine": 6,
+  "EndLine": 6,
+  "StartColumn": 20,
+  "EndColumn": 172,
+  "Match": "REDACTED",
+  "Secret": "REDACTED",
+  "File": "infra/docker/.env.dev.example",
+  "SymlinkFile": "",
+  "Commit": "",
+  "Entropy": 5.4937463,
+  "Author": "",
+
+=== keys present ===
+      5 "Description"
+      5 "File"
+      5 "RuleID"
+      5 "StartLine"
+
+=== 6a branch validate.yml stderr ===
+[90m10:15AM[0m [32mINF[0m [1mscanned ~15685 bytes (15.69 KB) in 245ms[0m
+[90m10:15AM[0m [33mWRN[0m [1mleaks found: 1[0m
+
+=== 6a base validate.yml (control) ===
+[90m10:15AM[0m [32mINF[0m [1mscanned ~14577 bytes (14.58 KB) in 241ms[0m
+[90m10:15AM[0m [33mWRN[0m [1mleaks found: 1[0m
+
+=== 7. actionlint diagnostics: base vs branch ===
+base validate.yml diagnostics:   12
+branch validate.yml diagnostics: 12
+base build-push.yml diagnostics:   1
+branch build-push.yml diagnostics: 1
+
+PS_U03_INSPECT_DONE

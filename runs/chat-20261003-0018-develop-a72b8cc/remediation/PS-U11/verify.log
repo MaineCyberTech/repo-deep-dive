@@ -1,0 +1,754 @@
+# PS-U11 lab verification (findings SEC-P1-008, SEC-P2-009, SEC-P2-010)
+run: 20261003-0018-develop-a72b8cc
+runner: lab ci-runner 172.23.128.51 (edge_key, scripts/lab-run.ps1)
+base: a72b8cc43590848b052bd5e8954dbbc726b3d7fd (origin/develop)
+date: 2026-10-03T06:10:00.3773384-04:00
+
+## Tests (required command from the patch set)
+cmd: corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test
+note: --filter api does not match a workspace package, so pnpm scopes all 8 projects;
+      the @chat/api unit suites are included (csrf.test.ts 22, webhook.service.test.ts 14,
+      socket.test.ts 3). The targeted @chat/api run below isolates the same suites.
+
+Scope: all 8 workspace projects
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages: -138
+--------------------------------------------------------------------------------
+Progress: resolved 0, reused 134, downloaded 0, added 0, done
+
+. prepare$ husky
+. prepare: Done
+Done in 2.5s
+
+> @chat/api@0.0.0 test /srv/work/chat/apps/api
+> vitest run
+
+
+ RUN  v3.2.6 /srv/work/chat
+
+ Γ£ô apps/api/src/modules/user-groups/__tests__/user-groups.test.ts (23 tests) 97ms
+ Γ£ô apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts (17 tests) 69ms
+ Γ£ô apps/api/src/modules/admin/__tests__/admin.test.ts (13 tests) 111ms
+ Γ£ô apps/api/src/modules/audit/__tests__/audit.test.ts (13 tests) 30ms
+ Γ£ô apps/api/src/modules/sidebar/__tests__/sidebar.test.ts (10 tests) 43ms
+ Γ£ô apps/api/src/middleware/__tests__/csrf.test.ts (22 tests) 34ms
+ Γ£ô apps/api/src/modules/emoji/__tests__/emoji.test.ts (9 tests) 28ms
+ Γ£ô apps/api/src/modules/groups/__tests__/groups.test.ts (11 tests) 25ms
+ Γ£ô apps/api/src/modules/announcements/__tests__/announcements.test.ts (9 tests) 21ms
+ Γ£ô apps/api/src/modules/scheduled-posts/__tests__/scheduled-posts.test.ts (7 tests) 50ms
+ Γ£ô apps/api/src/modules/auth/__tests__/auth.service.test.ts (10 tests) 29ms
+ Γ£ô apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts (14 tests) 62ms
+ Γ£ô apps/api/src/middleware/__tests__/error-handler.test.ts (12 tests) 55ms
+ Γ£ô apps/api/src/modules/status/__tests__/status.test.ts (7 tests) 35ms
+ Γ£ô apps/api/src/modules/workspaces/__tests__/workspace.service.test.ts (10 tests) 23ms
+ Γ£ô apps/api/src/middleware/__tests__/require-membership.test.ts (11 tests) 20ms
+ Γ£ô apps/api/src/modules/export/__tests__/export.test.ts (4 tests) 19ms
+ Γ£ô apps/api/src/modules/consent/__tests__/consent.test.ts (6 tests) 22ms
+ Γ£ô apps/api/src/modules/livekit/__tests__/livekit.test.ts (6 tests) 14ms
+ Γ£ô apps/api/src/modules/read-receipts/__tests__/read-receipts.test.ts (6 tests) 22ms
+ Γ£ô apps/api/src/modules/messages/__tests__/message.service.test.ts (6 tests) 17ms
+ Γ£ô apps/api/src/middleware/__tests__/require-admin.test.ts (4 tests) 11ms
+ Γ£ô apps/api/src/middleware/__tests__/rate-limit.test.ts (11 tests) 37ms
+ Γ£ô apps/api/src/middleware/__tests__/security-headers.test.ts (11 tests) 19ms
+ Γ£ô apps/api/src/modules/threads/__tests__/threads.test.ts (8 tests) 21ms
+ Γ£ô apps/api/src/lib/__tests__/app-error.test.ts (17 tests) 15ms
+ Γ£ô packages/config/__tests__/errors.test.ts (15 tests) 12ms
+ Γ£ô apps/api/src/modules/import/__tests__/import.test.ts (5 tests) 18ms
+ Γ£ô apps/worker/src/__tests__/notification.test.ts (3 tests) 49ms
+ Γ£ô apps/api/src/modules/channels/__tests__/channel.service.test.ts (5 tests) 13ms
+ Γ£ô apps/api/src/modules/notifications/__tests__/notification.service.test.ts (6 tests) 12ms
+ Γ£ô apps/api/src/middleware/__tests__/authenticate.test.ts (4 tests) 19ms
+ Γ£ô apps/api/src/middleware/__tests__/require-permission.test.ts (5 tests) 15ms
+ Γ£ô apps/worker/src/__tests__/cleanup.test.ts (3 tests) 45ms
+ Γ£ô apps/api/src/modules/reactions/__tests__/reaction.service.test.ts (5 tests) 11ms
+ Γ£ô apps/api/src/modules/ai/__tests__/ai.test.ts (3 tests) 13ms
+ Γ£ô apps/api/src/modules/openapi/__tests__/openapi.test.ts (2 tests) 151ms
+ Γ£ô packages/db/__tests__/stores.test.ts (4 tests) 6ms
+[2026-10-03 10:08:58.375 +0000] ERROR: Failed to get preferences
+    service: "@chat/api"
+    version: "0.0.0"
+    env: "test"
+    userId: "u1"
+    error: "Error: DB error"
+ Γ£ô apps/api/src/modules/preferences/__tests__/preferences.service.test.ts (3 tests) 15ms
+ Γ£ô apps/api/src/middleware/__tests__/request-id.test.ts (4 tests) 9ms
+ Γ£ô apps/api/src/modules/health/__tests__/health.service.test.ts (5 tests) 10ms
+ Γ£ô packages/sdk/__tests__/client.test.ts (5 tests) 7ms
+ Γ£ô apps/api/src/lib/__tests__/socket.test.ts (3 tests) 5ms
+ Γ£ô apps/web/components/chat/__tests__/chat-view.test.tsx (25 tests) 1018ms
+ Γ£ô apps/web/components/chat/__tests__/message-list.test.tsx (7 tests) 282ms
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > opens dropdown on click and shows empty state
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > opens dropdown and renders notifications
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > opens dropdown and renders notifications
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > closes dropdown on click outside
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > closes on Escape key
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/notifications/__tests__/notification-bell.test.tsx (8 tests) 438ms
+ Γ£ô apps/web/components/channel/__tests__/channel-list.test.tsx (7 tests) 184ms
+ Γ£ô apps/web/components/pwa/__tests__/install-prompt.test.tsx (7 tests) 234ms
+ Γ£ô apps/web/components/workspace/__tests__/create-workspace-dialog.test.tsx (5 tests) 543ms
+ Γ£ô apps/web/components/chat/__tests__/message-input.test.tsx (3 tests) 101ms
+ Γ£ô apps/web/components/workspace/__tests__/workspace-list.test.tsx (6 tests) 379ms
+ Γ£ô apps/web/components/media/__tests__/media-room.test.tsx (6 tests) 132ms
+stderr | apps/web/components/auth/__tests__/login-form.test.tsx > LoginForm > shows sent state after successful magic link submission
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+ Γ£ô packages/ui/src/components/__tests__/dialog.test.tsx (9 tests) 173ms
+stderr | apps/web/components/auth/__tests__/login-form.test.tsx > LoginForm > shows error message on failed submission
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/auth/__tests__/login-form.test.tsx (5 tests) 744ms
+ Γ£ô apps/web/components/shared/__tests__/error-boundary.test.tsx (5 tests) 164ms
+ Γ£ô packages/ui/src/components/__tests__/skeleton.test.tsx (7 tests) 64ms
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > renders the emoji picker popup
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > shows search input
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > renders category tabs
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > shows no results message when search yields no matches
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > shows no results message when search yields no matches
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skateboard_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `crayon_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `paintbrush_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+ Γ£ô packages/ui/src/components/__tests__/sidebar-group.test.tsx (5 tests) 155ms
+ Γ£ô packages/ui/src/components/__tests__/button.test.tsx (7 tests) 74ms
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onSelect when an emoji is clicked
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onSelect when an emoji is clicked
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onSelect when an emoji is clicked
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onClose when clicking outside
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onClose on Escape key
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/chat/__tests__/emoji-picker.test.tsx (7 tests) 1903ms
+   Γ£ô EmojiPicker > shows no results message when search yields no matches  381ms
+   Γ£ô EmojiPicker > calls onSelect when an emoji is clicked  746ms
+ Γ£ô packages/ui/src/components/__tests__/avatar.test.tsx (4 tests) 45ms
+ Γ£ô apps/web/components/home/__tests__/landing-shell.test.tsx (5 tests) 155ms
+ Γ£ô packages/ui/src/components/__tests__/input.test.tsx (4 tests) 144ms
+ Γ£ô packages/ui/src/components/__tests__/badge.test.tsx (3 tests) 38ms
+
+ Test Files  63 passed (63)
+      Tests  492 passed (492)
+   Start at  10:08:45
+   Duration  25.95s (transform 3.57s, setup 21.53s, collect 11.66s, tests 8.31s, environment 13.24s, prepare 7.81s)
+
+required_test_exit=0
+
+> @chat/api@0.0.0 test /srv/work/chat/apps/api
+> vitest run
+
+
+ RUN  v3.2.6 /srv/work/chat
+
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > renders the emoji picker popup
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > shows search input
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > renders category tabs
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/auth/__tests__/login-form.test.tsx > LoginForm > shows sent state after successful magic link submission
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/chat/__tests__/chat-view.test.tsx (25 tests) 1103ms
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > shows no results message when search yields no matches
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/auth/__tests__/login-form.test.tsx > LoginForm > shows error message on failed submission
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/auth/__tests__/login-form.test.tsx (5 tests) 748ms
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > shows no results message when search yields no matches
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `skateboard_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `crayon_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `paintbrush_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onSelect when an emoji is clicked
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onSelect when an emoji is clicked
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onSelect when an emoji is clicked
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onClose when clicking outside
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+stderr | apps/web/components/chat/__tests__/emoji-picker.test.tsx > EmojiPicker > calls onClose on Escape key
+Encountered two children with the same key, `brown_mushroom`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bison_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `tamale_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ginger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `pea_pod_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hamsa_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `plunger_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mouse_trap_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `bucket_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `ladder_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `carpentry_saw_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `screwdriver_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `hook_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `magnet_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `knot_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `potted_plant_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `mirror_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `window_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+Encountered two children with the same key, `wheel_extra`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted ΓÇö the behavior is unsupported and could change in a future version.
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/chat/__tests__/emoji-picker.test.tsx (7 tests) 2005ms
+   Γ£ô EmojiPicker > shows no results message when search yields no matches  382ms
+   Γ£ô EmojiPicker > calls onSelect when an emoji is clicked  861ms
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > opens dropdown on click and shows empty state
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > opens dropdown and renders notifications
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > opens dropdown and renders notifications
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > closes dropdown on click outside
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/workspace/__tests__/create-workspace-dialog.test.tsx (5 tests) 553ms
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > closes on Escape key
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+System.Management.Automation.RemoteException
+ Γ£ô apps/web/components/notifications/__tests__/notification-bell.test.tsx (8 tests) 382ms
+ Γ£ô apps/web/components/workspace/__tests__/workspace-list.test.tsx (6 tests) 289ms
+ Γ£ô apps/web/components/pwa/__tests__/install-prompt.test.tsx (7 tests) 198ms
+ Γ£ô apps/web/components/chat/__tests__/message-list.test.tsx (7 tests) 209ms
+ Γ£ô apps/web/components/channel/__tests__/channel-list.test.tsx (7 tests) 175ms
+ Γ£ô packages/ui/src/components/__tests__/dialog.test.tsx (9 tests) 134ms
+ Γ£ô apps/web/components/shared/__tests__/error-boundary.test.tsx (5 tests) 135ms
+ Γ£ô packages/ui/src/components/__tests__/sidebar-group.test.tsx (5 tests) 105ms
+ Γ£ô apps/web/components/home/__tests__/landing-shell.test.tsx (5 tests) 107ms
+ Γ£ô packages/ui/src/components/__tests__/input.test.tsx (4 tests) 135ms
+ Γ£ô apps/web/components/media/__tests__/media-room.test.tsx (6 tests) 100ms
+ Γ£ô apps/web/components/chat/__tests__/message-input.test.tsx (3 tests) 112ms
+ Γ£ô packages/ui/src/components/__tests__/button.test.tsx (7 tests) 49ms
+ Γ£ô packages/ui/src/components/__tests__/skeleton.test.tsx (7 tests) 51ms
+ Γ£ô apps/api/src/modules/openapi/__tests__/openapi.test.ts (2 tests) 173ms
+ Γ£ô packages/ui/src/components/__tests__/avatar.test.tsx (4 tests) 44ms
+ Γ£ô packages/ui/src/components/__tests__/badge.test.tsx (3 tests) 37ms
+ Γ£ô apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts (17 tests) 35ms
+ Γ£ô apps/api/src/modules/user-groups/__tests__/user-groups.test.ts (23 tests) 70ms
+ Γ£ô apps/api/src/modules/admin/__tests__/admin.test.ts (13 tests) 30ms
+ Γ£ô apps/api/src/middleware/__tests__/error-handler.test.ts (12 tests) 25ms
+ Γ£ô apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts (14 tests) 55ms
+ Γ£ô apps/api/src/modules/scheduled-posts/__tests__/scheduled-posts.test.ts (7 tests) 24ms
+ Γ£ô apps/worker/src/__tests__/notification.test.ts (3 tests) 33ms
+ Γ£ô apps/worker/src/__tests__/cleanup.test.ts (3 tests) 34ms
+ Γ£ô apps/api/src/middleware/__tests__/rate-limit.test.ts (11 tests) 35ms
+ Γ£ô apps/api/src/modules/status/__tests__/status.test.ts (7 tests) 17ms
+ Γ£ô apps/api/src/modules/sidebar/__tests__/sidebar.test.ts (10 tests) 24ms
+ Γ£ô apps/api/src/middleware/__tests__/csrf.test.ts (22 tests) 27ms
+ Γ£ô apps/api/src/modules/audit/__tests__/audit.test.ts (13 tests) 27ms
+ Γ£ô apps/api/src/modules/auth/__tests__/auth.service.test.ts (10 tests) 20ms
+ Γ£ô apps/api/src/modules/emoji/__tests__/emoji.test.ts (9 tests) 26ms
+ Γ£ô apps/api/src/modules/groups/__tests__/groups.test.ts (11 tests) 26ms
+ Γ£ô apps/api/src/modules/workspaces/__tests__/workspace.service.test.ts (10 tests) 19ms
+ Γ£ô apps/api/src/modules/consent/__tests__/consent.test.ts (6 tests) 20ms
+ Γ£ô apps/api/src/modules/read-receipts/__tests__/read-receipts.test.ts (6 tests) 15ms
+ Γ£ô apps/api/src/modules/announcements/__tests__/announcements.test.ts (9 tests) 19ms
+ Γ£ô apps/api/src/modules/threads/__tests__/threads.test.ts (8 tests) 13ms
+ Γ£ô apps/api/src/middleware/__tests__/require-membership.test.ts (11 tests) 21ms
+ Γ£ô apps/api/src/modules/export/__tests__/export.test.ts (4 tests) 10ms
+ Γ£ô apps/api/src/middleware/__tests__/authenticate.test.ts (4 tests) 15ms
+ Γ£ô apps/api/src/middleware/__tests__/security-headers.test.ts (11 tests) 12ms
+ Γ£ô apps/api/src/modules/import/__tests__/import.test.ts (5 tests) 12ms
+[2026-10-03 10:09:28.773 +0000] ERROR: Failed to get preferences
+    service: "@chat/api"
+    version: "0.0.0"
+    env: "test"
+    userId: "u1"
+    error: "Error: DB error"
+ Γ£ô apps/api/src/modules/preferences/__tests__/preferences.service.test.ts (3 tests) 11ms
+ Γ£ô apps/api/src/modules/messages/__tests__/message.service.test.ts (6 tests) 10ms
+ Γ£ô apps/api/src/lib/__tests__/app-error.test.ts (17 tests) 9ms
+ Γ£ô apps/api/src/middleware/__tests__/require-permission.test.ts (5 tests) 9ms
+ Γ£ô apps/api/src/modules/livekit/__tests__/livekit.test.ts (6 tests) 9ms
+ Γ£ô apps/api/src/modules/ai/__tests__/ai.test.ts (3 tests) 8ms
+ Γ£ô apps/api/src/modules/channels/__tests__/channel.service.test.ts (5 tests) 8ms
+ Γ£ô apps/api/src/modules/notifications/__tests__/notification.service.test.ts (6 tests) 8ms
+ Γ£ô packages/config/__tests__/errors.test.ts (15 tests) 9ms
+ Γ£ô apps/api/src/modules/reactions/__tests__/reaction.service.test.ts (5 tests) 8ms
+ Γ£ô apps/api/src/middleware/__tests__/require-admin.test.ts (4 tests) 6ms
+ Γ£ô apps/api/src/modules/health/__tests__/health.service.test.ts (5 tests) 12ms
+ Γ£ô apps/api/src/middleware/__tests__/request-id.test.ts (4 tests) 6ms
+ Γ£ô packages/sdk/__tests__/client.test.ts (5 tests) 5ms
+ Γ£ô packages/db/__tests__/stores.test.ts (4 tests) 6ms
+ Γ£ô apps/api/src/lib/__tests__/socket.test.ts (3 tests) 3ms
+
+ Test Files  63 passed (63)
+      Tests  492 passed (492)
+   Start at  10:09:12
+   Duration  18.96s (transform 2.70s, setup 14.04s, collect 8.34s, tests 7.63s, environment 10.80s, prepare 5.39s)
+
+api_test_exit=0
+
+> @chat/api@0.0.0 typecheck /srv/work/chat/apps/api
+> tsc --noEmit
+
+src/lib/logger.ts(4,8): error TS2307: Cannot find module '@chat/config/logger.js' or its corresponding type declarations.
+src/middleware/__tests__/require-permission.test.ts(45,44): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/middleware/__tests__/require-permission.test.ts(61,44): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/middleware/__tests__/require-permission.test.ts(77,44): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/middleware/__tests__/require-permission.test.ts(92,44): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/middleware/require-permission.ts(2,48): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/middleware/require-permission.ts(3,36): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/modules/auth/service.ts(2,40): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/modules/channels/service.ts(5,30): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/modules/messages/service.ts(8,30): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/modules/preferences/service.ts(3,38): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/modules/read-receipts/service.ts(2,34): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/modules/webhooks/service.ts(11,8): error TS2307: Cannot find module '@chat/config/webhook-utils.js' or its corresponding type declarations.
+src/modules/workspaces/routes.ts(17,32): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+src/modules/workspaces/service.ts(4,32): error TS2307: Cannot find module '@chat/db' or its corresponding type declarations.
+/srv/work/chat/apps/api:
+ΓÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILΓÇë @chat/api@0.0.0 typecheck: `tsc --noEmit`
+Exit status 2
+typecheck_exit=2
+
+> @chat/api@0.0.0 lint /srv/work/chat/apps/api
+> eslint .
+
+lint_exit=0
+
+## gitleaks (diff-scoped)
+cmd: git add <changed paths> && git diff --cached --unified=0 | gitleaks stdin --redact --no-banner
+7887 /tmp/psu11.diff
+10:09AM INF scanned ~7887 bytes (7.89 KB) in 218ms
+10:09AM INF no leaks found
+gitleaks_exit=0
+
+## Typecheck / lint
+- lint: exit 0 (eslint clean) — see above.
+- typecheck: exit 2, but all 15 errors are pre-existing TS2307 "cannot find module @chat/db|@chat/config/*"
+  in files not touched by this diff (workspace packages are not built before per-package tsc).
+  A baseline git stash -u run of @chat/api typecheck produced the identical error set; the only
+  error introduced by this change (TS2352 in webhook.service.test.ts) was fixed and is absent.

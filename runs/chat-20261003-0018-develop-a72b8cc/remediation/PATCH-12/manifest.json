@@ -1,0 +1,70 @@
+{
+  "patchSet": "PATCH-12",
+  "title": "Alerting + durable log aggregation",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "chat",
+  "base": "origin/develop",
+  "baseCommit": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-12-20261003-0018-develop-a72b8cc",
+  "commit": "d458b82e1a6ba11dd87b91b07d60aa7c53396f28",
+  "pr": "https://github.com/MaineCyberTech/chat/pull/66",
+  "prDraft": true,
+  "findings": ["OBS-P1-001", "OBS-P2-003"],
+  "files": [
+    "infra/prometheus/rules/chat.rules.yml",
+    "infra/prometheus/alertmanager.yml",
+    "infra/prometheus/README.md",
+    "docs/runbooks/alerting.md",
+    "infra/terraform/README.md",
+    "infra/terraform/terraform.tfvars.example",
+    "apps/api/src/modules/admin/error-buffer.ts",
+    "apps/api/src/modules/admin/__tests__/error-buffer.test.ts",
+    "apps/api/src/lib/sentry.ts",
+    "apps/api/src/lib/__tests__/sentry.test.ts",
+    "apps/api/src/config/env.ts",
+    "apps/api/src/server.ts",
+    ".env.example",
+    "apps/api/.env.example"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-12/diff.patch",
+    "sha256": "96de1f1cc65e1f8cfdba5d9b26b2de57a13100bb50b6945c484880668f05a2bf"
+  },
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "Test Files 64 passed (64); Tests 492 passed (492); new: error-buffer=6, sentry=1",
+      "evidence": "remediation/PATCH-12/verify.log"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/config build && corepack pnpm --filter @chat/db build && corepack pnpm --filter @chat/sdk build && corepack pnpm --filter api typecheck && corepack pnpm --filter api lint",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "tsc --noEmit clean (api); eslint clean (api)",
+      "evidence": "remediation/PATCH-12/verify.log"
+    },
+    {
+      "command": "yq e '.' infra/prometheus/rules/chat.rules.yml && yq e '.' infra/prometheus/alertmanager.yml && yq e '.groups[].rules[].alert' rules/chat.rules.yml",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "YAML parsed; all 7 required alert rules present; promtool/amtool not installed (recorded as not run)",
+      "evidence": "remediation/PATCH-12/raw-checks.txt"
+    },
+    {
+      "command": "gitleaks dir <changed-file-set> --redact --exit-code 1",
+      "runner": "ci-runner (Proxmox, lab-run.ps1)",
+      "exit": 0,
+      "result": "no leaks found (scanned PATCH-12 changed files, 38.01 KB)",
+      "evidence": "remediation/PATCH-12/gitleaks.log"
+    }
+  ],
+  "scopeCheck": "pass - observability/incident-readiness files only: Prometheus/Alertmanager rules + docs, terraform example/README, API error buffer + Sentry warning + env schema, tests, env examples",
+  "openQuestions": [
+    "Provision ALERT_EMAIL and ALERT_WEBHOOK_URL and deploy the Prometheus/Alertmanager stack; rules/routing are checked in but the stack is not deployed by this PR.",
+    "Worker queue alerts (ChatWorkerQueueBacklog/Failures) are inert until a JSON exporter publishes chat_worker_queue_waiting_jobs / chat_worker_queue_failed_total from the worker's JSON /metrics endpoint.",
+    "Set SENTRY_DSN in every deployed environment (the API now logs a warning when it is unset) and mount ERROR_LOG_FILE on a persistent volume for durable /admin/logs."
+  ],
+  "generated": "2026-10-03T10:05:00Z"
+}

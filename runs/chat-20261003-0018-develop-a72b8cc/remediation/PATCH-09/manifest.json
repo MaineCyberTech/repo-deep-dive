@@ -1,0 +1,68 @@
+{
+  "patchSet": "PATCH-09",
+  "title": "Durable webhook retries via BullMQ + stable idempotency key (FEAT-P1-002/003)",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "chat",
+  "base": "origin/develop",
+  "baseCommit": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-09-20261003-0018-develop-a72b8cc",
+  "commit": "7e1f260a804dfb7896a970c342274d45c2defa24",
+  "pr": "https://github.com/MaineCyberTech/chat/pull/64",
+  "prDraft": true,
+  "findings": ["FEAT-P1-002", "FEAT-P2-003"],
+  "files": [
+    "apps/api/package.json",
+    "apps/api/src/lib/webhook-queue.ts",
+    "apps/api/src/lib/__tests__/webhook-queue.test.ts",
+    "apps/api/src/modules/webhooks/service.ts",
+    "apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts",
+    "apps/worker/src/processors/webhook-delivery.ts",
+    "apps/worker/src/__tests__/webhook-delivery.test.ts",
+    "packages/config/webhook-utils.ts",
+    "pnpm-lock.yaml"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-09/diff.patch",
+    "sha256": "02c18810c306e8d167e471d2d4f2d3c9b0007cbd005feaf367f2055c98280d95"
+  },
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test",
+      "runner": "Proxmox lab (scripts/lab-sync.ps1 + lab-run.ps1, ssh)",
+      "exit": 0,
+      "result": "Lockfile is up to date; Test Files 64 passed (64); Tests 491 passed (491)",
+      "evidence": "remediation/PATCH-09/verify.log"
+    },
+    {
+      "command": "corepack pnpm exec vitest run apps/api/src/lib/__tests__/webhook-queue.test.ts apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts apps/worker/src/__tests__/webhook-delivery.test.ts",
+      "runner": "Proxmox lab (scripts/lab-run.ps1, ssh)",
+      "exit": 0,
+      "result": "Test Files 3 passed (3); Tests 18 passed (18)",
+      "evidence": "remediation/PATCH-09/verify.log"
+    },
+    {
+      "command": "corepack pnpm --filter api typecheck && corepack pnpm --filter worker typecheck",
+      "runner": "local clone (workspace deps built)",
+      "exit": 0,
+      "result": "both tsc --noEmit clean",
+      "evidence": "remediation/PATCH-09/verify.log"
+    },
+    {
+      "command": "corepack pnpm --filter api lint && corepack pnpm --filter worker lint",
+      "runner": "local clone",
+      "exit": 0,
+      "result": "both eslint clean",
+      "evidence": "remediation/PATCH-09/verify.log"
+    },
+    {
+      "command": "gitleaks protect --staged --redact --exit-code 1",
+      "runner": "Proxmox lab (scripts/lab-run.ps1, ssh)",
+      "exit": 0,
+      "result": "staged diff 13.73 KB: no leaks found; whole-tree scan reports 5 pre-existing develop leaks in files not touched by this patch",
+      "evidence": "remediation/PATCH-09/verify.log"
+    }
+  ],
+  "scopeCheck": "pass - 9 files, +427 / -17: API retry producer, worker processor, shared secret helper, bullmq dependency + lockfile importer entry, targeted tests",
+  "findingsNote": "remediation_plan.json lists FEAT-P1-003, which does not exist in findings.json; the related real finding is FEAT-P2-003 (stable idempotency key), addressed here",
+  "generated": "2026-10-03T08:40:00Z"
+}

@@ -1,0 +1,120 @@
+diff --git a/.github/workflows/build-push.yml b/.github/workflows/build-push.yml
+index 2b57b75..2317a56 100644
+--- a/.github/workflows/build-push.yml
++++ b/.github/workflows/build-push.yml
+@@ -51,7 +51,11 @@ jobs:
+         with:
+           context: .
+           file: apps/api/Dockerfile
+-          push: true
++          # CI-P2-006: pull requests must never publish images. PRs build only and
++          # load the result locally so the Trivy image scan inspects the PR build;
++          # only trusted branch pushes / manual dispatch publish to GHCR.
++          push: ${{ github.event_name != 'pull_request' }}
++          load: ${{ github.event_name == 'pull_request' }}
+           tags: |
+             ghcr.io/${{ env.REPO_LC }}/api:dev
+             ghcr.io/${{ env.REPO_LC }}/api:${{ github.sha }}
+@@ -62,7 +66,9 @@ jobs:
+         with:
+           context: .
+           file: apps/worker/Dockerfile
+-          push: true
++          # CI-P2-006: build-only on pull requests (see the API image step above).
++          push: ${{ github.event_name != 'pull_request' }}
++          load: ${{ github.event_name == 'pull_request' }}
+           tags: |
+             ghcr.io/${{ env.REPO_LC }}/worker:dev
+             ghcr.io/${{ env.REPO_LC }}/worker:${{ github.sha }}
+@@ -73,7 +79,9 @@ jobs:
+         with:
+           context: .
+           file: apps/web/Dockerfile
+-          push: true
++          # CI-P2-006: build-only on pull requests (see the API image step above).
++          push: ${{ github.event_name != 'pull_request' }}
++          load: ${{ github.event_name == 'pull_request' }}
+           build-args: |
+             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+diff --git a/.github/workflows/validate.yml b/.github/workflows/validate.yml
+index c0a04b5..9eaf463 100644
+--- a/.github/workflows/validate.yml
++++ b/.github/workflows/validate.yml
+@@ -247,38 +247,53 @@ jobs:
+     name: Check Branch Protection
+     runs-on: ubuntu-latest
+     timeout-minutes: 5
+-    continue-on-error: true
+-    if: github.repository_owner == github.actor || github.event_name == 'pull_request'
++    # Blocking, not advisory. `main` must carry active rules requiring PR review,
++    # passing status checks, and no force pushes. This is the in-repo gate for the
++    # governance findings CI-P1-001 / CI-P2-007: a misconfigured `main` fails CI
++    # instead of silently reporting a false sense of protection.
++    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+     steps:
+-      - uses: actions/checkout@v4
+-        with:
+-          fetch-depth: 0
+-      - name: Check branch protection on main
++      - name: Check branch rules on main
+         uses: actions/github-script@v7
+         with:
+           script: |
+-            const branch = await github.rest.repos.getBranchProtection({
+-              owner: context.repo.owner,
+-              repo: context.repo.repo,
+-              branch: 'main'
+-            });
++            const { owner, repo } = context.repo;
++            const branch = 'main';
++
++            // GET /repos/{owner}/{repo}/rules/branches/{branch} returns every active
++            // rule applying to the branch, whether configured as a repository ruleset
++            // or as a classic branch protection rule. The legacy getBranchProtection
++            // endpoint 404s when protection is expressed as a ruleset and misreports
++            // the optional `restrictions` field, so it is not used here.
++            let rules;
++            try {
++              rules = await github.paginate('GET /repos/{owner}/{repo}/rules/branches/{branch}', {
++                owner,
++                repo,
++                branch,
++                per_page: 100
++              });
++            } catch (error) {
++              core.setFailed(`Unable to read branch rules for '${branch}': ${error.message}`);
++              return;
++            }
+ 
+-            const required = [
+-              'required_status_checks',
+-              'enforce_admins',
+-              'required_pull_request_reviews',
+-              'restrictions'
+-            ];
++            const types = new Set(rules.map(rule => rule.type));
++            const required = {
++              pull_request: 'require pull request reviews before merging',
++              required_status_checks: 'require status checks to pass before merging',
++              non_fast_forward: 'block force pushes'
++            };
+ 
+-            const missing = required.filter(r => !branch.data[r]);
++            const missing = Object.entries(required)
++              .filter(([type]) => !types.has(type))
++              .map(([, description]) => description);
+ 
+             if (missing.length > 0) {
+-              console.log('❌ Missing branch protection rules:', missing.join(', '));
+-              core.setFailed(`Branch protection not fully configured. Missing: ${missing.join(', ')}`);
+-              process.exit(1);
+-            } else {
+-              console.log('✅ All branch protection rules configured');
++              core.setFailed(`Branch rules for '${branch}' are incomplete. Missing: ${missing.join('; ')}`);
++              return;
+             }
++            core.info(`Branch rules for '${branch}' satisfy the required gates: ${[...types].sort().join(', ')}`);
+ 
+   migration-test:
+     name: Test Database Migrations

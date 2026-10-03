@@ -1,0 +1,82 @@
+################################################################
+# PS-U04 verification - chat - DATA-P2-005
+# date_utc: 2026-10-03T11:07:54Z
+# commit:   937b43983fd3efc836f19af8407e4f06e8fcfbc2
+# branch:   remediation/ps-u04-20261003-0018-develop-a72b8cc
+# base:     a72b8cc43590848b052bd5e8954dbbc726b3d7fd (develop)
+# node: v20.20.2  pnpm: 9.15.4  supabase: 2.119.0  gitleaks: 8.30.1
+################################################################
+
+########## 1. changed files (this patch set) ##########
+  apps/api/src/modules/auth/routes.ts
+  apps/api/src/modules/auth/__tests__/gdpr-delete.test.ts
+  supabase/migrations/20260725000001_make_gdpr_delete_atomic.sql
+  supabase/migrations/migrations.list
+  supabase/rollback/20260725000001_make_gdpr_delete_atomic_down.sql
+
+########## 2. install + full API test suite ##########
+install_exit=0
+api_test_exit=0
+ Test Files  63 passed (63)
+      Tests  487 passed (487)
+   Duration  18.44s (transform 2.36s, setup 14.32s, collect 8.05s, tests 6.36s, environment 10.28s, prepare 5.20s)
+-- gdpr-delete suite --
+ ✓ apps/api/src/modules/auth/__tests__/gdpr-delete.test.ts (2 tests) 9ms
+
+########## 3. SQL migrations applied on a real Supabase Postgres ##########
+supabase_start_exit=0
+db_reset_exit=0
+Applying migration 20260725000001_make_gdpr_delete_atomic.sql...
+Finished supabase db reset on branch remediation/ps-u04-20261003-0018-develop-a72b8cc.
+
+########## 4. functional erasure test on seeded DB ##########
+target_user=a0000001-0000-4000-8000-000000000001
+=== pre-delete references ===
+pre dm_members.user_id=1
+pre notification_preferences.user_id=3
+pre custom_emoji.created_by=1
+pre user_group_members.user_id=3
+pre user_groups.created_by=6
+pre thread_participants.user_id=10
+pre channel_role_overrides.user_id=0
+pre message_reads.user_id=129
+pre channel_member_history.user_id=14
+pre compliance_exports.created_by=4
+pre announcements.created_by=3
+pre sidebar_categories.user_id=6
+pre channel_notification_preferences.user_id=14
+pre consent_logs.user_id=2
+pre channel_bookmarks.created_by=5
+pre message_reminders.user_id=1
+pre notifications.user_id=5
+pre push_subscriptions.user_id=1
+pre message_edit_history.edited_by=3
+pre scheduled_posts.user_id=1
+pre trigger_words.user_id=2
+pre auto_responders.user_id=0
+pre user_statuses.user_id=1
+pre user_presence.user_id=1
+pre message_flags.user_id=4
+pre reactions.user_id=13
+pre messages.user_id=45
+pre webhook_endpoints.created_by=1
+pre channel_members.user_id=14
+pre workspace_members.user_id=2
+pre audit_logs.actor_user_id=11
+pre user_preferences.user_id=1
+=== call 1: gdpr_delete_user ===
+call1={"success": true, "user_id": "a0000001-0000-4000-8000-000000000001"}
+=== post-delete remaining references (all must be 0) ===
+=== retained/anonymised check (channel created by user survives with NULL creator) ===
+channels_with_null_creator=0
+=== call 2: idempotent retry ===
+call2={"success": true, "user_id": "a0000001-0000-4000-8000-000000000001"}
+GDPR_DELETE_OK
+gdpr_functional_exit=0
+
+########## 5. gitleaks on the staged diff ##########
+[90m11:09AM[0m [32mINF[0m [1mscanned ~16399 bytes (16.40 KB) in 269ms[0m
+[90m11:09AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks_diff_exit=0
+
+PS_U04_VERIFY_DONE

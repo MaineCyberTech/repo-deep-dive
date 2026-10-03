@@ -1,0 +1,77 @@
+{
+  "patch_set": "PS-U11",
+  "title": "Unassigned SEC findings (catch-all) — SEC-P1-008, SEC-P2-009, SEC-P2-010",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/ps-u11-20261003-0018-develop-a72b8cc",
+  "commit": "52588c328c4a8521ff155ce0882733c9e7ceb95f",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/67",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["SEC-P1-008", "SEC-P2-009", "SEC-P2-010"],
+  "files": [
+    "apps/api/src/lib/socket.ts",
+    "apps/api/src/lib/__tests__/socket.test.ts",
+    "apps/api/src/middleware/csrf.ts",
+    "apps/api/src/middleware/__tests__/csrf.test.ts",
+    "apps/api/src/modules/webhooks/routes.ts",
+    "apps/api/src/modules/webhooks/service.ts",
+    "apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts"
+  ],
+  "in_scope_files": [
+    "apps/api/src/lib/socket.ts",
+    "apps/api/src/middleware/csrf.ts",
+    "apps/api/src/modules/webhooks/routes.ts",
+    "apps/api/src/modules/webhooks/service.ts"
+  ],
+  "test_files": [
+    "apps/api/src/lib/__tests__/socket.test.ts",
+    "apps/api/src/middleware/__tests__/csrf.test.ts",
+    "apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts"
+  ],
+  "diff": {
+    "path": "remediation/PS-U11/diff.patch",
+    "sha256": "090ADA3EAC398495FF520D20C7B9C4AFF3304F2718C85F62574AE7D26466B424",
+    "insertions": 111,
+    "deletions": 16
+  },
+  "verification": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test",
+      "runner": "lab-ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "pass: 63 files / 492 tests passed; api suites csrf.test.ts (22), webhook.service.test.ts (14), socket.test.ts (3)"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/api test",
+      "runner": "lab-ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "pass: 63 files / 492 tests passed (targeted api package run)"
+    },
+    {
+      "command": "git add <changed paths> && git diff --cached --unified=0 | gitleaks stdin --redact --no-banner",
+      "runner": "lab-ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (7,887 bytes scanned)"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/api lint",
+      "runner": "lab-ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "pass: eslint clean"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/api typecheck",
+      "runner": "lab-ci-runner (172.23.128.51)",
+      "exit_code": 2,
+      "result": "pre-existing only: 15x TS2307 missing @chat/db|@chat/config module types in untouched files; identical to `git stash -u` baseline; TS2352 introduced by the webhook test was fixed"
+    }
+  ],
+  "verify_log": "remediation/PS-U11/verify.log",
+  "pr_body": "remediation/PS-U11/pr_body.md",
+  "generated_at": "2026-10-03T10:12:00-04:00"
+}

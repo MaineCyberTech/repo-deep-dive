@@ -1,0 +1,281 @@
+diff --git a/apps/api/src/lib/__tests__/socket.test.ts b/apps/api/src/lib/__tests__/socket.test.ts
+new file mode 100644
+index 0000000..5a744fb
+--- /dev/null
++++ b/apps/api/src/lib/__tests__/socket.test.ts
+@@ -0,0 +1,18 @@
++import { describe, it, expect } from "vitest";
++import { isChannelRoomMember } from "../socket.js";
++
++// The channel:leave / typing:start / typing:stop handlers must only broadcast to a
++// room the sender actually joined (membership is validated in channel:join).
++describe("isChannelRoomMember", () => {
++  it("recognizes a joined channel room", () => {
++    expect(isChannelRoomMember(new Set(["channel:abc", "user:1"]), "abc")).toBe(true);
++  });
++
++  it("rejects a channel room that was never joined", () => {
++    expect(isChannelRoomMember(new Set(["user:1"]), "abc")).toBe(false);
++  });
++
++  it("does not treat a user room as a channel room", () => {
++    expect(isChannelRoomMember(new Set(["user:abc"]), "abc")).toBe(false);
++  });
++});
+diff --git a/apps/api/src/lib/socket.ts b/apps/api/src/lib/socket.ts
+index 2ce2b3d..d806a63 100644
+--- a/apps/api/src/lib/socket.ts
++++ b/apps/api/src/lib/socket.ts
+@@ -9,6 +9,15 @@ const ipConnectionTimestamps = new Map<string, number[]>();
+ const RATE_LIMIT_WINDOW_MS = 1000;
+ const RATE_LIMIT_MAX_CONNECTIONS = 10;
+ 
++/**
++ * A socket may only broadcast to a channel room it has actually joined.
++ * `channel:join` performs the workspace/private-channel membership checks before
++ * `socket.join(...)`, so membership of the room is the authorization signal here.
++ */
++export function isChannelRoomMember(rooms: ReadonlySet<string>, channelId: string): boolean {
++  return rooms.has(`channel:${channelId}`);
++}
++
+ function checkSocketRateLimit(ip: string): boolean {
+   const now = Date.now();
+   const timestamps = ipConnectionTimestamps.get(ip) ?? [];
+@@ -212,6 +221,7 @@ export function initSocket(
+     });
+ 
+     socket.on("channel:leave", (channelId: string) => {
++      if (!isChannelRoomMember(socket.rooms, channelId)) return;
+       socket.leave(`channel:${channelId}`);
+       socket.to(`channel:${channelId}`).emit("channel:user_left", { userId });
+       socket.to(`channel:${channelId}`).emit("presence:update", {
+@@ -251,10 +261,12 @@ export function initSocket(
+     });
+ 
+     socket.on("typing:start", (channelId: string) => {
++      if (!isChannelRoomMember(socket.rooms, channelId)) return;
+       socket.to(`channel:${channelId}`).emit("typing:start", { userId, channelId });
+     });
+ 
+     socket.on("typing:stop", (channelId: string) => {
++      if (!isChannelRoomMember(socket.rooms, channelId)) return;
+       socket.to(`channel:${channelId}`).emit("typing:stop", { userId, channelId });
+     });
+ 
+diff --git a/apps/api/src/middleware/__tests__/csrf.test.ts b/apps/api/src/middleware/__tests__/csrf.test.ts
+index bc94fe2..dd3e308 100644
+--- a/apps/api/src/middleware/__tests__/csrf.test.ts
++++ b/apps/api/src/middleware/__tests__/csrf.test.ts
+@@ -6,7 +6,9 @@ type AnyObj = any;
+ vi.mock("node:crypto", () => ({
+   randomBytes: vi.fn((size: number) => Buffer.alloc(size, 0x61)),
+   timingSafeEqual: vi.fn((a: Buffer, b: Buffer) => {
+-    if (a.length !== b.length) return false;
++    if (a.length !== b.length) {
++      throw new RangeError("Input buffers must have the same byte length");
++    }
+     return a.toString("latin1") === b.toString("latin1");
+   }),
+ }));
+@@ -143,6 +145,20 @@ describe("csrfProtection", () => {
+     expect(next).not.toHaveBeenCalled();
+   });
+ 
++  it("returns 403 instead of throwing for a header token of a different length", () => {
++    const middleware = csrfProtection({ cookie: true });
++    const req = mockReq("POST", { "x-csrf-token": "a" }, { csrf_token: "a".repeat(64) });
++    const res = mockRes();
++    const next = vi.fn();
++
++    expect(() => middleware(req, res, next)).not.toThrow();
++    expect(res.status).toHaveBeenCalledWith(403);
++    expect(res.json).toHaveBeenCalledWith(
++      expect.objectContaining({ error: expect.objectContaining({ code: "CSRF_INVALID" }) }),
++    );
++    expect(next).not.toHaveBeenCalled();
++  });
++
+   it("accepts POST with csrfMiddleware token matching cookie token", () => {
+     const middleware = csrfProtection({ cookie: true });
+     const req = mockReq("POST", { "x-csrf-token": "a".repeat(64) }, { csrf_token: "a".repeat(64) });
+@@ -249,6 +265,19 @@ describe("doubleSubmitCookieCsrf", () => {
+     expect(next).not.toHaveBeenCalled();
+   });
+ 
++  it("returns 403 instead of throwing when the header token length differs", () => {
++    const req = mockReq("POST", { "x-csrf-token": "a" }, { csrf_token: "a".repeat(64) });
++    const res = mockRes();
++    const next = vi.fn();
++
++    expect(() => doubleSubmitCookieCsrf(req, res, next)).not.toThrow();
++    expect(res.status).toHaveBeenCalledWith(403);
++    expect(res.json).toHaveBeenCalledWith(
++      expect.objectContaining({ error: expect.objectContaining({ code: "CSRF_INVALID" }) }),
++    );
++    expect(next).not.toHaveBeenCalled();
++  });
++
+   it("rejects PATCH without valid token", () => {
+     const req = mockReq("PATCH", {}, { csrf_token: "a".repeat(64) });
+     const res = mockRes();
+diff --git a/apps/api/src/middleware/csrf.ts b/apps/api/src/middleware/csrf.ts
+index b573c17..9292d26 100644
+--- a/apps/api/src/middleware/csrf.ts
++++ b/apps/api/src/middleware/csrf.ts
+@@ -24,6 +24,20 @@ function parseTokenFromBody(req: Request): string | undefined {
+   return undefined;
+ }
+ 
++/**
++ * Constant-time string comparison that never throws.
++ * `crypto.timingSafeEqual` throws a RangeError when the buffers differ in length;
++ * compare lengths first so a crafted token yields a 403 instead of an unhandled 500.
++ */
++function safeEqual(a: string, b: string): boolean {
++  const aBuf = Buffer.from(a);
++  const bBuf = Buffer.from(b);
++  if (aBuf.length !== bBuf.length) {
++    return false;
++  }
++  return timingSafeEqual(aBuf, bBuf);
++}
++
+ export function csrfProtection(
+   options: {
+     cookie?: boolean;
+@@ -47,7 +61,7 @@ export function csrfProtection(
+ 
+     const expectedToken = cookie ? req.cookies?.[CSRF_COOKIE_NAME] : undefined;
+ 
+-    if (!expectedToken || !timingSafeEqual(Buffer.from(token), Buffer.from(expectedToken))) {
++    if (!expectedToken || !safeEqual(token, expectedToken)) {
+       return res.status(403).json({
+         error: { code: "CSRF_INVALID", message: "Invalid CSRF token" },
+       });
+@@ -96,11 +110,7 @@ export function doubleSubmitCookieCsrf(req: CSRFRequest, res: Response, next: Ne
+   const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
+   const headerToken = req.headers["x-csrf-token"] as string | undefined;
+ 
+-  if (
+-    !cookieToken ||
+-    !headerToken ||
+-    !timingSafeEqual(Buffer.from(cookieToken), Buffer.from(headerToken))
+-  ) {
++  if (!cookieToken || !headerToken || !safeEqual(cookieToken, headerToken)) {
+     return res.status(403).json({
+       error: { code: "CSRF_INVALID", message: "Invalid CSRF token" },
+     });
+diff --git a/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts b/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts
+index f3e2e3b..c2eafb0 100644
+--- a/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts
++++ b/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts
+@@ -127,6 +127,9 @@ vi.mock("../../../lib/supabase.js", () => ({
+ vi.mock("../../../lib/logger.js", () => ({ logger: { info: vi.fn(), error: vi.fn() } }));
+ vi.mock("../../../lib/metrics.js", () => ({ recordWebhookDelivery: vi.fn() }));
+ 
++// Required by encryptSecret(); value is a throwaway test key, not a real secret.
++process.env.WEBHOOK_ENCRYPTION_KEY ??= "test-encryption-key";
++
+ describe("WebhookService", () => {
+   let service: WebhookService;
+ 
+@@ -156,6 +159,7 @@ describe("WebhookService", () => {
+       workspace_id: "ws-1",
+       name: "New",
+       url: "https://example.com/new",
++      secret: "a".repeat(16),
+       events: [],
+       created_by: "u1",
+     });
+@@ -163,6 +167,31 @@ describe("WebhookService", () => {
+     expect(wh?.name).toBe("New");
+   });
+ 
++  it("rejects creating a webhook without a secret", async () => {
++    await expect(
++      service.create({
++        workspace_id: "ws-1",
++        name: "New",
++        url: "https://example.com/new",
++        events: [],
++        created_by: "u1",
++      } as unknown as Parameters<WebhookService["create"]>[0]),
++    ).rejects.toThrow(/secret is required/i);
++  });
++
++  it("rejects creating a webhook with a too-short secret", async () => {
++    await expect(
++      service.create({
++        workspace_id: "ws-1",
++        name: "New",
++        url: "https://example.com/new",
++        secret: "short",
++        events: [],
++        created_by: "u1",
++      }),
++    ).rejects.toThrow(/at least 16/i);
++  });
++
+   it("updates a webhook", async () => {
+     const wh = await service.update("wh-1", { name: "Updated" });
+     expect(wh?.name).toBe("Updated");
+diff --git a/apps/api/src/modules/webhooks/routes.ts b/apps/api/src/modules/webhooks/routes.ts
+index 4a257b4..053eb07 100644
+--- a/apps/api/src/modules/webhooks/routes.ts
++++ b/apps/api/src/modules/webhooks/routes.ts
+@@ -40,14 +40,14 @@ const createWebhookSchema = z.object({
+   workspace_id: z.string().uuid(),
+   name: z.string().min(1).max(100),
+   url: z.string().url().startsWith("https://"),
+-  secret: z.string().max(255).optional(),
++  secret: z.string().min(16).max(255),
+   events: z.array(z.string()).min(1),
+ });
+ 
+ const updateWebhookSchema = z.object({
+   name: z.string().min(1).max(100).optional(),
+   url: z.string().url().startsWith("https://").optional(),
+-  secret: z.string().max(255).optional(),
++  secret: z.string().min(16).max(255).optional(),
+   events: z.array(z.string()).min(1).optional(),
+   is_active: z.boolean().optional(),
+ });
+diff --git a/apps/api/src/modules/webhooks/service.ts b/apps/api/src/modules/webhooks/service.ts
+index a82151c..cbdd905 100644
+--- a/apps/api/src/modules/webhooks/service.ts
++++ b/apps/api/src/modules/webhooks/service.ts
+@@ -53,13 +53,10 @@ function decryptSecret(encrypted: string): string {
+ const WEBHOOK_SECRET_MIN_LENGTH = 16;
+ 
+ function validateSecret(secret: string | undefined): { valid: boolean; error?: string } {
+-  if (!secret || secret.length === 0) {
+-    return { valid: true };
+-  }
+-  if (secret.length < WEBHOOK_SECRET_MIN_LENGTH) {
++  if (!secret || secret.length < WEBHOOK_SECRET_MIN_LENGTH) {
+     return {
+       valid: false,
+-      error: `Webhook secret must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters`,
++      error: `Webhook secret is required and must be at least ${WEBHOOK_SECRET_MIN_LENGTH} characters`,
+     };
+   }
+   return { valid: true };
+@@ -122,7 +119,7 @@ export class WebhookService {
+     workspace_id: string;
+     name: string;
+     url: string;
+-    secret?: string;
++    secret: string;
+     events: string[];
+     created_by: string;
+   }): Promise<WebhookEndpoint | null> {
+@@ -132,7 +129,7 @@ export class WebhookService {
+       throw new Error(validation.error);
+     }
+ 
+-    const encryptedSecret = input.secret ? encryptSecret(input.secret) : "";
++    const encryptedSecret = encryptSecret(input.secret);
+ 
+     const supabase = getSupabase();
+     const { data, error } = await supabase

@@ -1,0 +1,33 @@
+# PATCH-05 gitleaks evidence
+
+- command: gitleaks protect --staged --redact --exit-code 1
+- runner: ci-runner via lab API
+- result: no leaks found, exit 0
+
+```text
+python : warning: in the working copy of 'apps/api/src/lib/socket.ts', CRLF will be replaced by LF the next time Git 
+touches it
+At line:4 char:1
++ python "C:\temp\repo-deep-dive\tools\lab_runner.py" --url http://172. ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of 'apps/api/src/modules/notifications/push-subscription-service.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/webhooks/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+
+[90m6:44AM[0m [32mINF[0m [1m0 commits scanned.[0m
+[90m6:44AM[0m [32mINF[0m [1mscanned ~1971 bytes (1.97 KB) in 345ms[0m
+[90m6:44AM[0m [32mINF[0m [1mno leaks found[0m
+GITLEAKS_RC=0
+[exit=0 duration=0.8s cwd=/srv/work/chat]
+
+```n

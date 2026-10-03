@@ -1,0 +1,35 @@
+# PATCH-02 diff.patch
+# test-signin.json content (credential) is intentionally omitted from this evidence bundle.
+# Deletion summary:
+ test-signin.json | 1 -
+ 1 file changed, 1 deletion(-)
+
+# Non-secret file changes:
+diff --git a/.gitignore b/.gitignore
+index c95bff3..b743ea9 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -41,3 +41,7 @@ __snapshots__/
+ *.swp
+ *.swo
+ *~
++
++# Local E2E credentials (never commit real credentials; see SECURITY.md)
++test-signin*.json
++!test-signin.example.json
+diff --git a/SECURITY.md b/SECURITY.md
+index 058d233..628a414 100644
+--- a/SECURITY.md
++++ b/SECURITY.md
+@@ -27,3 +27,11 @@ Particular care should be taken when reviewing or changing:
+ - Never publish user data in issues, PRs, or screenshots
+ - Avoid posting raw production logs containing sensitive values
+ - Treat migration and RLS policy changes as security-sensitive changes
++
++## Test credential files
++
++`test-signin.json` holds local E2E credentials and must never be committed.
++Copy `test-signin.example.json` to `test-signin.json` locally; the file is
++gitignored. If a credential is ever committed, treat it as compromised:
++remove it from the tracked tree, rotate the underlying password out-of-band,
++and purge it from history (for example with `git filter-repo`) if required.

@@ -1,0 +1,83 @@
+{
+  "patch_set": "PATCH-06",
+  "title": "Secure SSH (SEC-P1-007)",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-06-20261003-0018-develop-a72b8cc",
+  "commit": "7481c5f4e9186c28eb17bd080e232a302c121d40",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/62",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["SEC-P1-007"],
+  "files": [
+    "infra/terraform/variables.tf",
+    ".github/workflows/deploy-production.yml",
+    ".github/workflows/infra-development.yml"
+  ],
+  "in_scope_files": [
+    "infra/terraform/variables.tf",
+    ".github/workflows/deploy-production.yml"
+  ],
+  "companion_files": [
+    ".github/workflows/infra-development.yml"
+  ],
+  "test_files": [],
+  "diff": {
+    "path": "remediation/PATCH-06/diff.patch",
+    "sha256": "4DD2DC90DB335038468FAA8B1575F5FD49FD4A62DD692097F142CC872D4A9347",
+    "files_changed": 3,
+    "insertions": 12,
+    "deletions": 2
+  },
+  "verification": [
+    {
+      "command": "grep -E 'default.*0\\.0\\.0\\.0/0' infra/terraform/variables.tf",
+      "runner": "lab-ci-runner",
+      "exit_code": 1,
+      "result": "pass: no world-open default in variables.tf"
+    },
+    {
+      "command": "grep -E 'default.*::/0' infra/terraform/variables.tf",
+      "runner": "lab-ci-runner",
+      "exit_code": 1,
+      "result": "pass: no world-open IPv6 default in variables.tf"
+    },
+    {
+      "command": "command -v terraform ; command -v tofu",
+      "runner": "lab-ci-runner",
+      "exit_code": null,
+      "result": "not run: terraform/tofu not installed on ci-runner; terraform fmt -check and terraform validate not executed"
+    },
+    {
+      "command": "actionlint .github/workflows/deploy-production.yml .github/workflows/infra-development.yml",
+      "runner": "lab-ci-runner (actionlint)",
+      "exit_code": 1,
+      "result": "no new diagnostics: 18 diagnostics on base a72b8cc = 18 on branch; normalized diff empty. Existing shellcheck SC2086/SC2129/SC2162 and run_started_at expression warnings are pre-existing"
+    },
+    {
+      "command": "gitleaks dir /tmp/p06scan --redact --exit-code 1",
+      "runner": "lab-ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found across the three changed files"
+    },
+    {
+      "command": "git diff --no-color -- <3 changed files> | gitleaks stdin --redact",
+      "runner": "lab-ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "pass: no leaks found in the diff"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --exit-code 1",
+      "runner": "lab-ci-runner (gitleaks 8.30.1)",
+      "exit_code": 1,
+      "result": "5 pre-existing findings, all outside this patch: apps/web/components/shared/keyboard-shortcuts.tsx, .github/workflows/validate.yml, infra/docker/.env.dev.example (x3)"
+    }
+  ],
+  "verify_log": "remediation/PATCH-06/verify.log",
+  "pr_body": "remediation/PATCH-06/pr_body.md",
+  "generated_at": "2026-10-03T11:20:00Z"
+}

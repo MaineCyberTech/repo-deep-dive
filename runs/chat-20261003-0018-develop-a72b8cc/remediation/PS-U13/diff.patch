@@ -1,0 +1,33 @@
+diff --git a/.github/workflows/validate.yml b/.github/workflows/validate.yml
+index c0a04b5..ae1975e 100644
+--- a/.github/workflows/validate.yml
++++ b/.github/workflows/validate.yml
+@@ -93,8 +93,7 @@ jobs:
+         with:
+           name: diff-coverage
+           path: coverage/
+-      - name: Check diff coverage thresholds
+-        continue-on-error: true
++      - name: Check diff coverage thresholds (blocking)
+         run: |
+           node -e "
+           const fs = require('fs');
+diff --git a/packages/config/vitest.config.base.ts b/packages/config/vitest.config.base.ts
+index ad9436b..afdbf73 100644
+--- a/packages/config/vitest.config.base.ts
++++ b/packages/config/vitest.config.base.ts
+@@ -31,10 +31,10 @@ export default defineConfig({
+       reporter: ["text", "json", "html"],
+       include: ["apps/*/src/**", "packages/*/src/**"],
+       thresholds: {
+-        lines: 35,
+-        functions: 30,
+-        branches: 25,
+-        statements: 35,
++        lines: 36,
++        functions: 40,
++        branches: 60,
++        statements: 36,
+       },
+     },
+   },

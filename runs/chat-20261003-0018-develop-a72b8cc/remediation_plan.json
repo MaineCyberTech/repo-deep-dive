@@ -1,7 +1,7 @@
 {
   "run": "20261003-0018-develop-a72b8cc",
   "repo": "",
-  "generated": "2026-10-03T06:36:32Z",
+  "generated": "2026-10-03T09:36:23Z",
   "patchSets": [
     {
       "id": "PATCH-01",
@@ -295,32 +295,215 @@
       ],
       "severity": "P1",
       "branch": "remediation/PATCH-16-20261003-0018-develop-a72b8cc"
+    },
+    {
+      "id": "PS-U01",
+      "title": "Unassigned API findings (catch-all)",
+      "findings": [
+        "API-P2-003",
+        "API-P3-005"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U01-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U02",
+      "title": "Unassigned ARCH findings (catch-all)",
+      "findings": [
+        "ARCH-P2-003",
+        "ARCH-P2-004"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U02-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U03",
+      "title": "Unassigned CI findings (catch-all)",
+      "findings": [
+        "CI-P1-001",
+        "CI-P2-006",
+        "CI-P2-007"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U03-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U04",
+      "title": "Unassigned DATA findings (catch-all)",
+      "findings": [
+        "DATA-P2-005"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U04-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U05",
+      "title": "Unassigned EXEC findings (catch-all)",
+      "findings": [
+        "EXEC-P1-001",
+        "EXEC-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U05-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U06",
+      "title": "Unassigned FEAT findings (catch-all)",
+      "findings": [
+        "FEAT-P1-001",
+        "FEAT-P2-003"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U06-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U07",
+      "title": "Unassigned FINAL findings (catch-all)",
+      "findings": [
+        "FINAL-P1-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U07-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U08",
+      "title": "Unassigned HYG findings (catch-all)",
+      "findings": [
+        "HYG-P2-002",
+        "HYG-P3-003",
+        "HYG-P3-004"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U08-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U09",
+      "title": "Unassigned INV findings (catch-all)",
+      "findings": [
+        "INV-P2-003",
+        "INV-P3-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U09-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U10",
+      "title": "Unassigned OBS findings (catch-all)",
+      "findings": [
+        "OBS-P2-004"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U10-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U11",
+      "title": "Unassigned SEC findings (catch-all)",
+      "findings": [
+        "SEC-P1-008",
+        "SEC-P2-009",
+        "SEC-P2-010"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P1",
+      "branch": "remediation/PS-U11-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U12",
+      "title": "Unassigned SUPPLY findings (catch-all)",
+      "findings": [
+        "SUPPLY-P2-003"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U12-20261003-0018-develop-a72b8cc",
+      "catchAll": true
+    },
+    {
+      "id": "PS-U13",
+      "title": "Unassigned TEST findings (catch-all)",
+      "findings": [
+        "TEST-P2-002"
+      ],
+      "files": [],
+      "dependsOn": [],
+      "effort": "",
+      "verification": [],
+      "severity": "P2",
+      "branch": "remediation/PS-U13-20261003-0018-develop-a72b8cc",
+      "catchAll": true
     }
   ],
-  "unassignedFindings": [
-    "API-P2-003",
-    "API-P3-005",
-    "ARCH-P2-003",
-    "ARCH-P2-004",
-    "CI-P1-001",
-    "CI-P2-006",
-    "CI-P2-007",
-    "DATA-P2-005",
-    "EXEC-P1-001",
-    "EXEC-P2-002",
-    "FEAT-P1-001",
-    "FEAT-P2-003",
-    "FINAL-P1-002",
-    "HYG-P2-002",
-    "HYG-P3-003",
-    "HYG-P3-004",
-    "INV-P2-003",
-    "INV-P3-002",
-    "OBS-P2-004",
-    "SEC-P1-008",
-    "SEC-P2-009",
-    "SEC-P2-010",
-    "SUPPLY-P2-003",
-    "TEST-P2-002"
+  "unassignedFindings": [],
+  "catchAllSets": [
+    "PS-U01",
+    "PS-U02",
+    "PS-U03",
+    "PS-U04",
+    "PS-U05",
+    "PS-U06",
+    "PS-U07",
+    "PS-U08",
+    "PS-U09",
+    "PS-U10",
+    "PS-U11",
+    "PS-U12",
+    "PS-U13"
   ]
 }

@@ -1,0 +1,110 @@
+{
+  "patch_set": "PS-U09",
+  "title": "Unassigned INV findings (catch-all) - audit-artifact authoritativeness + canonical env-schema doc",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/ps-u09-20261003-0018-develop-a72b8cc",
+  "commit": "3a46f2f8c3ab723d3f07402e1559bca9094e21a1",
+  "commit_subject": "chore(inv): close unassigned inventory findings [INV-P2-003,INV-P3-002]",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/76",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["INV-P2-003", "INV-P3-002"],
+  "finding_status": {
+    "INV-P2-003": "partially-fixed",
+    "INV-P3-002": "partially-fixed"
+  },
+  "files": [
+    "docs/audits/README.md",
+    "docs/audits/compare/audit_final_testing_20260724.md",
+    "docs/environments/env-vars.md"
+  ],
+  "in_scope_files": [
+    "docs/audits/README.md",
+    "docs/audits/compare/audit_final_testing_20260724.md",
+    "docs/environments/env-vars.md"
+  ],
+  "test_files": [],
+  "deferred": [
+    {
+      "finding": "INV-P3-002",
+      "part": "align/generate the *.env*.example templates from the canonical schema and pass WEBHOOK_ENCRYPTION_KEY through docker-compose.prod.yml",
+      "reason": ".env* paths are on the remediation profile blocked-path list; the canonical env doc records the follow-up instead."
+    },
+    {
+      "finding": "INV-P2-003",
+      "part": "AGENTS.md '0 P0/P1 / ALL CLEAN / both healthy' claims",
+      "reason": "Already addressed by PS-U05 (docs/operations/release-readiness-status.md, draft PR #71); editing AGENTS.md here would conflict."
+    }
+  ],
+  "not_reproducible": [],
+  "diff": {
+    "path": "remediation/PS-U09/diff.patch",
+    "sha256": "8678127C2F01301310C8C6141D6B080D33ED94B4F2BC41C8CC7FE0595CFF0C51",
+    "bytes": 9221,
+    "files_changed": 3,
+    "insertions": 50,
+    "deletions": 3
+  },
+  "verification": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile",
+      "runner": "lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + scripts/lab-run.ps1)",
+      "exit_code": 0,
+      "result": "pass: Lockfile is up to date; 883 packages; Done in 2.4s"
+    },
+    {
+      "command": "corepack pnpm exec prettier --check docs/audits/README.md docs/audits/compare/audit_final_testing_20260724.md",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "pass: All matched files use Prettier code style!"
+    },
+    {
+      "command": "corepack pnpm exec prettier --check docs/environments/env-vars.md",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "pre-existing only: the unmodified base file (git show HEAD:...) reproduces the same exit 1; PS-U09 appends rows without reformatting the table"
+    },
+    {
+      "command": "git ls-files test-signin.json",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "lists test-signin.json - the stale 'not present in repo' claim was false"
+    },
+    {
+      "command": "grep -c not.present.in.repo docs/audits/compare/audit_final_testing_20260724.md",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "count 0 after correction"
+    },
+    {
+      "command": "grep -l WEBHOOK_ENCRYPTION_KEY .env.example apps/api/.env.example infra/docker/.env.prod.example infra/docker/.env.devremote.example",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "no files match - templates omit the key that apps/api/src/modules/webhooks/service.ts:22 throws without"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --no-banner --source /tmp/ps-u09-diff.patch",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "no leaks found (~9,221 bytes scanned)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --no-banner --source <each changed file>",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "no leaks found in all three changed files"
+    }
+  ],
+  "verify_log": "remediation/PS-U09/verify.log",
+  "lab_sync_log": "remediation/PS-U09/lab-sync.log",
+  "pr_body": "remediation/PS-U09/pr_body.md",
+  "scopeCheck": "pass - docs only: 1 index note + 1 corrected report + 1 canonical env doc; no code, workflow, dependency, schema, lockfile, or .env* changes",
+  "notes": "Docs-only inventory fix. INV-P2-003's AGENTS.md half is handled by PS-U05 (draft PR #71) to avoid a conflicting edit; INV-P3-002's template edits are deferred because .env* is on the blocked-path list.",
+  "generated_at": "2026-10-03T11:30:00-04:00"
+}

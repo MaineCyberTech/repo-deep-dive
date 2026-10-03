@@ -1,0 +1,74 @@
+{
+  "patch_set": "PS-U06",
+  "title": "Unassigned FEAT findings (catch-all) - FEAT-P1-001, FEAT-P2-003",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/ps-u06-20261003-0018-develop-a72b8cc",
+  "commit": "92ef54074256aec75e3858f3339a28c21a980d4e",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/69",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["FEAT-P1-001", "FEAT-P2-003"],
+  "findings_implemented": ["FEAT-P1-001"],
+  "findings_deferred": {
+    "FEAT-P2-003": "Already implemented by PATCH-09 / draft PR #64 (open, unmerged). Not duplicated in this patch set."
+  },
+  "files": [
+    "apps/api/src/modules/auth/routes.ts",
+    "apps/api/src/modules/auth/service.ts",
+    "apps/api/src/modules/auth/__tests__/auth.service.test.ts"
+  ],
+  "in_scope_files": [
+    "apps/api/src/modules/auth/routes.ts",
+    "apps/api/src/modules/auth/service.ts"
+  ],
+  "test_files": [
+    "apps/api/src/modules/auth/__tests__/auth.service.test.ts"
+  ],
+  "diff": {
+    "path": "remediation/PS-U06/diff.patch",
+    "sha256": "590C5DA323C605AD4D597CA72939636119BF9E4A3BE31619D34A16483A6F401D",
+    "insertions": 61,
+    "deletions": 2
+  },
+  "verification": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter @chat/api test",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "pass: Lockfile is up to date; 62 files / 486 tests passed; auth.service.test.ts 11 tests"
+    },
+    {
+      "command": "git add <changed paths> && git diff --cached --unified=0 | gitleaks stdin --redact --no-banner",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: scanned ~3340 bytes (3.34 KB); no leaks found"
+    },
+    {
+      "command": "corepack pnpm exec vitest run apps/api/src/modules/auth/__tests__/auth.service.test.ts",
+      "runner": "local clone (C:\\temp\\chat)",
+      "exit_code": 0,
+      "result": "pass: 1 file / 11 tests passed"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/api lint",
+      "runner": "local clone",
+      "exit_code": 0,
+      "result": "pass: eslint . clean"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/api typecheck",
+      "runner": "local clone (workspace deps built)",
+      "exit_code": 0,
+      "result": "pass: tsc --noEmit clean"
+    }
+  ],
+  "verify_log": "remediation/PS-U06/verify.log",
+  "pr_body": "remediation/PS-U06/pr_body.md",
+  "scopeCheck": "pass - 2 in-scope product files + 1 test file; no dependency/config/schema changes",
+  "generated_at": "2026-10-03T10:30:00-04:00"
+}

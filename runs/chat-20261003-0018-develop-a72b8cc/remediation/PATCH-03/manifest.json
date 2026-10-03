@@ -1,0 +1,79 @@
+{
+  "patch_set": "PATCH-03",
+  "title": "Stop destructive Docker volume pruning in deploy workflows",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/patch-03-20261003-0018-develop-a72b8cc",
+  "commit": "6733291c22a8c21a7c2b094e52886ade75229d8e",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/61",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["DATA-P1-002", "CI-P1-004"],
+  "files": [
+    ".github/workflows/deploy-production.yml",
+    ".github/workflows/deploy-development.yml"
+  ],
+  "diff": {
+    "path": "remediation/PATCH-03/diff.patch",
+    "sha256": "08554A93F4B760E218AAC4A0D1A2013A483820D138DB5B98104E4ADD4700BD8E",
+    "insertions": 5,
+    "deletions": 5
+  },
+  "verification": [
+    {
+      "command": "actionlint .github/workflows/deploy-production.yml .github/workflows/deploy-development.yml",
+      "runner": "ci-runner (actionlint 1.7.12)",
+      "exit_code": 1,
+      "result": "20 pre-existing shellcheck/expression diagnostics; patched output byte-identical to base a72b8cc (0 new diagnostics) - not a green gate at base either"
+    },
+    {
+      "command": "actionlint <base copies from HEAD a72b8cc>",
+      "runner": "ci-runner",
+      "exit_code": 1,
+      "result": "20 identical diagnostics; confirms no regression introduced"
+    },
+    {
+      "command": "rg -n -- 'docker system prune[^\\n]*--volumes|prune[^\\n]*--volumes|--volumes' deploy-production.yml deploy-development.yml",
+      "runner": "ci-runner",
+      "exit_code": 1,
+      "result": "no matches (pass) - no --volumes flag remains"
+    },
+    {
+      "command": "rg -n -- 'docker [a-z]+ prune' deploy-production.yml deploy-development.yml",
+      "runner": "ci-runner",
+      "exit_code": 0,
+      "result": "all remaining prune commands are image/builder only"
+    },
+    {
+      "command": "gitleaks protect --staged --redact --exit-code 1",
+      "runner": "ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "no leaks found"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --exit-code 1 -s <patched files>",
+      "runner": "ci-runner",
+      "exit_code": 0,
+      "result": "0 findings; base files also 0 (net-zero)"
+    },
+    {
+      "command": "git diff --name-only / --numstat",
+      "runner": "local",
+      "exit_code": 0,
+      "result": "only the 2 in-scope files; 2/2 and 3/3 (5 replacements, 0 net lines)"
+    },
+    {
+      "command": "deploy twice; docker volume ls retains redis-data",
+      "runner": "n/a",
+      "exit_code": null,
+      "result": "not run: requires two live deployments against the dev/prod Docker hosts; out of scope for this runner"
+    }
+  ],
+  "verify_log": "remediation/PATCH-03/verify.log",
+  "pr_body": "remediation/PATCH-03/pr_body.md",
+  "generated_at": "2026-10-03T07:10:00Z"
+}

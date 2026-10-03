@@ -1,0 +1,101 @@
+# PS-U05 lab verification — findings EXEC-P1-001, EXEC-P2-002
+run: 20261003-0018-develop-a72b8cc
+patch set: PS-U05 — Unassigned EXEC findings (catch-all)
+runner: lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + scripts/lab-run.ps1 over ssh, edge_key)
+base: a72b8cc43590848b052bd5e8954dbbc726b3d7fd (origin/develop)
+branch: remediation/ps-u05-20261003-0018-develop-a72b8cc
+date: 2026-10-03
+
+## Scope note
+Docs-only executive/release-readiness fix.
+- Adds `docs/operations/release-readiness-status.md` — a commit-stamped status generated from
+  audit run `20261003-0018-develop-a72b8cc` (audited commit `a72b8cc`), recording the
+  GO WITH CONDITIONS gate and the 1 P0 / 24 P1 / 31 P2 / 7 P3 totals.
+- Corrects the overstated readiness claims in `AGENTS.md` (the "0 P0, 0 P1" / "ALL CLEAN" /
+  "both healthy" statements) so they no longer describe the current commit.
+- `docs/README.md` links the new status doc.
+No code, workflow, dependency, schema, or lockfile changes.
+
+## Command 1 (lab) — frozen install
+cmd: corepack pnpm install --frozen-lockfile
+exit: 0
+--- output ---
+Scope: all 8 workspace projects
+Lockfile is up to date, resolution step is skipped
+Packages: +883
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 0, reused 1, downloaded 0, added 0
+Progress: resolved 0, reused 861, downloaded 0, added 682
+Progress: resolved 0, reused 861, downloaded 0, added 883, done
+
+. prepare$ husky
+. prepare: Done
+Done in 2.5s
+
+## Command 2 (lab) — prettier on the new doc
+cmd: corepack pnpm exec prettier --check docs/operations/release-readiness-status.md
+exit: 0
+--- output ---
+Checking formatting...
+All matched files use Prettier code style!
+
+## Command 3 (lab) — prettier on the 3 touched docs (whole-file gate)
+cmd: corepack pnpm exec prettier --check AGENTS.md docs/README.md docs/operations/release-readiness-status.md
+exit: 1
+--- output ---
+Checking formatting...
+[warn] AGENTS.md
+[warn] docs/README.md
+[warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+--- note ---
+The two warnings are PRE-EXISTING at base, not introduced by this change: the new doc is clean
+(Command 2, exit 0). Baseline check on `origin/develop` in the local clone (runner: local clone
+C:\temp\chat, `node_modules/.bin/prettier --check AGENTS.md docs/README.md` while the working
+tree was stashed) returned the identical warnings and exit 1. `AGENTS.md` was already
+non-conformant (long unwrapped prose/tables); this change does not touch its formatting.
+
+## Command 4 (lab) — relative link target exists
+cmd: test -f docs/operations/release-readiness-status.md
+exit: 0
+--- output ---
+(exists; the links added to AGENTS.md — `docs/operations/release-readiness-status.md` — and to
+docs/README.md — `operations/release-readiness-status.md` — both resolve)
+
+## Command 5 (lab) — content sha256 of the changed docs
+cmd: sha256sum AGENTS.md docs/README.md docs/operations/release-readiness-status.md
+exit: 0
+--- output ---
+70af23f6cdccdce7c5dad0331805398731f4a919e6d1105484901cde0d027b3b  AGENTS.md
+3aa965954f5ac92a5327500e9699d71fe0568f9f9f1d07c5f084e345ff4bc8dc  docs/README.md
+144fc64f74ee9128658f2291a81de919c133c50c2e6ced50f1ab7177a7450d13  docs/operations/release-readiness-status.md
+
+## Command 6 (lab) — gitleaks on each changed file
+cmd: gitleaks detect --no-git --redact --no-banner --source <file>
+exit: 0
+--- output ---
+## gitleaks AGENTS.md
+scanned ~114808 bytes (114.81 KB) in 279ms
+no leaks found
+## gitleaks docs/README.md
+scanned ~1022 bytes (1.02 KB) in 195ms
+no leaks found
+## gitleaks docs/operations/release-readiness-status.md
+scanned ~2330 bytes (2.33 KB) in 200ms
+no leaks found
+
+## Command 7 (lab) — gitleaks on the staged diff
+cmd: gitleaks detect --no-git --redact --no-banner --source /tmp/ps-u05-diff.patch
+exit: 0
+--- output ---
+scanned ~16918 bytes (16.92 KB) in 210ms
+no leaks found
+--- artifact ---
+remediation/PS-U05/diff.patch  bytes=16918  sha256=47805A8890C314BCF8B167804CCBD6954F18FDF3AD239A9801E0F83EBCE24483
+
+## Gate summary
+- install (frozen lockfile): PASS (exit 0)
+- new doc formatting: PASS (exit 0)
+- whole-file prettier: two pre-existing warnings at base (documented above); no new warnings
+- link target: PASS (exit 0)
+- gitleaks (files + diff): PASS, no leaks
+- scope: docs only

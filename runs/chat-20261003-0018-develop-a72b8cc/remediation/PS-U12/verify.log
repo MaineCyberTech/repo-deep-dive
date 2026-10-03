@@ -1,0 +1,99 @@
+# PS-U12 lab verification - blocking dependency-vulnerability gate (SUPPLY-P2-003)
+
+run:    20261003-0018-develop-a72b8cc
+repo:   MaineCyberTech/chat  (local C:\temp\chat)
+base:   a72b8cc43590848b052bd5e8954dbbc726b3d7fd (origin/develop)
+branch: remediation/ps-u12-20261003-0018-develop-a72b8cc
+runner: lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + scripts/lab-run.ps1, edge_key)
+date:   2026-10-03T11:38:59Z
+
+Scope of this patch set: `.husky/pre-commit` (blocking, was warning-only) and the new
+helper `.husky/audit-gate.mjs`. The CI-side gates (`.github/workflows/validate.yml`,
+`build-push.yml`, `.pnpm-audit-exceptions.json`, `.trivyignore`) are implemented by the sibling
+patch set PATCH-07 (PR #63); this set deliberately touches only the developer-side hook and
+consumes the same shared exception list, so the two diffs do not overlap.
+
+## 0. Lab sync + install + line-ending note
+
+cmd: scripts/lab-sync.ps1 -Repo chat        -> synced:chat, git rev-parse --short HEAD = a72b8cc
+cmd: corepack pnpm install --frozen-lockfile -> exit 0 (883 pkgs; husky prepare ok)
+
+The local working tree is checked out with core.autocrlf=true, so the synced `.husky/pre-commit`
+arrives with CRLF while the repository blob is LF:
+  base blob  .husky/pre-commit CR count: 0
+  worktree   .husky/pre-commit CR count: 37
+  normalized (tr -d '\r') CR count:      0   -> git stores LF on commit; diff confirms LF
+The syntax/shellcheck checks below run on the LF-normalized content (identical to the committed
+blob); the raw synced copy fails `sh -n` for the same pre-existing CRLF reason as the base file.
+
+## 1. Real dependency audit (base dependency tree)
+
+cmd: corepack pnpm audit --prod --json > /tmp/psu12-audit-real.json
+exit: 1  (non-zero because advisories exist)
+out:  advisories total=52 high=28 critical=2
+
+## 2. Gate against the real report + shared exceptions  [expect 0]
+
+cmd: node .husky/audit-gate.mjs /tmp/psu12-audit-real.json .pnpm-audit-exceptions.json
+out: audit-gate: no HIGH/CRITICAL advisories outside the 30-entry time-boxed exception list
+exit: 0
+
+(`.pnpm-audit-exceptions.json` is the time-boxed allowlist introduced by sibling PATCH-07 #63;
+it was copied from that branch for verification only and is NOT added by PS-U12.)
+
+## 3. Negative: injected new HIGH advisory  [expect 1]
+
+cmd: node .husky/audit-gate.mjs /tmp/audit-injected.json .pnpm-audit-exceptions.json
+out: audit-gate: un-allowlisted HIGH/CRITICAL advisories:
+       high GHSA-injected-new01 injected: injected
+exit: 1   (fails closed on a new advisory)
+
+## 4. Negative: expired exception list  [expect 1]
+
+cmd: node .husky/audit-gate.mjs /tmp/psu12-audit-real.json /tmp/psu12-exceptions-expired.json
+out: audit-gate: exceptions expired on 2020-01-01; fix or renew them.
+exit: 1
+
+## 5. Negative: missing exception list fails closed  [expect 1]
+
+cmd: node .husky/audit-gate.mjs /tmp/audit-injected.json /tmp/psu12-missing.json
+out: audit-gate: no exception list at /tmp/psu12-missing.json; failing closed on HIGH/CRITICAL advisories.
+       high GHSA-injected-new01 injected: injected
+exit: 1
+
+## 6. Syntax of the committed content
+
+cmd: sh -n /tmp/psu12-pre-commit.lf          exit 0
+cmd: shellcheck -S warning /tmp/psu12-pre-commit.lf   exit 0 (no diagnostics)
+cmd: node --check .husky/audit-gate.mjs      exit 0
+
+## 7. End-to-end hook audit block (fake pnpm; no network)
+
+cmd: sh pre-commit.lf (audit block, injected report)   -> hook_injected_exit=1
+cmd: sh pre-commit.lf (audit block, real report)       -> hook_real_exit=0
+cmd: HUSKY_AUDIT=off sh pre-commit.lf (injected report) -> hook_bypass_exit=0
+The "large files" / lint-staged / turbo steps were stubbed in the isolated harness; only the
+audit block and its exit propagation are under test here.
+
+## 8. Secret gate (gitleaks)
+
+cmd: git add .husky/audit-gate.mjs .husky/pre-commit; git diff --cached | gitleaks stdin --redact
+out: no leaks found (3,995 bytes scanned)
+exit: 0
+
+cmd: gitleaks detect --no-git --redact --no-banner --source .   -> 5 findings, exit 1
+These 5 are PRE-EXISTING and none are in the diff:
+  jwt               .github/workflows/validate.yml:396
+  generic-api-key   apps/web/components/shared/keyboard-shortcuts.tsx:15
+  jwt               infra/docker/.env.dev.example:6
+  jwt               infra/docker/.env.dev.example:7
+  jwt               infra/docker/.env.dev.example:22
+(identical set documented for this base under PS-U03 / PATCH-07.)
+
+## Result
+
+All gates for the changed file pass (exit 0); all negative controls fail closed (exit 1).
+The hook now blocks on un-allowlisted HIGH/CRITICAL advisories instead of printing a warning;
+HUSKY_AUDIT=off provides an explicit local override while the CI gate remains authoritative.
+
+PSU12_VERIFY_DONE

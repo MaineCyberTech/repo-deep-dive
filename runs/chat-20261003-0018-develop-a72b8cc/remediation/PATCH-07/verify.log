@@ -1,0 +1,195 @@
+########## PATCH-07 verification ##########
+date_utc: 2026-10-03T08:03:02Z
+runner: ci-runner (LXC 200) via ssh, /srv/work/chat
+base: origin/develop @ a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+branch commit: 9afa84904cfc7c23abbbf3d204c584fdc4df5aa2
+changes vs base:
+ .github/workflows/build-push.yml |  6 +++--
+ .github/workflows/validate.yml   | 55 +++++++++++++++++++++++++++++++---------
+ .pnpm-audit-exceptions.json      | 36 ++++++++++++++++++++++++++
+ .trivyignore                     | 41 ++++++++++++++++++++++++++++++
+ 4 files changed, 124 insertions(+), 14 deletions(-)
+
+########## 1. actionlint (new vs base diagnostics) ##########
+base validate.yml diagnostics=12    new validate.yml diagnostics=12
+base build-push.yml diagnostics=1  new build-push.yml diagnostics=1
+ACTIONLINT: no new diagnostics
+
+########## 2. yq YAML parse (job names) ##########
+$ yq -e .jobs | keys .github/workflows/validate.yml
+- test
+- diff-coverage
+- lint
+- typecheck
+- openapi-validate
+- security-audit
+- branch-protection
+- migration-test
+- build
+- e2e
+EXIT: 0
+
+$ yq -e .jobs | keys .github/workflows/build-push.yml
+- build-images
+EXIT: 0
+
+
+########## 3. blocking-gate assertions ##########
+--- Trivy exit-code (expect 1 in validate + 2 in build-push) ---
+.github/workflows/validate.yml:266:          exit-code: "1"
+.github/workflows/build-push.yml:124:          exit-code: "1"
+.github/workflows/build-push.yml:134:          exit-code: "1"
+EXIT: 0
+
+--- pnpm audit escape removed (expect no '|| true' on the audit step) ---
+228:      - name: Run pnpm audit (blocking; time-boxed exceptions)
+233:          corepack pnpm audit --prod --json > audit.json 2>/dev/null || true
+254:          console.log(`pnpm audit: no HIGH/CRITICAL advisories outside the ${allow.size}-entry time-boxed exception list`);
+EXIT: 0
+
+--- E2E job continue-on-error (expect none in the e2e job) ---
+none (pass)
+
+--- remaining continue-on-error (out of PATCH-07 scope: TEST-P2-002 diff-coverage, CI-P2-007 branch-protection) ---
+97:        continue-on-error: true
+278:    continue-on-error: true
+
+
+########## 4. pnpm install ##########
+install_exit=0
+. prepare: Done
+Done in 2.8s
+
+########## 5. pnpm audit gate (blocking, time-boxed exceptions) ##########
+pnpm audit: no HIGH/CRITICAL advisories outside the 30-entry time-boxed exception list
+audit_gate_exit=0
+
+########## 6. NEGATIVE TEST: injected new HIGH advisory fails gate ##########
+Un-allowlisted HIGH/CRITICAL advisories:
+high GHSA-injected-new01 injected-pkg: Injected regression
+negative_audit_exit=1 (expected 1)
+
+########## 7. Trivy fs scan (blocking with .trivyignore) ##########
+trivy_fs_exit=0 (expected 0)
+
+########## 8. NEGATIVE TEST: findings fail when not ignored ##########
+trivy_without_ignore_exit=1 (expected non-zero: pre-existing findings no longer ignored)
+
+########## 9. gitleaks ##########
+--- 9a. diff (tracked changes) ---
+gitleaks_diff_exit=0 (expected 0)
+--- 9b. new files ---
+.trivyignore: clean
+.pnpm-audit-exceptions.json: clean
+--- 9c. changed-file scan vs base (classifies pre-existing) ---
+new : [('jwt', '/tmp/p07scan/workflows/validate.yml', 424)]
+base: [('jwt', '/tmp/p07base/workflows/validate.yml', 396)]
+delta: none (same single pre-existing hardcoded Supabase anon JWT in validate.yml; shifted by the added lines)
+P07_FINAL_DONE
+
+########## 10. E2E gate -- local Supabase + seeding + credential provisioning (first run) ##########
+
+Command (ci-runner, /srv/work/chat, commit 9afa849): boot local Supabase, db reset, verify the
+seeded E2E user, generate test-signin.json, install Playwright Chromium, run tests/e2e/auth.spec.ts.
+
+Real output (excerpt):
+
+  == supabase start ==
+  ... Started supabase local development setup. ...
+  supabase_start_exit=0
+
+  == supabase db reset ==
+  Applying migration 20260625000001_create_users.sql ...
+  ... (75 migrations applied) ...
+  Seeding data from supabase/seeds/00_comprehensive_users.sql...
+  Seeding data from supabase/seeds/01_comprehensive_workspaces.sql...
+  Seeding data from supabase/seeds/02_comprehensive_channels.sql...
+  Seeding data from supabase/seeds/03_comprehensive_messages.sql...
+  Seeding data from supabase/seeds/04_comprehensive_features.sql...
+  Seeding data from supabase/seeds/05_comprehensive_expansion.sql...
+  Finished supabase db reset on branch remediation/patch-07-20261003-0018-develop-a72b8cc.
+  db_reset_exit=0
+
+  == verify seeded e2e user (db reset seeds via [db.seed].sql_paths) ==
+  +------------------+
+  | email            |
+  +------------------+
+  | marcus@seed.test |
+  +------------------+
+  seed_query_exit=0
+
+  == provision e2e creds ==
+  { "email": "marcus@seed.test", "password": "password123" }
+
+  == playwright install ==
+  playwright_install_exit=0
+
+  == run auth.spec.ts ==
+  [pid=127261][err] .../chrome-headless-shell: error while loading shared libraries:
+      libglib-2.0.so.0: cannot open shared object file: No such file or directory
+  5 failed
+    [chromium] > tests/e2e/auth.spec.ts:13:7 > Auth Flow > renders login form ...
+    [chromium] > tests/e2e/auth.spec.ts:19:7 > Auth Flow > shows error for invalid email format
+    [chromium] > tests/e2e/auth.spec.ts:25:7 > Auth Flow > shows error for empty email
+    [chromium] > tests/e2e/auth.spec.ts:30:7 > Auth Flow > shows sent state after successful magic link request
+    [chromium] > tests/e2e/auth.spec.ts:37:7 > Auth Flow > completes full sign-in with credentials
+  e2e_auth_exit=1
+  P07_E2E_DONE
+  wrapper_rc=0
+
+Interpretation (no fabrication):
+
+- VERIFIED (setup path): `supabase start` -> `supabase db reset` applies all 75 migrations AND
+  seeds from `[db.seed].sql_paths` in supabase/config.toml (all 6 seed files observed). The seeded
+  user `marcus@seed.test` exists in the local DB, and the generated `test-signin.json` matches it,
+  so the committed-credential dependency is genuinely closed.
+- BLOCKED at this first run (test execution): every auth.spec test failed at browser *launch*,
+  because the ci-runner LXC lacked `libglib-2.0.so.0`. See section 11 for the re-run after the OS
+  libraries were installed.
+- Workflow hardened: `pnpm exec playwright install --with-deps chromium` so CI installs the
+  Chromium OS libraries the lab lacked.
+- Historical note: the first E2E attempt (at commit 0432329) discovered that `supabase db execute`
+  is not a valid subcommand in Supabase CLI 2.119.0 and that the original separate seed step was
+  both wrong and redundant; the final commit relies on `supabase db reset` seeding and drops the
+  extra step. That bug was found only because this E2E run was executed.
+
+########## 11. E2E gate re-run after Chromium OS libs were installed (branch vs base) ##########
+
+Runner: ci-runner (LXC 200), Supabase CLI 2.119.0, docker. To avoid clobbering a concurrent
+patch-09 working tree, the runs used isolated git worktrees:
+  /srv/work/chat-p07       @ 9afa849 (PATCH-07)
+  /srv/work/chat-p07-base  @ a72b8cc43590848b052bd5e8954dbbc726b3d7fd (base control)
+
+--- PATCH-07 branch (commit 9afa849) ---
+supabase_start_exit=0
+db_reset_exit=0              # 75 migrations + all 6 supabase/seeds/*.sql via [db.seed].sql_paths
+seed_query_exit=0            # query returned marcus@seed.test
+provision e2e creds          # wrote test-signin.json {marcus@seed.test, password123}
+playwright_install_exit=0    # `playwright install --with-deps chromium`; browser now launches
+Running 5 tests using 1 worker
+  [x] Auth Flow > renders login form ... (30.2s) + retry #1/#2
+  [x] Auth Flow > shows error for invalid email format + retries
+  [x] Auth Flow > shows error for empty email + retries
+  [x] Auth Flow > shows sent state after successful magic link request + retries
+  [x] Auth Flow > completes full sign-in with credentials + retries
+  5 failed
+e2e_auth_exit=1
+Principal failure: `Error: expect(locator).toBeVisible() failed` -- `locator('#email') element(s)
+not found`; the /login screenshot shows the page stuck on a loading spinner (only the app
+version footer renders). No `libglib-2.0.so.0` error this time -- the browser launched.
+
+--- BASE control (commit a72b8cc) ---
+supabase_start_exit=0
+db_reset_exit=0
+  5 failed
+e2e_auth_exit=1
+Identical failure: `#email element(s) not found`, /login stuck on the loading spinner.
+
+Classification (no fabrication): the auth.spec render failure is PRE-EXISTING at base a72b8cc and
+is NOT caused by PATCH-07 (which changes CI workflow files only). PATCH-07's blocking E2E gate
+therefore correctly surfaces a pre-existing failure. The E2E setup path (Supabase boot, 75
+migrations, 6 seed files, `marcus@seed.test`, generated credentials, Chromium launch) is verified.
+
+TEST-P1-001 stays `partially-fixed`: the gate is blocking and no longer depends on a committed
+credential, but a green E2E run is required (i.e. the pre-existing app/render failure must be
+fixed) before the finding can be `verified-fixed`.

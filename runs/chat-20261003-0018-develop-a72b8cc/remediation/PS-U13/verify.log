@@ -1,0 +1,170 @@
+# PS-U13 lab verification — TEST-P2-002 (coverage thresholds + blocking diff coverage)
+
+run:     20261003-0018-develop-a72b8cc
+repo:    MaineCyberTech/chat   (local C:\temp\chat)
+base:    a72b8cc43590848b052bd5e8954dbbc726b3d7fd (origin/develop)
+branch:  remediation/ps-u13-20261003-0018-develop-a72b8cc
+commit:  fe04ab3a01cd04ff3dcc8c9a4cce6153c0340f9b
+runner:  lab ci-runner 172.23.128.51 (scripts/lab-sync.ps1 + scripts/lab-run.ps1, edge_key)
+date:    2026-10-03T11:46:49Z (re-run at the committed SHA)
+
+Scope of this patch set (two files, both cited by the finding):
+  - `packages/config/vitest.config.base.ts`  — raise global coverage floors
+  - `.github/workflows/validate.yml`         — make the diff-coverage threshold step blocking
+No application code, dependency, workflow-job, or other config changes.
+
+Files changed vs origin/develop:
+  .github/workflows/validate.yml        | 3 +--
+  packages/config/vitest.config.base.ts | 8 ++++----
+
+------------------------------------------------------------------------------
+## 0. Lab sync + git state at the verified commit
+
+cmd: scripts/lab-sync.ps1 -Repo chat  -> synced:chat, HEAD fe04ab3
+cmd: git rev-parse --short HEAD       -> fe04ab3
+cmd: git branch --show-current        -> remediation/ps-u13-20261003-0018-develop-a72b8cc
+cmd: git status --porcelain           -> (clean; task run from the committed tree)
+
+------------------------------------------------------------------------------
+## 1. REQUIRED command: install + @chat/api test   [expect 0]
+
+cmd: corepack pnpm install --frozen-lockfile
+exit: 0
+
+cmd: corepack pnpm --filter @chat/api test
+exit: 0
+out:  Test Files  62 passed (62)
+      Tests       485 passed (485)
+      Duration    24.11s
+(The @chat/api test script resolves the root vitest config, so this exercises the
+whole unit suite; the run is green with the raised coverage floors in the tree.)
+
+------------------------------------------------------------------------------
+## 2. Full coverage, validate.yml test-job command, with the RAISED floors  [expect 0]
+
+cmd: corepack pnpm vitest run --config vitest.config.ts --coverage
+exit: 0
+
+Coverage totals at the commit (text reporter, "All files" row; column order
+%stmts | %branch | %funcs | %lines):
+
+  All files | 36.85 | 66.62 | 45.98 | 36.85 |
+
+Baseline measured at a72b8cc (before the change) — identical values:
+  lines 36.85, statements 36.85, functions 45.98, branches 66.62
+
+New floors vs measured (all measured values are >= the new floor):
+
+  metric      floor   measured   headroom
+  lines         36      36.85       +0.85
+  functions     40      45.98       +5.98
+  branches      60      66.62       +6.62
+  statements    36      36.85       +0.85
+
+The floors were set to the highest integer below measured coverage at this
+commit; vitest applies them because the CI test job runs with `--coverage`.
+(An unrelated pre-existing `ERROR: Failed to get preferences` log line appears
+during the run but does not affect the exit code; no coverage-threshold error.)
+
+------------------------------------------------------------------------------
+## 3. actionlint: no new diagnostics vs base   [counts equal]
+
+cmd: actionlint .github/workflows/validate.yml 2>&1 | grep -c SC   -> 12
+base (git show HEAD:.github/workflows/validate.yml):
+cmd: actionlint /tmp/psu13-base-validate.yml 2>&1 | grep -c SC     -> 12
+
+12 == 12: no new diagnostics introduced. The 12 are pre-existing shellcheck
+infos/warnings in older steps (`$(pnpm store path)` quoting, backticks, find|xargs);
+the base validate.yml already carried the same 12 (also recorded for PATCH-07).
+
+------------------------------------------------------------------------------
+## 4. Workflow YAML parse   [expect 0]
+
+cmd: yq -e . .github/workflows/validate.yml >/dev/null
+exit: 0
+
+------------------------------------------------------------------------------
+## 5. Remaining `continue-on-error: true` occurrences (OUT of this finding's scope)
+
+cmd: grep -n "continue-on-error" .github/workflows/validate.yml
+  237, 249, 416, 419, 422, 425, 428
+The diff-coverage step is no longer among them. The remaining ones belong to
+other jobs/findings (e.g. advisory security-audit step, migration/branch-protection
+checks governed by CI-P2-005/CI-P2-007/PATCH-07) and were deliberately not touched.
+
+The changed step now reads:
+
+      - name: Check diff coverage thresholds (blocking)
+        run: |
+          node -e "
+          const fs = require('fs');
+          const coveragePath = './coverage/coverage-summary.json';
+          ...
+
+------------------------------------------------------------------------------
+## 6. Negative control: diff-coverage threshold logic fails closed  [expect 1]
+
+cmd: node <exact threshold logic from validate.yml> against
+     {"total":{"lines":{"pct":10},"functions":{"pct":10},"branches":{"pct":5},"statements":{"pct":10}}}
+exit: 1
+out: Coverage thresholds not met: lines: 10% < 20%, functions: 10% < 20%, branches: 5% < 15%, statements: 10% < 20%
+
+## 7. Positive control: same logic above the diff thresholds  [expect 0]
+
+cmd: same logic against all-80% summary
+exit: 0
+out: All coverage thresholds met
+
+## 8. Negative control: raised global floor is enforcing  [expect 1]
+
+cmd: node, required {lines:36,functions:40,branches:60,statements:36} vs
+     actual {lines:35,functions:39,branches:59,statements:35}
+exit: 1
+out: Coverage thresholds not met: lines: 35% < 36%, functions: 39% < 40%, branches: 59% < 60%, statements: 35% < 36%
+
+------------------------------------------------------------------------------
+## 9. Secret gate (gitleaks 8.30.1)
+
+cmd: git diff origin/develop..HEAD | gitleaks stdin --redact --no-banner
+out: no leaks found (scanned ~1,079 bytes)
+exit: 0
+commit diff files: .github/workflows/validate.yml, packages/config/vitest.config.base.ts
+
+cmd: gitleaks detect --no-git --redact --source .   (full worktree)
+exit: 1  (5 PRE-EXISTING findings; none added by this diff)
+  jwt               .github/workflows/validate.yml   (pre-existing Supabase anon JWT)
+  generic-api-key   apps/web/components/shared/keyboard-shortcuts.tsx
+  jwt               infra/docker/.env.dev.example  (x3)
+This is the same pre-existing set documented for PS-U03 / PATCH-07 / PS-U12; the
+baseline commit produces the same 5.
+
+------------------------------------------------------------------------------
+## 10. Pre-existing defect observed (OUT of scope; recorded, not fixed)
+
+cmd (the `Run diff coverage` step command, as written in validate.yml):
+     corepack pnpm test -- --changed --coverage --reporter=json --coverage.reporter=json-summary
+exit: 1   (same at base a72b8cc and at fe04ab3)
+out:  ERROR  unexpected argument '--changed' found
+      > turbo test "--changed" "--coverage" ...
+      tip: to pass '--changed' as a value, use '-- --changed'
+      ELIFECYCLE  Test failed.
+
+Root cause: the root `test` script is `turbo test`, so `pnpm test -- --changed ...`
+forwards `--changed` to turbo, which rejects it. The `Run diff coverage` step
+therefore fails before reaching the (now-blocking) threshold step. This predates
+this patch set and is not caused by it; it was not part of TEST-P2-002's evidence.
+It is left for a separate fix (see PR open questions) because correcting the run
+command and reconciling it with the global floors is a different change.
+
+------------------------------------------------------------------------------
+## Result
+
+All gates that this patch set controls pass (exit 0): the required install +
+`@chat/api` test, the full coverage run at the raised floors, yq parse, and the
+commit-diff gitleaks scan. The negative controls fail closed (exit 1): the
+diff-coverage threshold logic and the raised global floor both block below-floor
+coverage. No new actionlint diagnostics. No secrets in the diff.
+
+TEST-P2-002 advances to partially-fixed (a draft PR cannot be verified-fixed).
+
+PSU13_VERIFY_DONE

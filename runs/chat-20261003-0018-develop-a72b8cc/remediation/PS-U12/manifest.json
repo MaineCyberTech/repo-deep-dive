@@ -1,0 +1,106 @@
+{
+  "patch_set": "PS-U12",
+  "title": "Unassigned SUPPLY findings (catch-all) — blocking dependency-vulnerability gate",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/ps-u12-20261003-0018-develop-a72b8cc",
+  "commit": "a202fad83cd2fceb244dc6e815d76da7d8cb9978",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/78",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["SUPPLY-P2-003"],
+  "finding_status": {
+    "SUPPLY-P2-003": "partially-fixed"
+  },
+  "overlap": {
+    "PATCH-07": "PR #63 makes pnpm audit (validate.yml) and Trivy (validate.yml/build-push.yml) blocking and adds .pnpm-audit-exceptions.json + .trivyignore. PS-U12 deliberately covers only the developer pre-commit hook and consumes the same .pnpm-audit-exceptions.json, so the diffs do not overlap. Merge #63 first (or bring the allowlist over); otherwise the hook fails closed on the 30 pre-existing advisories.",
+    "notes": "Single shared allowlist; disjoint hunks; merge-order note in the PR body."
+  },
+  "files": [
+    ".husky/audit-gate.mjs",
+    ".husky/pre-commit"
+  ],
+  "in_scope_files": [
+    ".husky/pre-commit"
+  ],
+  "companion_files": [
+    ".husky/audit-gate.mjs"
+  ],
+  "test_files": [],
+  "diff": {
+    "path": "remediation/PS-U12/diff.patch",
+    "sha256": "D7D12CDFD7A12A8F0E59C9270976EB858121ABFB0219C63B9A93735B05B5A628",
+    "files_changed": 2,
+    "insertions": 81,
+    "deletions": 5
+  },
+  "verification": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "install ok; 883 packages; husky prepare ok"
+    },
+    {
+      "command": "corepack pnpm audit --prod --json",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "advisories total=52 high=28 critical=2 (non-zero expected when advisories exist)"
+    },
+    {
+      "command": "node .husky/audit-gate.mjs <real audit> .pnpm-audit-exceptions.json",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "pass: 0 HIGH/CRITICAL advisories outside the 30-entry time-boxed exception list"
+    },
+    {
+      "command": "node .husky/audit-gate.mjs <audit + injected HIGH> .pnpm-audit-exceptions.json",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "pass (negative): injected GHSA-injected-new01 blocked; gate failed closed"
+    },
+    {
+      "command": "node .husky/audit-gate.mjs <audit> <expired exceptions>",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "pass (negative): expired exception list blocked"
+    },
+    {
+      "command": "node .husky/audit-gate.mjs <audit + injected HIGH> <missing exceptions>",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "pass (negative): missing allowlist fails closed"
+    },
+    {
+      "command": "sh -n /tmp/psu12-pre-commit.lf ; shellcheck -S warning /tmp/psu12-pre-commit.lf ; node --check .husky/audit-gate.mjs",
+      "runner": "lab ci-runner (shellcheck; LF-normalized content)",
+      "exit_code": 0,
+      "result": "hook and gate parse clean; repo stores LF (worktree CRLF is a core.autocrlf=true artifact)"
+    },
+    {
+      "command": "end-to-end hook audit block with fake pnpm (injected vs real report; HUSKY_AUDIT=off)",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "injected -> exit 1; real -> exit 0; HUSKY_AUDIT=off -> exit 0"
+    },
+    {
+      "command": "git diff --cached | gitleaks stdin --redact",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "no leaks found (3,995 bytes scanned)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source .",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 1,
+      "result": "5 pre-existing findings (validate.yml:396 jwt, keyboard-shortcuts.tsx:15 generic-api-key, .env.dev.example jwt x3); none in the diff"
+    }
+  ],
+  "verify_log": "remediation/PS-U12/verify.log",
+  "pr_body": "remediation/PS-U12/pr_body.md",
+  "generated_at": "2026-10-03T11:45:00Z"
+}

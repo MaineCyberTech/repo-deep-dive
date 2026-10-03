@@ -1,0 +1,8 @@
+# gitleaks dir /tmp/gl --redact --exit-code 1
+# runner: ci-runner (Proxmox) via lab-run.ps1
+# scope: PATCH-12 changed file set only (node_modules excluded)
+# exit: 0
+# raw capture: gitleaks-raw.txt
+
+scanned ~38010 bytes (38.01 KB) in 32.1ms
+no leaks found

@@ -1,0 +1,106 @@
+# PATCH-06 verification log — Secure SSH (SEC-P1-007)
+
+- Run: 20261003-0018-develop-a72b8cc
+- Repo: chat (MaineCyberTech), base: origin/develop @ a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+- Branch: remediation/patch-06-20261003-0018-develop-a72b8cc
+- Runner: Proxmox ci-runner (LXC 200) via lab job API (tools/lab_runner.py); working tree synced with scripts/lab-sync.ps1
+- Generated: 2026-10-03 (pre-commit verification)
+- Findings: SEC-P1-007
+- Changed files: infra/terraform/variables.tf, .github/workflows/deploy-production.yml, .github/workflows/infra-development.yml
+
+Root cause confirmed from git history: `a72b8cc` removed `TF_VAR_ssh_allowed_ips` from the
+Terraform Apply step of `.github/workflows/infra-development.yml`; the `ssh_allowed_ips`
+variable still defaulted to `0.0.0.0/0` in `infra/terraform/variables.tf`, so both provision
+workflows fell back to an internet-open SSH rule.
+
+## 0) Scope / diff
+
+$ git --no-pager diff --stat
+ .github/workflows/deploy-production.yml |  1 +
+ .github/workflows/infra-development.yml |  2 ++
+ infra/terraform/variables.tf            | 11 +++++++++--
+ 3 files changed, 12 insertions(+), 2 deletions(-)
+
+## 1) Grep: insecure default removed from variables.tf (expect NO match)
+
+$ grep -nE 'default.*0\.0\.0\.0/0' infra/terraform/variables.tf
+(no output)
+EXIT: 1  -> PASS_no_wide_default
+
+$ grep -nE 'default.*::/0' infra/terraform/variables.tf
+(no output)
+EXIT: 1  -> PASS_no_v6_default
+
+$ grep -n 'var.ssh_allowed_ips' infra/terraform/main.tf
+40:    source_addresses = split(",", var.ssh_allowed_ips)
+(SSH ingress now sourced only from the required, validated variable)
+
+Note: the literals `0.0.0.0/0` / `::/0` still appear once in variables.tf inside the
+validation denylist (intentional — they are rejected values, not an allow default).
+
+## 2) Terraform fmt / validate
+
+$ command -v terraform ; command -v tofu
+terraform: NOTFOUND
+tofu: NOTFOUND
+=> `terraform fmt -check` and `terraform validate`: NOT RUN (terraform/tofu not installed on ci-runner).
+
+## 3) actionlint on the changed workflows
+
+$ actionlint .github/workflows/deploy-production.yml .github/workflows/infra-development.yml
+(exit 1)
+Output is 18 diagnostics, all pre-existing and unrelated to this patch:
+  - shellcheck SC2086/SC2129/SC2162 in pre-existing `run:` scripts, and
+  - `run_started_at` not defined in object type in deploy-production.yml (pre-existing build-args usage).
+None reference the lines added by this patch.
+
+Baseline-vs-branch comparison (base = HEAD a72b8cc, swapping the two workflow files):
+  base diagnostics:   18
+  branch diagnostics: 18
+  normalized diff:    empty  -> NO_NEW_ACTIONLINT_DIAGNOSTICS
+ACTIONLINT_BASE_RC=1
+ACTIONLINT_BRANCH_RC=1
+=> actionlint is already red on the base branch; used as a comparison, not as a pass gate.
+   This patch introduces zero new actionlint diagnostics.
+
+$ grep -c TF_VAR_ssh_allowed_ips .github/workflows/infra-development.yml
+base a72b8cc: 0
+branch:       2
+(restores the variable to Import + Apply so the now-required var is supplied in dev)
+
+## 4) gitleaks (diff-scoped gate)
+
+$ gitleaks dir /tmp/p06scan --redact --exit-code 1
+scanned ~10 KB across the three changed files
+EXIT: 0
+result: no leaks found
+
+$ git diff --no-color -- <3 changed files> | gitleaks stdin --redact
+EXIT: 0
+result: no leaks found
+
+## 5) gitleaks (working tree, no-git) — repo-wide context
+
+$ gitleaks detect --no-git --redact --exit-code 1 -f json -r /tmp/p06-gl.json
+EXIT: 1
+leaks found: 5, all in pre-existing files OUTSIDE this patch set:
+  generic-api-key  apps/web/components/shared/keyboard-shortcuts.tsx
+  jwt              .github/workflows/validate.yml
+  jwt (x3)         infra/docker/.env.dev.example
+
+=> Diff-scoped secret gate PASSES. The repo-wide findings pre-date this patch and are out of
+   scope for PATCH-06 (SEC-P1-002 handles the tracked credential; others belong to their owners).
+
+## Summary
+
+| Gate | Command | Runner | Exit | Result |
+|---|---|---|---|---|
+| Wide SSH default removed | `grep -E 'default.*0\.0\.0\.0/0' variables.tf` | lab ci-runner | 1 | PASS (no match) |
+| IPv6 wide default removed | `grep -E 'default.*::/0' variables.tf` | lab ci-runner | 1 | PASS (no match) |
+| terraform fmt/validate | `command -v terraform` | lab ci-runner | n/a | NOT RUN (tool absent) |
+| actionlint (regression) | `actionlint <2 workflows>` | lab ci-runner | 1 | no NEW diagnostics (18 base = 18 branch) |
+| gitleaks (diff) | `gitleaks dir /tmp/p06scan --redact` | lab ci-runner | 0 | PASS (no leaks) |
+| gitleaks (git diff stdin) | `<diff> | gitleaks stdin --redact` | lab ci-runner | 0 | PASS (no leaks) |
+| gitleaks (repo, no-git) | `gitleaks detect --no-git --redact` | lab ci-runner | 1 | 5 pre-existing, none in patch files |
+
+PATCH-06 verification complete.

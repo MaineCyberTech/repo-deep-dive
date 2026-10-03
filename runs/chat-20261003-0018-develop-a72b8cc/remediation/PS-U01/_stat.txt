@@ -1,0 +1,10 @@
+ .../api/src/lib/__tests__/postgrest-filter.test.ts | 37 +++++++++++++
+ apps/api/src/lib/postgrest-filter.ts               | 39 ++++++++++++++
+ apps/api/src/modules/admin/__tests__/admin.test.ts | 17 ++++++
+ apps/api/src/modules/admin/routes.ts               |  8 ++-
+ .../modules/auth/__tests__/auth.service.test.ts    | 33 ++++++++++++
+ apps/api/src/modules/auth/routes.ts                |  8 +--
+ apps/api/src/modules/auth/service.ts               |  3 +-
+ .../openapi/__tests__/openapi-coverage.test.ts     | 62 ++++++++++++++++++++++
+ apps/api/src/modules/openapi/routes.ts             |  2 +-
+ 9 files changed, 202 insertions(+), 7 deletions(-)

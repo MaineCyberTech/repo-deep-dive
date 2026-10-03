@@ -1,0 +1,252 @@
+# PATCH-05 verification log — correct Supabase client selection / realtime wiring
+
+- Run: 20261003-0018-develop-a72b8cc
+- Repo: chat (MaineCyberTech), base: origin/develop @ a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+- Branch: remediation/patch-05-20261003-0018-develop-a72b8cc
+- Commit: 9bd4f88f22cbee0f2de45c635fcdfc6f04deb052
+- Runner: Proxmox ci-runner (LXC 200) via lab job API (tools/lab_runner.py)
+- Generated: 2026-10-03T06:47:57Z
+- Findings: ARCH-P1-001, ARCH-P1-002, FINAL-P1-001, FEAT-P1-002 (dependency)
+
+All commands were executed in /srv/work/chat on the lab; the working tree was synced
+from the local clone (branch above, uncommitted at time of first two runs, identical
+content to commit 9bd4f88).
+
+## 1) corepack pnpm install --frozen-lockfile && corepack pnpm --filter api test
+EXIT: 0
+--------------------------------------------------------------------------------
+Progress: resolved 0, reused 138, downloaded 0, added 0, done
+
+. prepare$ husky
+. prepare: Done
+Done in 4.4s
+INSTALL_RC=0
+
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > closes dropdown on click outside
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > marks notification as read on click
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+stderr | apps/web/components/notifications/__tests__/notification-bell.test.tsx > NotificationBell > closes on Escape key
+The current testing environment is not configured to support act(...)
+The current testing environment is not configured to support act(...)
+
+ Γ£ô apps/web/components/notifications/__tests__/notification-bell.test.tsx (8 tests) 446ms
+ Γ£ô apps/web/components/channel/__tests__/channel-list.test.tsx (7 tests) 218ms
+ Γ£ô apps/web/components/workspace/__tests__/workspace-list.test.tsx (6 tests) 414ms
+ Γ£ô apps/web/components/chat/__tests__/message-list.test.tsx (7 tests) 391ms
+ Γ£ô apps/web/components/pwa/__tests__/install-prompt.test.tsx (7 tests) 224ms
+ Γ£ô packages/ui/src/components/__tests__/input.test.tsx (4 tests) 210ms
+ Γ£ô apps/web/components/home/__tests__/landing-shell.test.tsx (5 tests) 197ms
+ Γ£ô packages/ui/src/components/__tests__/sidebar-group.test.tsx (5 tests) 159ms
+ Γ£ô packages/ui/src/components/__tests__/dialog.test.tsx (9 tests) 215ms
+ Γ£ô apps/web/components/chat/__tests__/message-input.test.tsx (3 tests) 131ms
+ Γ£ô packages/ui/src/components/__tests__/avatar.test.tsx (4 tests) 74ms
+ Γ£ô packages/ui/src/components/__tests__/button.test.tsx (7 tests) 87ms
+ Γ£ô apps/web/components/shared/__tests__/error-boundary.test.tsx (5 tests) 145ms
+ Γ£ô packages/ui/src/components/__tests__/badge.test.tsx (3 tests) 40ms
+ Γ£ô apps/web/components/media/__tests__/media-room.test.tsx (6 tests) 110ms
+ Γ£ô apps/api/src/modules/emoji/__tests__/emoji.test.ts (9 tests) 31ms
+ Γ£ô apps/api/src/modules/openapi/__tests__/openapi.test.ts (2 tests) 249ms
+ Γ£ô packages/ui/src/components/__tests__/skeleton.test.tsx (7 tests) 59ms
+ Γ£ô apps/api/src/middleware/__tests__/rate-limit.test.ts (11 tests) 42ms
+ Γ£ô apps/api/src/modules/user-groups/__tests__/user-groups.test.ts (23 tests) 152ms
+ Γ£ô apps/api/src/modules/sidebar/__tests__/sidebar.test.ts (10 tests) 73ms
+ Γ£ô apps/api/src/modules/export/__tests__/export.test.ts (4 tests) 15ms
+ Γ£ô apps/worker/src/__tests__/notification.test.ts (3 tests) 71ms
+ Γ£ô apps/api/src/modules/import/__tests__/import.test.ts (5 tests) 16ms
+ Γ£ô apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts (12 tests) 81ms
+ Γ£ô apps/worker/src/__tests__/cleanup.test.ts (3 tests) 43ms
+ Γ£ô apps/api/src/modules/workspaces/__tests__/workspace.service.test.ts (10 tests) 23ms
+ Γ£ô apps/api/src/modules/consent/__tests__/consent.test.ts (6 tests) 22ms
+ Γ£ô apps/api/src/modules/admin/__tests__/admin.test.ts (13 tests) 111ms
+ Γ£ô apps/api/src/modules/read-receipts/__tests__/read-receipts.test.ts (6 tests) 29ms
+ Γ£ô apps/api/src/middleware/__tests__/csrf.test.ts (20 tests) 49ms
+ Γ£ô apps/api/src/middleware/__tests__/request-id.test.ts (4 tests) 12ms
+ Γ£ô apps/api/src/modules/messages/__tests__/message.service.test.ts (6 tests) 26ms
+ Γ£ô apps/api/src/modules/auth/__tests__/auth.service.test.ts (10 tests) 41ms
+ Γ£ô apps/api/src/modules/threads/__tests__/threads.test.ts (8 tests) 38ms
+ Γ£ô packages/config/__tests__/errors.test.ts (15 tests) 12ms
+ Γ£ô apps/api/src/modules/feature-flags/__tests__/feature-flags.test.ts (17 tests) 50ms
+ Γ£ô apps/api/src/modules/announcements/__tests__/announcements.test.ts (9 tests) 34ms
+ Γ£ô apps/api/src/middleware/__tests__/error-handler.test.ts (12 tests) 39ms
+ Γ£ô apps/api/src/modules/scheduled-posts/__tests__/scheduled-posts.test.ts (7 tests) 26ms
+ Γ£ô apps/api/src/modules/audit/__tests__/audit.test.ts (13 tests) 30ms
+ Γ£ô apps/api/src/modules/groups/__tests__/groups.test.ts (11 tests) 26ms
+ Γ£ô apps/api/src/modules/reactions/__tests__/reaction.service.test.ts (5 tests) 16ms
+ Γ£ô apps/api/src/modules/notifications/__tests__/notification.service.test.ts (6 tests) 8ms
+ Γ£ô apps/api/src/modules/status/__tests__/status.test.ts (7 tests) 15ms
+ Γ£ô apps/api/src/middleware/__tests__/require-permission.test.ts (5 tests) 11ms
+ Γ£ô apps/api/src/middleware/__tests__/require-membership.test.ts (11 tests) 27ms
+ Γ£ô apps/api/src/modules/livekit/__tests__/livekit.test.ts (6 tests) 34ms
+[2026-10-03 06:43:32.566 +0000] [31mERROR[39m: [36mFailed to get preferences[39m
+    [35mservice[39m: "@chat/api"
+    [35mversion[39m: "0.0.0"
+    [35menv[39m: "test"
+    [35muserId[39m: "u1"
+    error: "Error: DB error"
+ Γ£ô apps/api/src/modules/preferences/__tests__/preferences.service.test.ts (3 tests) 15ms
+ Γ£ô apps/api/src/modules/ai/__tests__/ai.test.ts (3 tests) 16ms
+ Γ£ô apps/api/src/middleware/__tests__/security-headers.test.ts (11 tests) 18ms
+ Γ£ô apps/api/src/lib/__tests__/app-error.test.ts (17 tests) 21ms
+ Γ£ô packages/db/__tests__/stores.test.ts (4 tests) 6ms
+ Γ£ô apps/api/src/middleware/__tests__/authenticate.test.ts (4 tests) 11ms
+ Γ£ô apps/api/src/modules/health/__tests__/health.service.test.ts (5 tests) 8ms
+ Γ£ô apps/api/src/middleware/__tests__/require-admin.test.ts (4 tests) 17ms
+ Γ£ô packages/sdk/__tests__/client.test.ts (5 tests) 6ms
+ Γ£ô apps/api/src/modules/channels/__tests__/channel.service.test.ts (5 tests) 17ms
+
+ Test Files  62 passed (62)
+      Tests  485 passed (485)
+   Start at  06:43:03
+   Duration  31.87s (transform 4.46s, setup 25.31s, collect 14.03s, tests 11.51s, environment 17.77s, prepare 9.12s)
+
+TEST_RC=0
+[exit=0 duration=38.0s cwd=/srv/work/chat]
+
+
+## 2) targeted modules + API typecheck
+EXIT: 0
+
+> @chat/api@0.0.0 typecheck /srv/work/chat/apps/api
+> tsc --noEmit
+
+TSC_RC=0
+
+ RUN  v3.2.6 /srv/work/chat
+
+ Γ£ô apps/api/src/modules/notifications/__tests__/notification.service.test.ts (6 tests) 8ms
+ Γ£ô apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts (12 tests) 65ms
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  06:44:00
+   Duration  1.03s (transform 337ms, setup 725ms, collect 463ms, tests 73ms, environment 0ms, prepare 216ms)
+
+VITEST_RC=0
+[exit=0 duration=17.6s cwd=/srv/work/chat]
+
+
+## 3) repo-wide lint + typecheck
+EXIT: 0
+
+   ΓÇó Packages in scope: @chat/api, @chat/config, @chat/db, @chat/sdk, @chat/ui, @chat/web, @chat/worker
+   ΓÇó Running lint in 7 packages
+   ΓÇó Remote caching disabled
+
+@chat/ui:lint: cache miss, executing 8730b4173f5ffbed
+@chat/api:lint: cache miss, executing c6bf21b59299ab99
+@chat/worker:lint: cache miss, executing e505fc0684082a49
+@chat/web:lint: cache miss, executing 16c8a65d3d7d8895
+@chat/sdk:lint: cache miss, executing 9e5072e8c481f83e
+@chat/db:lint: cache miss, executing 402083e5aa6138d0
+@chat/sdk:lint: 
+@chat/sdk:lint: > @chat/sdk@0.0.0 lint /srv/work/chat/packages/sdk
+@chat/sdk:lint: > eslint .
+@chat/sdk:lint: 
+@chat/api:lint: 
+@chat/api:lint: > @chat/api@0.0.0 lint /srv/work/chat/apps/api
+@chat/api:lint: > eslint .
+@chat/api:lint: 
+@chat/worker:lint: 
+@chat/worker:lint: > @chat/worker@0.0.0 lint /srv/work/chat/apps/worker
+@chat/worker:lint: > eslint .
+@chat/worker:lint: 
+@chat/ui:lint: 
+@chat/ui:lint: > @chat/ui@0.0.0 lint /srv/work/chat/packages/ui
+@chat/ui:lint: > eslint .
+@chat/ui:lint: 
+@chat/db:lint: 
+@chat/db:lint: > @chat/db@0.0.0 lint /srv/work/chat/packages/db
+@chat/db:lint: > eslint .
+@chat/db:lint: 
+@chat/web:lint: 
+@chat/web:lint: > @chat/web@0.0.0 lint /srv/work/chat/apps/web
+@chat/web:lint: > eslint .
+@chat/web:lint: 
+
+ Tasks:    6 successful, 6 total
+Cached:    0 cached, 6 total
+  Time:    12.835s 
+
+LINT_RC=0
+@chat/sdk:typecheck: 
+@chat/db:typecheck: 
+@chat/sdk:typecheck: > @chat/sdk@0.0.0 typecheck /srv/work/chat/packages/sdk
+@chat/sdk:typecheck: > tsc --noEmit
+@chat/sdk:typecheck: 
+@chat/ui:build: cache hit, replaying logs 5a40d19be1ece8e2
+@chat/ui:build: 
+@chat/ui:build: > @chat/ui@0.0.0 build /srv/work/chat/packages/ui
+@chat/ui:build: > tsc
+@chat/ui:build: 
+@chat/sdk:build: cache hit, replaying logs bbd64198fdef5112
+@chat/sdk:build: 
+@chat/sdk:build: > @chat/sdk@0.0.0 build /srv/work/chat/packages/sdk
+@chat/sdk:build: > tsc
+@chat/sdk:build: 
+@chat/config:build: cache hit, replaying logs 474071001875f49c
+@chat/config:build: 
+@chat/config:build: > @chat/config@0.0.0 build /srv/work/chat/packages/config
+@chat/config:build: > tsc
+@chat/config:build: 
+@chat/api:typecheck: cache miss, executing 70bcf05ec0d42657
+@chat/web:typecheck: cache hit, replaying logs 67c362316a4b615b
+@chat/worker:typecheck: cache hit, replaying logs a5ef5086b56ccb52
+@chat/web:typecheck: 
+@chat/web:typecheck: > @chat/web@0.0.0 typecheck /srv/work/chat/apps/web
+@chat/web:typecheck: > tsc --noEmit
+@chat/web:typecheck: 
+@chat/worker:typecheck: 
+@chat/worker:typecheck: > @chat/worker@0.0.0 typecheck /srv/work/chat/apps/worker
+@chat/worker:typecheck: > tsc --noEmit
+@chat/worker:typecheck: 
+@chat/api:typecheck: 
+@chat/api:typecheck: > @chat/api@0.0.0 typecheck /srv/work/chat/apps/api
+@chat/api:typecheck: > tsc --noEmit
+@chat/api:typecheck: 
+
+ Tasks:    11 successful, 11 total
+Cached:    10 cached, 11 total
+  Time:    11.776s 
+
+TYPECHECK_RC=0
+[exit=0 duration=26.0s cwd=/srv/work/chat]
+
+
+## 4) gitleaks (staged diff)
+EXIT: 0
+python : warning: in the working copy of 'apps/api/src/lib/socket.ts', CRLF will be replaced by LF the next time Git 
+touches it
+At line:4 char:1
++ python "C:\temp\repo-deep-dive\tools\lab_runner.py" --url http://172. ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: in the working copy of 'apps/api/src/modules/notifications/push-subscription-service.ts', CRLF will be 
+replaced by LF the next time Git touches it
+warning: in the working copy of 'apps/api/src/modules/webhooks/service.ts', CRLF will be replaced by LF the next time 
+Git touches it
+
+    Γùï
+    ΓöéΓò▓
+    Γöé Γùï
+    Γùï Γûæ
+    Γûæ    gitleaks
+
+[90m6:44AM[0m [32mINF[0m [1m0 commits scanned.[0m
+[90m6:44AM[0m [32mINF[0m [1mscanned ~1971 bytes (1.97 KB) in 345ms[0m
+[90m6:44AM[0m [32mINF[0m [1mno leaks found[0m
+GITLEAKS_RC=0
+[exit=0 duration=0.8s cwd=/srv/work/chat]

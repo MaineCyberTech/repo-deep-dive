@@ -1,0 +1,620 @@
+diff --git a/apps/api/package.json b/apps/api/package.json
+index 2e60216..1f34574 100644
+--- a/apps/api/package.json
++++ b/apps/api/package.json
+@@ -18,6 +18,7 @@
+     "@sentry/node": "^10.59.0",
+     "@socket.io/redis-adapter": "^8.3.0",
+     "@supabase/supabase-js": "^2.49.0",
++    "bullmq": "^5.79.1",
+     "compression": "^1.8.1",
+     "cookie-parser": "^1.4.7",
+     "cors": "^2.8.5",
+diff --git a/apps/api/src/lib/__tests__/webhook-queue.test.ts b/apps/api/src/lib/__tests__/webhook-queue.test.ts
+new file mode 100644
+index 0000000..03a4f54
+--- /dev/null
++++ b/apps/api/src/lib/__tests__/webhook-queue.test.ts
+@@ -0,0 +1,59 @@
++import { describe, it, expect, vi, beforeEach } from "vitest";
++
++const { MockQueue, mockAdd } = vi.hoisted(() => {
++  const mockAdd = vi.fn().mockResolvedValue({ id: "job-1" });
++  const MockQueue = vi.fn(() => ({ add: mockAdd }));
++  return { MockQueue, mockAdd };
++});
++
++vi.mock("bullmq", () => ({ Queue: MockQueue }));
++vi.mock("../../config/env.js", () => ({
++  loadEnv: () => ({ REDIS_URL: "redis://localhost:6379" }),
++}));
++vi.mock("../logger.js", () => ({
++  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
++}));
++
++import { enqueueWebhookRetry, type WebhookRetryJobData } from "../webhook-queue.js";
++
++function jobData(retryCount: number): WebhookRetryJobData {
++  return {
++    webhookId: "wh-1",
++    event: "message.created",
++    payload: { channel_id: "ch-1" },
++    retryCount,
++    deliveryId: "d-1",
++    idempotencyKey: "idem-stable-1",
++  };
++}
++
++describe("enqueueWebhookRetry", () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++  });
++
++  it("adds a delayed job with a deterministic jobId and remaining attempts", async () => {
++    const ok = await enqueueWebhookRetry(jobData(1), 60_000);
++
++    expect(ok).toBe(true);
++    expect(mockAdd).toHaveBeenCalledWith(
++      "deliver",
++      jobData(1),
++      expect.objectContaining({
++        delay: 60_000,
++        jobId: "webhook-retry:d-1:1",
++        attempts: 5,
++      }),
++    );
++  });
++
++  it("clamps attempts to one on the final retry", async () => {
++    await enqueueWebhookRetry(jobData(5), 1_920_000);
++
++    expect(mockAdd).toHaveBeenCalledWith(
++      "deliver",
++      jobData(5),
++      expect.objectContaining({ attempts: 1, jobId: "webhook-retry:d-1:5" }),
++    );
++  });
++});
+diff --git a/apps/api/src/lib/webhook-queue.ts b/apps/api/src/lib/webhook-queue.ts
+new file mode 100644
+index 0000000..659ca21
+--- /dev/null
++++ b/apps/api/src/lib/webhook-queue.ts
+@@ -0,0 +1,82 @@
++import { Queue } from "bullmq";
++import { loadEnv } from "../config/env.js";
++import { logger } from "./logger.js";
++import { BASE_DELAY_MS, MAX_RETRIES } from "@chat/config/webhook-utils.js";
++
++/**
++ * Durable webhook retry scheduling.
++ *
++ * Failed deliveries are not retried with an in-process `setTimeout` (which a
++ * restart/pod eviction silently drops). Instead the first retry is added to the
++ * shared BullMQ `webhook-delivery` queue with a deterministic `jobId` and a
++ * delay; the worker owns the remaining attempts and the dead-letter transition.
++ */
++export interface WebhookRetryJobData {
++  webhookId: string;
++  event: string;
++  payload: Record<string, unknown>;
++  /** Cumulative retry number for the first attempt of the enqueued job. */
++  retryCount: number;
++  deliveryId: string;
++  /** Stable per-delivery idempotency key, reused across every attempt. */
++  idempotencyKey: string;
++}
++
++let queue: Queue<WebhookRetryJobData> | null = null;
++
++export function getWebhookDeliveryQueue(): Queue<WebhookRetryJobData> | null {
++  if (queue) return queue;
++
++  const env = loadEnv();
++  if (!env.REDIS_URL) {
++    return null;
++  }
++
++  try {
++    queue = new Queue<WebhookRetryJobData>("webhook-delivery", {
++      connection: { url: env.REDIS_URL },
++    });
++    return queue;
++  } catch (err) {
++    logger.error("Failed to create webhook delivery queue", { error: String(err) });
++    return null;
++  }
++}
++
++export async function enqueueWebhookRetry(
++  data: WebhookRetryJobData,
++  delayMs: number,
++): Promise<boolean> {
++  const webhookQueue = getWebhookDeliveryQueue();
++  if (!webhookQueue) {
++    logger.error("Webhook retry not enqueued durably: REDIS_URL is not configured", {
++      webhookId: data.webhookId,
++      deliveryId: data.deliveryId,
++    });
++    return false;
++  }
++
++  // `data.retryCount` is the cumulative retry number for attemptsMade === 0.
++  // Allow one BullMQ attempt per remaining retry so the worker's final attempt
++  // lands on MAX_RETRIES and moves the delivery to the dead-letter queue.
++  const remainingAttempts = Math.max(1, MAX_RETRIES - data.retryCount + 1);
++
++  try {
++    await webhookQueue.add("deliver", data, {
++      delay: delayMs,
++      jobId: `webhook-retry:${data.deliveryId}:${data.retryCount}`,
++      attempts: remainingAttempts,
++      backoff: { type: "exponential", delay: BASE_DELAY_MS },
++      removeOnComplete: { age: 86400 },
++      removeOnFail: { age: 86400 },
++    });
++    return true;
++  } catch (err) {
++    logger.error("Failed to enqueue webhook retry", {
++      webhookId: data.webhookId,
++      deliveryId: data.deliveryId,
++      error: String(err),
++    });
++    return false;
++  }
++}
+diff --git a/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts b/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts
+index f3e2e3b..1223fab 100644
+--- a/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts
++++ b/apps/api/src/modules/webhooks/__tests__/webhook.service.test.ts
+@@ -1,6 +1,12 @@
+ import { describe, it, expect, vi, beforeEach } from "vitest";
+ import { WebhookService, validateWebhookUrl } from "../service.js";
+ 
++const { enqueueWebhookRetry } = vi.hoisted(() => ({
++  enqueueWebhookRetry: vi.fn(async () => true),
++}));
++
++vi.mock("../../../lib/webhook-queue.js", () => ({ enqueueWebhookRetry }));
++
+ const mockClient = () => ({
+   from: vi.fn(() => ({
+     select: vi.fn(() => ({
+@@ -132,6 +138,7 @@ describe("WebhookService", () => {
+ 
+   beforeEach(() => {
+     service = new WebhookService();
++    vi.clearAllMocks();
+   });
+ 
+   it("gets channel workspace id", async () => {
+@@ -176,6 +183,38 @@ describe("WebhookService", () => {
+   it("triggers events for matching webhooks", async () => {
+     await service.triggerEvent("message.created", "ws-1", { channel_id: "ch-1" });
+   });
++
++  it("enqueues a durable retry job when a delivery fails", async () => {
++    vi.stubGlobal(
++      "fetch",
++      vi.fn(async () => new Response("upstream error", { status: 500 })),
++    );
++
++    await service.triggerEvent("message.created", "ws-1", { channel_id: "ch-2" });
++
++    type RetryCall = [
++      {
++        payload: { channel_id?: string };
++        webhookId: string;
++        retryCount: number;
++        deliveryId: string;
++        idempotencyKey: string;
++      },
++      number,
++    ];
++    const calls = enqueueWebhookRetry.mock.calls as unknown as RetryCall[];
++    const findCall = () => calls.find(([data]) => data.payload.channel_id === "ch-2");
++
++    await vi.waitFor(() => expect(findCall()).toBeTruthy(), { timeout: 15_000 });
++
++    const [jobData, delayMs] = findCall() as RetryCall;
++    expect(jobData.webhookId).toBe("wh-1");
++    expect(jobData.retryCount).toBe(1);
++    expect(jobData.idempotencyKey).toBeTruthy();
++    expect(delayMs).toBeGreaterThan(0);
++
++    vi.unstubAllGlobals();
++  });
+ });
+ 
+ describe("validateWebhookUrl", () => {
+diff --git a/apps/api/src/modules/webhooks/service.ts b/apps/api/src/modules/webhooks/service.ts
+index a82151c..2d33b22 100644
+--- a/apps/api/src/modules/webhooks/service.ts
++++ b/apps/api/src/modules/webhooks/service.ts
+@@ -2,6 +2,7 @@ import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
+ import { logger } from "../../lib/logger.js";
+ import { recordWebhookDelivery } from "../../lib/metrics.js";
+ import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
++import { enqueueWebhookRetry } from "../../lib/webhook-queue.js";
+ import {
+   validateWebhookUrl,
+   computeHmacSignature,
+@@ -208,6 +209,10 @@ export class WebhookService {
+     let responseBody: string | null = null;
+     let error: string | null = null;
+ 
++    // Generated once per delivery so the first attempt and every durable retry
++    // of the same delivery carry the same X-Idempotency-Key.
++    const idempotencyKey = randomUUID();
++
+     try {
+       const headers: Record<string, string> = { "Content-Type": "application/json" };
+       if (endpoint.secret) {
+@@ -217,8 +222,6 @@ export class WebhookService {
+ 
+       const breakerName = `webhook:${endpoint.id}`;
+ 
+-      const idempotencyKey = randomUUID();
+-
+       const urlValidation = await validateWebhookUrl(endpoint.url);
+       if (!urlValidation.valid) {
+         logger.error("Webhook URL validation failed at delivery time", {
+@@ -326,10 +329,13 @@ export class WebhookService {
+ 
+     recordWebhookDelivery(status === "success" ? "success" : "failed", event);
+ 
+-    // Schedule retry if failed and not exceeded max retries
++    // Schedule retry if failed and not exceeded max retries.
++    // The retry is a durable BullMQ job on the shared `webhook-delivery` queue,
++    // not an in-process timer, so it survives an API restart/pod eviction.
+     if (status === "failed" && retryCount < MAX_RETRIES) {
+       const delayMs = BASE_DELAY_MS * Math.pow(2, retryCount) + Math.random() * 30_000;
+       const nextRetryAt = new Date(Date.now() + delayMs).toISOString();
++      const deliveryId = delivery?.id ?? "";
+ 
+       await admin
+         .from("webhook_deliveries")
+@@ -337,14 +343,29 @@ export class WebhookService {
+           retry_count: retryCount + 1,
+           next_retry_at: nextRetryAt,
+         })
+-        .eq("id", delivery!.id);
+-
+-      // Schedule retry
+-      setTimeout(() => {
+-        this.retryDelivery(endpoint, event, payload, retryCount + 1).catch((err) =>
+-          logger.error("webhook retry failed", { webhookId: endpoint.id, error: String(err) }),
+-        );
+-      }, delayMs);
++        .eq("id", deliveryId);
++
++      const enqueued = await enqueueWebhookRetry(
++        {
++          webhookId: endpoint.id,
++          event,
++          payload,
++          retryCount: retryCount + 1,
++          deliveryId,
++          // Reuse the key from the attempt that just failed so receivers can
++          // deduplicate retries of the same delivery.
++          idempotencyKey,
++        },
++        delayMs,
++      );
++
++      if (!enqueued) {
++        logger.error("webhook retry could not be durably enqueued", {
++          webhookId: endpoint.id,
++          deliveryId,
++          retryCount: retryCount + 1,
++        });
++      }
+     } else if (status === "failed" && retryCount >= MAX_RETRIES) {
+       // Move to dead letter queue
+       await admin.from("webhook_dead_letters").insert({
+diff --git a/apps/worker/src/__tests__/webhook-delivery.test.ts b/apps/worker/src/__tests__/webhook-delivery.test.ts
+new file mode 100644
+index 0000000..78e3a92
+--- /dev/null
++++ b/apps/worker/src/__tests__/webhook-delivery.test.ts
+@@ -0,0 +1,146 @@
++import { describe, it, expect, beforeEach, vi } from "vitest";
++
++const { mockLogger, MockWorker, MockQueue, mockSupabase, inserts, hmac } = vi.hoisted(() => {
++  const mockLogger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
++  const MockWorker = vi.fn(() => ({ on: vi.fn() }));
++  const MockQueue = vi.fn();
++
++  const inserts: Array<Record<string, unknown>> = [];
++  const endpoint = {
++    id: "wh-1",
++    url: "https://example.com/hook",
++    secret: "enc-secret",
++    is_active: true,
++  };
++
++  const single = vi.fn().mockResolvedValue({ data: endpoint, error: null });
++  const eq = vi.fn(() => ({ eq, single }));
++  const select = vi.fn(() => ({ eq }));
++  const insert = vi.fn(async (row: Record<string, unknown>) => {
++    inserts.push(row);
++    return { error: null };
++  });
++  const update = vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }));
++  const mockSupabase = { from: vi.fn(() => ({ select, insert, update })) };
++
++  const hmac = vi.fn(() => "sig");
++
++  return { mockLogger, MockWorker, MockQueue, mockSupabase, inserts, hmac };
++});
++
++vi.mock("@chat/config/logger.js", () => ({ logger: mockLogger }));
++
++vi.mock("@chat/config/env-schema.js", () => ({
++  loadEnv: () => ({
++    REDIS_URL: "redis://localhost:6379",
++    SUPABASE_URL: "https://test.supabase.co",
++    SUPABASE_SERVICE_ROLE_KEY: "test-key",
++  }),
++}));
++
++vi.mock("@chat/config/webhook-utils.js", () => ({
++  MAX_RETRIES: 5,
++  BASE_DELAY_MS: 60_000,
++  validateWebhookUrl: vi.fn(async () => ({ valid: true })),
++  computeHmacSignature: hmac,
++  buildWebhookPayload: (event: string, payload: Record<string, unknown>) =>
++    JSON.stringify({ event, ...payload }),
++  decryptWebhookSecret: vi.fn((encrypted: string) => `decrypted:${encrypted}`),
++}));
++
++vi.mock("../lib/supabase.js", () => ({
++  createSupabaseClient: () => mockSupabase,
++}));
++
++vi.mock("bullmq", () => ({ Queue: MockQueue, Worker: MockWorker }));
++
++type Handler = (job: unknown) => Promise<unknown>;
++
++async function getHandler(): Promise<Handler> {
++  const { registerWebhookProcessor } = await import("../processors/webhook-delivery.js");
++  registerWebhookProcessor();
++  return (MockWorker.mock.calls[0] as unknown as [unknown, Handler])[1];
++}
++
++function job(data: Record<string, unknown>, attemptsMade: number) {
++  return { id: "job-1", data, attemptsMade, opts: {} };
++}
++
++describe("webhook-delivery processor (durable retries)", () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++    inserts.length = 0;
++    process.env.WEBHOOK_ENCRYPTION_KEY = "unit-test-encryption-key-1234567890";
++    vi.stubGlobal(
++      "fetch",
++      vi.fn(async () => new Response("upstream error", { status: 500 })),
++    );
++  });
++
++  it("signs with the decrypted secret and reuses the provided idempotency key", async () => {
++    const handler = await getHandler();
++    const fetchMock = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
++
++    await handler(
++      job(
++        {
++          webhookId: "wh-1",
++          event: "message.created",
++          payload: { channel_id: "ch-1" },
++          retryCount: 1,
++          deliveryId: "d-1",
++          idempotencyKey: "idem-stable-1",
++        },
++        0,
++      ),
++    ).catch(() => undefined);
++
++    expect(hmac).toHaveBeenCalledWith("decrypted:enc-secret", expect.anything(), "message.created");
++    const [, options] = fetchMock.mock.calls[0] as [string, { headers: Record<string, string> }];
++    expect(options.headers["X-Idempotency-Key"]).toBe("idem-stable-1");
++  });
++
++  it("throws for a retryable failure before the final attempt so BullMQ retries durably", async () => {
++    const handler = await getHandler();
++
++    await expect(
++      handler(
++        job(
++          {
++            webhookId: "wh-1",
++            event: "message.created",
++            payload: {},
++            retryCount: 1,
++            deliveryId: "d-1",
++            idempotencyKey: "idem-1",
++          },
++          0,
++        ),
++      ),
++    ).rejects.toThrow(/will retry/);
++  });
++
++  it("records the cumulative retry count and dead-letters on the final attempt", async () => {
++    const handler = await getHandler();
++
++    const result = await handler(
++      job(
++        {
++          webhookId: "wh-1",
++          event: "message.created",
++          payload: {},
++          retryCount: 1,
++          deliveryId: "d-1",
++          idempotencyKey: "idem-1",
++        },
++        4,
++      ),
++    );
++
++    expect((result as { status: string }).status).toBe("failed");
++    const deliveryInsert = inserts.find((row) => "retry_count" in row);
++    expect(deliveryInsert?.retry_count).toBe(5);
++    const deadLetterInsert = inserts.find((row) => "attempt_count" in row);
++    expect(deadLetterInsert).toBeTruthy();
++  });
++});
+diff --git a/apps/worker/src/processors/webhook-delivery.ts b/apps/worker/src/processors/webhook-delivery.ts
+index dce4896..688d367 100644
+--- a/apps/worker/src/processors/webhook-delivery.ts
++++ b/apps/worker/src/processors/webhook-delivery.ts
+@@ -2,11 +2,11 @@ import { Worker, Job, Queue } from "bullmq";
+ import { loadEnv } from "@chat/config/env-schema.js";
+ import { logger } from "@chat/config/logger.js";
+ import { createSupabaseClient } from "../lib/supabase.js";
+-import { randomUUID } from "node:crypto";
+ import {
+   validateWebhookUrl,
+   computeHmacSignature,
+   buildWebhookPayload,
++  decryptWebhookSecret,
+   MAX_RETRIES,
+   BASE_DELAY_MS,
+ } from "@chat/config/webhook-utils.js";
+@@ -17,6 +17,7 @@ export interface WebhookDeliveryJobData {
+   payload: Record<string, unknown>;
+   retryCount?: number;
+   deliveryId?: string;
++  idempotencyKey?: string;
+ }
+ 
+ export const webhookQueue = new Queue<WebhookDeliveryJobData>("webhook-delivery", {
+@@ -29,12 +30,31 @@ export const webhookQueue = new Queue<WebhookDeliveryJobData>("webhook-delivery"
+   },
+ });
+ 
++/**
++ * Endpoint secrets are stored encrypted by the API (AES-256-GCM). Decrypt with
++ * the shared key before signing. Fall back to the raw value only when no key is
++ * configured, preserving delivery for installations without encryption.
++ */
++function resolveSigningSecret(encrypted: string): string {
++  const encryptionKey = process.env.WEBHOOK_ENCRYPTION_KEY;
++  if (!encryptionKey) {
++    return encrypted;
++  }
++  try {
++    return decryptWebhookSecret(encrypted, encryptionKey);
++  } catch (err) {
++    logger.error({ error: String(err) }, "Failed to decrypt webhook secret for signing");
++    return encrypted;
++  }
++}
++
+ async function performWebhookDelivery(
+   supabase: ReturnType<typeof createSupabaseClient>,
+   webhookId: string,
+   event: string,
+   payload: Record<string, unknown>,
+   retryCount: number,
++  idempotencyKey: string,
+ ): Promise<{ status: string; statusCode: number | null; permanent: boolean }> {
+   const { data: endpoint } = await supabase
+     .from("webhook_endpoints")
+@@ -67,11 +87,14 @@ async function performWebhookDelivery(
+   try {
+     const headers: Record<string, string> = { "Content-Type": "application/json" };
+     if (endpoint.secret) {
+-      headers["X-Webhook-Signature"] = computeHmacSignature(endpoint.secret, payload, event);
++      headers["X-Webhook-Signature"] = computeHmacSignature(
++        resolveSigningSecret(endpoint.secret),
++        payload,
++        event,
++      );
+     }
+ 
+     const body = buildWebhookPayload(event, payload);
+-    const idempotencyKey = randomUUID();
+ 
+     const response = await fetch(endpoint.url, {
+       method: "POST",
+@@ -154,10 +177,20 @@ export function registerWebhookProcessor() {
+     "webhook-delivery",
+     async (job: Job<WebhookDeliveryJobData>) => {
+       const { webhookId, event, payload } = job.data;
+-      const retryCount = job.attemptsMade;
++      // Jobs enqueued by the API carry the cumulative retry number reached by
++      // its inline first attempt; BullMQ's own attempts extend it from there.
++      const retryCount = (job.data.retryCount ?? 0) + job.attemptsMade;
++      const idempotencyKey = job.data.idempotencyKey ?? `job:${job.id}`;
+       logger.info({ webhookId, event, retryCount }, "Processing webhook delivery");
+ 
+-      const result = await performWebhookDelivery(supabase, webhookId, event, payload, retryCount);
++      const result = await performWebhookDelivery(
++        supabase,
++        webhookId,
++        event,
++        payload,
++        retryCount,
++        idempotencyKey,
++      );
+ 
+       if (result.status === "failed" && !result.permanent && retryCount < MAX_RETRIES) {
+         throw new Error(`Webhook delivery failed (attempt ${retryCount + 1}), will retry`);
+diff --git a/packages/config/webhook-utils.ts b/packages/config/webhook-utils.ts
+index 5fbafc0..b16248f 100644
+--- a/packages/config/webhook-utils.ts
++++ b/packages/config/webhook-utils.ts
+@@ -1,8 +1,37 @@
+-import { createHmac } from "node:crypto";
++import { createDecipheriv, createHash, createHmac } from "node:crypto";
+ 
+ export const MAX_RETRIES = 5;
+ export const BASE_DELAY_MS = 60_000;
+ 
++const WEBHOOK_ENCRYPTION_ALGORITHM = "aes-256-gcm";
++
++function deriveWebhookEncryptionKey(encryptionKey: string): Buffer {
++  return createHash("sha256").update(encryptionKey).digest();
++}
++
++/**
++ * Decrypt a webhook signing secret produced by the API's `encryptSecret`
++ * (`iv:authTag:ciphertext`, all hex, AES-256-GCM). Shared so the worker can
++ * sign deliveries/retries with the real secret rather than the ciphertext.
++ */
++export function decryptWebhookSecret(encrypted: string, encryptionKey: string): string {
++  const key = deriveWebhookEncryptionKey(encryptionKey);
++  const parts = encrypted.split(":");
++  if (parts.length !== 3) {
++    throw new Error("Invalid encrypted secret format");
++  }
++  const [ivHex, authTagHex, encryptedData] = parts;
++  const decipher = createDecipheriv(
++    WEBHOOK_ENCRYPTION_ALGORITHM,
++    key,
++    Buffer.from(ivHex, "hex"),
++  );
++  decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
++  let plaintext = decipher.update(encryptedData, "hex", "utf8");
++  plaintext += decipher.final("utf8");
++  return plaintext;
++}
++
+ const PRIVATE_IP_RANGES = [
+   /^127\./,
+   /^10\./,
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index e7550c5..7c929f5 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -111,6 +111,9 @@ importers:
+       '@supabase/supabase-js':
+         specifier: ^2.49.0
+         version: 2.108.2
++      bullmq:
++        specifier: ^5.79.1
++        version: 5.79.1
+       compression:
+         specifier: ^1.8.1
+         version: 1.8.1

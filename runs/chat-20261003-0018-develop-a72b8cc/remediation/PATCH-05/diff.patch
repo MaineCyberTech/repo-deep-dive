@@ -1,0 +1,196 @@
+diff --git a/apps/api/src/lib/socket.ts b/apps/api/src/lib/socket.ts
+index 2ce2b3d..de96f83 100644
+--- a/apps/api/src/lib/socket.ts
++++ b/apps/api/src/lib/socket.ts
+@@ -2,6 +2,7 @@ import { Server as HttpServer } from "node:http";
+ import { Server as SocketServer } from "socket.io";
+ import { createAdapter } from "@socket.io/redis-adapter";
+ import Redis from "ioredis";
++import type { SupabaseClient } from "@supabase/supabase-js";
+ import { logger } from "./logger.js";
+ import { incrementWebsocketConnections } from "./metrics.js";
+ 
+@@ -28,6 +29,9 @@ let subClient: Redis | null = null;
+ declare module "socket.io" {
+   interface Socket {
+     userId?: string;
++    // Per-socket Supabase client carrying the user's JWT so RLS sees auth.uid()
++    // for channel/workspace membership and presence queries.
++    supabase?: SupabaseClient;
+   }
+ }
+ 
+@@ -111,7 +115,7 @@ export function initSocket(
+ 
+     try {
+       // Dynamic import to avoid circular dependency at module init
+-      const { getSupabase } = await import("./supabase.js");
++      const { getSupabase, getSupabaseForUser } = await import("./supabase.js");
+       const supabase = getSupabase();
+       const { data, error } = await supabase.auth.getUser(token);
+ 
+@@ -122,6 +126,9 @@ export function initSocket(
+ 
+       clearTimeout(authTimer);
+       socket.userId = data.user.id;
++      // Build a user-scoped client so downstream queries run as `authenticated`
++      // with auth.uid() set; the bare anon client is denied by RLS.
++      socket.supabase = getSupabaseForUser(token);
+       next();
+     } catch (err) {
+       clearTimeout(authTimer);
+@@ -138,8 +145,8 @@ export function initSocket(
+     // Update user presence to online
+     (async () => {
+       try {
+-        const { getSupabase } = await import("./supabase.js");
+-        const supabase = getSupabase();
++        const supabase = socket.supabase;
++        if (!supabase) return;
+         await supabase
+           .from("user_presence")
+           .upsert(
+@@ -154,8 +161,11 @@ export function initSocket(
+ 
+     socket.on("channel:join", async (channelId: string) => {
+       try {
+-        const { getSupabase } = await import("./supabase.js");
+-        const supabase = getSupabase();
++        const supabase = socket.supabase;
++        if (!supabase) {
++          socket.emit("channel:join_error", { channelId, error: "Not authenticated" });
++          return;
++        }
+         const { data: channel, error } = await supabase
+           .from("channels")
+           .select("workspace_id, is_private")
+@@ -223,8 +233,8 @@ export function initSocket(
+ 
+     socket.on("presence:set", async (status: "online" | "away" | "dnd") => {
+       try {
+-        const { getSupabase } = await import("./supabase.js");
+-        const supabase = getSupabase();
++        const supabase = socket.supabase;
++        if (!supabase) return;
+         await supabase.from("user_presence").upsert(
+           {
+             user_id: userId,
+@@ -264,8 +274,8 @@ export function initSocket(
+ 
+       // Update presence to offline
+       try {
+-        const { getSupabase } = await import("./supabase.js");
+-        const supabase = getSupabase();
++        const supabase = socket.supabase;
++        if (!supabase) return;
+         await supabase
+           .from("user_presence")
+           .upsert(
+diff --git a/apps/api/src/modules/notifications/push-subscription-service.ts b/apps/api/src/modules/notifications/push-subscription-service.ts
+index df900fa..952ec11 100644
+--- a/apps/api/src/modules/notifications/push-subscription-service.ts
++++ b/apps/api/src/modules/notifications/push-subscription-service.ts
+@@ -1,4 +1,4 @@
+-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
++import { getSupabaseAdmin } from "../../lib/supabase.js";
+ import webPush from "web-push";
+ import { logger } from "../../lib/logger.js";
+ 
+@@ -85,7 +85,9 @@ export class PushSubscriptionService {
+   }
+ 
+   async list(userId: string): Promise<PushSubscription[]> {
+-    const supabase = getSupabase();
++    // Push subscriptions are system-owned records (worker delivery path); use the
++    // service-role client. The anon client has no JWT and RLS denies it.
++    const supabase = getSupabaseAdmin();
+     const { data } = await supabase
+       .from("push_subscriptions")
+       .select("*")
+diff --git a/apps/api/src/modules/webhooks/service.ts b/apps/api/src/modules/webhooks/service.ts
+index a82151c..ce7212b 100644
+--- a/apps/api/src/modules/webhooks/service.ts
++++ b/apps/api/src/modules/webhooks/service.ts
+@@ -1,4 +1,4 @@
+-import { getSupabase, getSupabaseAdmin } from "../../lib/supabase.js";
++import { getSupabaseAdmin } from "../../lib/supabase.js";
+ import { logger } from "../../lib/logger.js";
+ import { recordWebhookDelivery } from "../../lib/metrics.js";
+ import { executeWithCircuitBreaker } from "../../lib/circuit-breaker.js";
+@@ -91,9 +91,14 @@ interface WebhookDelivery {
+   created_at: string;
+ }
+ 
++// Webhook tenant data is accessed with the service-role client: callers of the
++// user-facing methods (webhook routes) authorize access via requireWorkspaceAccess
++// / requireWorkspaceQueryParam before invoking the service, and internal trigger
++// paths run after the originating action was authorized. The bare anon client has
++// no user JWT, so RLS policies written `TO authenticated` deny every operation.
+ export class WebhookService {
+   async getChannelWorkspaceId(channelId: string): Promise<string | null> {
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const { data } = await supabase
+       .from("channels")
+       .select("workspace_id")
+@@ -103,7 +108,7 @@ export class WebhookService {
+   }
+ 
+   async listByWorkspace(workspaceId: string): Promise<WebhookEndpoint[]> {
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const { data } = await supabase
+       .from("webhook_endpoints")
+       .select("*")
+@@ -113,7 +118,7 @@ export class WebhookService {
+   }
+ 
+   async getById(id: string): Promise<WebhookEndpoint | null> {
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const { data } = await supabase.from("webhook_endpoints").select("*").eq("id", id).single();
+     return data as WebhookEndpoint | null;
+   }
+@@ -134,7 +139,7 @@ export class WebhookService {
+ 
+     const encryptedSecret = input.secret ? encryptSecret(input.secret) : "";
+ 
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const { data, error } = await supabase
+       .from("webhook_endpoints")
+       .insert({
+@@ -159,7 +164,7 @@ export class WebhookService {
+     if (updateData.secret) {
+       updateData.secret = encryptSecret(updateData.secret);
+     }
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const { data, error } = await supabase
+       .from("webhook_endpoints")
+       .update(updateData)
+@@ -171,13 +176,13 @@ export class WebhookService {
+   }
+ 
+   async remove(id: string): Promise<boolean> {
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const { error } = await supabase.from("webhook_endpoints").delete().eq("id", id);
+     return !error;
+   }
+ 
+   async triggerEvent(event: string, workspaceId: string, payload: Record<string, unknown>) {
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const { data: endpoints } = await supabase
+       .from("webhook_endpoints")
+       .select("*")
+@@ -380,7 +385,7 @@ export class WebhookService {
+     webhookId: string,
+     options: { limit?: number; offset?: number } = {},
+   ): Promise<{ deliveries: WebhookDelivery[]; total: number }> {
+-    const supabase = getSupabase();
++    const supabase = getSupabaseAdmin();
+     const limit = options.limit ?? 100;
+     const offset = options.offset ?? 0;
+     const { data, error, count } = await supabase

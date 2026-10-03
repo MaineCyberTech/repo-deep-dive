@@ -1,4 +1,4 @@
-﻿diff --git a/.github/workflows/deploy-development.yml b/.github/workflows/deploy-development.yml
+diff --git a/.github/workflows/deploy-development.yml b/.github/workflows/deploy-development.yml
 index 87276e8..03c5320 100644
 --- a/.github/workflows/deploy-development.yml
 +++ b/.github/workflows/deploy-development.yml

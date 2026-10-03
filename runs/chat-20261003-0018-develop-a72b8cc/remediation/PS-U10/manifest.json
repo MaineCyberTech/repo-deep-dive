@@ -1,0 +1,50 @@
+{
+  "patchSet": "PS-U10",
+  "title": "Unassigned OBS findings (catch-all)",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "chat",
+  "org": "MaineCyberTech",
+  "findings": ["OBS-P2-004"],
+  "branch": "remediation/ps-u10-20261003-0018-develop-a72b8cc",
+  "base": "develop",
+  "baseCommit": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "commit": "fdadf5941c86b0b27182c8289e4812300455e7ce",
+  "pr": "https://github.com/MaineCyberTech/chat/pull/77",
+  "prDraft": true,
+  "diff": "remediation/PS-U10/diff.patch",
+  "diffSha256": "46270B842CA22776D04DAADAD551D3AE0078E8431053366374036FFFD462F4D1",
+  "files": [
+    "apps/api/src/lib/trace-context.ts",
+    "apps/api/src/lib/__tests__/trace-context.test.ts",
+    "apps/api/src/middleware/request-id.ts",
+    "apps/api/src/middleware/__tests__/request-id.test.ts"
+  ],
+  "commands": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile && corepack pnpm --filter @chat/api test",
+      "runner": "lab-run.ps1 -Repo chat (172.23.128.51)",
+      "exit": 0,
+      "result": "63 test files / 503 tests passed",
+      "evidence": "remediation/PS-U10/verify.log"
+    },
+    {
+      "command": "gitleaks protect --staged --redact (staged diff)",
+      "runner": "lab-run.ps1 -Repo chat (172.23.128.51)",
+      "exit": 0,
+      "result": "no leaks found",
+      "evidence": "remediation/PS-U10/gitleaks.log"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source . (full working tree)",
+      "runner": "lab-run.ps1 -Repo chat (172.23.128.51)",
+      "exit": 1,
+      "result": "5 pre-existing Supabase local-dev demo JWT matches in infra/docker/.env.dev.example (not touched by this diff)",
+      "evidence": "remediation/PS-U10/gitleaks.log"
+    }
+  ],
+  "status": "partially-fixed",
+  "rollback": "git revert fdadf5941c86b0b27182c8289e4812300455e7ce",
+  "openQuestions": [
+    "Full OpenTelemetry SDK/exporter and API->worker->Supabase span propagation are deferred; the finding remains partially-fixed until a collector is wired and a trace spanning API->worker is captured."
+  ]
+}

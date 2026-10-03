@@ -1,0 +1,90 @@
+{
+  "patch_set": "PS-U05",
+  "title": "Unassigned EXEC findings (catch-all) — release-readiness status correction",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/ps-u05-20261003-0018-develop-a72b8cc",
+  "commit": "82f8eaa2c8525febd24f6fbaa7c0ef93de28de82",
+  "commit_subject": "docs: close EXEC-P1-001/002 [EXEC-P1-001,EXEC-P2-002]",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/71",
+  "pr_state": "draft",
+  "pr_draft": true,
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["EXEC-P1-001", "EXEC-P2-002"],
+  "finding_status": {
+    "EXEC-P1-001": "partially-fixed",
+    "EXEC-P2-002": "partially-fixed"
+  },
+  "files": [
+    "docs/operations/release-readiness-status.md",
+    "AGENTS.md",
+    "docs/README.md"
+  ],
+  "in_scope_files": [
+    "docs/operations/release-readiness-status.md",
+    "AGENTS.md",
+    "docs/README.md"
+  ],
+  "test_files": [],
+  "diff": {
+    "path": "remediation/PS-U05/diff.patch",
+    "sha256": "47805A8890C314BCF8B167804CCBD6954F18FDF3AD239A9801E0F83EBCE24483",
+    "bytes": 16918,
+    "files_changed": 3,
+    "insertions": 63,
+    "deletions": 4
+  },
+  "verification": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "pass: Lockfile is up to date; 883 packages; Done in 2.5s"
+    },
+    {
+      "command": "corepack pnpm exec prettier --check docs/operations/release-readiness-status.md",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "pass: All matched files use Prettier code style!"
+    },
+    {
+      "command": "corepack pnpm exec prettier --check AGENTS.md docs/README.md docs/operations/release-readiness-status.md",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 1,
+      "result": "pre-existing only: AGENTS.md and docs/README.md are already non-conformant at base (stashed baseline reproduces the same exit 1); the new doc is clean"
+    },
+    {
+      "command": "test -f docs/operations/release-readiness-status.md (relative link target)",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "pass: the links added to AGENTS.md and docs/README.md resolve"
+    },
+    {
+      "command": "sha256sum AGENTS.md docs/README.md docs/operations/release-readiness-status.md",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "AGENTS.md=70af23f6..., docs/README.md=3aa96595..., release-readiness-status.md=144fc64f..."
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --no-banner --source <each changed file>",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found in AGENTS.md (114.81 KB), docs/README.md (1.02 KB), release-readiness-status.md (2.33 KB)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --no-banner --source /tmp/ps-u05-diff.patch",
+      "runner": "lab ci-runner (gitleaks)",
+      "exit_code": 0,
+      "result": "pass: no leaks found (16,918 bytes scanned)"
+    }
+  ],
+  "verify_log": "remediation/PS-U05/verify.log",
+  "pr_body": "remediation/PS-U05/pr_body.md",
+  "scopeCheck": "pass - docs only: 1 new doc + 2 edited docs; no code, workflow, dependency, schema, or lockfile changes",
+  "notes": "Docs-only executive/release-readiness fix. The new status doc is commit-stamped to the audited commit a72b8cc and generated from the audit run's findings.json totals and RELEASE_GATE.md conditions. EXEC-P1-001/EXEC-P2-002 remain partially-fixed pending remediation of the underlying P0/P1 and a re-audit at the remediated commit.",
+  "generated_at": "2026-10-03T10:42:00-04:00"
+}

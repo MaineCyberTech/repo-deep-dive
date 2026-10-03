@@ -1,4 +1,4 @@
-﻿diff --git a/apps/web/app/install/page.tsx b/apps/web/app/install/page.tsx
+diff --git a/apps/web/app/install/page.tsx b/apps/web/app/install/page.tsx
 index 780b681..83e2d02 100644
 --- a/apps/web/app/install/page.tsx
 +++ b/apps/web/app/install/page.tsx

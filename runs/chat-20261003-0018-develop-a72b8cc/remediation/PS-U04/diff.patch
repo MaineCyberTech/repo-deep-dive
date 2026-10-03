@@ -1,0 +1,345 @@
+diff --git a/apps/api/src/modules/auth/__tests__/gdpr-delete.test.ts b/apps/api/src/modules/auth/__tests__/gdpr-delete.test.ts
+new file mode 100644
+index 0000000..de20e26
+--- /dev/null
++++ b/apps/api/src/modules/auth/__tests__/gdpr-delete.test.ts
+@@ -0,0 +1,90 @@
++import { describe, it, expect, vi, beforeEach } from "vitest";
++import authRouter from "../routes.js";
++
++const mockAdminClient = {
++  rpc: vi.fn(),
++  auth: {
++    signInWithPassword: vi.fn(),
++    admin: { deleteUser: vi.fn() },
++  },
++};
++
++vi.mock("../../../lib/supabase.js", () => ({
++  getSupabase: vi.fn(() => ({})),
++  getSupabaseAdmin: vi.fn(() => mockAdminClient),
++}));
++
++vi.mock("../../../lib/logger.js", () => ({
++  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
++}));
++
++vi.mock("../../../lib/socket.js", () => ({
++  getOnlineUsers: vi.fn(() => []),
++}));
++
++function findHandler(method: string, path: string) {
++  const m = method.toLowerCase();
++  for (const layer of (authRouter as any).stack) {
++    if (layer.route && layer.route.path === path && layer.route.methods?.[m]) {
++      return layer.route.stack[layer.route.stack.length - 1].handle;
++    }
++  }
++  return null;
++}
++
++function mockRes() {
++  const res: Record<string, ReturnType<typeof vi.fn>> = {};
++  res.status = vi.fn(() => res) as any;
++  res.json = vi.fn(() => res) as any;
++  res.send = vi.fn(() => res) as any;
++  res.setHeader = vi.fn(() => res) as any;
++  return res as any;
++}
++
++const req = {
++  userId: "user-1",
++  userEmail: "test@example.com",
++  body: { password: "correct-horse" },
++} as any;
++
++describe("DELETE /account (GDPR erasure)", () => {
++  beforeEach(() => {
++    mockAdminClient.rpc.mockReset();
++    mockAdminClient.auth.signInWithPassword.mockReset();
++    mockAdminClient.auth.admin.deleteUser.mockReset();
++    mockAdminClient.auth.signInWithPassword.mockResolvedValue({ data: { user: { id: "user-1" } }, error: null });
++    mockAdminClient.rpc.mockResolvedValue({ data: { success: true, user_id: "user-1" }, error: null });
++  });
++
++  it("erases via a single atomic RPC and never calls auth.admin.deleteUser", async () => {
++    const handler = findHandler("delete", "/account");
++    expect(handler).toBeTruthy();
++    const res = mockRes();
++    const next = vi.fn();
++
++    await handler(req, res, next);
++
++    expect(mockAdminClient.rpc).toHaveBeenCalledTimes(1);
++    expect(mockAdminClient.rpc).toHaveBeenCalledWith("gdpr_delete_user", { target_user_id: "user-1" });
++    expect(mockAdminClient.auth.admin.deleteUser).not.toHaveBeenCalled();
++    expect(res.status).toHaveBeenCalledWith(204);
++    expect(res.send).toHaveBeenCalledTimes(1);
++    expect(next).not.toHaveBeenCalled();
++  });
++
++  it("bubbles a rolled-back (success=false) erasure as an error so it can be retried", async () => {
++    mockAdminClient.rpc.mockResolvedValueOnce({
++      data: { success: false, user_id: "user-1", error: "fk violation" },
++      error: null,
++    });
++    const handler = findHandler("delete", "/account");
++    const res = mockRes();
++    const next = vi.fn();
++
++    await handler(req, res, next);
++
++    expect(mockAdminClient.auth.admin.deleteUser).not.toHaveBeenCalled();
++    expect(next).toHaveBeenCalledTimes(1);
++    expect(res.status).not.toHaveBeenCalledWith(204);
++  });
++});
+diff --git a/apps/api/src/modules/auth/routes.ts b/apps/api/src/modules/auth/routes.ts
+index 7b5f2ea..459c969 100644
+--- a/apps/api/src/modules/auth/routes.ts
++++ b/apps/api/src/modules/auth/routes.ts
+@@ -330,6 +330,9 @@ router.delete(
+       throw new BadRequestError("Invalid password");
+     }
+ 
++    // gdpr_delete_user atomically erases the public rows, the auth sessions/identities,
++    // and the auth.users row in a single transaction (DATA-P2-005). If it reports
++    // failure the whole erasure rolled back, so the request is safe to retry.
+     const { data: rpcResult, error: rpcError } = await supabase.rpc("gdpr_delete_user", {
+       target_user_id: userId,
+     });
+@@ -345,18 +348,6 @@ router.delete(
+       throw new InternalServerError(result?.error ?? "Failed to delete user data");
+     }
+ 
+-    try {
+-      await supabase.auth.admin.deleteUser(userId);
+-    } catch (err) {
+-      logger.error("Failed to delete auth user during GDPR deletion", {
+-        userId,
+-        error: String(err),
+-      });
+-      throw new InternalServerError(
+-        "Failed to complete account deletion. Auth user could not be removed.",
+-      );
+-    }
+-
+     res.status(204).send();
+   }),
+ );
+diff --git a/supabase/migrations/20260725000001_make_gdpr_delete_atomic.sql b/supabase/migrations/20260725000001_make_gdpr_delete_atomic.sql
+new file mode 100644
+index 0000000..d930160
+--- /dev/null
++++ b/supabase/migrations/20260725000001_make_gdpr_delete_atomic.sql
+@@ -0,0 +1,122 @@
++-- DATA-P2-005: make GDPR account erasure idempotent, atomic and complete.
++--
++-- Root-cause bug: the previous definition declared
++--   SET search_path = 'public, auth'      -- quoted -> ONE schema literally named
++--                                         -- "public, auth", so current_schemas()={}
++-- which made every unqualified reference (dm_members, messages, ...) fail with
++-- "relation ... does not exist". gdpr_delete_user therefore deleted NOTHING and always
++-- returned success=false, so the API 500'd and the right to erasure was never honoured.
++-- The fix uses the unquoted list form SET search_path = public, auth.
++--
++-- Additionally, before this migration the erasure was a two-step, non-atomic operation:
++--   1. apps/api called public.gdpr_delete_user(...), which hard-deleted all of the
++--      user's public rows and the auth token/identity rows; then
++--   2. the API called supabase.auth.admin.deleteUser(...) to remove auth.users.
++-- If step 2 failed (network/GoTrue error), the public data and auth identities were
++-- already gone, the route returned 500, and a retry was impossible because the user
++-- could no longer re-authenticate. The account was left partially erased.
++--
++-- This function now removes auth.users inside the same transaction as the rest of the
++-- deletes, so the whole erasure either commits or rolls back as one unit (the EXCEPTION
++-- handler catches errors in the same transaction and returns success=false). Every
++-- statement is a plain DELETE, so calling it again after a successful (or partial,
++-- rolled-back) run is a no-op: the function is idempotent and safe to retry.
++--
++-- Deleted (hard-erased):
++--   Public, user-owned: dm_members, notification_preferences, custom_emoji,
++--     user_group_members, user_groups, thread_participants, channel_role_overrides,
++--     message_reads, channel_member_history, compliance_exports, announcements,
++--     sidebar_categories (+ sidebar_channel_assignments), channel_notification_preferences,
++--     consent_logs, channel_bookmarks, message_reminders, notifications,
++--     push_subscriptions, message_edit_history, scheduled_posts, trigger_words,
++--     auto_responders, user_statuses, user_presence, message_flags, reactions, messages,
++--     dm_channels, webhook_endpoints, channel_members, workspace_members, audit_logs,
++--     user_preferences, users (cascades any workspaces the user solely owned).
++--   Auth: refresh_tokens, mfa_factors, sessions, identities, users.
++--
++-- Retained / anonymised (not deleted, by design):
++--   channels.created_by and webhook_endpoints.created_by -> NULL (channel/webhook is
++--     shared workspace infrastructure and must outlive the creator);
++--   audit_logs.actor_user_id -> deleted by this function, and the column is
++--     ON DELETE SET NULL if new rows appear after the erasure;
++--   other members' messages/threads/reactions that reference the user only via
++--     non-owner columns are retained with the deleted author's id already removed by
++--     the rows above.
++--
++-- Paired with the API change that removes the separate auth.admin.deleteUser call.
++
++CREATE OR REPLACE FUNCTION public.gdpr_delete_user(target_user_id UUID)
++RETURNS jsonb
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = public, auth
++AS $$
++DECLARE
++  result jsonb;
++BEGIN
++  -- Public, user-owned rows (FK-safe order: children before users).
++  DELETE FROM dm_members WHERE user_id = target_user_id;
++  DELETE FROM notification_preferences WHERE user_id = target_user_id;
++  DELETE FROM custom_emoji WHERE created_by = target_user_id;
++  DELETE FROM user_group_members WHERE user_id = target_user_id;
++  DELETE FROM user_groups WHERE created_by = target_user_id;
++  DELETE FROM thread_participants WHERE user_id = target_user_id;
++  DELETE FROM channel_role_overrides WHERE user_id = target_user_id;
++  DELETE FROM message_reads WHERE user_id = target_user_id;
++  DELETE FROM channel_member_history WHERE user_id = target_user_id;
++  DELETE FROM compliance_exports WHERE created_by = target_user_id;
++  DELETE FROM announcements WHERE created_by = target_user_id;
++
++  DELETE FROM sidebar_channel_assignments
++  WHERE category_id IN (SELECT id FROM sidebar_categories WHERE user_id = target_user_id);
++
++  DELETE FROM sidebar_categories WHERE user_id = target_user_id;
++  DELETE FROM channel_notification_preferences WHERE user_id = target_user_id;
++  DELETE FROM consent_logs WHERE user_id = target_user_id;
++  DELETE FROM channel_bookmarks WHERE created_by = target_user_id;
++  DELETE FROM message_reminders WHERE user_id = target_user_id;
++  DELETE FROM notifications WHERE user_id = target_user_id;
++  DELETE FROM push_subscriptions WHERE user_id = target_user_id;
++  DELETE FROM message_edit_history WHERE edited_by = target_user_id;
++  DELETE FROM scheduled_posts WHERE user_id = target_user_id;
++  DELETE FROM trigger_words WHERE user_id = target_user_id;
++  DELETE FROM auto_responders WHERE user_id = target_user_id;
++  DELETE FROM user_statuses WHERE user_id = target_user_id;
++  DELETE FROM user_presence WHERE user_id = target_user_id;
++  DELETE FROM message_flags WHERE user_id = target_user_id;
++  DELETE FROM reactions WHERE user_id = target_user_id;
++  DELETE FROM messages WHERE user_id = target_user_id;
++  DELETE FROM dm_channels WHERE user1_id = target_user_id OR user2_id = target_user_id;
++  DELETE FROM webhook_endpoints WHERE created_by = target_user_id;
++  DELETE FROM channel_members WHERE user_id = target_user_id;
++  DELETE FROM workspace_members WHERE user_id = target_user_id;
++  DELETE FROM audit_logs WHERE actor_user_id = target_user_id;
++  DELETE FROM user_preferences WHERE user_id = target_user_id;
++  DELETE FROM users WHERE id = target_user_id;
++
++  -- Auth rows. auth.users is deleted last so the public-side trigger
++  -- (handle_user_deletion) sees the same transaction. This is the step that used to
++  -- live in the API; doing it here keeps the erasure atomic and retryable.
++  DELETE FROM auth.refresh_tokens WHERE user_id = target_user_id::varchar;
++  DELETE FROM auth.mfa_factors WHERE user_id = target_user_id;
++  DELETE FROM auth.sessions WHERE user_id = target_user_id;
++  DELETE FROM auth.identities WHERE user_id = target_user_id;
++  DELETE FROM auth.users WHERE id = target_user_id;
++
++  result := jsonb_build_object('success', true, 'user_id', target_user_id);
++  RETURN result;
++EXCEPTION
++  WHEN others THEN
++    -- Rolls back every DELETE above; the API treats success=false as a retryable 500.
++    RAISE LOG 'gdpr_delete_user failed for %: %', target_user_id, SQLERRM;
++    result := jsonb_build_object(
++      'success', false,
++      'user_id', target_user_id,
++      'error', SQLERRM
++    );
++    RETURN result;
++END;
++$$;
++
++COMMENT ON FUNCTION public.gdpr_delete_user(UUID) IS
++  'GDPR right-to-erasure. Atomically hard-deletes the user''s public rows and the auth.users row (and auth sessions/identities/tokens). Idempotent and retryable (DATA-P2-005).';
+diff --git a/supabase/migrations/migrations.list b/supabase/migrations/migrations.list
+index 25bbbe3..ba5111e 100644
+--- a/supabase/migrations/migrations.list
++++ b/supabase/migrations/migrations.list
+@@ -73,3 +73,4 @@
+ 20260724000004_fix_gdpr_delete_completeness.sql
+ 20260724000005_fix_handle_user_deletion_fks.sql
+ 20260724000006_fix_database_p1_findings.sql
++20260725000001_make_gdpr_delete_atomic.sql
+diff --git a/supabase/rollback/20260725000001_make_gdpr_delete_atomic_down.sql b/supabase/rollback/20260725000001_make_gdpr_delete_atomic_down.sql
+new file mode 100644
+index 0000000..28ba74c
+--- /dev/null
++++ b/supabase/rollback/20260725000001_make_gdpr_delete_atomic_down.sql
+@@ -0,0 +1,73 @@
++-- Rollback DATA-P2-005: restore the pre-20260725000001 gdpr_delete_user verbatim
++-- (quoted, non-resolving search_path and auth user deletion left to the API) and drop
++-- the function comment. NOTE: this faithfully reintroduces the pre-fix behaviour,
++-- including the search_path defect fixed by 20260725000001; roll back only to revert.
++
++COMMENT ON FUNCTION public.gdpr_delete_user(UUID) IS NULL;
++
++CREATE OR REPLACE FUNCTION public.gdpr_delete_user(target_user_id UUID)
++RETURNS jsonb
++LANGUAGE plpgsql
++SECURITY DEFINER
++SET search_path = 'public, auth'
++AS $$
++DECLARE
++  result jsonb;
++BEGIN
++  DELETE FROM dm_members WHERE user_id = target_user_id;
++  DELETE FROM notification_preferences WHERE user_id = target_user_id;
++  DELETE FROM custom_emoji WHERE created_by = target_user_id;
++  DELETE FROM user_group_members WHERE user_id = target_user_id;
++  DELETE FROM user_groups WHERE created_by = target_user_id;
++  DELETE FROM thread_participants WHERE user_id = target_user_id;
++  DELETE FROM channel_role_overrides WHERE user_id = target_user_id;
++  DELETE FROM message_reads WHERE user_id = target_user_id;
++  DELETE FROM channel_member_history WHERE user_id = target_user_id;
++  DELETE FROM compliance_exports WHERE created_by = target_user_id;
++  DELETE FROM announcements WHERE created_by = target_user_id;
++
++  DELETE FROM sidebar_channel_assignments
++  WHERE category_id IN (SELECT id FROM sidebar_categories WHERE user_id = target_user_id);
++
++  DELETE FROM sidebar_categories WHERE user_id = target_user_id;
++  DELETE FROM channel_notification_preferences WHERE user_id = target_user_id;
++  DELETE FROM consent_logs WHERE user_id = target_user_id;
++  DELETE FROM channel_bookmarks WHERE created_by = target_user_id;
++  DELETE FROM message_reminders WHERE user_id = target_user_id;
++  DELETE FROM notifications WHERE user_id = target_user_id;
++  DELETE FROM push_subscriptions WHERE user_id = target_user_id;
++  DELETE FROM message_edit_history WHERE edited_by = target_user_id;
++  DELETE FROM scheduled_posts WHERE user_id = target_user_id;
++  DELETE FROM trigger_words WHERE user_id = target_user_id;
++  DELETE FROM auto_responders WHERE user_id = target_user_id;
++  DELETE FROM user_statuses WHERE user_id = target_user_id;
++  DELETE FROM user_presence WHERE user_id = target_user_id;
++  DELETE FROM message_flags WHERE user_id = target_user_id;
++  DELETE FROM reactions WHERE user_id = target_user_id;
++  DELETE FROM messages WHERE user_id = target_user_id;
++  DELETE FROM dm_channels WHERE user1_id = target_user_id OR user2_id = target_user_id;
++  DELETE FROM webhook_endpoints WHERE created_by = target_user_id;
++  DELETE FROM channel_members WHERE user_id = target_user_id;
++  DELETE FROM workspace_members WHERE user_id = target_user_id;
++  DELETE FROM audit_logs WHERE actor_user_id = target_user_id;
++  DELETE FROM user_preferences WHERE user_id = target_user_id;
++  DELETE FROM users WHERE id = target_user_id;
++
++  DELETE FROM auth.refresh_tokens WHERE user_id = target_user_id::varchar;
++  DELETE FROM auth.mfa_factors WHERE user_id = target_user_id;
++  DELETE FROM auth.sessions WHERE user_id = target_user_id;
++  DELETE FROM auth.identities WHERE user_id = target_user_id;
++
++  result := jsonb_build_object('success', true, 'user_id', target_user_id);
++  RETURN result;
++EXCEPTION
++  WHEN others THEN
++    RAISE LOG 'gdpr_delete_user failed for %: %', target_user_id, SQLERRM;
++    result := jsonb_build_object(
++      'success', false,
++      'user_id', target_user_id,
++      'error', SQLERRM
++    );
++    RETURN result;
++END;
++$$;

@@ -1,0 +1,120 @@
+{
+  "patch_set": "PS-U13",
+  "title": "Unassigned TEST findings (catch-all) — raise coverage floors and make diff coverage blocking",
+  "run": "20261003-0018-develop-a72b8cc",
+  "repo": "MaineCyberTech/chat",
+  "local_repo": "C:\\temp\\chat",
+  "base_branch": "develop",
+  "base_sha": "a72b8cc43590848b052bd5e8954dbbc726b3d7fd",
+  "branch": "remediation/ps-u13-20261003-0018-develop-a72b8cc",
+  "commit": "fe04ab3a01cd04ff3dcc8c9a4cce6153c0340f9b",
+  "pr_url": "https://github.com/MaineCyberTech/chat/pull/79",
+  "pr_state": "draft",
+  "merged": false,
+  "auto_merge": false,
+  "findings": ["TEST-P2-002"],
+  "finding_status": {
+    "TEST-P2-002": "partially-fixed"
+  },
+  "overlap": {
+    "PATCH-07": "PR #63 makes E2E/Trivy/pnpm-audit gates blocking and touched .github/workflows/validate.yml around the audit/E2E jobs. PS-U13 edits a different, earlier hunk (the diff-coverage job, ~line 96) and packages/config/vitest.config.base.ts; hunks are disjoint. Both PRs touching validate.yml should be merged in either order; expect no conflict.",
+    "notes": "TEST-P2-002's diff-coverage continue-on-error was explicitly left in place by PATCH-07 (see PATCH-07 verify.log line 53)."
+  },
+  "files": [
+    "packages/config/vitest.config.base.ts",
+    ".github/workflows/validate.yml"
+  ],
+  "in_scope_files": [
+    "packages/config/vitest.config.base.ts",
+    ".github/workflows/validate.yml"
+  ],
+  "companion_files": [],
+  "test_files": [],
+  "diff": {
+    "path": "remediation/PS-U13/diff.patch",
+    "sha256": "C883F2AF222EB38F18CCABEE76F288CA3217DE53A2A1D3B59119CD53D9F8D8F8",
+    "files_changed": 2,
+    "insertions": 5,
+    "deletions": 6
+  },
+  "coverage": {
+    "measured_at": "fe04ab3 / a72b8cc",
+    "lines": 36.85,
+    "statements": 36.85,
+    "functions": 45.98,
+    "branches": 66.62,
+    "old_thresholds": { "lines": 35, "functions": 30, "branches": 25, "statements": 35 },
+    "new_thresholds": { "lines": 36, "functions": 40, "branches": 60, "statements": 36 }
+  },
+  "verification": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile",
+      "runner": "lab ci-runner (172.23.128.51)",
+      "exit_code": 0,
+      "result": "install ok"
+    },
+    {
+      "command": "corepack pnpm --filter @chat/api test",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "62 test files / 485 tests passed"
+    },
+    {
+      "command": "corepack pnpm vitest run --config vitest.config.ts --coverage",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "All files 36.85 lines / 66.62 branches / 45.98 functions / 36.85 statements vs new floors 36/60/40/36"
+    },
+    {
+      "command": "actionlint .github/workflows/validate.yml",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "12 diagnostics, equal to base 12 — no new diagnostics"
+    },
+    {
+      "command": "yq -e . .github/workflows/validate.yml",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "YAML parses"
+    },
+    {
+      "command": "negative: diff-coverage threshold logic vs below-floor summary",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "fails closed: lines 10% < 20%, functions 10% < 20%, branches 5% < 15%, statements 10% < 20%"
+    },
+    {
+      "command": "positive: diff-coverage threshold logic vs 80% summary",
+      "runner": "lab ci-runner",
+      "exit_code": 0,
+      "result": "All coverage thresholds met"
+    },
+    {
+      "command": "negative: raised global floor vs 35/39/59/35 report",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "lines 35% < 36%, functions 39% < 40%, branches 59% < 60%, statements 35% < 36%"
+    },
+    {
+      "command": "git diff origin/develop..HEAD | gitleaks stdin --redact",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 0,
+      "result": "no leaks found (1,079 bytes scanned)"
+    },
+    {
+      "command": "gitleaks detect --no-git --redact --source .",
+      "runner": "lab ci-runner (gitleaks 8.30.1)",
+      "exit_code": 1,
+      "result": "5 pre-existing findings (validate.yml jwt, keyboard-shortcuts.tsx generic-api-key, .env.dev.example jwt x3); none in the diff"
+    },
+    {
+      "command": "corepack pnpm test -- --changed --coverage --reporter=json --coverage.reporter=json-summary",
+      "runner": "lab ci-runner",
+      "exit_code": 1,
+      "result": "PRE-EXISTING defect at base and after: turbo rejects '--changed'; the Run diff coverage step fails before the threshold step. Out of scope; recorded in verify.log §10."
+    }
+  ],
+  "verify_log": "remediation/PS-U13/verify.log",
+  "pr_body": "remediation/PS-U13/pr_body.md",
+  "generated_at": "2026-10-03T11:50:00Z"
+}

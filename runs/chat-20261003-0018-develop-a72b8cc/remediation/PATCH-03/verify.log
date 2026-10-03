@@ -1,0 +1,113 @@
+# PATCH-03 verification log — stop destructive volume pruning (DATA-P1-002, CI-P1-004)
+
+- Run: 20261003-0018-develop-a72b8cc
+- Repo: chat (MaineCyberTech), base: origin/develop @ a72b8cc43590848b052bd5e8954dbbc726b3d7fd
+- Branch: remediation/patch-03-20261003-0018-develop-a72b8cc
+- Files changed: `.github/workflows/deploy-production.yml`, `.github/workflows/deploy-development.yml`
+- Runner: Proxmox ci-runner (LXC 200) @ 172.23.128.51, `actionlint 1.7.12`, `gitleaks 8.30.1`
+- Generated: 2026-10-03T07:05:00Z
+- Change: `docker system prune -af --volumes` -> `docker system prune -af` (3 call sites: deploy-production.yml:287 & :527, deploy-development.yml:219); comment corrected to state volumes are preserved.
+
+The lab workspace `/srv/work/chat` was patched by copying the two changed files from
+`C:\temp\chat` over the base checkout (HEAD a72b8cc). All commands below were run there.
+
+------------------------------------------------------------------------------
+## GATE 1: actionlint on the changed workflows
+$ actionlint .github/workflows/deploy-production.yml .github/workflows/deploy-development.yml
+CURR_ACTIONLINT_RC=1
+
+$ actionlint <base copies of the two files from HEAD a72b8cc>
+BASE_ACTIONLINT_RC=1
+
+issue count base    = 20
+issue count patched = 20
+Normalized base-vs-patched diff (path prefixes removed): only pre-existing
+diagnostics; no new issue at any changed line.
+NON_INFO_ISSUES=NONE (only pre-existing shellcheck info/style and one expression type info)
+
+Pre-existing diagnostics (identical at base and patched; representative list):
+deploy-production.yml:81  SC2086 info  (x2)
+deploy-production.yml:96  SC2162 info  (x2)
+deploy-production.yml:115 SC2162 info
+deploy-production.yml:138 SC2086 info (x3) + SC2129 style
+deploy-production.yml:153 SC2086 info
+deploy-production.yml:190 expression: property "run_started_at" is not defined
+deploy-production.yml:214 SC2086 info
+deploy-production.yml:355 SC2086 info (x2)
+deploy-production.yml:484 SC2086 info
+deploy-development.yml:37  SC2086 info
+deploy-development.yml:97  SC2086 info + SC2162 info
+deploy-development.yml:334 SC2086 info (x2)
+
+RESULT: actionlint reports no error introduced by this patch. The workflow cannot
+be made "green" by this patch set: actionlint is already red at base a72b8cc with
+these 20 unrelated, pre-existing shellcheck/expression diagnostics. The patched
+diagnostic set is byte-for-byte identical to base (same files, lines, columns,
+rules) — see `patch03-actionlint-raw.txt` (local evidence capture) and the
+normalized diff in this log's session.
+
+------------------------------------------------------------------------------
+## GATE 2: no unscoped/volume-pruning command remains
+$ rg -n -- 'docker system prune[^\n]*--volumes|prune[^\n]*--volumes|--volumes' \
+      .github/workflows/deploy-production.yml .github/workflows/deploy-development.yml
+(no output)
+PRUNE_SCAN=NO_MATCHES (pass)
+
+$ rg -n -- 'docker [a-z]+ prune' \
+      .github/workflows/deploy-production.yml .github/workflows/deploy-development.yml
+.github/workflows/deploy-production.yml:287:            docker system prune -af
+.github/workflows/deploy-production.yml:288:            docker builder prune -af
+.github/workflows/deploy-production.yml:289:            docker image prune -af --filter "until=24h"
+.github/workflows/deploy-production.yml:309:            docker image prune -af
+.github/workflows/deploy-production.yml:527:            docker system prune -af
+.github/workflows/deploy-production.yml:528:            docker builder prune -af
+.github/workflows/deploy-production.yml:529:            docker image prune -af --filter "until=24h"
+.github/workflows/deploy-production.yml:551:            docker image prune -af
+.github/workflows/deploy-development.yml:219:            docker system prune -af
+.github/workflows/deploy-development.yml:220:            docker builder prune -af
+.github/workflows/deploy-development.yml:221:            docker image prune -af --filter "until=24h"
+.github/workflows/deploy-development.yml:247:            docker image prune -af
+
+RESULT: PASS. Every remaining prune is image/builder-only; no `--volumes` flag
+remains anywhere in either deploy workflow.
+
+------------------------------------------------------------------------------
+## GATE 3: gitleaks secret scan
+$ gitleaks protect --staged --redact --exit-code 1     (lab staged diff)
+INF 0 commits scanned.
+INF scanned ~350 bytes (350 bytes)
+INF no leaks found
+GITLEAKS_RC=0
+
+$ cp <both patched workflow files> /tmp/p3scan && gitleaks detect --no-git --redact --exit-code 1 -s /tmp/p3scan
+GITLEAKS_NOGIT_RC=0
+findings: 0
+
+$ gitleaks detect --no-git --redact --exit-code 1 -s /tmp/p3scan_base   (base files from HEAD)
+BASE_GITLEAKS_NOGIT_RC=0
+base findings: 0
+
+RESULT: PASS (net-zero). The two changed files contain no secret at base or after
+the patch; the staged-diff gate also reports no leaks. No secret value is printed.
+
+------------------------------------------------------------------------------
+## GATE 4: scope
+$ git diff --name-only
+.github/workflows/deploy-development.yml
+.github/workflows/deploy-production.yml
+$ git diff --numstat
+2	2	.github/workflows/deploy-development.yml
+3	3	.github/workflows/deploy-production.yml
+RESULT: PASS. Only the patch-set files; 5 line replacements, 0 net lines.
+
+------------------------------------------------------------------------------
+## HONESTY NOTES
+- The actionlint gate exits 1, as it does at base a72b8cc, because of 20
+  pre-existing shellcheck/expression diagnostics unrelated to this change. The
+  gate evidence is the base-vs-patched equivalence, not a green exit.
+- The runners' `docker volume ls retains redis-data` runtime validation from the
+  patch plan was not run: it requires two live deployments against the dev/prod
+  Docker hosts, which is outside the scope of a read-only remediation runner. The
+  static proof (no `--volumes` materializes anywhere) is recorded above.
+- No secret value appears in this log.
+LAB_P3_VERIFY_DONE
