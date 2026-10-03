@@ -1,0 +1,107 @@
+name: Deep-dive deterministic checks
+
+# LLM-free machine checks across the org's repos (repo-deep-dive vocabulary).
+# Runs the prompt-driven audit separately; this produces baseline findings,
+# an inventory-equivalent scan, and a cross-repo rollup.
+#
+# Trigger on a schedule, or on demand with a repo list.
+
+on:
+  workflow_dispatch:
+    inputs:
+      org:
+        description: GitHub organization
+        required: false
+        default: MaineCyberTech
+      repos:
+        description: Comma-separated repo names (blank = all org repos)
+        required: false
+        default: ''
+      exclude:
+        description: Comma-separated repos to skip
+        required: false
+        default: 'soc,infra,AWS-WWW,www,www-dev'
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic:
+    runs-on: ubuntu-latest
+    env:
+      ORG: ${{ inputs.org || 'MaineCyberTech' }}
+      INPUT_REPOS: ${{ inputs.repos }}
+      EXCLUDE: ${{ inputs.exclude || 'soc,infra,AWS-WWW,www,www-dev' }}
+      # A PAT with org read (repo scope) is required for private repos.
+      # Falls back to the workflow token (public repos only) when unset.
+      GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
+
+    steps:
+      - name: Checkout repo-deep-dive
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          set -e
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck jq curl >/dev/null
+          # actionlint
+          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null 2>&1 || true
+          sudo mv actionlint /usr/local/bin/ 2>/dev/null || true
+          # gitleaks
+          GL_TAG=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r .tag_name)
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/${GL_TAG}/gitleaks_${GL_TAG#v}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks || true
+          echo "tool versions:"; gitleaks version || true; actionlint --version || true; shellcheck --version | head -2 || true
+
+      - name: Determine repo list
+        id: repos
+        run: |
+          set -e
+          if [ -n "$INPUT_REPOS" ]; then
+            echo "list=$INPUT_REPOS" >> "$GITHUB_OUTPUT"
+          else
+            curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/orgs/$ORG/repos?per_page=100" \
+              | jq -r '.[] | select(.archived==false) | .name' | paste -sd, - > /tmp/list
+            echo "list=$(cat /tmp/list)" >> "$GITHUB_OUTPUT"
+          fi
+          echo "repos: $(cat /tmp/list 2>/dev/null || echo "$INPUT_REPOS")"
+
+      - name: Run deterministic checks
+        run: |
+          set -e
+          mkdir -p work out
+          IFS=',' read -ra REPOS <<< "${{ steps.repos.outputs.list }}"
+          IFS=',' read -ra EXC <<< "$EXCLUDE"
+          for raw in "${REPOS[@]}"; do
+            r="$(echo "$raw" | xargs)"
+            [ -z "$r" ] && continue
+            skip=0
+            for e in "${EXC[@]}"; do [ "$r" = "$(echo "$e" | xargs)" ] && skip=1; done
+            if [ "$skip" = 1 ]; then echo "skip $r"; continue; fi
+            echo "::group::$r"
+            if git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${r}.git" "work/$r"; then
+              python3 tools/repo_inventory.py "work/$r" -o "out/$r.inventory.json" || true
+              python3 tools/deterministic_checks.py "work/$r" -o "out/$r" || true
+            else
+              echo "clone failed: $r"
+            fi
+            echo "::endgroup::"
+          done
+
+      - name: Aggregate rollup
+        run: |
+          set -e
+          python3 tools/aggregate_findings.py out -o out/ORG_SUMMARY.md --json out/org-findings.json || true
+          if [ -f out/ORG_SUMMARY.md ]; then cat out/ORG_SUMMARY.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-dive-deterministic
+          path: out/
+          if-no-files-found: warn
