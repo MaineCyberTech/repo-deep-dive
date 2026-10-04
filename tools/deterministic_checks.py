@@ -23,9 +23,11 @@ Usage:
   tools/deterministic_checks.py <repo-root> --run-folder <run-dir>
 
 Writes OUTDIR/deterministic-findings.json and OUTDIR/lens_deterministic.md.
-Deterministic findings use the distinct `DET` area (with the check subcode kept
-in the title), so their IDs can never collide with the domain reports' areas
-such as SEC/CI (API-P2-001). With `--run-folder`, the lens + JSON are written
+Deterministic findings use the distinct `DET` area, so their IDs can never
+collide with the domain reports' areas such as SEC/CI (API-P2-001). The check
+family (SEC/CI/PORT/...) is carried both in the title (`[SEC] ...`) and in a
+machine-readable `subcode` field so the secret gate can match it without
+depending on the ID namespace (repo-deep-dive-CI-001). With `--run-folder`, the lens + JSON are written
 into the run folder and merged into its findings.json via collect_findings.py
 (API-P2-002).
 Read-only against the target repo (gitleaks is run with --no-git --redact).
@@ -127,10 +129,15 @@ def check_secrets(root, add):
     if have("gitleaks"):
         with tempfile.TemporaryDirectory() as td:
             rep = os.path.join(td, "gl.json")
-            subprocess.run(["gitleaks", "detect", "--source", root, "--no-git",
-                            "--redact", "--report-format", "json",
-                            "--report-path", rep, "--exit-code", "0"],
-                           capture_output=True, text=True, timeout=600)
+            cmd = ["gitleaks", "detect", "--source", root, "--no-git",
+                   "--redact", "--report-format", "json",
+                   "--report-path", rep, "--exit-code", "0"]
+            repo_cfg = os.path.join(root, ".gitleaks.toml")
+            if os.path.exists(repo_cfg):
+                # Honor the repo's reviewed allowlist (its own gate already uses it);
+                # otherwise reviewed false positives re-report as raw findings.
+                cmd += ["--config", repo_cfg]
+            subprocess.run(cmd, capture_output=True, text=True, timeout=600)
             leaks = []
             if os.path.exists(rep):
                 try:
@@ -336,9 +343,10 @@ def check_deep(root, add):
 def run_checks(root, deep=False):
     raw = []
 
-    # `subcode` is the check family (SEC/CI/PORT/...); it is rendered into the
-    # title only. Every deterministic ID uses the single `DET` area so it can
-    # never collide with a domain report's own area counter (API-P2-001).
+    # `subcode` is the check family (SEC/CI/PORT/...); it is emitted as a
+    # structured field and rendered into the title. Every deterministic ID uses
+    # the single `DET` area so it can never collide with a domain report's own
+    # area counter (API-P2-001).
     def add(subcode, sev, title, detail, evidence):
         raw.append({"subcode": subcode, "severity": sev, "title": title,
                     "detail": detail, "evidence": list(evidence)})
@@ -362,10 +370,32 @@ def run_checks(root, deep=False):
         counters[area] = counters.get(area, 0) + 1
         fid = "%s-%s-%03d" % (area, f["severity"], counters[area])
         findings.append({"id": fid, "severity": f["severity"],
+                         "subcode": f["subcode"],
                          "title": "[%s] %s" % (f["subcode"], f["title"]),
                          "report": "lens_deterministic.md", "line": 1,
                          "detail": f["detail"], "evidence": f["evidence"]})
     return findings
+
+
+def finding_subcode(f):
+    """Return the check family (SEC/CI/PORT/...) for a deterministic finding.
+
+    Prefers the structured `subcode` field emitted by run_checks; falls back to
+    the `[SEC]` title prefix so archived deterministic-findings.json written
+    before the field existed is still classified correctly (CI-001).
+    """
+    sc = str(f.get("subcode", "")).strip()
+    if sc:
+        return sc.upper()
+    m = re.match(r"^\[([A-Za-z]+)\]", str(f.get("title", "")))
+    return m.group(1).upper() if m else ""
+
+
+def p1_secret_hits(findings):
+    """P1 SEC findings that must fail the org-wide secret gate (CI-001)."""
+    return [f for f in findings
+            if str(f.get("severity", "")).upper() == "P1"
+            and finding_subcode(f) == "SEC"]
 
 
 def counts(findings):

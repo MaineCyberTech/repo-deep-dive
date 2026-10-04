@@ -38,7 +38,8 @@ jobs:
   # built out and tested (see .github/workflows/lab-preflight.yml).
   preflight:
     uses: ./.github/workflows/lab-preflight.yml
-    secrets: inherit
+    secrets:
+      LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}
 
   remediation:
     needs: preflight
@@ -54,11 +55,17 @@ jobs:
 
     steps:
       - name: Checkout repo-deep-dive (this pack)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Checkout target repository
         run: |
-          git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${REPO}.git" work/"$REPO"
+          set -euo pipefail
+          # Pass the PAT via an HTTP header, never in the clone URL, so it cannot
+          # leak through git/shell error or diagnostic output (SEC-001).
+          AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git -c credential.helper= \
+            -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+            clone -q "https://github.com/${ORG}/${REPO}.git" work/"$REPO"
 
       - name: Compile remediation plan
         run: |
@@ -98,7 +105,7 @@ jobs:
                     '', 'See prompts/REMEDIATION_RUNNER.md to implement.']
               open('.audit-remediation/%s.md' % ps['id'], 'w').write('\n'.join(body) + '\n')
           PY
-          BR="remediation/$(echo "$PATCH_SET" | tr 'A-Z' 'a-z')-$(date -u +%Y%m%d%H%M)"
+          BR="remediation/$(echo "$PATCH_SET" | tr '[:upper:]' '[:lower:]')-$(date -u +%Y%m%d%H%M)"
           git switch -c "$BR"
           git add .audit-remediation
           git commit -q -m "chore(remediation): scaffold plan for $PATCH_SET"
@@ -111,7 +118,7 @@ jobs:
 
       - name: Upload plan
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: remediation-plan
           path: /tmp/remediation_plan.json

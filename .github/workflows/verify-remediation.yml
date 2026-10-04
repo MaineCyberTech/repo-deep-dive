@@ -3,6 +3,10 @@ name: Verify remediation
 # Read-only verification pass for a remediation branch: re-runs the machine checks
 # and the patch set's declared verification commands against a candidate branch, on
 # the lab (self-hosted runner). Never merges, approves, or pushes.
+#
+# Trust boundary (CI-002): the plan's `verification` commands are arbitrary shell
+# executed on a persistent runner. Only a remediation_plan.json already merged to
+# the default branch is honored; a plan introduced by a PR head is not executed.
 
 on:
   workflow_dispatch:
@@ -35,7 +39,8 @@ jobs:
   # Fail-closed gate: verify lab access before dispatching verification to the lab.
   preflight:
     uses: ./.github/workflows/lab-preflight.yml
-    secrets: inherit
+    secrets:
+      LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}
 
   verify:
     needs: preflight
@@ -48,19 +53,29 @@ jobs:
       PATCH_SET: ${{ inputs.patch_set }}
       DEEP: ${{ inputs.deep }}
       REPO_DIR: ${{ github.workspace }}/work/${{ inputs.repo }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
       GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
 
     steps:
       - name: Checkout pack
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
 
       - name: Clone target at ref
         run: |
           set -euo pipefail
           mkdir -p work
-          git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${REPO}.git" "$REPO_DIR"
+          # Pass the PAT via an HTTP header, never in the clone URL, so it cannot
+          # leak through git/shell error or diagnostic output (SEC-001).
+          AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git -c credential.helper= \
+            -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+            clone -q "https://github.com/${ORG}/${REPO}.git" "$REPO_DIR"
           cd "$REPO_DIR"
-          git fetch -q origin "$REF" || true
+          git -c credential.helper= \
+            -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+            fetch -q origin "$REF" || true
           git checkout -q "$REF"
           echo "Verifying \`$REPO\` @ \`$(git rev-parse --short HEAD)\` (\`$REF\`)" | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -80,10 +95,21 @@ jobs:
         if: ${{ inputs.run != '' }}
         run: |
           set -uo pipefail
+          # Trust boundary (CI-002): remediation_plan.json supplies arbitrary
+          # shell executed on the persistent self-hosted runner. A plan under
+          # runs/** is PR-editable, so only a plan already merged to the default
+          # branch is honored; the working-tree copy is never executed. The plan
+          # is therefore review-gated input, not attacker-controlled PR content.
           PLAN="runs/$RUN/remediation_plan.json"
-          if [ ! -f "$PLAN" ]; then echo "no plan at $PLAN (skipping)"; exit 0; fi
+          git fetch --no-tags origin "$DEFAULT_BRANCH" >/dev/null 2>&1 || true
+          if ! git cat-file -e "origin/$DEFAULT_BRANCH:$PLAN" 2>/dev/null; then
+            echo "no trusted plan at origin/$DEFAULT_BRANCH:$PLAN (skipping; merge the plan to $DEFAULT_BRANCH to run it)"
+            exit 0
+          fi
+          TRUSTED_PLAN="$(mktemp)"
+          git show "origin/$DEFAULT_BRANCH:$PLAN" > "$TRUSTED_PLAN"
           export REPO_DIR PATCH_SET
-          python3 - "$PLAN" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 - "$TRUSTED_PLAN" <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import json, os, subprocess, sys
           plan = json.load(open(sys.argv[1]))
           want = os.environ.get("PATCH_SET", "")
@@ -107,7 +133,7 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: verify-${{ inputs.repo }}
           path: out/

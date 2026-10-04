@@ -30,7 +30,8 @@ jobs:
   # Fail-closed gate: verify lab access before dispatching work to the lab.
   preflight:
     uses: ./.github/workflows/lab-preflight.yml
-    secrets: inherit
+    secrets:
+      LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}
 
   lab:
     needs: preflight
@@ -52,7 +53,11 @@ jobs:
           ROOT="$HOME/lab-repos"; mkdir -p "$ROOT"
           DEST="$ROOT/$REPO"
           if [ ! -d "$DEST/.git" ]; then
-            git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${REPO}.git" "$DEST"
+            # Pass the PAT via an HTTP header, never in the clone URL (SEC-001).
+            AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+            git -c credential.helper= \
+              -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+              clone -q "https://github.com/${OWNER}/${REPO}.git" "$DEST"
           fi
           cd "$DEST"
           git fetch -q --all --tags || true

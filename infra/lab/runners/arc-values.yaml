@@ -1,0 +1,48 @@
+# Helm values for Actions Runner Controller (ARC) — gha-runner-scale-set.
+#
+# Elastic, per-job (ephemeral) org runners on a dedicated k3s cluster. This is
+# the target design in docs/LAB_ARCHITECTURE.md §"Runners"; it replaces the
+# persistent root-in-container runners on ci-runner/edge-builder.
+#
+# Install sketch (see README.md for the full sequence):
+#   helm install arc --namespace arc --create-namespace \
+#     oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+#   helm install lab-runners --namespace arc \
+#     -f arc-values.yaml \
+#     oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+#
+# githubConfigSecret is created out of band (App private key + app id); it is
+# never committed. For org runners the App must be installed on the org.
+githubConfigUrl: https://github.com/MaineCyberTech
+githubConfigSecret: lab-runners-github-app
+
+runnerScaleSetName: lab-ephemeral
+
+# Scale to zero when idle; cap so a burst can't exhaust the node.
+minRunners: 0
+maxRunners: 4
+
+# Build jobs need a Docker daemon; dind runs a privileged sidecar. Keep this
+# runner class for TRUSTED events only (docs/ARCHITECTURE.md runner policy).
+containerMode:
+  type: dind
+
+template:
+  spec:
+    containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        command: ["/home/runner/run.sh"]
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "4"
+            memory: "8Gi"
+        env:
+          - name: ACTIONS_RUNNER_REQUIRE_JOB_CONTAINER
+            value: "true"
+    # Schedule only on the dedicated runner node pool, not lab workloads.
+    nodeSelector:
+      node-pool: lab-runners

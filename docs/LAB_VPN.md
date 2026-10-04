@@ -138,10 +138,13 @@ Actions**, which already holds them, and never copy keys/tokens to the machine:
 
 ```bash
 # requires `gh auth login` (repo scope); nothing else
-bash tools/lab-vpn/lab-audit-gh.sh onboard my-server      # -> downloads config and connects
+bash tools/lab-vpn/lab-audit-gh.sh setup my-server --repos chat,buddy   # connect + preflight + confirm rep approvals
 bash tools/lab-vpn/lab-audit-gh.sh run --repo chat --command "corepack pnpm test"
 bash tools/lab-vpn/lab-audit-gh.sh status
 ```
+`setup` = onboard → preflight → `tools/repo_approvals.py` (confirms each repo's branch protection,
+required checks, environment reviewers, required secrets and records `CONFIRMED/MISSING/NEEDS-HUMAN`;
+see `runbooks/AGENT_SETUP.md`).
 
 - `onboard` generates a keypair **locally**, sends only the public key through the
   `lab-agent-onboard` workflow, downloads the config artifact, and connects — no lab secret
