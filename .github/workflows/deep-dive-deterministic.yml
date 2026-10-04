@@ -161,6 +161,8 @@ jobs:
         run: |
           python3 - <<'PY'
           import glob, json, sys
+          sys.path.insert(0, "tools")
+          import deterministic_checks as dc
           hits = []
           for p in sorted(glob.glob("out/*/deterministic-findings.json")):
               try:
@@ -168,10 +170,11 @@ jobs:
               except Exception as exc:
                   print("::error::could not read %s: %s" % (p, exc), file=sys.stderr)
                   sys.exit(2)
-              for f in doc.get("findings", []):
-                  fid = str(f.get("id", ""))
-                  if f.get("severity") == "P1" and fid.startswith("SEC-"):
-                      hits.append("%s: %s - %s" % (p, fid, f.get("title", "")))
+              # Match the finding's SEC subcode (structured field, with a
+              # `[SEC]` title fallback for older files), never its ID prefix:
+              # deterministic IDs are namespaced `DET-*` (CI-001).
+              for f in dc.p1_secret_hits(doc.get("findings", [])):
+                  hits.append("%s: %s - %s" % (p, f.get("id", ""), f.get("title", "")))
           if hits:
               print("::error::P1 secret finding(s) detected; failing closed:")
               for h in hits:

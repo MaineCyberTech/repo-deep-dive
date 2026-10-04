@@ -1,0 +1,20 @@
+#cloud-config
+# edge-builder cloud-init (rendered by infra/lab/terraform/main.tf).
+hostname: ${hostname}
+manage_etc_hosts: true
+users:
+  - default
+  - name: ${username}
+    gecos: Lab administrator
+    groups: [sudo, docker]
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    lock_passwd: true
+    ssh_authorized_keys: ${ssh_authorized_keys}
+package_update: true
+package_upgrade: false
+packages: ${packages}
+runcmd:
+  - [ systemctl, enable, --now, docker ]
+  - [ systemctl, enable, --now, binfmt-support ]
+  - [ sh, -c, "echo edge-builder cloud-init complete > /var/log/lab-cloud-init.log" ]

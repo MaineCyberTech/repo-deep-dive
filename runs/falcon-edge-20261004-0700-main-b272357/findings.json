@@ -1,0 +1,280 @@
+{
+  "run": "20261004-0700-main-b272357",
+  "generated": "2026-10-04T07:45:16Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 14,
+    "bySeverity": {
+      "P3": 9,
+      "P2": 5
+    },
+    "byArea": {
+      "GIT": 1,
+      "PORT": 2,
+      "SEC": 4,
+      "AUTH": 1,
+      "CI": 3,
+      "SUPPLY": 2,
+      "CONF": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "GIT-P3-001",
+      "severity": "P3",
+      "title": "No repository LICENSE file (deterministic real)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 1,
+      "area": "GIT",
+      "evidence": [
+        "git ls-files @5ff59fe: no LICENSE/LICENCE/COPYING/UNLICENSE tracked",
+        "ci/license_check.py:1 - license gate covers installed Python distributions, not the repository"
+      ],
+      "impact": "Default 'all rights reserved'; downstream reuse, redistribution and SBOM/license provenance are legally ambiguous.",
+      "recommendation": "Add an explicit LICENSE (and optional NOTICE) matching the intended distribution terms and reference it from README.md.",
+      "deterministic_ref": "DET-P3-001",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-001",
+      "severity": "P3",
+      "title": "Four tracked shell scripts lack the executable bit (deterministic real, impact limited)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 249,
+      "area": "PORT",
+      "evidence": [
+        "git ls-files -s: mode 100644 for automation/evidence/growth.sh, automation/validation/p9_drop_budget.sh, automation/validation/p9_hard_reset_endurance.sh, image/overlay/usr/local/sbin/falcon-log-export.sh",
+        "automation/validation/bake_lab_test_image.sh:249 - install -m 0755 'image/overlay/usr/local/sbin/falcon-log-export.sh' (deployed copy is executable)",
+        "ledgers/test_execution.csv:130 - 'bash automation/evidence/growth.sh' (all in-repo calls use an explicit interpreter)"
+      ],
+      "impact": "Cosmetic/portability only; no './script.sh' invocation exists and the deployed log-exporter is force-chmod'ed, so no deployed failure is reproduced. The DET-P2 severity overstates impact.",
+      "recommendation": "git update-index --chmod=+x for the four paths and add a CI assertion that every tracked *.sh is mode 100755.",
+      "deterministic_ref": "DET-P2-002",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-002",
+      "severity": "P3",
+      "title": "False positive: '14 CRLF files' are intentional byte-exact evidence (*.out -text)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 36,
+      "area": "PORT",
+      "evidence": [
+        ".gitattributes:36-41 - '*.out -text' / '*.sha256 -text' because 'the recorded SHA-256 is over exact bytes'",
+        "raw git cat-file blob check: embedded CRLF pairs present in the named evidence/*.out files; git ls-files --eol reports i/lf for all 1,113 tracked text entries",
+        "ci/check_evidence.py verifies content hashes over exact bytes"
+      ],
+      "impact": "None. The flagged files are captured tool output whose CR bytes are part of the payload; the suggested 'git add --renormalize' would break evidence hash checks. False positive.",
+      "recommendation": "None for these files; keep the -text policy. Scope any future renormalization to text config/scripts only.",
+      "deterministic_ref": "DET-P2-003",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "False positive: gitleaks generic-api-key hits are allowlisted public/identifier values",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 15,
+      "area": "SEC",
+      "evidence": [
+        ".gitleaks.toml:15-23 - line-scoped allowlist for 'raw section key part: .[A-Za-z0-9+/=_-]{43,44}.' and 'token_id:\\s*[0-9a-fA-F-]{36}'",
+        ".github/workflows/validate.yml:141 - gitleaks detect --redact --config .gitleaks.toml --log-opts=--all",
+        "evidence/raw/EDGE-ONBOARD/20260929T071159Z_inspect-v2-wg-section.out:5 - WireGuard PUBLIC key in a NetworkManager section header (no private key in file)",
+        "evidence/raw/P2-G03/20260929T045055Z_live-mtls-walkthrough.out:4 - bootstrap token_id (UUID audit identifier), not the token value",
+        "python regex test against the embedded allowlist patterns returns True, True for the two lines"
+      ],
+      "impact": "None. Deterministic scan appears to have run gitleaks without --config .gitleaks.toml; under the repo's configured scan both are already reviewed and suppressed. No secret value reproduced.",
+      "recommendation": "No change; keep the allowlist line-scoped so a real secret on another line still alerts.",
+      "deterministic_ref": "DET-P2-004",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "AUTH-P2-001",
+      "severity": "P2",
+      "title": "Device mTLS private key is group-readable (0640), contradicting its documented 0600",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 4,
+      "area": "AUTH",
+      "evidence": [
+        "src/falcon_agent/identity.py:4 - docstring: 'identity/device.key.pem    Ed25519 private key (0600, PKCS#8)'",
+        "src/falcon_agent/identity.py:44 - os.chmod(self.key_path, 0o640)  # group-read for sibling collectors (Vector)",
+        "src/falcon_agent/identity.py:66 and :79 - same 0o640 after rotation / for the certificate",
+        "deploy/falcon-agent.service:15 - Group=falcon-agent",
+        "ledgers/contradiction_ledger.md:7 - deliberate 0640 so Vector can read the client cert/key"
+      ],
+      "impact": "Any co-resident process in group falcon-agent can read the sensor identity private key and impersonate the sensor (heartbeats/inventory/events, certificate renewal) until revocation. The stated 0600 control is not in force.",
+      "recommendation": "Keep the sensor identity key at 0600 and give Vector its own client certificate/identity; only widen the certificate (not the private key) to 0640. Update identity.py's docstring and SECURITY_BOUNDARY.md.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "mTLS clients never verify the control-plane hostname",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 112,
+      "area": "SEC",
+      "evidence": [
+        "src/falcon_common/x509tools.py:112 - ctx.check_hostname = False  # lab certificates carry SANs; hostname policy is the caller's",
+        "src/falcon_common/x509tools.py:101-106 - TLS 1.2+ client context loads CA but disables hostname check",
+        "src/falcon_agent/client.py:42-47 - agent builds its context through client_ssl_context; no caller re-enables hostname checking or pins the server"
+      ],
+      "impact": "The client trusts any certificate issued by the private edge CA regardless of name; a rogue/mis-issued CA cert (e.g. a sensor or operator cert) enables MITM of heartbeats, inventories, updates and directives.",
+      "recommendation": "Enable check_hostname with SANs on the control-plane certificate, or pin the control-plane certificate fingerprint / signing keyId at enrollment; document the policy.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "bake-image interpolates secrets directly into shell script text",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 101,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/bake-image.yml:101-104 - printf 'wifi_ssid=%s\\nwifi_key=%s\\nsudo=%s\\n' \"${{ secrets.WIFI_SSID }}\" \"${{ secrets.WIFI_KEY }}\" \"${{ secrets.PI_PASSWORD }}\" ; printf '%s' \"${{ secrets.LAB_CA_CERT }}\"",
+        ".github/workflows/bake-image.yml:61-63 - other secrets are passed safely through env: (FALCON_EDGE_SERVER_WG_PUB / CLAIM_TOKEN / CLAIM_TOKEN_EXPIRES)"
+      ],
+      "impact": "GitHub substitutes secret text before bash parses it; a secret containing quotes, backticks, $(...) or newlines can break out of the quoted argument, inject commands, or corrupt the credentials file - in the workflow holding the owner's WiFi PSK, WireGuard key, claim token and password hash.",
+      "recommendation": "Pass these values via step env: and reference \"$WIFI_SSID\" etc. inside the script; never place ${{ secrets.* }} inside run: text.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Branch protection / required checks cannot be enforced; main is only advisory-gated",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 3,
+      "area": "CI",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:3-9 - protection/ruleset API returns 403 Upgrade to GitHub Pro; plan-blocked on private Free",
+        "docs/security/BRANCH_PROTECTION.md:71-84 - owner decision to stay on Free; 'a bad change can reach main without green CI'",
+        ".github/workflows/validate.yml:14-21 - validate runs on push/PR but nothing blocks a red push"
+      ],
+      "impact": "A compromised or erroneous maintainer push can land workflow or credential-bearing bake changes on main without passing any gate; the bake environment reviewer protection is likewise plan-blocked.",
+      "recommendation": "Upgrade to GitHub Pro/Team and apply the ready payload (BRANCH_PROTECTION.md:53-64); until then keep compensating controls and re-review at each plan/cost review.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P2-001",
+      "severity": "P2",
+      "title": "Shipped sensor image auto-applies signed updates without a per-update human gate",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 17,
+      "area": "SUPPLY",
+      "evidence": [
+        "image/overlay/etc/falcon-agent/agent.json:17 - \"update_auto_apply\": true",
+        "src/falcon_agent/runner.py:791-792 - if self.config.get('update_auto_apply'): result['update_apply'] = self.apply_update()",
+        "image/overlay/usr/local/sbin/falcon-update-verify.py:224-248 - root-side manifest signature verify against root-owned update pubkey",
+        "image/overlay/usr/local/sbin/falcon-update-verify.py:310-347 - rejects symlink/traversal/setuid archive members",
+        "docs/security/DEPENDENCY_POLICY.md:18-19 - 'No auto-upgrades on the sensor' policy statement (kernel/package framing)"
+      ],
+      "impact": "Signature verification protects integrity but not the decision to ship: compromise of the control-plane signing seed (or a malformed operator manifest) yields unattended root code swap across the fleet, with no human hold between issuance and execution.",
+      "recommendation": "Default update_auto_apply to false for stable/production (keep true for lab/canary) or require an explicit operator release action; align DEPENDENCY_POLICY.md with actual behavior.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-001",
+      "severity": "P3",
+      "title": "Dependabot watches only GitHub Actions, not hash-pinned dev dependencies",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 7,
+      "area": "SUPPLY",
+      "evidence": [
+        ".github/dependabot.yml:7-14 - single package-ecosystem: github-actions (no pip)",
+        "requirements-dev.txt:11-17 - pyyaml/coverage/zizmor pinned with --hash=sha256 (manual bump = version + every hash)",
+        "docs/security/DEPENDENCY_POLICY.md:7-10 - runtime is deliberately stdlib-only"
+      ],
+      "impact": "Security updates for the CI security toolchain (linters/scanners) arrive only via manual bumps.",
+      "recommendation": "Add a pip ecosystem entry for / to dependabot.yml and document the hash-update procedure.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P3-002",
+      "severity": "P3",
+      "title": "Lab tooling disables SSH host-key and TLS verification",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 33,
+      "area": "SEC",
+      "evidence": [
+        "automation/validation/ab_device_drill.sh:33 - StrictHostKeyChecking=no; :34 reads sudo password; :40 pipes it over that channel",
+        "automation/validation/release_skew_check.sh:193-194 - context.check_hostname = False; context.verify_mode = ssl.CERT_NONE",
+        "automation/validation/unifi_networks.py:57-58 - same TLS disablement",
+        "automation/validation/inventory_metrics.py:66-75 - the safer pattern (StrictHostKeyChecking=yes + managed known_hosts) already exists"
+      ],
+      "impact": "MITM/spoofing during device drills and skew checks; runs privileged remote commands over an unverified channel. Lab-only.",
+      "recommendation": "Pin lab host keys via managed known_hosts and verify TLS with the lab CA, mirroring inventory_metrics.py.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "Documentation overstates the dependabot-merge gate specificity",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 41,
+      "area": "CI",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:41-45 - claims the sweep requires the validate, tests (3.12) and tests (3.13) check-runs and only dependabot/* branches",
+        ".github/workflows/dependabot-merge.yml:44-45,81 - filters by author app/dependabot and 'gh pr checks' (all checks green); no named-context or branch filter",
+        ".github/workflows/dependabot-merge.yml:88-96 - does re-read the head and merges with --match-head-commit (head-binding present)"
+      ],
+      "impact": "Control/documentation drift; 'all checks green' is a weaker, less auditable contract than the three named required checks.",
+      "recommendation": "Implement the named-check gate in the workflow or correct the documentation to match implemented behavior.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P3-003",
+      "severity": "P3",
+      "title": "No step-by-step emergency rotation procedure for the CA key / signing seed",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 18,
+      "area": "SEC",
+      "evidence": [
+        "docs/runbooks/certificate-renewal-revocation.md:18-19 - only a responsibility note ('emergency rotation owner is the program owner (ED-08)')",
+        "docs/runbooks/retirement-key-destruction.md - covers per-sensor key destruction, not trust-root rotation",
+        "docs/runbooks/backup-restore.md:7,135 - backs up ca/ca.key.pem and signing.seed but does not rotate them"
+      ],
+      "impact": "Ad-hoc response to a trust-root compromise; rotation is exactly when an operator needs a written procedure (fleet re-enrollment, evidence preservation, notification).",
+      "recommendation": "Add docs/runbooks/root-key-compromise.md covering CA + signing-seed rotation, fleet re-enrollment and evidence preservation; link it from runbooks/INDEX.md.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "Lab configs ship permissive defaults (TOFU enrollment; control plane binds all interfaces)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 1,
+      "area": "CONF",
+      "evidence": [
+        "deploy/falcon-agent.lab.json - \"allow_insecure_enrollment\": true (lab trust-on-first-use)",
+        "deploy/edge-control-plane.lab.json - \"bind\": \"0.0.0.0\" with a firewall-dependent comment",
+        "image/overlay/etc/falcon-agent/agent.json - the shipped image config uses \"allow_insecure_enrollment\": false"
+      ],
+      "impact": "Accidental reuse of lab configs on a non-isolated host would expose the control plane broadly or permit unauthenticated TOFU enrollment.",
+      "recommendation": "Mark lab configs LAB ONLY, add startup guards (refuse insecure enrollment without an explicit lab flag; warn on 0.0.0.0 bind), and keep the safe defaults in shipped images.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    }
+  ]
+}
