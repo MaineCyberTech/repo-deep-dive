@@ -1,12 +1,12 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T09:17:47Z
+# generated: 2026-10-04T09:26:27Z
 # files: 1232
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
-6c1ece68d8eacc80a46b451d127c1ab5c1a62bd2ba1ab3c9d1d20f2479204c90  ./.github/workflows/audit.yml
+a318eddef6d4f26fa5e095213bfee294ff6e579a1750090ccf6351d7c9171650  ./.github/workflows/audit.yml
 27bdbd24d03ce3470be7363fc58a1da918b12e5abb2ad06b5eacc509e3dedd86  ./.github/workflows/deep-dive-deterministic.yml
 63d7e4212d4e4c4c3d14fbefd174d7d9b1ab64302358a79dbc0974ba9913c222  ./.github/workflows/lab-agent-offboard.yml
 64a1621d71f6b2138b8b5387c8e86bb74da1c9af9a5e8a10a9dfa588dbb1c047  ./.github/workflows/lab-agent-onboard.yml
@@ -21,7 +21,7 @@ f78806fe8a6daa1364c33ca73f7a7955c426345050f62d17635dea567172373f  ./.github/work
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 480b4197df1825f0d82dca24df35860a6e7016b8a16cfabd137bd5d633b600d7  ./AGENTS.md
 9c883bfd0ea2426255986f9456a5c32bd4fe672debd17078d389e137337806fb  ./CHANGELOG.md
-6d0d4f121324b673fe85aa0502df10e8b7ec940a32e06b90b0747cb57d1f2402  ./CONTRIBUTING.md
+c4dd58c3dffa1dd407b5acaddf402025659b1e211d1265ce4771b07e0a307f43  ./CONTRIBUTING.md
 0886904dbbf64dbe39709dd725d06d87627ad397bca96a4013b310da077fdc42  ./LICENSE
 688b7221796be92c2399b670e95683704580d76f223124438fdfa6076cfc08e8  ./OWNER_DECISIONS.md
 2d47c692ca198f666cea3cc164c252a66a99bcf1ee7ebe3d6ed29b307fd761b9  ./README.md
