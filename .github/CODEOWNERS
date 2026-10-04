@@ -1,0 +1,17 @@
+# Review routing for the repo-deep-dive pack.
+#
+# This file routes review requests only; it does not enforce them. To make review
+# and the pack CI required, a repository admin must enable branch protection on
+# `main` (require a pull request, at least one review, and the checks below).
+# See CONTRIBUTING.md § "CI and required checks" for the required checks and the
+# bypass policy.
+
+# Default owner for everything.
+*                       @JulianB-MCT
+
+# The gates themselves and the contract they protect.
+/.github/               @JulianB-MCT
+/ci/                    @JulianB-MCT
+/tools/                 @JulianB-MCT
+/schemas/               @JulianB-MCT
+/profiles/              @JulianB-MCT
