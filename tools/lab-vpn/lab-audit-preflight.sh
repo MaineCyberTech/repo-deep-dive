@@ -138,7 +138,10 @@ fi
 
 echo "== result =="
 if [ "$fail" -eq 0 ]; then
-  cat > "$HERE/.lab-ready.json" <<EOF
+  # Store the stamp OUTSIDE the pack tree (in .git) so it can never affect PACK_DIGEST.
+  GITDIR="$(git rev-parse --git-dir 2>/dev/null || true)"
+  STAMP="${GITDIR:-$HERE}/lab-audit-ready.json"
+  cat > "$STAMP" <<EOF
 {
   "ready": true,
   "lab_state": "$lab_state",
@@ -150,6 +153,7 @@ if [ "$fail" -eq 0 ]; then
 }
 EOF
   echo "RESULT: PASS - safe to start audit/remediation work"
+  echo "stamp: $STAMP"
   exit 0
 fi
 echo "RESULT: FAIL - do NOT start audit/remediation work"
