@@ -1,9 +1,17 @@
 # Secret-scan configuration for repo-deep-dive (gitleaks >= 8.25).
 #
-# The built-in ruleset stays enabled; this only allowlists known-safe,
-# non-secret artifacts shipped by the pack itself (the config file, example
-# manifests, and already-redacted gitleaks logs archived under runs/).
-# Everything else is reported, and CI fails the job on P1 SEC findings.
+# The built-in ruleset stays enabled. The global allowlist covers known-safe
+# artifacts shipped by the pack (the config file, example manifests, and
+# already-redacted gitleaks logs archived under runs/). Everything else is
+# reported, and CI fails the job on P1 SEC findings.
+#
+# Archived audit evidence under runs/ (and the docs/ mirror) quotes the very
+# findings it analyses, including documented secret placeholders, rule names
+# and non-secret hashes, so those raw values re-trip the scanner. The
+# rule-scoped allowlists below match only the reviewed value/line for a single
+# rule; unlike a `runs/.*` path allowlist they neither skip the directory nor
+# hide new findings in it. `tools/verify_gitleaks_config.sh` proves the
+# allowlists are not too broad with a negative fixture.
 
 [extend]
 useDefault = true
@@ -15,3 +23,71 @@ paths = [
     '''(?:^|/)examples/.*\.example\.json$''',
     '''(?:^|/)runs/[^/]+/remediation/.*gitleaks[^/]*\.(?:log|txt|json)$''',
 ]
+
+# ---------------------------------------------------------------------------
+# generic-api-key
+# ---------------------------------------------------------------------------
+[[rules]]
+id = "generic-api-key"
+
+    # Documented placeholder quoted while discussing a past false positive.
+    [[rules.allowlists]]
+    description = "documented placeholder token"
+    regexTarget = "line"
+    regexes = ['''token=abcdef1234567890''']
+
+    # SHA-256 prompt-manifest digests quoted in a remediation diff; the JSON
+    # entry (".md": "<64-hex>") makes them unambiguous checksums, not keys.
+    [[rules.allowlists]]
+    description = "SHA-256 prompt-manifest digests"
+    regexTarget = "line"
+    regexes = ['''"[^"]+\.md": "[0-9a-f]{64}"''']
+
+    # Non-secret values re-quoted from other repos' audits.
+    [[rules.allowlists]]
+    description = "module identifier, throwaway e2e JWT, and other reviewed non-secrets"
+    regexTarget = "line"
+    regexes = [
+        '''m365-hardening''',
+        '''e2e-test-secret-32-characters-long''',
+        '''validation_failures=1''',
+        '''Ctrl\+Shift\+Down''',
+        '''dGhpcyBpcyBub3QgYSByZWFsIGtleSBidXQgbG9uZyBlbm91Z2g=''',
+        '''OSQUERY_KEY=[0-9A-F]{40}''',
+    ]
+
+# ---------------------------------------------------------------------------
+# curl-auth-user
+# ---------------------------------------------------------------------------
+[[rules]]
+id = "curl-auth-user"
+
+    # Example credentials in archived evidence about curl-auth-user itself.
+    # Matched on the extracted secret: the `curl … -u` span starts on an earlier
+    # line, so a line-scoped regex would not reach the value.
+    [[rules.allowlists]]
+    description = "documented curl basic-auth false positives"
+    regexTarget = "secret"
+    regexes = [
+        '''^kibanaserver:kibanaserver$''',
+        '''^falcon-healthcheck:\$\$OPENSEARCH_HEALTHCHECK_PASSWORD$''',
+        '''^user:realsecret$''',
+    ]
+
+# ---------------------------------------------------------------------------
+# sourcegraph-access-token
+# ---------------------------------------------------------------------------
+[[rules]]
+id = "sourcegraph-access-token"
+
+    # The rule also matches any 40-hex run once its "sourcegraph" keyword is
+    # present in the fragment. These are a commit SHA, the public osquery APT
+    # GPG key, and a CycloneDX SHA-1.
+    [[rules.allowlists]]
+    description = "non-secret 40-hex values quoted in archived evidence"
+    regexTarget = "secret"
+    regexes = [
+        '''^ff868e54327a5aab9c13b0a3cfa57fda339cbeed$''',
+        '''^1484120AC4E9F8A1A577AEEE97A80C63C9D8B80B$''',
+        '''^c6f9bded17d844b6f1b0bb5766d2c35c0d5c8508$''',
+    ]
