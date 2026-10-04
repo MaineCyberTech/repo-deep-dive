@@ -52,7 +52,8 @@
       "recommendation": "git update-index --chmod=+x for the four paths and add a CI assertion that every tracked *.sh is mode 100755.",
       "deterministic_ref": "DET-P2-002",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#34 @ 73028d0"
     },
     {
       "id": "PORT-P3-002",
@@ -128,7 +129,8 @@
       "recommendation": "Enable check_hostname with SANs on the control-plane certificate, or pin the control-plane certificate fingerprint / signing keyId at enrollment; document the policy.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#39 @ 5cd08c9"
     },
     {
       "id": "CI-P2-001",
@@ -145,7 +147,8 @@
       "recommendation": "Pass these values via step env: and reference \"$WIFI_SSID\" etc. inside the script; never place ${{ secrets.* }} inside run: text.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#33 @ 0ee35df"
     },
     {
       "id": "CI-P2-002",
@@ -183,7 +186,8 @@
       "recommendation": "Default update_auto_apply to false for stable/production (keep true for lab/canary) or require an explicit operator release action; align DEPENDENCY_POLICY.md with actual behavior.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#41 @ 3ae7e75"
     },
     {
       "id": "SUPPLY-P3-001",
@@ -201,7 +205,8 @@
       "recommendation": "Add a pip ecosystem entry for / to dependabot.yml and document the hash-update procedure.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#35 @ 9dce2a5"
     },
     {
       "id": "SEC-P3-002",
@@ -238,7 +243,8 @@
       "recommendation": "Implement the named-check gate in the workflow or correct the documentation to match implemented behavior.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#36 @ a169b7d"
     },
     {
       "id": "SEC-P3-003",
@@ -256,7 +262,8 @@
       "recommendation": "Add docs/runbooks/root-key-compromise.md covering CA + signing-seed rotation, fleet re-enrollment and evidence preservation; link it from runbooks/INDEX.md.",
       "deterministic_ref": null,
       "confidence": "Medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#37 @ 5549903"
     },
     {
       "id": "CONF-P3-001",
@@ -274,7 +281,8 @@
       "recommendation": "Mark lab configs LAB ONLY, add startup guards (refuse insecure enrollment without an explicit lab flag; warn on 0.0.0.0 bind), and keep the safe defaults in shipped images.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged falcon-edge#38 @ f267647"
     }
   ]
 }
