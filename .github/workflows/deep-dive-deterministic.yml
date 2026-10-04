@@ -36,9 +36,17 @@ on:
 permissions:
   contents: read
 
+# One org-wide scan at a time; never cancel a run that may be mid-clone.
+concurrency:
+  group: deep-dive-deterministic
+  cancel-in-progress: false
+
 jobs:
   deterministic:
     runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
+    timeout-minutes: 90
+    # Gate the PAT-bearing job behind a protected environment.
+    environment: deep-dive-scan
     env:
       ORG: ${{ inputs.org || 'MaineCyberTech' }}
       INPUT_REPOS: ${{ inputs.repos }}
@@ -49,27 +57,51 @@ jobs:
 
     steps:
       - name: Checkout repo-deep-dive
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Install tools
+      - name: Install tools (pinned versions, sha256-verified)
         if: ${{ !inputs.runner || inputs.runner == 'ubuntu-latest' }}
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+          ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+          GITLEAKS_VERSION: "8.30.1"
+          GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+          HADOLINT_VERSION: "2.15.1"
+          HADOLINT_SHA256: "c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507"
+          TRIVY_VERSION: "0.75.0"
+          TRIVY_SHA256: "c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f"
         run: |
-          set -e
+          set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck jq curl >/dev/null
-          # actionlint
-          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) >/dev/null 2>&1 || true
-          sudo mv actionlint /usr/local/bin/ 2>/dev/null || true
-          # gitleaks
-          GL_TAG=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | jq -r .tag_name)
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/${GL_TAG}/gitleaks_${GL_TAG#v}_linux_x64.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin gitleaks || true
-          # hadolint + trivy (only needed for --deep)
+          bindir="$RUNNER_TEMP/tools"
+          mkdir -p "$bindir"
+          # actionlint - versioned tarball, sha256-verified, unpacked without sudo.
+          curl -sSL -o /tmp/actionlint.tgz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  /tmp/actionlint.tgz" | sha256sum -c -
+          tar -xzf /tmp/actionlint.tgz -C "$bindir" actionlint
+          # gitleaks - versioned tarball, sha256-verified.
+          curl -sSL -o /tmp/gitleaks.tgz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tgz" | sha256sum -c -
+          tar -xzf /tmp/gitleaks.tgz -C "$bindir" gitleaks
+          # hadolint + trivy (only fetched when --deep is requested)
           if [ "${{ inputs.deep }}" = "true" ]; then
-            command -v hadolint >/dev/null || { curl -sSL https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /tmp/hadolint && sudo install -m 0755 /tmp/hadolint /usr/local/bin/hadolint; }
-            command -v trivy >/dev/null || { curl -sSL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin; }
+            curl -sSL -o /tmp/hadolint \
+              "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-linux-x86_64"
+            echo "${HADOLINT_SHA256}  /tmp/hadolint" | sha256sum -c -
+            install -m 0755 /tmp/hadolint "$bindir/hadolint"
+            curl -sSL -o /tmp/trivy.tgz \
+              "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+            echo "${TRIVY_SHA256}  /tmp/trivy.tgz" | sha256sum -c -
+            tar -xzf /tmp/trivy.tgz -C "$bindir" trivy
           fi
-          echo "tool versions:"; gitleaks version || true; actionlint --version || true; shellcheck --version | head -2 || true
+          echo "$bindir" >> "$GITHUB_PATH"
+          # Fail closed: the required scanners must install and run.
+          "$bindir/actionlint" --version
+          "$bindir/gitleaks" version
+          shellcheck --version | head -2
 
       - name: Determine repo list
         id: repos
@@ -86,13 +118,17 @@ jobs:
           echo "repos: $(cat /tmp/list 2>/dev/null || echo "$INPUT_REPOS")"
 
       - name: Run deterministic checks
+        env:
+          GITLEAKS_CONFIG: ${{ github.workspace }}/.gitleaks.toml
         run: |
           set -e
+          echo "::add-mask::${GH_TOKEN}"
           mkdir -p work out
           EXTRA=""
           if [ "${{ inputs.deep }}" = "true" ]; then EXTRA="--deep"; fi
           IFS=',' read -ra REPOS <<< "${{ steps.repos.outputs.list }}"
           IFS=',' read -ra EXC <<< "$EXCLUDE"
+          failed=0
           for raw in "${REPOS[@]}"; do
             r="$(echo "$raw" | xargs)"
             [ -z "$r" ] && continue
@@ -100,24 +136,56 @@ jobs:
             for e in "${EXC[@]}"; do [ "$r" = "$(echo "$e" | xargs)" ] && skip=1; done
             if [ "$skip" = 1 ]; then echo "skip $r"; continue; fi
             echo "::group::$r"
-            if git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${r}.git" "work/$r"; then
-              python3 tools/repo_inventory.py "work/$r" -o "out/$r.inventory.json" || true
-              python3 tools/deterministic_checks.py "work/$r" -o "out/$r" $EXTRA || true
+            # The PAT is passed via an HTTP header, never placed in the clone URL,
+            # so it cannot leak through git/shell error or diagnostic output.
+            if git -c credential.helper= \
+                 -c http.extraheader="AUTHORIZATION: bearer ${GH_TOKEN}" \
+                 clone -q "https://github.com/${ORG}/${r}.git" "work/$r"; then
+              python3 tools/repo_inventory.py "work/$r" -o "out/$r.inventory.json" || failed=1
+              python3 tools/deterministic_checks.py "work/$r" -o "out/$r" $EXTRA || failed=1
             else
-              echo "clone failed: $r"
+              echo "::error::clone failed: $r"
+              failed=1
             fi
             echo "::endgroup::"
           done
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::one or more repos failed to clone or scan; failing closed"
+            exit 1
+          fi
+
+      - name: Fail on P1 secret findings
+        run: |
+          python3 - <<'PY'
+          import glob, json, sys
+          hits = []
+          for p in sorted(glob.glob("out/*/deterministic-findings.json")):
+              try:
+                  doc = json.load(open(p, encoding="utf-8"))
+              except Exception as exc:
+                  print("::error::could not read %s: %s" % (p, exc), file=sys.stderr)
+                  sys.exit(2)
+              for f in doc.get("findings", []):
+                  fid = str(f.get("id", ""))
+                  if f.get("severity") == "P1" and fid.startswith("SEC-"):
+                      hits.append("%s: %s - %s" % (p, fid, f.get("title", "")))
+          if hits:
+              print("::error::P1 secret finding(s) detected; failing closed:")
+              for h in hits:
+                  print("  " + h)
+              sys.exit(1)
+          print("no P1 secret findings")
+          PY
 
       - name: Aggregate rollup
         run: |
           set -e
-          python3 tools/aggregate_findings.py out -o out/ORG_SUMMARY.md --json out/org-findings.json || true
+          python3 tools/aggregate_findings.py out -o out/ORG_SUMMARY.md --json out/org-findings.json
           if [ -f out/ORG_SUMMARY.md ]; then cat out/ORG_SUMMARY.md >> "$GITHUB_STEP_SUMMARY"; fi
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
         with:
           name: deep-dive-deterministic
           path: out/

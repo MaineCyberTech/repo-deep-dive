@@ -1,0 +1,17 @@
+# Secret-scan configuration for repo-deep-dive (gitleaks >= 8.25).
+#
+# The built-in ruleset stays enabled; this only allowlists known-safe,
+# non-secret artifacts shipped by the pack itself (the config file, example
+# manifests, and already-redacted gitleaks logs archived under runs/).
+# Everything else is reported, and CI fails the job on P1 SEC findings.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "repo-deep-dive known-safe paths (config, examples, redacted scan logs)"
+paths = [
+    '''(?:^|/)\.gitleaks\.toml$''',
+    '''(?:^|/)examples/.*\.example\.json$''',
+    '''(?:^|/)runs/[^/]+/remediation/.*gitleaks[^/]*\.(?:log|txt|json)$''',
+]

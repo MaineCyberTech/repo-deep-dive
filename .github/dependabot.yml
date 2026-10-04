@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # Keep the GitHub Actions used by this pack current, including the pinned
+  # commit SHAs in .github/workflows/*.yml (SUPPLY-P1-001 / SUPPLY-P2-002).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(ci)"
