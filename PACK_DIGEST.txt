@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T08:12:26Z
-# files: 1186
+# generated: 2026-10-04T08:29:55Z
+# files: 1189
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -30,6 +30,7 @@ fbac3f47281fa06abd0440f07ce01231baf0601af9a3c79f34ea9ca16fa8dc54  ./.gitignore
 c3715a4e8c0dc0596cdbc0df05dc1d979a87b2f208d6d8d32f6caad7037a87d5  ./REVIEW_INDEX.md
 3e50a74a7332f00dd710375633a049911b7154148d92e919d29a9b7bff7373c5  ./SECURITY.md
 acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
+393b39c49a37c50d0e5a0890b7d89763f64121191e2023623732ee614549e167  ./approvals.yml
 45e3d8c92ead3f8c35cc36be964698ca8b12abad0d803f26ae6b0f8d1f3fc8ab  ./ci/audit.yml
 c8b9df7a9ea79cebfe073cb2a72b1167d9a6add1ca883ea665b6383eb2216d84  ./docs/ARCHITECTURE.md
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
@@ -112,6 +113,7 @@ dc90ac116efc53da0f0c7b6c3c3123ac345b6d00c212d63d8823730757da395b  ./prompts/MAST
 f5cdff431dfc09048110d0227265e10380632dda7880fb14519b497276dd7e7a  ./prompts/MASTER_RUNNER_FULL_HARDENING.md
 49c036f570d66818898e13e21f923aafa017d1ce07ca67257c00d84c95753a71  ./prompts/REMEDIATION_RUNNER.md
 cc773cf23872e97ff71cda564b368ca97829ced82df54099eab6b5afb544c8f8  ./runbooks/AGENT_SETUP.md
+6384997df98e28e4beb09879e0457f860249fb0dad3fc27c898a2869f22eb687  ./runbooks/CI_ON_LAB.md
 ff265fba18171efd42131b23f39da4725c8a0ee836c0710ef260640f5b6f0044  ./runbooks/OPERATOR_QUICKSTART.md
 61ec923b3be44f6c2983dabb9381c2888ece9e30392250c14887a6516a74b867  ./runbooks/OPERATOR_QUICKSTART_FALCON_LAB.md
 215938035f309e17f0b3616828f0ee39b2531b6727ace0613e9f80d02c78c0fe  ./runbooks/OPERATOR_TROUBLESHOOTING.md
@@ -1148,6 +1150,7 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 75b7f9747ba21eabe1f23b7f708407cbf6103d359c7ba5a885b4a4c19d7b6d5c  ./tests/test_lib_findings.py
 87e8aea750804ce5991efb69f2c73fdf81a246f42f754d567aaea0b7ee1b8cdc  ./tests/test_repo_inventory.py
 4b77ad57ba5a912dc55bd0a3a93fd10327b4856a39088bb91c81fe60280fb477  ./tools/aggregate_findings.py
+5c0c4cfe71fc838086291f520592ae93d4cb6a8ef7fcf4b45effce0cadff4055  ./tools/apply_approvals.py
 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
 da6a9b7eaa62a42e1cb8e2b76b692d513ad478b13ae5e3d1d0eff70ca335501d  ./tools/collect_findings.py
 5ddc3a28eea998d4b946d321d5ec1418952c843d96abada96b714bf7078b8d57  ./tools/deterministic_checks.py
