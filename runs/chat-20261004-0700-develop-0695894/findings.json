@@ -40,7 +40,7 @@
       "deterministic_ref": null,
       "confidence": "high",
       "status": "verified-fixed",
-      "note": "merged #88 @ 3115ab3"
+      "note": "merged chat#88 @ 3115ab3"
     },
     {
       "id": "CI-P1-001",
@@ -62,7 +62,7 @@
       "deterministic_ref": null,
       "confidence": "high",
       "status": "verified-fixed",
-      "note": "merged #89 @ b32bd0f"
+      "note": "merged chat#89 @ b32bd0f"
     },
     {
       "id": "AUTH-P2-001",
@@ -81,7 +81,7 @@
       "deterministic_ref": null,
       "confidence": "high",
       "status": "verified-fixed",
-      "note": "merged #90 @ e687345"
+      "note": "merged chat#90 @ e687345"
     },
     {
       "id": "SEC-P2-001",
@@ -101,7 +101,7 @@
       "deterministic_ref": null,
       "confidence": "high",
       "status": "verified-fixed",
-      "note": "merged #91 @ a70ebe1"
+      "note": "merged chat#91 @ a70ebe1"
     },
     {
       "id": "CI-P2-001",
@@ -159,7 +159,7 @@
       "deterministic_ref": null,
       "confidence": "high",
       "status": "verified-fixed",
-      "note": "merged #92 @ a498513"
+      "note": "merged chat#92 @ a498513"
     },
     {
       "id": "DEP-P2-001",
