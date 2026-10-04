@@ -58,9 +58,16 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p work
-          git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${REPO}.git" "$REPO_DIR"
+          # Pass the PAT via an HTTP header, never in the clone URL, so it cannot
+          # leak through git/shell error or diagnostic output (SEC-001).
+          AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git -c credential.helper= \
+            -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+            clone -q "https://github.com/${ORG}/${REPO}.git" "$REPO_DIR"
           cd "$REPO_DIR"
-          git fetch -q origin "$REF" || true
+          git -c credential.helper= \
+            -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+            fetch -q origin "$REF" || true
           git checkout -q "$REF"
           echo "Verifying \`$REPO\` @ \`$(git rev-parse --short HEAD)\` (\`$REF\`)" | tee -a "$GITHUB_STEP_SUMMARY"
 
