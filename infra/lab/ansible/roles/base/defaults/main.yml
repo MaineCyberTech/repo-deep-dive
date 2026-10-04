@@ -1,0 +1,22 @@
+---
+# Base role defaults. Safe, generic Debian/Ubuntu settings.
+base_admin_user: labadmin
+base_admin_group: labadmin
+base_admin_ssh_keys: []
+base_timezone: UTC
+base_ssh_port: 22
+base_manage_ssh: true
+base_install_auto_updates: false
+base_packages:
+  - sudo
+  - ca-certificates
+  - curl
+  - gnupg
+  - git
+  - jq
+  - htop
+  - vim
+  - rsync
+  - unzip
+  - python3
+base_extra_packages: []

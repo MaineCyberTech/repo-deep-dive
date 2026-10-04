@@ -2,6 +2,8 @@
 """Publish an audit run - the standard post-audit step.
 
 Given a run source (the audit's findings + report), this:
+  0. runs a lightweight pre-publish secret scan (fail closed) over every file it
+     would write or push; nothing is written or pushed when a likely secret is found.
   1. normalizes everything into a repo-deep-dive run folder that PASSES tools/check_run.sh
      (fixed AREA-Px-NNN finding IDs, registers, finals, manifest, INDEX);
   2. installs it in the pack under runs/<repo>-<run>/ and appends a runs/INDEX.md row
@@ -33,9 +35,65 @@ from datetime import datetime, timezone
 
 ALLOWED_STATUS = {"", "open", "partially-fixed", "verified-fixed", "still-open", "regressed", "owner-accepted"}
 
+# Pre-publish secret scan (repo-deep-dive-SEC-002). Lightweight, dependency-free
+# deny-list of high-confidence secret shapes; publication fails closed on a hit
+# so a credential pasted into evidence/report is never committed to the pack or
+# pushed to a target-repo PR. Values are reported redacted only.
+SECRET_RULES = (
+    ("private-key", re.compile(r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----")),
+    ("aws-access-key-id", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
+    ("github-token", re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{50,})\b")),
+    ("slack-token", re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b")),
+    ("stripe-key", re.compile(r"\bsk_live_[A-Za-z0-9]{16,}\b")),
+    ("google-api-key", re.compile(r"\bAIza[0-9A-Za-z_\-]{35}\b")),
+    ("generic-assigned-secret", re.compile(
+        r"(?i)\b(?:password|passwd|pwd|secret|token|api[_-]?key|apikey|"
+        r"access[_-]?key|client[_-]?secret|private[_-]?key)\b\s*[:=]\s*"
+        r"['\"]?([A-Za-z0-9_\-/+]{16,})")),
+)
+
+# Known-safe values (documented placeholders, env references, redactions) and
+# explicit false-positive prose. Keep narrow so real keys in a diff still fire.
+SECRET_VALUE_ALLOWLIST = re.compile(
+    r"(?i)^(?:<[^>]+>|example|placeholder|redacted|changeme|xxx+|abcdef1234567890|"
+    r"your[_-]?(?:token|key|secret|password)|not[_-]?a[_-]?secret|"
+    r"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)$")
+SECRET_LINE_ALLOWLIST = re.compile(
+    r"(?i)(?:gitleaks[^\n]*false[ -]?positive|false[ -]?positive|"
+    r"not[ -]?a[ -]?secret|redacted|<redacted>)")
+
 
 def now():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _redact(value):
+    """Report a matched secret without reproducing it (first 3 chars only)."""
+    n = len(value)
+    return "***redacted***" if n <= 8 else value[:3] + "***redacted***"
+
+
+def scan_secrets(files):
+    """Return [(name, lineno, rule, redacted), ...] for likely secrets in files.
+
+    `files` maps a filename to its text. Known-safe placeholders and explicit
+    false-positive notes are allowed; everything else matches the deny-list.
+    """
+    hits = []
+    for name in sorted(files):
+        for lineno, line in enumerate(str(files[name]).splitlines(), 1):
+            if SECRET_LINE_ALLOWLIST.search(line):
+                continue
+            for rule, rx in SECRET_RULES:
+                m = rx.search(line)
+                if not m:
+                    continue
+                value = m.group(1) if m.groups() else m.group(0)
+                if SECRET_VALUE_ALLOWLIST.match(value):
+                    continue
+                hits.append((name, lineno, rule, _redact(value)))
+                break
+    return hits
 
 
 def area_code(f):
@@ -271,6 +329,26 @@ def main():
 
     files = build_files(a.repo, a.branch, a.sha, run, items, a.source_dir, report_name, report_text)
     print("[publish] %s run=%s files=%d findings=%d" % (a.repo, run, len(files), len(items)))
+
+    # Fail closed: never write to the pack or push a PR if a likely secret is
+    # present anywhere in the generated file set (repo-deep-dive-SEC-002).
+    hits = scan_secrets(files)
+    if hits:
+        print("[publish] REFUSING to publish: %d likely secret(s) detected "
+              "(redacted):" % len(hits), file=sys.stderr)
+        for name, lineno, rule, red in hits:
+            print("  %s:%d %s -> %s" % (name, lineno, rule, red), file=sys.stderr)
+        print("[publish] redact/remove the value, or add a narrow entry to "
+              "publish_audit.SECRET_VALUE_ALLOWLIST.", file=sys.stderr)
+        return 2
+    try:
+        manifest = json.loads(files["audit_manifest.json"])
+        manifest["secretScan"] = {"tool": "tools/publish_audit.py scan_secrets",
+                                  "result": "pass", "rules": len(SECRET_RULES),
+                                  "scannedAt": now()}
+        files["audit_manifest.json"] = json.dumps(manifest, indent=2) + "\n"
+    except (KeyError, ValueError):
+        pass
 
     if not a.no_pack:
         dest = os.path.join(pack_runs, "%s-%s" % (a.repo, run))
