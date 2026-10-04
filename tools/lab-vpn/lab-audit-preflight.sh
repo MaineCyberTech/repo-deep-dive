@@ -124,10 +124,12 @@ case "$lab_state" in
     echo "      bash tools/lab-vpn/lab-audit-connect.sh <name>.conf" ;;
   lab_down)
     bad "lab is GENUINELY DOWN (endpoint health failed and it is not reachable locally)"
-    echo "   -> do NOT dispatch to the lab; work may be attempted LOCALLY only" ;;
+    echo "   -> do NOT dispatch to the lab; run work LOCALLY via:"
+    echo "      bash tools/lab-vpn/lab-audit-run.sh --repo <repo> --command \"<cmd>\"" ;;
   unknown)
     bad "cannot confirm lab state (no remote key and no local access)"
-    echo "   -> provide --remote-key <labvpn key>, or set up local access with --conf <file>" ;;
+    echo "   -> set up the connection: LABVPN_KEY=<labvpn key> bash tools/lab-vpn/lab-audit-bootstrap.sh"
+    echo "      or run work LOCALLY via: bash tools/lab-vpn/lab-audit-run.sh --repo <repo> --command \"<cmd>\"" ;;
 esac
 
 # --- 5) Pack health ----------------------------------------------------------

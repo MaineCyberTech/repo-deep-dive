@@ -37,6 +37,8 @@ agent/dev ──(wg)──► mct-portal-dev  wgaudit0 10.250.0.1:51900 ──(w
 | `lab-audit-scoped-deploy.sh` | endpoint (root) | install/refresh the scoped `labvpn` identity (user, forced command, sudoers, restart drop-in) |
 | `labvpn-run.sh` | endpoint | the forced-command wrapper (installed to `/usr/local/bin/labvpn-run`) |
 | `lab-audit-connect.sh` | agent/dev workstation | install a client config, add friendly names, verify the lab |
+| `lab-audit-bootstrap.sh` | agent / server / workstation | one-command **connection setup**: generate a keypair, register the public key via the scoped identity, bring the tunnel up, verify |
+| `lab-audit-run.sh` | agent / server | run a repo command **on the lab when reachable, else locally** (auto-sets up the tunnel first if `LABVPN_KEY` is present) |
 
 All scripts are **idempotent**, **back up before writing**, run **pre-checks** (interface / UDP port /
 subnet collisions), refuse to touch `wg0`, and print an inventory.
@@ -126,6 +128,29 @@ ssh -i labvpn_ed25519 labvpn@138.197.105.82 "get-client <name>"
 ssh -i labvpn_ed25519 labvpn@138.197.105.82 "revoke-agent <name>"
 ssh -i labvpn_ed25519 labvpn@138.197.105.82 "health"
 ```
+
+## New agent / server: automatic setup + local fallback
+
+On a fresh agent or a server running a repo, lab use is self-service and degrades gracefully:
+
+```bash
+# 1) set the connection up in one command (private key stays on this machine)
+LABVPN_KEY=/path/to/labvpn_key bash tools/lab-vpn/lab-audit-bootstrap.sh [name]
+#    -> generates a keypair, registers the public key, brings up wgaudit0, verifies the lab
+
+# 2) run a command on the lab when reachable, otherwise locally
+LAB_API_TOKEN=<lab token> bash tools/lab-vpn/lab-audit-run.sh \
+    --repo <repo> --command "corepack pnpm test"
+#    -> MODE=lab (dispatched to the lab) or MODE=local (lab unavailable: ran here)
+```
+
+- `lab-audit-bootstrap.sh` needs the scoped `labvpn` key (`LABVPN_KEY`). If it cannot register
+  (endpoint down / key rejected) it exits non-zero and nothing is left half-configured.
+- `lab-audit-run.sh` needs `LAB_API_TOKEN` for the lab path; without it, or if the lab is
+  unreachable, it runs the command **locally** (in `--cwd`, default repo root). Which mode was used
+  is printed, so it can be recorded as evidence (`lab` vs `local`).
+- For CI on a server without lab runners, use `lab-tests.yml`/`verify-remediation.yml` when the lab
+  is reachable; those are gated by the preflight and will not dispatch to a dead lab.
 
 ## Offboarding / revocation
 

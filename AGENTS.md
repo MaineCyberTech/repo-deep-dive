@@ -26,10 +26,14 @@ subagents or others) use it to audit repos and to open remediation PRs.
     dispatching work to the lab — run `bash tools/lab-vpn/lab-audit-preflight.sh`
     (`--mode lab` when dispatching to the lab/CI; `--remote-key <labvpn key>` to classify the lab
     remotely; `--conf <client.conf>` only as a local fallback). It MUST print `RESULT: PASS`.
-    If it does not: **STOP**. Specifically, when it reports `lab_up_local_down` fix **local access**;
-    when it reports `lab_down`, do **not** dispatch to the lab and attempt work **locally only**.
-    The same gate runs in CI (`Lab preflight`) and as a `needs:` gate on the remediation/lab
-    workflows, and `tools/lab_runner.py` refuses to dispatch unless the lab API is healthy.
+    If it does not: **STOP**. Specifically, when it reports `lab_up_local_down` fix **local access**
+    (`LABVPN_KEY=<labvpn key> bash tools/lab-vpn/lab-audit-bootstrap.sh` sets the connection up
+    automatically); when it reports `lab_down`/`unknown` (the lab genuinely can't be used), do
+    **not** dispatch to the lab — run the work **locally** instead via
+    `bash tools/lab-vpn/lab-audit-run.sh --repo <repo> --command "<cmd>"`, which uses the lab when
+    reachable and falls back to local execution. Record which mode was used. The same gate runs in
+    CI (`Lab preflight`) and as a `needs:` gate on the remediation/lab workflows, and
+    `tools/lab_runner.py` refuses to dispatch unless the lab API is healthy.
 
 ## Working on the pack itself
 
