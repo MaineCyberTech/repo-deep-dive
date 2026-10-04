@@ -40,9 +40,15 @@ jobs:
       GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}
     steps:
       - name: Run on the lab
+        # Dispatch inputs are passed as environment data, never interpolated into
+        # the script text, so a value containing quotes/;/$( ) cannot break out
+        # of the intended command (CI-005).
+        env:
+          CMD: ${{ inputs.command }}
+          REPO: ${{ inputs.repo }}
+          REF: ${{ inputs.ref }}
         run: |
           set -euo pipefail
-          REPO="${{ inputs.repo }}"; REF="${{ inputs.ref }}"
           OWNER="${{ github.repository_owner }}"
           ROOT="$HOME/lab-repos"; mkdir -p "$ROOT"
           DEST="$ROOT/$REPO"
@@ -63,6 +69,6 @@ jobs:
             git checkout -q "${{ github.sha }}"
           fi
           echo "runner: $RUNNER_NAME  repo: $REPO  head: $(git rev-parse --short HEAD)"
-          echo "== command: ${{ inputs.command }} =="
-          bash -o pipefail -c "${{ inputs.command }}"
+          echo "== command: $CMD =="
+          bash -o pipefail -c "$CMD"
           echo "LAB_TEST_PASS"
