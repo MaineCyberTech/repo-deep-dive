@@ -22,7 +22,10 @@ subagents or others) use it to audit repos and to open remediation PRs.
    `gitleaks` the diff; if a gate cannot run, record it as `not run` and why — never fabricate.
 9. **Reconcile, don't rewrite.** Update finding statuses via `tools/remediation_status.py`; never
    edit the original finding reports.
-10. **Lab preflight first (fail closed).** Before any audit or remediation work — and before
+10. **Lab preflight first (fail closed).** On a fresh agent/server, prefer the GitHub route so no
+    lab key/token is handled locally: `bash tools/lab-vpn/lab-audit-gh.sh onboard <name>` to set the
+    connection up and `bash tools/lab-vpn/lab-audit-gh.sh run --repo <r> --command "<cmd>"` to use
+    the lab (falls back to local). Then, before any audit or remediation work — and before
     dispatching work to the lab — run `bash tools/lab-vpn/lab-audit-preflight.sh`
     (`--mode lab` when dispatching to the lab/CI; `--remote-key <labvpn key>` to classify the lab
     remotely; `--conf <client.conf>` only as a local fallback). It MUST print `RESULT: PASS`.

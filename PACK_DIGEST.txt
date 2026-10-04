@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T06:26:48Z
-# files: 1074
+# generated: 2026-10-04T06:38:02Z
+# files: 1075
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -19,7 +19,7 @@ d798bc9bc65b99d412a14b311daa630625c4fed59a7d0505b37a90ea0158f9c6  ./.github/work
 3e4db81f236c5c2f839da836a72ea8828481cdbfce804e627e54a44198289ca7  ./.github/workflows/verify-remediation.yml
 1901417f77cc78c633a09e80e61270b57c80643470381a01465730caab633a6c  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
-7936567f1597c040b8425e5d5f893553397800f6313df909a4afeba3590f1774  ./AGENTS.md
+b426a76dee5a0add00936b2591fdd954f3ea2754acf193851280b970a37970e6  ./AGENTS.md
 9c883bfd0ea2426255986f9456a5c32bd4fe672debd17078d389e137337806fb  ./CHANGELOG.md
 6d0d4f121324b673fe85aa0502df10e8b7ec940a32e06b90b0747cb57d1f2402  ./CONTRIBUTING.md
 0886904dbbf64dbe39709dd725d06d87627ad397bca96a4013b310da077fdc42  ./LICENSE
@@ -32,7 +32,7 @@ c3715a4e8c0dc0596cdbc0df05dc1d979a87b2f208d6d8d32f6caad7037a87d5  ./REVIEW_INDEX
 acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
 45e3d8c92ead3f8c35cc36be964698ca8b12abad0d803f26ae6b0f8d1f3fc8ab  ./ci/audit.yml
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
-c0d6ecdd0850e6069ecb87097939f42bcf1ceecac617a50bc148acbc5750ef25  ./docs/LAB_VPN.md
+8b97f6bc7dadc0d98bc39c7651c0149a4380048c4794fd4ad0772003b3f818ca  ./docs/LAB_VPN.md
 8e8d4464abe5d3accb3cda5b9bba9c9e00fc8d64a90ebe2bdadf49a8e2e54c7a  ./docs/OBSERVABILITY.md
 22689ec18c1a279cd478236d2d714f7a231deb94a279eadd058c497090e12708  ./docs/OWNER_REMEDIATION_DECISIONS.md
 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
@@ -1048,6 +1048,7 @@ c56f0126000bbd588c9450e7a66da9f202d2fd278c717c3101be7603275f0b7a  ./tools/lab-vp
 f2937323c675b55b383aa761f004a2dc30a45951c65ff0021aa5133133f881c8  ./tools/lab-vpn/lab-audit-bootstrap.sh
 eb22184b019abc0704301b6737d12accc505446700090d17d95ebfbdd033d524  ./tools/lab-vpn/lab-audit-connect.sh
 22742c2755e83a082f150eb1292693d67657eed57ed5f7a58a10dc8abdf4d283  ./tools/lab-vpn/lab-audit-endpoint.sh
+f5a7e1b2d927534d24122ae206a6b66c20a9dc309182b47417ecb474707e143e  ./tools/lab-vpn/lab-audit-gh.sh
 b68c1e456691be1e00a772b50d8efa8b125a493184f66801f7d0f6897e813a00  ./tools/lab-vpn/lab-audit-lab.sh
 4a38aefa3abb20b7fbed6f669b010a8f62727f62ea8fd33ecb74b446c3c0de02  ./tools/lab-vpn/lab-audit-list-agents.sh
 aa9b2c9e3b60dcd051019930969dd3682c8c6f715d5a6ea1eaad35c8e5c0e37d  ./tools/lab-vpn/lab-audit-preflight.sh

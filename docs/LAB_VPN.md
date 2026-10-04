@@ -39,6 +39,7 @@ agent/dev ──(wg)──► mct-portal-dev  wgaudit0 10.250.0.1:51900 ──(w
 | `lab-audit-connect.sh` | agent/dev workstation | install a client config, add friendly names, verify the lab |
 | `lab-audit-bootstrap.sh` | agent / server / workstation | one-command **connection setup**: generate a keypair, register the public key via the scoped identity, bring the tunnel up, verify |
 | `lab-audit-run.sh` | agent / server | run a repo command **on the lab when reachable, else locally** (auto-sets up the tunnel first if `LABVPN_KEY` is present) |
+| `lab-audit-gh.sh` | agent / server (with `gh`) | **seamless via GitHub**: `onboard` (dispatch onboarding, fetch config, connect), `run` (dispatch to the lab runner; local fallback), `status` |
 
 All scripts are **idempotent**, **back up before writing**, run **pre-checks** (interface / UDP port /
 subnet collisions), refuse to touch `wg0`, and print an inventory.
@@ -128,6 +129,29 @@ ssh -i labvpn_ed25519 labvpn@138.197.105.82 "get-client <name>"
 ssh -i labvpn_ed25519 labvpn@138.197.105.82 "revoke-agent <name>"
 ssh -i labvpn_ed25519 labvpn@138.197.105.82 "health"
 ```
+
+## Seamless access via GitHub (recommended for agents/servers)
+
+GitHub **secrets are write-only** — an external machine cannot read `LAB_ENDPOINT_SSH_KEY`,
+`LAB_API_TOKEN`, etc. back with `gh`. So the seamless pattern is to **route through GitHub
+Actions**, which already holds them, and never copy keys/tokens to the machine:
+
+```bash
+# requires `gh auth login` (repo scope); nothing else
+bash tools/lab-vpn/lab-audit-gh.sh onboard my-server      # -> downloads config and connects
+bash tools/lab-vpn/lab-audit-gh.sh run --repo chat --command "corepack pnpm test"
+bash tools/lab-vpn/lab-audit-gh.sh status
+```
+
+- `onboard` generates a keypair **locally**, sends only the public key through the
+  `lab-agent-onboard` workflow, downloads the config artifact, and connects — no lab secret
+  touches the machine. Offboard with the **Lab agent offboarding** workflow (or
+  `lab-audit-gh.sh` dispatch of it).
+- `run` dispatches `lab-tests.yml` to the lab's self-hosted runner (GitHub injects the secrets);
+  if the runner/lab is unavailable it **falls back to local** execution.
+- GitHub Actions themselves already read the secrets/vars directly — no change needed there.
+- Read-only config that *is* retrievable via `gh variable get` (`LAB_ENDPOINT_HOST`,
+  `LAB_ENDPOINT_USER`, `LAB_API_URL`) is used automatically by the helper.
 
 ## New agent / server: automatic setup + local fallback
 
