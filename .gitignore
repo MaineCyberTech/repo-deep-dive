@@ -23,3 +23,11 @@ lab-audit- *.conf
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Terraform (infra/lab/terraform) — local state, plans and secrets are never committed.
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+crash.log
+

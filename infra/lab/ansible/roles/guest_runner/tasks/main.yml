@@ -1,0 +1,196 @@
+---
+# guest_runner: Node/pnpm, Docker, gitleaks, ripgrep, Python, and the GitHub
+# Actions runner service. Idempotent; registration is gated and token-driven.
+
+# --- baseline toolchain -------------------------------------------------------
+- name: Install runner baseline packages
+  ansible.builtin.apt:
+    name: "{{ runner_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+# --- Node.js + pnpm -----------------------------------------------------------
+- name: Add the NodeSource apt repository
+  ansible.builtin.deb822_repository:
+    name: nodesource
+    types: [deb]
+    uris: "https://deb.nodesource.com/node_{{ node_major }}.x"
+    suites: nodistro
+    components: main
+    signed_by: "https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key"
+    state: present
+
+- name: Install Node.js
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+    update_cache: true
+
+- name: Enable corepack (provides pnpm/yarn shims)
+  ansible.builtin.command: corepack enable
+  args:
+    creates: /usr/bin/pnpm
+
+- name: Pin pnpm via corepack (optional)
+  ansible.builtin.command: "corepack prepare pnpm@{{ pnpm_version }} --activate"
+  when: pnpm_version | length > 0
+  changed_when: true
+
+# --- Docker -------------------------------------------------------------------
+- name: Derive the Docker apt distro slug
+  ansible.builtin.set_fact:
+    runner_docker_distro: "{{ ansible_facts.distribution | lower }}"
+
+- name: Add the Docker apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: "https://download.docker.com/linux/{{ runner_docker_distro }}"
+    suites: "{{ ansible_facts.distribution_release }}"
+    components: stable
+    architectures: "{{ 'amd64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
+    signed_by: "https://download.docker.com/linux/{{ runner_docker_distro }}/gpg"
+    state: present
+  when: runner_install_docker | bool
+
+- name: Install Docker Engine + buildx
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+    state: present
+    update_cache: true
+  when: runner_install_docker | bool
+
+- name: Enable and start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+  when: runner_install_docker | bool
+
+# --- gitleaks -----------------------------------------------------------------
+- name: Check for an existing gitleaks binary
+  ansible.builtin.stat:
+    path: /usr/local/bin/gitleaks
+  register: runner_gitleaks_bin
+
+- name: Download gitleaks
+  ansible.builtin.get_url:
+    url: "https://github.com/gitleaks/gitleaks/releases/download/v{{ gitleaks_version }}/gitleaks_{{ gitleaks_version }}_linux_x64.tar.gz"
+    dest: "/tmp/gitleaks-{{ gitleaks_version }}.tar.gz"
+    mode: "0644"
+  when: not runner_gitleaks_bin.stat.exists
+
+- name: Install gitleaks
+  ansible.builtin.unarchive:
+    src: "/tmp/gitleaks-{{ gitleaks_version }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    mode: "0755"
+  when: not runner_gitleaks_bin.stat.exists
+
+# --- GitHub Actions runner ----------------------------------------------------
+- name: Ensure the runner group exists
+  ansible.builtin.group:
+    name: "{{ runner_group }}"
+    state: present
+
+- name: Ensure the runner user exists
+  ansible.builtin.user:
+    name: "{{ runner_user }}"
+    group: "{{ runner_group }}"
+    groups: "{{ ['docker'] if runner_install_docker | bool else [] }}"
+    append: true
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Ensure the runner install directory exists
+  ansible.builtin.file:
+    path: "{{ runner_install_dir }}"
+    state: directory
+    owner: "{{ runner_user }}"
+    group: "{{ runner_group }}"
+    mode: "0755"
+
+- name: Check whether the runner is already extracted
+  ansible.builtin.stat:
+    path: "{{ runner_install_dir }}/config.sh"
+  register: runner_config_sh
+
+- name: Download the Actions runner tarball
+  ansible.builtin.get_url:
+    url: "https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz"
+    dest: "/tmp/actions-runner-{{ runner_version }}.tar.gz"
+    mode: "0644"
+  when: not runner_config_sh.stat.exists
+
+- name: Extract the Actions runner
+  ansible.builtin.unarchive:
+    src: "/tmp/actions-runner-{{ runner_version }}.tar.gz"
+    dest: "{{ runner_install_dir }}"
+    remote_src: true
+    owner: "{{ runner_user }}"
+    group: "{{ runner_group }}"
+  when: not runner_config_sh.stat.exists
+
+- name: Build the runner registration URL
+  ansible.builtin.set_fact:
+    runner_registration_url: >-
+      {{ ('https://github.com/' ~ runner_org) if runner_scope == 'org'
+         else ('https://github.com/' ~ runner_org ~ '/' ~ runner_repo) }}
+
+- name: Check whether the runner is registered
+  ansible.builtin.stat:
+    path: "{{ runner_install_dir }}/.runner"
+  register: runner_already_registered
+
+- name: Register the runner
+  ansible.builtin.command:
+    cmd: >-
+      ./config.sh --unattended --replace
+      --name "{{ runner_name }}"
+      --labels "{{ runner_labels }}"
+      --work "{{ runner_workdir }}"
+      --url "{{ runner_registration_url }}"
+      --token "{{ runner_registration_token }}"
+      {{ '--ephemeral' if runner_ephemeral | bool else '' }}
+    chdir: "{{ runner_install_dir }}"
+  become: true
+  become_user: "{{ runner_user }}"
+  when:
+    - not runner_already_registered.stat.exists
+    - runner_register | bool
+    - (runner_registration_token | default('')) | length > 0
+  no_log: true
+
+- name: Install the runner systemd service
+  ansible.builtin.command: "./svc.sh install {{ runner_user }}"
+  args:
+    chdir: "{{ runner_install_dir }}"
+  when:
+    - runner_register | bool
+    - (runner_registration_token | default('')) | length > 0
+  register: runner_svc_install
+  changed_when: "'already installed' not in (runner_svc_install.stdout | default(''))"
+
+- name: Enable and start the runner service
+  ansible.builtin.command: ./svc.sh start
+  args:
+    chdir: "{{ runner_install_dir }}"
+  when:
+    - runner_register | bool
+    - (runner_registration_token | default('')) | length > 0
+  changed_when: false
+
+- name: Explain how to register when no token was supplied
+  ansible.builtin.debug:
+    msg: >-
+      Runner not registered: set RUNNER_TOKEN (an org/repo registration token)
+      and runner_register=true. For ephemeral runners, prefer
+      infra/lab/runners/ (ARC or bootstrap-runner.sh).
+  when: not runner_register | bool
