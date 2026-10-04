@@ -11,7 +11,7 @@ run the machine checks and a verification-mode LLM re-audit per repo.
 | chat | 65 | 1 | 26 | 31 | 7 | 28 | [ ] |
 | falcon | 46 | 4 | 20 | 18 | 4 | 20 | [ ] |
 | falcon-edge | 43 | 0 | 3 | 27 | 13 | 15 | [ ] |
-| mainecybertech | 44 | 1 | 3 | 26 | 14 | 16 | [ ] |
+| mainecybertech | 44 | 1 | 3 | 26 | 14 | 16 | [x] |
 | repo-deep-dive | 41 | 0 | 9 | 20 | 12 | 10 | [ ] |
 | snowride | 46 | 0 | 6 | 25 | 15 | 17 | [ ] |
 
@@ -120,6 +120,9 @@ Total: 7 repos, 119 PRs.
 - [x] https://github.com/MaineCyberTech/mainecybertech/pull/65
 - [x] https://github.com/MaineCyberTech/mainecybertech/pull/66
 - [x] https://github.com/MaineCyberTech/mainecybertech/pull/67
+- [x] https://github.com/MaineCyberTech/mainecybertech/pull/72 (integration of the stranded remediation onto develop)
+
+**Re-audit 2026-10-04:** [mainecybertech-20261004-0840-verify-develop-a97425d](runs/mainecybertech-20261004-0840-verify-develop-a97425d/) — 34 verified-fixed / 9 partially-fixed / 1 still-open (`CI-P1-001` prod environment) / 0 regressed. The 16 remediation PRs had merged into `fix/p2-batch-31` after #32 landed it, so they were integrated to develop by PR #72 (merge `a97425db`); deploy run 37188587849 green, droplet healthy. Close-out remains conditional on the operator/owner items in the verification run's `roadmap.md`.
 
 ### repo-deep-dive
 - [x] https://github.com/MaineCyberTech/repo-deep-dive/pull/1

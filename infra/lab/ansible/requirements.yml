@@ -1,0 +1,8 @@
+---
+# Collections the lab roles use. Install with:
+#   ansible-galaxy collection install -r requirements.yml
+collections:
+  - name: ansible.posix        # authorized_key, sysctl
+    version: ">=1.5.0"
+  - name: community.general    # timezone, ufw, zfs helpers
+    version: ">=8.0.0"

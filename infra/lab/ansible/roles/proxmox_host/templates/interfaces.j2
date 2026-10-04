@@ -1,0 +1,34 @@
+---
+# Managed Proxmox VE bridge layout. Rendered only when proxmox_manage_network
+# is true. Keep a console/BMC session open before applying.
+auto lo
+iface lo inet loopback
+
+{% if proxmox_bridge_ports | length > 0 %}
+iface {{ proxmox_bridge_ports[0] }} inet manual
+{% endif %}
+
+auto {{ proxmox_bridge_name }}
+iface {{ proxmox_bridge_name }} inet static
+    address {{ proxmox_bridge_address }}
+{% if proxmox_bridge_gateway | length > 0 %}
+    gateway {{ proxmox_bridge_gateway }}
+{% endif %}
+    bridge-ports {{ proxmox_bridge_ports | join(' ') if proxmox_bridge_ports | length > 0 else 'none' }}
+    bridge-stp off
+    bridge-fd 0
+{% if proxmox_bridge_ports | length > 0 %}
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+{% endif %}
+
+{% if proxmox_lab_bridge_address | length > 0 %}
+auto {{ proxmox_lab_bridge }}
+iface {{ proxmox_lab_bridge }} inet static
+    address {{ proxmox_lab_bridge_address }}
+    bridge-ports {{ proxmox_lab_bridge_ports | join(' ') if proxmox_lab_bridge_ports | length > 0 else 'none' }}
+    bridge-stp off
+    bridge-fd 0
+    bridge-vlan-aware yes
+    bridge-vids 2-4094
+{% endif %}
