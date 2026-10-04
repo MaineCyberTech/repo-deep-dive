@@ -37,7 +37,7 @@
       "deterministic_ref": "DET-P1-001, DET-P3-002",
       "confidence": "High",
       "status": "verified-fixed",
-      "note": "merged #30 @ cb583a2"
+      "note": "merged snowride#30 @ cb583a2"
     },
     {
       "id": "SUPPLY-P2-001",
@@ -55,7 +55,7 @@
       "deterministic_ref": "DET-P2-006",
       "confidence": "High",
       "status": "verified-fixed",
-      "note": "merged #31 @ 34347c0"
+      "note": "merged snowride#31 @ 34347c0"
     },
     {
       "id": "SUPPLY-P2-002",
@@ -76,7 +76,7 @@
       "deterministic_ref": "DET-P3-007 (derived)",
       "confidence": "High",
       "status": "verified-fixed",
-      "note": "merged #32 @ 4c6e788"
+      "note": "merged snowride#32 @ 4c6e788"
     },
     {
       "id": "CI-P2-001",
@@ -95,7 +95,7 @@
       "deterministic_ref": null,
       "confidence": "High",
       "status": "verified-fixed",
-      "note": "merged #34 @ b5d6921"
+      "note": "merged snowride#34 @ b5d6921"
     },
     {
       "id": "PORT-P3-001",

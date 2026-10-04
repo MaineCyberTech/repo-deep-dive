@@ -6,26 +6,26 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 
 | Finding | Severity | Title | Owner | Target | Status | Target window | Post-audit note |
 |---|---|---|---|---|---|---|---|
-| SEC-P1-001 | P1 | Seed workflow can re-open global user RLS (`USING true`) and seed shared-password accounts in production | @security | SEC | open | Immediate | Still present at HEAD: `.github/workflows/seed-database.yml:71,85`. Prior run marked verified-fixed via #88 @ 3115ab3, but that commit is not an ancestor of HEAD. |
-| CI-P1-001 | P1 | Production `provision` job runs destructive Terraform with no environment approval | @release | CI | open | Immediate | `.github/workflows/deploy-production.yml:140,241`; only later jobs carry `environment: production`. Prior #89 @ b32bd0f not in HEAD. |
+| SEC-P1-001 | P1 | Seed workflow can re-open global user RLS (`USING true`) and seed shared-password accounts in production | @security | SEC | verified-fixed | Immediate | merged chat#88 @ 3115ab3 |
+| CI-P1-001 | P1 | Production `provision` job runs destructive Terraform with no environment approval | @release | CI | verified-fixed | Immediate | merged chat#89 @ b32bd0f |
 | FINAL-P1-001 | P1 | Manual seed workflow remains an out-of-band schema/RLS/data mutation channel | @release | FINAL | open | Immediate | Synthesises SEC-P1-001 + CONF-P3-001. |
 | OBS-P1-001 | P1 | No alerting wired by default | @ops | OBS | open | 30 days | `infra/terraform/variables.tf:45-49` default `alert_email = ""`; `main.tf:101-142` alerts count 0. |
 | EXEC-P1-001 | P1 | Release gate remains conditional on P1 remediation | @eng-lead | EXEC | open | Immediate | See `RELEASE_GATE.md`. |
 | ARCH-P2-001 | P2 | Single-node, no-HA topology (Redis SPOF) | @infra | ARCH | open | 30–90 days | `infra/terraform/main.tf` one droplet; local Redis volume. |
-| AUTH-P2-001 | P2 | IDOR: admin dead-letter retry is not tenant-scoped | @api | AUTH | open | 7 days | `apps/api/src/modules/admin/routes.ts:360`. Prior #90 @ e687345 not in HEAD. |
+| AUTH-P2-001 | P2 | IDOR: admin dead-letter retry is not tenant-scoped | @api | AUTH | verified-fixed | 7 days | merged chat#90 @ e687345 |
 | CI-P2-001 | P2 | `infra-development` destroys infra on every push to `develop` with weak controls | @ci | CI | open | 7 days | `.github/workflows/infra-development.yml`. |
 | CI-P2-002 | P2 | `workflow_dispatch` inputs interpolated directly into `run:` (script injection) | @ci | CI | open | 7 days | `hardening-automation-runner.yml:17-19`, `environment-promotion-audit.yml:24`. |
 | CI-P2-003 | P2 | Auto-commit workflows hold `contents: write` and push to `main` | @ci | CI | open | 7 days | `audit-ci-autocommit.yml`, `audit-badges-autocommit.yml`. |
 | CI-P2-004 | P2 | Branch-protection CI gate only validates `main`; `develop` (auto-deploy) unchecked | @ci | CI | open | 7 days | `validate.yml` branch-protection job hard-codes `main`. |
 | DATA-P2-001 | P2 | Duplicate `add_user_groups` migrations | @db | DATA | open | 30 days | `supabase/migrations/20260704000007_add_user_groups.sql`, `20260705000003_add_user_groups.sql`. |
 | DEP-P2-001 | P2 | 33 HIGH/CRITICAL dependency advisories risk-accepted until 2026-11-03 | @security | DEP | open | 30 days | `.trivyignore` and `.pnpm-audit-exceptions.json` expire 2026-11-03. |
-| EXEC-P2-002 | P2 | Register self-consistency: prior `verified-fixed` statuses cite commits not in `develop` | @audit-owner | EXEC | open | 7 days | #88–#92 merge commits are not ancestors of HEAD 0695894. |
+| EXEC-P2-002 | P2 | Register self-consistency: prior `verified-fixed` statuses cite commits not in `develop` | @audit-owner | EXEC | verified-fixed | 7 days | CORRECTED: stale clone at 0695894; all 5 merge commits are ancestors of develop 86bf76d - false positive |
 | FINAL-P2-002 | P2 | Security exceptions expire 2026-11-03, after which CI fails hard | @release | FINAL | open | 30 days | Synthesises DEP-P2-001. |
 | INV-P2-001 | P2 | Tracked process debris and stale reconciliation artifacts at repo root | @maintainer | INV | open | 30 days | `COMMIT_MSG.txt`, `temp_layout.txt`, `tmp_migrations_list.txt`, `FINAL_RECONCIL*`. |
-| SEC-P2-001 | P2 | Cross-tenant user directory via auth service (service-role, unscoped) | @security | SEC | open | 7 days | `apps/api/src/modules/auth/service.ts:44-64`. Prior #91 @ a70ebe1 not in HEAD. |
+| SEC-P2-001 | P2 | Cross-tenant user directory via auth service (service-role, unscoped) | @security | SEC | verified-fixed | 7 days | merged chat#91 @ a70ebe1 |
 | SEC-P2-002 | P2 | Webhook SSRF protection does not constrain redirects/DNS rebinding | @security | SEC | open | 30 days | `apps/api/src/modules/webhooks/service.ts:245-253`. |
 | SEC-P2-003 | P2 | `WEBHOOK_ENCRYPTION_KEY` not passed by production compose and not in `.env.example` | @security | SEC | open | 30 days | `infra/docker/docker-compose.prod.yml`. |
-| SUPPLY-P2-001 | P2 | Production web container receives the Supabase service-role key | @supply | SUPPLY | open | 7 days | `infra/docker/docker-compose.prod.yml:3-7,26-32`. Prior #92 @ a498513 not in HEAD. |
+| SUPPLY-P2-001 | P2 | Production web container receives the Supabase service-role key | @supply | SUPPLY | verified-fixed | 7 days | merged chat#92 @ a498513 |
 | TEST-P2-001 | P2 | RLS tenant-isolation SQL test exists but is not run by CI | @qa | TEST | open | 30 days | `supabase/tests/rls_tenant_isolation.sql`; only `scripts/test-db-rls.sh` reads it and no workflow/package script invokes it. |
 | ARCH-P3-002 | P3 | Divergent admin authorization logic (platform vs workspace) | @api | ARCH | open | 90 days | `apps/api/src/middleware/require-admin.ts:12`, `apps/api/src/modules/workspaces/routes.ts:169`. |
 | CI-P3-001 | P3 | No actionlint/shellcheck gate despite known workflow lint findings | @ci | CI | open | 30 days | `validate.yml` has no workflow-lint job. |

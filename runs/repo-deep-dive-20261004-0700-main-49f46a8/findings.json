@@ -35,7 +35,8 @@
       "recommendation": "Match on the subcode instead of the ID, e.g. `if f.get('severity') == 'P1' and str(f.get('title','')).startswith('[SEC]')`, or (preferred) have deterministic_checks.py emit a machine-readable `subcode`/`area` field on each finding and gate on that. Add a unit/CI test that feeds a synthetic P1 SEC deterministic-findings.json through the gate and asserts a non-zero exit.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#15 @ abdf75d"
     },
     {
       "id": "SEC-P2-001",
@@ -55,7 +56,8 @@
       "recommendation": "Use the extraheader form from deep-dive-deterministic.yml (or `git -c credential.helper=` with a header) in remediation.yml, verify-remediation.yml and lab-tests.yml; never interpolate GH_TOKEN into the remote URL. Optionally use a short-lived GitHub App installation token or GITHUB_TOKEN with scoped permissions instead of a long-lived PAT.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#17 @ 7a2aa6e"
     },
     {
       "id": "CI-P2-001",
@@ -74,7 +76,8 @@
       "recommendation": "Constrain `run`/`ref` to trusted refs (default branch, or an allowlisted set), pin the plan to a commit whose digest is verified, and run verification in an ephemeral/microVM runner or container with no org secrets. Treat remediation_plan.json verification commands as untrusted input and require an explicit approval-protected environment before executing them.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#18 @ ec3d0c2"
     },
     {
       "id": "SUPPLY-P2-001",
@@ -96,7 +99,8 @@
       "recommendation": "Pin all external `uses:` to full commit SHAs with a trailing `# vX.Y.Z` comment (Dependabot already updates github-actions weekly per .github/dependabot.yml, so pins stay current). Add a lint in tools/deterministic_checks.py (already exists) as a required check so tagged refs fail the pack CI.",
       "deterministic_ref": "DET-P2-005",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#19 @ e26b4e3"
     },
     {
       "id": "SUPPLY-P2-002",
@@ -115,7 +119,8 @@
       "recommendation": "Remove the binaries from the archived run (keep the verify.sh that downloads them by pinned version+SHA), or add a SHA256SUMS file and a check that verifies it before use. If the blobs must stay for provenance, move them to Git LFS and record their sha256 in the run manifest.",
       "deterministic_ref": "DET-P3-002",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#20 @ b881482"
     },
     {
       "id": "SEC-P2-002",
@@ -135,7 +140,8 @@
       "recommendation": "Before writing/PR-ing, run gitleaks (--redact) over the assembled file set and fail closed on any hit; strip or redact secret-like strings in evidence; record the scan result in the run manifest. Alternatively call the existing deterministic secret check on the source dir and block publication on P1.",
       "deterministic_ref": null,
       "confidence": "Medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#21 @ 870bd9c"
     },
     {
       "id": "CI-P3-001",
@@ -154,7 +160,8 @@
       "recommendation": "Run the changed-run gate on push to main as well as pull_request, and make the gate severity configurable (fail on P0 by default, optionally P1). Keep documenting the admin/force-push bypass, but pair it with a branch-protection checklist and an auditable CHANGELOG exception entry (CONTRIBUTING.md:74 already asks for the latter).",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#33 @ 2626a84"
     },
     {
       "id": "PORT-P3-001",
@@ -172,7 +179,8 @@
       "recommendation": "Run `git update-index --chmod=+x` for the 35 scripts (a one-line loop over `git ls-files -s | awk '$1==\"100644\" && /[.]sh$/ {print $4}'`), and add a lint (already detected by deterministic_checks.py check_portability) as a required check so new exports do not regress.",
       "deterministic_ref": "DET-P2-003",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#24 @ e4403c8"
     },
     {
       "id": "CI-P3-002",
@@ -191,7 +199,8 @@
       "recommendation": "Rewrite the three guards as explicit `if [ -z \"$HOST\" ] || [ -z \"$USER\" ]; then echo ...; exit 1; fi` and replace `tr 'A-Z' 'a-z'` with `tr '[:upper:]' '[:lower:]'`. Alternatively add a targeted actionlint shellcheck-ignore if the idiom is intentional.",
       "deterministic_ref": "DET-P2-001",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#26 @ 508b580"
     },
     {
       "id": "CONF-P3-001",
@@ -230,7 +239,8 @@
       "recommendation": "Replace `secrets: inherit` with an explicit `secrets: LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}` mapping in all three callers, matching the workflow_call contract already declared in lab-preflight.yml.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#27 @ 161de65"
     },
     {
       "id": "CI-P3-003",
@@ -248,7 +258,8 @@
       "recommendation": "Pass the command through an `env:` variable (e.g. `CMD: ${{ inputs.command }}`) and run `bash -o pipefail -c \"$CMD\"` so the value is data, not script text; keep dispatch restricted to trusted users and drop GH_TOKEN from the step env unless needed.",
       "deterministic_ref": null,
       "confidence": "Medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive#29 @ 877e248"
     }
   ]
 }

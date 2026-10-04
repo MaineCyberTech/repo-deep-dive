@@ -2,9 +2,9 @@
 
 | Finding | Severity | Title | Owner | Target | Status | Note |
 |---|---|---|---|---|---|---|
-| SEC-P2-001 | P2 | gitleaks curl-auth-user allowlist is unanchored and suppresses every curl line | @owner | SEC | verified-fixed | merged #34 @ bc58e7e |
-| SEC-P2-002 | P2 | Retired DFIR-IRIS API key literal still committed in vendored scripts; rotation PENDING | @owner | SEC | verified-fixed | merged #37 @ a146ae0 |
-| SEC-P2-003 | P2 | All 20 inherited credentials are PENDING rotation; vendored scripts source credential files wholesale | @owner | SEC | verified-fixed | merged #38 @ 01c176a |
+| SEC-P2-001 | P2 | gitleaks curl-auth-user allowlist is unanchored and suppresses every curl line | @owner | SEC | verified-fixed | merged falcon#34 @ bc58e7e |
+| SEC-P2-002 | P2 | Retired DFIR-IRIS API key literal still committed in vendored scripts; rotation PENDING | @owner | SEC | verified-fixed | merged falcon#37 @ a146ae0 |
+| SEC-P2-003 | P2 | All 20 inherited credentials are PENDING rotation; vendored scripts source credential files wholesale | @owner | SEC | verified-fixed | merged falcon#38 @ 01c176a |
 | DEP-P2-001 | P2 | Dependabot covers only GitHub Actions; Python dependencies and container images are unmanaged | @owner | DEP | open | Add pip/uv and docker ecosystems to .github/dependabot.yml, or add renovate.json with digest pinning, preserving the exi |
 | SUPPLY-P2-001 | P2 | Release and SBOM artifacts are integrity-checked but unsigned (SLSA ~0-1) | @owner | SUPPLY | open | Implement D1: owner-held ed25519/GPG signature over sbom/SBOM_MANIFEST.sha256 with the public key published and the mani |
 | CI-P2-001 | P2 | Branch protection and required checks are plan-gated, so validate is advisory | @owner | CI | open | Owner decision: upgrade to GitHub Pro/Team and apply the ready payload (BRANCH_PROTECTION.md:16-51), or record a per-mer |
