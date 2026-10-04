@@ -1,0 +1,38 @@
+# Declarative approvals (approvals-as-code).
+# Dry-run:  tools/apply_approvals.py --file approvals.yml
+# Apply:    tools/apply_approvals.py --file approvals.yml --apply
+# Verify:   tools/repo_approvals.py --org MaineCyberTech --repos <...>
+repos:
+  MaineCyberTech/repo-deep-dive:
+    branch: main
+    required_checks: ["Lab preflight / lab"]
+    strict: true
+    required_reviews: 0
+    enforce_admins: false
+
+  MaineCyberTech/falcon:
+    branch: main
+    required_checks: ["validate"]
+    strict: true
+
+  MaineCyberTech/snowride:
+    branch: main
+    required_checks: ["foundation", "migrations", "e2e", "license-and-vulnerability"]
+    strict: true
+
+  MaineCyberTech/falcon-edge:
+    branch: main
+    required_checks: ["validate"]
+    strict: true
+
+  MaineCyberTech/mainecybertech:
+    branch: main
+    required_checks: ["test (20.x)", "lint (20.x)", "typecheck", "e2e (20.x)", "Dependency Review"]
+    strict: true
+    environments:
+      prod-approval: { reviewers: ["JulianB-MCT"] }
+
+  MaineCyberTech/chat:
+    branch: develop
+    environments:
+      production: { reviewers: ["JulianB-MCT"] }

@@ -8,7 +8,12 @@ preflight -> deterministic sweep -> audit -> PUBLISH AUDIT PR -> remediation pla
           -> draft remediation PRs -> MERGE ALL IN -> run all PRs OR stop for delegation
 ```
 
-## 0. Preflight (required)
+## 0. Setup + preflight (required)
+Agent setup is one step: `bash tools/lab-vpn/lab-audit-gh.sh setup <name> --repos <r,...>` — it sets
+up the connection, runs the preflight, and **confirms each repo's approvals** via
+`tools/repo_approvals.py` (`runbooks/AGENT_SETUP.md`); record `NEEDS-HUMAN` controls, never fake them.
+
+## 0b. Preflight (required for lab-dependent work)
 `bash tools/lab-vpn/lab-audit-preflight.sh` (or `--mode lab`) must print `RESULT: PASS`
 (see `docs/LAB_VPN.md`). If the lab genuinely can't be used, work still proceeds **locally**.
 
