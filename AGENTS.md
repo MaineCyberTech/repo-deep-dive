@@ -3,47 +3,34 @@
 This repository is an **audit + remediation framework**, not an application. Agents (OpenCode
 subagents or others) use it to audit repos and to open remediation PRs.
 
-## Golden rules
+## Rules (scoped — apply only when the condition holds)
 
-1. **Evidence or `Unknown`.** Every finding cites repository evidence (file, symbol/route/workflow/
-   migration, lines). Never invent functionality, risks, or controls.
-2. **No secrets.** Never print or commit secret values; reference path + type and redact.
-3. **Audit-only during an audit.** Do not modify application code; write only under the run folder.
-4. **Reproduce before asserting.** For headline claims (verdicts, PASS/APPROVED, "verified/fixed"),
-   reproduce from the repo or mark `not reproducible`.
-5. **A finding is `verified-fixed` only with an artifact at the current commit** — assertions and
-   intentions do not close findings.
+### While auditing
+1. **Evidence or `Unknown`.** Cite file/symbol/route/workflow/migration/lines; never invent.
+2. **Read-only on app code.** Write only under the run folder.
+3. **Reproduce headline claims** (verdicts, PASS, "verified/fixed") or mark `not reproducible`.
+4. **No secrets.** Reference path + type and redact the value.
 
-## Remediation rules (see `prompts/REMEDIATION_RUNNER.md`)
+### While remediating
+5. **Minimal scope.** Only the patch set's files (plus the tests/docs the fix requires).
+6. **Draft PRs; no auto-merge or self-approval** unless the operator explicitly authorizes the merge.
+7. **Fail closed.** Record `not run` + why; `verified-fixed` only with a commit/artifact at the
+   current commit.
 
-6. **Draft PRs only.** Never auto-merge and never self-approve; a human/reviewer merges.
-7. **Minimal scope.** Touch only the patch set's files (plus the tests/docs the fix requires).
-8. **Fail closed.** Run the patch set's verification in the lab (`ci-runner` / `edge-builder`) and
-   `gitleaks` the diff; if a gate cannot run, record it as `not run` and why — never fabricate.
-9. **Reconcile, don't rewrite.** Update finding statuses via `tools/remediation_status.py`; never
-   edit the original finding reports.
-10. **Lab preflight first (fail closed).** On a fresh agent/server, prefer the GitHub route so no
-    lab key/token is handled locally: `bash tools/lab-vpn/lab-audit-gh.sh onboard <name>` to set the
-    connection up and `bash tools/lab-vpn/lab-audit-gh.sh run --repo <r> --command "<cmd>"` to use
-    the lab (falls back to local). Then, before any audit or remediation work — and before
-    dispatching work to the lab — run `bash tools/lab-vpn/lab-audit-preflight.sh`
-    (`--mode lab` when dispatching to the lab/CI; `--remote-key <labvpn key>` to classify the lab
-    remotely; `--conf <client.conf>` only as a local fallback). It MUST print `RESULT: PASS`.
-    If it does not: **STOP**. Specifically, when it reports `lab_up_local_down` fix **local access**
-    (`LABVPN_KEY=<labvpn key> bash tools/lab-vpn/lab-audit-bootstrap.sh` sets the connection up
-    automatically); when it reports `lab_down`/`unknown` (the lab genuinely can't be used), do
-    **not** dispatch to the lab — run the work **locally** instead via
-    `bash tools/lab-vpn/lab-audit-run.sh --repo <repo> --command "<cmd>"`, which uses the lab when
-    reachable and falls back to local execution. Record which mode was used. The same gate runs in
-    CI (`Lab preflight`) and as a `needs:` gate on the remediation/lab workflows, and
-    `tools/lab_runner.py` refuses to dispatch unless the lab API is healthy.
+### When using the lab
+8. **Preflight only for lab-dependent work.** `tools/lab-vpn/lab-audit-preflight.sh` must print
+   `RESULT: PASS`; if the lab genuinely can't be used, run the work locally and record `MODE=local`.
+   Audits that don't touch the lab are exempt. (Setup + local fallback: `runbooks/AGENT_SETUP.md`.)
 
-11. **Publish after every audit (standard pipeline).** After an audit, follow
-    `runbooks/POST_AUDIT_PIPELINE.md`: publish the **full audit first** with
-    `tools/publish_audit.py` (writes a `check_run.sh`-valid `runs/<repo>-<run>/`, updates
-    `runs/INDEX.md`, and opens a **draft** audit PR in the repo), then run remediation agents for
-    a plan + draft remediation PRs, then merge **only on explicit authorization** — audit PR first,
-    then remediation PRs — and either finish the queue or stop for delegation.
+### After an audit
+9. **Standard pipeline** (`runbooks/POST_AUDIT_PIPELINE.md`): publish the audit first
+   (`tools/publish_audit.py`), then draft remediation PRs, then merge only on authorization — audit
+   PR first — then reconcile.
+
+### On setup
+10. **Confirm repo approvals.** When setting up the pack + lab, run `tools/repo_approvals.py` and
+    record the result (`runbooks/AGENT_SETUP.md`); record controls you cannot set (branch
+    protection, environment reviewers, tag rules) as `NEEDS-HUMAN` — never fake them.
 
 ## Working on the pack itself
 
@@ -83,6 +70,7 @@ This is **separate** from the falcon telemetry VPN (`wg0`) — never reuse or ed
 
 | Need | Location |
 |---|---|
+| Agent setup (pack + lab + approvals) | `runbooks/AGENT_SETUP.md` + `tools/repo_approvals.py` |
 | Lab WireGuard access | `docs/LAB_VPN.md` + `tools/lab-vpn/` |
 | Post-audit pipeline | `runbooks/POST_AUDIT_PIPELINE.md` + `tools/publish_audit.py` |
 | Audit runner (generic) | `prompts/MASTER_RUNNER_FULL_HARDENING.md` |
