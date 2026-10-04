@@ -58,7 +58,13 @@ jobs:
 
       - name: Checkout target repository
         run: |
-          git clone -q "https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${REPO}.git" work/"$REPO"
+          set -euo pipefail
+          # Pass the PAT via an HTTP header, never in the clone URL, so it cannot
+          # leak through git/shell error or diagnostic output (SEC-001).
+          AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git -c credential.helper= \
+            -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+            clone -q "https://github.com/${ORG}/${REPO}.git" work/"$REPO"
 
       - name: Compile remediation plan
         run: |
