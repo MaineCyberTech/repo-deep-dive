@@ -1,6 +1,6 @@
 {
   "run": "20260930-0701-falcon-8282d3f_edge-45dfed0",
-  "generated": "2026-10-01T05:07:41Z",
+  "generated": "2026-10-03T04:53:35Z",
   "sourceReports": [
     "00_audit_orchestrator.md",
     "01_repository_inventory.md",
@@ -111,8 +111,8 @@
       "line": 110,
       "owner": "falcon",
       "target": "immediate",
-      "status": "partially-fixed",
-      "note": "new — Wazuh config credential literals in repo/package/delivery; scanner blind to the XML-tag form (EVID-P1-004, SC-P1-001). Cluster key rotated + Shuffle key retired 2026-09-30 (live-verified); repo/package scrubbed; rebuild/rebind at C1."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the repo/package credential-literal class is closed (no XML-tag literal; the live config was fixed under C2). Residual: history + old archives (owner)."
     },
     {
       "id": "EVID-P0-001",
@@ -123,7 +123,7 @@
       "owner": "owner",
       "target": "immediate",
       "status": "partially-fixed",
-      "note": "new — approval chain binds superseded package; prior REV-P1-001: still-open, prior REV-P1-002: still-open (worse)."
+      "note": "new: 2026-10-02 - round 2: package b595354, publication 31e1e90, archive 0a8a5e8e... (chain 0 failures; verdict consistency fixed). Residual: JPB's reviewer artifact + the owner adoption."
     },
     {
       "id": "EVID-P0-002",
@@ -134,7 +134,7 @@
       "owner": "owner",
       "target": "immediate",
       "status": "partially-fixed",
-      "note": "new — reviewer disposition is a transcription; prior REV-P1-002: still-open (worse), system installer named as reviewer."
+      "note": "new: 2026-10-02 - the disambiguation is in the C1 binder scope; round 2 rebound. Residual: the reviewer-produced disposition."
     },
     {
       "id": "FINAL-P0-001",
@@ -178,7 +178,7 @@
       "owner": "owner",
       "target": "immediate",
       "status": "partially-fixed",
-      "note": "new — verdict artifacts bind a superseded package and contradict the digest (prior REV-P1-001: still-open; prior REV-P1-003: partially-fixed)."
+      "note": "new: 2026-10-02 - the verdict/digest artifacts rebound at b595354 (chain 0 failures); FINAL_RESPONSE == PACKAGE_DIGEST (AI-P2-003 fixed)."
     },
     {
       "id": "LIVE-P0-001",
@@ -233,7 +233,7 @@
       "owner": "owner",
       "target": "immediate",
       "status": "partially-fixed",
-      "note": "new — reviewed archive itself carries a denying digest; prior REV-P1-001: still-open, prior REV-P1-002: still-open."
+      "note": "new: 2026-10-02 - the rebind machinery done (round 2: b595354/31e1e90); residual: the independent reviewer artifact."
     },
     {
       "id": "XREPO-P0-001",
@@ -342,8 +342,8 @@
       "line": 182,
       "owner": "both",
       "target": "this week",
-      "status": "open",
-      "note": "prior INTG-P1-002: still-open; prior INTG-P1-004: still-open — live services run from dirty working trees."
+      "status": "partially-fixed",
+      "note": "prior INTG-P1-002/-P1-004: falcon side fixed 2026-10-01 (source-digest logging, dirty-tree gate, metrics + rule, TB-9); edge side 2026-10-01: the control plane records and serves its source tree on /healthz (source_commit + source_dirty; live 2d9df9e dirty=1) and release_skew_check.sh automates pin/delivery/live skew (observed drift). Residual: the edge tree is still executed directly; live devices stay older until the next bake."
     },
     {
       "id": "ARCH-P1-003",
@@ -353,8 +353,8 @@
       "line": 194,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "new — trust-boundary matrix vs live port binds (prior INTG-P1-004/INTG-P3-004: still-open)."
+      "status": "verified-fixed",
+      "note": "new — fixed 2026-10-01: matrix reconciled with every live bind (corrections + N-22..N-28 incl. the documented any-source 1516/1517 Wazuh forwards); port_matrix_check.sh + falcon_port_matrix_undocumented + falcon-port-matrix-drift live (22 documented / 0 undocumented). Residual: the external per-port sweep needs a remote vantage (DO-side watcher)."
     },
     {
       "id": "BP-P1-001",
@@ -463,8 +463,8 @@
       "line": 115,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "new — DLQ counts pre-sink validation errors only; write failures invisible (prior LIVE-P2-002/003: still-open)."
+      "status": "verified-fixed",
+      "note": "new — fixed 2026-10-01: Vector internal metrics exposed (internal_metrics + prometheus_exporter on host loopback:9598); exporter adds falcon_pipeline_sink_{http_errors,errors,discarded_events,buffer_events,...}; two rules live (write failures/drops critical + backlog warning); the write-rejection drill dropped 927 events (previously invisible) and the re-drill proved the alert fires. Residual: dropped batches are counted/alerted, not dead-lettered or auto-replayed."
     },
     {
       "id": "DR-P1-001",
@@ -507,8 +507,8 @@
       "line": 143,
       "owner": "falcon/ops",
       "target": "this week",
-      "status": "partially-fixed",
-      "note": "new — backup-key custody unverified; offsite archives depend on a host-only key."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the decrypt drill proves the offsite archives decrypt with the key; the owner's custody attestation recorded (escrow in SharePoint; the lab copy shredded). Residual: review the rotation intent at any custody change."
     },
     {
       "id": "DR-P1-005",
@@ -529,8 +529,8 @@
       "line": 154,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "new — delivered package ships closeout records that do not match the delivery commit."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - round 2: the closeout regenerated with the ledger-derived verdict (APPROVED, matching the digest)."
     },
     {
       "id": "EVID-P1-002",
@@ -541,7 +541,7 @@
       "owner": "falcon",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior ND-P2-002: still-open — `FINAL_RESPONSE.json` contradicts `PACKAGE_DIGEST.txt` at HEAD; verdict fields hardcoded."
+      "note": "prior ND-P2-002: 2026-10-02 - FINAL_RESPONSE now derives the verdict from the ledger (consistency test 3/3); round 2 published."
     },
     {
       "id": "EVID-P1-003",
@@ -551,8 +551,8 @@
       "line": 175,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "prior ND-P1-001: verified-fixed (context) — doctrine docs/progress ledger still describe pre-closure state."
+      "status": "verified-fixed",
+      "note": "prior ND-P1-001: fixed 2026-10-01 — state lines re-verified (101 PASS/1 N/A + 13 PASS/1 N/A); progress-ledger closure section + C-34 appended; owner-inputs refreshed; dead refs/banners fixed."
     },
     {
       "id": "EVID-P1-004",
@@ -562,8 +562,8 @@
       "line": 185,
       "owner": "falcon",
       "target": "this week",
-      "status": "partially-fixed",
-      "note": "new — secret literals ship in repo/package/delivery; scanner blind to XML-tag credentials; no redaction entry (API-P0-001)."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - no 32+hex XML-tag literal in the repo/package; 2 redundant allowlist entries pruned. Residual: git history + old delivery archives (owner)."
     },
     {
       "id": "EXEC-P1-001",
@@ -596,7 +596,7 @@
       "owner": "falcon",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior ND-P1-002: still-open; prior ND-P2-013: partially-fixed — status claims contradict ledgers/digest."
+      "note": "prior ND-P1-002/ND-P2-013: 2026-10-02 - the aggregates verified == the ledgers + a new drift test enforces them. Residual: the edge FINAL_RESPONSE (edge repo)."
     },
     {
       "id": "FEAT-P1-002",
@@ -607,7 +607,7 @@
       "owner": "owner",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior REV-P1-001: still-open; prior REV-P1-003: partially-fixed — verdict vs digest bind different artifact sets."
+      "note": "prior REV-P1-001/003: 2026-10-02 - the verdict artifacts regenerated from the ledgers; round 2 bound."
     },
     {
       "id": "FINAL-P1-001",
@@ -705,8 +705,8 @@
       "line": 104,
       "owner": "both",
       "target": "this week",
-      "status": "open",
-      "note": "prior INTG-P1-002/-P1-004: still-open — no joint release gate, upgrade order or atomic rollback."
+      "status": "partially-fixed",
+      "note": "prior INTG-P1-002/-P1-004: 2026-10-01 — joint release procedure + fail-closed joint_release_check.sh (pin<->delivery OK; pin<->live CP drift is the known state); upgrade order edge-first documented with exceptions; rollback pair record defined. Residual: live drift, the first rollback rehearsal, independent review, the edge-owned gate aggregate/live-sensor pair."
     },
     {
       "id": "INV-P1-001",
@@ -727,8 +727,8 @@
       "line": 218,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "new — live images/vendored stacks outside the pin check."
+      "status": "partially-fixed",
+      "note": "new — fixed 2026-10-01: live_image_pin_check.sh + falcon_live_image_drift metric live (27 containers: 18 OK, 9 drift — Wazuh 4.14.7 images, python:3.12-alpine override, nginx:stable, cloudflared:latest); TB-8 documents it. Residual: the drifted/vendored images remain outside the lock."
     },
     {
       "id": "IR-P1-001",
@@ -738,8 +738,8 @@
       "line": 104,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "new — no tabletop for total loss of the monitoring/alerting path."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the tabletop adoption guide appended. Residual: the facilitated owner+JPB session."
     },
     {
       "id": "IR-P1-002",
@@ -749,8 +749,8 @@
       "line": 115,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "new — exercise coverage/artefacts short of the required catalogue."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the adoption checklist/coverage-matrix links added. Residual: the facilitated session."
     },
     {
       "id": "LIVE-P1-001",
@@ -760,8 +760,8 @@
       "line": 100,
       "owner": "falcon",
       "target": "this week",
-      "status": "open",
-      "note": "prior LIVE-P0-003: partially-fixed; prior LIVE-P1-001: still-open."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P0-003/LIVE-P1-001: 2026-10-02 - verified: the guard text is 10 GiB, the 15 GiB band + projections + the >=90% critical page are live, reclaims_total 2. Residual: the volume migration + the 7-day stability observation."
     },
     {
       "id": "LIVE-P1-002",
@@ -804,8 +804,8 @@
       "line": 116,
       "owner": "falcon/ops",
       "target": "this week",
-      "status": "partially-fixed",
-      "note": "prior LIVE-P1-007: still-open — up to ~26 h dead-man detection; no real-time external notice."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P1-007: 2026-10-01 - the DO watcher is repo-versioned, the heartbeat hourly, the threshold 2 h with a 5-min cron; deployed + drill-proven (alert path end-to-end). Detection <= ~2 h 5 m (was ~26 h). The watcher host remains owner-side by design."
     },
     {
       "id": "NOTIF-P1-002",
@@ -827,7 +827,7 @@
       "owner": "falcon/ops",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior LIVE-P1-007: still-open — no real-time external notification on total-host failure. Three-path canary live 2026-09-30; DO-side watcher threshold remains."
+      "note": "prior LIVE-P1-007: 2026-10-01 - the DO watcher improvement delivered (repo-versioned, 2 h threshold, drill-proven); watcher-stale rule + metric guard its liveness. Residual: the external DO-side dead-man remains owner-hosted."
     },
     {
       "id": "OBS-P1-002",
@@ -849,7 +849,7 @@
       "owner": "falcon",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "new — MoM freshness/resources/alert-eval health unalerted (prior LIVE-P1-002: partially-fixed)."
+      "note": "new: 2026-10-02 - falcon-adsb-exporter-stale proven; falcon-mom-series-absent DEPLOYED (live 76; the self-timestamps verified present). Residual: the Grafana scrape job (owner decision)."
     },
     {
       "id": "OBS-P1-004",
@@ -882,7 +882,7 @@
       "owner": "falcon",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior LIVE-P1-001: still-open — root LV 83 %, ~-3.8 GB/day, no reclaim path."
+      "note": "prior LIVE-P1-001: 2026-10-02 - the old-volume deletion plan + retire_migrated_docker_volumes.sh (dry-run; refuses before 10-08); root 83%/30 G free, the 7 old volumes ~31 GiB kept. Residual: the 10-08 deletion + the observation."
     },
     {
       "id": "PERF-P1-002",
@@ -926,7 +926,7 @@
       "owner": "falcon/ops",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior LIVE-P1-007: still-open — 09-28 outage produced no notification; up to ~26 h detection."
+      "note": "prior LIVE-P1-007: 2026-10-01 — precise state table appended to OPERATOR_START_HERE.md; owner-gated residuals (detection-latency policy)."
     },
     {
       "id": "RES-P1-002",
@@ -936,8 +936,8 @@
       "line": 141,
       "owner": "falcon",
       "target": "this week",
-      "status": "partially-fixed",
-      "note": "prior LIVE-P1-002: partially-fixed — metrics exist (mtime, uptime), no alert uses them."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P1-002: 2026-10-01 — the named freshness/staleness rules verified live + 3 new (cold-copy 48h, wazuh-backup 36h, edge-cleanup 48h) → 70 live; a freeze drill fired 3/3 + delivered on both relay paths. Residual: firing proofs for three older rules."
     },
     {
       "id": "RES-P1-003",
@@ -948,7 +948,7 @@
       "owner": "both",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior INTG-P1-001/INTG-P1-003: still-open — no deployed edge alert; PKI/DB local-only."
+      "note": "prior INTG-P1-001/INTG-P1-003: 2026-10-01 — the central edge rules are live and all 3 encrypted edge-secrets offsite markers exist (latest 2026-10-01T04:39Z). Residual: the edge-side PKI/DB items."
     },
     {
       "id": "RES-P1-004",
@@ -958,8 +958,8 @@
       "line": 163,
       "owner": "falcon/ops",
       "target": "this week",
-      "status": "partially-fixed",
-      "note": "prior LIVE-P0-002: partially-fixed; prior LIVE-P1-005: still-open — new-services verification unproven; duplicate snapshots."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P0-002/LIVE-P1-005: 2026-10-01 — a real HEAD run exit 0 (4/4 [ok]), the stamp + metric advanced, one snapshot/day re-verified (80 reuses 85). Residual: the edge-secrets restore rehearsal."
     },
     {
       "id": "RES-P1-005",
@@ -970,7 +970,7 @@
       "owner": "falcon",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior LIVE-P0-003: partially-fixed; prior LIVE-P1-001: still-open — root LV unguarded; guard reclaim never exercised."
+      "note": "prior LIVE-P0-003/LIVE-P1-001: 2026-10-01 — reclaims_total 2 (the audit saw 0); root 83% / data 77%; the disk-guard's installed unit still reports 5 GiB (stale install). Residual: owner-gated guard policy."
     },
     {
       "id": "RES-P1-006",
@@ -992,7 +992,7 @@
       "owner": "owner",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "prior REV-P1-002: still-open (worse) — independence claim self-referential; P9-G11 wording requires a human reviewer."
+      "note": "prior REV-P1-002: 2026-10-02 - JPB confirmed as final reviewer; round 2 rebound. Residual: the reviewer artifact + the owner adoption."
     },
     {
       "id": "REV-P1-002",
@@ -1003,7 +1003,7 @@
       "owner": "owner",
       "target": "this week",
       "status": "partially-fixed",
-      "note": "new — machine-readable verdict artifacts disagree and are not derived from one source (prior REV-P1-001/003: still-open/partially-fixed)."
+      "note": "new: 2026-10-02 - the verdict artifacts regenerated from the ledgers (D8); round 2 chain 0 failures."
     },
     {
       "id": "SBOM-P1-001",
@@ -1024,8 +1024,8 @@
       "line": 114,
       "owner": "falcon",
       "target": "this week",
-      "status": "partially-fixed",
-      "note": "new — scanner false-negative blind spots let the API-P0-001 credential set ship; prior ND-P2-003/REV-P3-004: still-open."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the 64-hex allowance tightened to digest/identifier contexts (3,419 classified; 25/25 tests; bare/labeled negatives fail); the MCT IRIS literal classified (R-39)."
     },
     {
       "id": "SEC-P1-001",
@@ -1068,8 +1068,8 @@
       "line": 108,
       "owner": "falcon/ops",
       "target": "this week",
-      "status": "open",
-      "note": "prior LIVE-P2-005: still-open — cleartext multi-class `.env` drives root tooling."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P2-005: fixed 2026-10-01 — credentials split into root-owned per-class files (/srv/falcon/secrets/{spaces,cloudflare,ntfy,vt,proxmox}.env); 11 scripts read their class file; .env reduced to user-side keys; ci/validate.py fails on any script sourcing the owner .env."
     },
     {
       "id": "SECRET-P1-003",
@@ -1123,8 +1123,8 @@
       "line": 169,
       "owner": "both",
       "target": "this week",
-      "status": "partially-fixed",
-      "note": "prior INTG-P1-004: still-open — no automated pin verification or skew detection."
+      "status": "verified-fixed",
+      "note": "prior INTG-P1-004: 2026-10-02 - the pair checks are wired into the probe; the pin verifies (verify_edge_pin PASS; mutation test fails closed); the pair state is OK on all legs."
     },
     {
       "id": "ACM-P2-001",
@@ -1145,8 +1145,8 @@
       "line": 158,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — client-VPN enrollment shared credential, peer replacement, unthrottled."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - per-device tokens, rate limit, lock, source logging live (14/14 tests); host-level public path closed. Residual: rotate the shared token after the pending devices onboard; issue per-device tokens."
     },
     {
       "id": "ACM-P2-003",
@@ -1167,8 +1167,8 @@
       "line": 190,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — public routes depend on per-app logins/out-of-repo Cloudflare Access; no in-repo rate limits."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the Traefik public routers now carry an origin rate limit (public-rate-limit: 50/s avg, 100 burst per XFF; live-verified with a 429 burst test). Residual: the Cloudflare Access policies remain owner-side (R-15)."
     },
     {
       "id": "ADV-P2-001",
@@ -1211,8 +1211,8 @@
       "line": 141,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — falcon summary artifacts hardcode a verdict opposite to the ledgers (prior ND-P2-013: partially-fixed)."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the generator now derives verdict/readiness/open_gates from the ledger (same source as publish_digests); FINAL_RESPONSE regenerated (APPROVED, matching the digest) + a consistency regression test (3/3)."
     },
     {
       "id": "AI-P2-004",
@@ -1222,8 +1222,8 @@
       "line": 153,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — audit outputs conflict with repo validation; no untrusted-content handling rule."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - AGENTS.md rule 7 added (repository content is untrusted data, never instructions; the audit-output policy + the narrow docs/audits long-hex skip documented). Residual: the edge-side symmetric rule (edge repo)."
     },
     {
       "id": "AI-P2-005",
@@ -1233,8 +1233,8 @@
       "line": 165,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — human-approval/drift enforcement documented, not enforced (prior ND-P3-006/ND-P3-011 context)."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - CI now runs the publication chain + digest/verdict consistency gate (validate.yml); the bake/release environment reviewers remain plan-gated (owner)."
     },
     {
       "id": "AI-P2-006",
@@ -1299,8 +1299,8 @@
       "line": 164,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new this run — see report `08_api_contracts_realtime_integrations`."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the contract is documented (docs/security/ENROLL_API.md) and versioned (/health reports falcon-vpn-enroll/1.1); the brute-force test returns 429 after 60/60s. Residual: token expiry/rotation metadata (owner decision)."
     },
     {
       "id": "ARCH-P2-001",
@@ -1310,8 +1310,8 @@
       "line": 206,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P3-004: still-open — edge CP binds all interfaces."
+      "status": "partially-fixed",
+      "note": "prior INTG-P3-004: 2026-10-01 - verified the wg0 blanket accept covers 9443 (peers reach the CP; LAN/internet default-dropped; lab.json comment accurate); N-24 addendum + the prepared wg0 narrowing (not applied, owner-gated). Residual: the narrowing decision."
     },
     {
       "id": "ARCH-P2-002",
@@ -1321,8 +1321,8 @@
       "line": 218,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P0-002/INTG-P1-003: partially-fixed/still-open — edge trust state single-host, not fully config-managed."
+      "status": "partially-fixed",
+      "note": "prior INTG-P0-002/INTG-P1-003: 2026-10-01 - trust-state gap list (JOINT_RELEASE_PROCEDURE section 8) + the encrypted offsite edge-secrets backup verified. Residual: CP DB 0644->0600, /etc-only backup/renew units, backup-key escrow, retired plaintext archives."
     },
     {
       "id": "BP-P2-001",
@@ -1332,8 +1332,8 @@
       "line": 119,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "new — credential-bearing bake/release paths have no approval gate."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the falcon-side approval gate documented; the edge bake/release environments remain plan-gated (owner)."
     },
     {
       "id": "BP-P2-002",
@@ -1344,7 +1344,7 @@
       "owner": "both",
       "target": "this month",
       "status": "partially-fixed",
-      "note": "new — no CODEOWNERS/PR template/required review; Dependabot merges bypass human review."
+      "note": "new: 2026-10-02 - the enforcement matrix documented (required checks/reviews/tags plan-gated; the label gate live)."
     },
     {
       "id": "BP-P2-003",
@@ -1377,7 +1377,7 @@
       "owner": "falcon",
       "target": "this month",
       "status": "partially-fixed",
-      "note": "prior ND-P3-006: partially-fixed (one doc agent recorded verified-fixed; no run evidence, tests excluded)."
+      "note": "prior ND-P3-006: 2026-10-02 - the governance reconciliation anchored to the committed baseline. Residuals: no captured falcon run, no evidence-index check, the pack check local, the edge pin host-only."
     },
     {
       "id": "CI-P2-004",
@@ -1398,8 +1398,8 @@
       "line": 131,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — running stacks outside image pin/SBOM enforcement."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: the Wazuh estate + nginx are digest-pinned (compose + installer + lock) AND the live containers were recreated with the pinned refs (drift 0; cluster re-formed). Residual: SBOM scans for the pinned images; the standalone forwarder declaration."
     },
     {
       "id": "CTR-P2-004",
@@ -1409,8 +1409,8 @@
       "line": 141,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — live privilege/exposure profile outgrew the container hardening certification."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: the profile vs P7-G01 captured (9 -> 27 containers; 0 privileged; 0 docker.sock; nnp unchanged; delta: OpenCanary decoys, ntopng/suricata caps, host-net cloudflared, Wazuh 1517/1518). Residual: no cap_drop/read_only on the new stacks; the certification re-baseline."
     },
     {
       "id": "CTR-P2-005",
@@ -1420,8 +1420,8 @@
       "line": 151,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — no routine running-vs-declared drift check; digest evidence stale."
+      "status": "verified-fixed",
+      "note": "new — 2026-10-01: container_drift_check.sh + falcon_container_drift{kind}/undeclared metrics live and wired into the service probe; the pin digests refreshed (0 drift)."
     },
     {
       "id": "DATA-P2-004",
@@ -1442,8 +1442,8 @@
       "line": 145,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-002: still-open — retention covers one class; DLQ/fixtures unmanaged."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P2-002: 2026-10-01 — 4 new ISM policies live (audit 30d, top_queries 14d, ISM history 30d, test 1d); the DLQ bounded by the disk guard (30d/64 MiB + metric); the retention matrix documented."
     },
     {
       "id": "DATA-P2-006",
@@ -1453,8 +1453,8 @@
       "line": 156,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-003: still-open — mapping drift; dynamic mapping open to writers."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-003: 2026-10-01 - mapping-drift runner live (current 0; legacy fields documented). Residual: the legacy reindex (owner-gated)."
     },
     {
       "id": "DOC-P2-001",
@@ -1464,8 +1464,8 @@
       "line": 131,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-007: still-open + prior ND-P1-003: partially-fixed — runbooks/VPN checklist stale/mutating."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-007/-P1-003: fixed 2026-10-01 — VPN runbook/checklist state headers, mutating-step warnings, the INFRA-P2-002 port caveat; .2 persisted peer fixed, .31 edge peer added."
     },
     {
       "id": "DOC-P2-002",
@@ -1475,8 +1475,8 @@
       "line": 142,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-004/008/011, ND-P3-001/002/003: still-open — records and references contradict current state."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-004/008/011: 2026-10-02 - the counts fixed; a new offline drift/link suite. Residual: the review-package README (package rebuild)."
     },
     {
       "id": "DOC-P2-003",
@@ -1508,8 +1508,8 @@
       "line": 127,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — no dedup/idempotency on the main ingest path."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - duplicate ratio live 0.0000/2000-sample. Residual: ingest dedup absent."
     },
     {
       "id": "DQ-P2-003",
@@ -1519,8 +1519,8 @@
       "line": 139,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — no scheduled canary or end-to-end assertion."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the e2e timer 4/4 with drill6's firing evidence (falcon-pipeline-e2e-failed/-stale FIRING + RESOLVED on both paths)."
     },
     {
       "id": "DQ-P2-004",
@@ -1530,8 +1530,8 @@
       "line": 151,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — freshness detection is zero-rate silence only; partial gaps/alert feed uncovered."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - per-feed age + source fields live for 7 feeds. Residual: rate-deviation bands."
     },
     {
       "id": "DQ-P2-005",
@@ -1541,8 +1541,8 @@
       "line": 163,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — event time discarded for ingest time; hardcoded timezone label."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - event_time template pin verified live; 5141 normalized. Residual: TLS raw feed has no event_time; no skew metric."
     },
     {
       "id": "DQ-P2-006",
@@ -1552,8 +1552,8 @@
       "line": 175,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — completeness checks fields whose values are pipeline literals."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - real source-field metrics live; mapping drift runner (current 0). Residual: normalize checks only site/sensor; no registry validation."
     },
     {
       "id": "DQ-P2-007",
@@ -1563,8 +1563,8 @@
       "line": 187,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — retention boundaries delete silently (indices and edge spool)."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the retention/spool/mapping rules proven on both paths (live 76)."
     },
     {
       "id": "DQ-P2-008",
@@ -1574,8 +1574,8 @@
       "line": 199,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — consumer queries depend on unpinned dynamic mappings."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the template pins verified live (dynamic:false + 75 props; drift 0); consumer_query_check.sh added; an event_type.keyword consumer bug fixed."
     },
     {
       "id": "DR-P2-001",
@@ -1585,8 +1585,8 @@
       "line": 167,
       "owner": "falcon/ops",
       "target": "this month",
-      "status": "open",
-      "note": "new — datasets with no backup only partially accepted."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the backup coverage matrix added to RESTORE.md (decisions per dataset; IRIS case data OPEN - owner)."
     },
     {
       "id": "DR-P2-002",
@@ -1596,8 +1596,8 @@
       "line": 179,
       "owner": "falcon/ops",
       "target": "this month",
-      "status": "open",
-      "note": "new — no bad-migration/rollback drill for the index-rename path."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the index-rename rollback drill rc=0 (partial reindex -> mismatch -> rollback -> source intact) + the refresh-before-count lesson."
     },
     {
       "id": "EVID-P2-001",
@@ -1607,8 +1607,8 @@
       "line": 196,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior REV-P3-003: partially-fixed — phase-9 aggregate omits the NOT_APPLICABLE gate."
+      "status": "verified-fixed",
+      "note": "prior REV-P3-003: fixed 2026-10-01 — the phase-9 aggregate emits NOT_APPLICABLE (digest 13/0/0/0/1); regression test added; re-run publish_digests.sh at the next publication commit."
     },
     {
       "id": "EVID-P2-002",
@@ -1618,8 +1618,8 @@
       "line": 204,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior REV-P2-001: partially-fixed — `PACKAGE_MANIFEST.sha256` cannot verify the tree it describes."
+      "status": "partially-fixed",
+      "note": "prior REV-P2-001: 2026-10-02 - PACKAGE_MANIFEST.sha256 republished (3,272 entries; round 2); the chain + delivery pass."
     },
     {
       "id": "EVID-P2-003",
@@ -1629,8 +1629,8 @@
       "line": 213,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-008/ND-P3-005: still-open — exception/contradiction registers not reconciled with closure."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-008/ND-P3-005: reconciled 2026-10-01 (appended rows; C-31..C-33 record the still-open verdict/package, FINAL_RESPONSE and pin/manifest contradictions)."
     },
     {
       "id": "EVOL-P2-001",
@@ -1640,8 +1640,8 @@
       "line": 112,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — no in-repo roadmap/evolution guide/module template."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: the evolution guide + per-extension checklists + a worked example exist. Residual: adoption in the change flows."
     },
     {
       "id": "EVOL-P2-002",
@@ -1651,8 +1651,8 @@
       "line": 124,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — shared tooling duplicated across repos instead of a versioned package."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: the duplication map + the option-B recommendation (vendored-with-pin + digest check). Residual: the owner/independent-review choice + implementation."
     },
     {
       "id": "EVOL-P2-003",
@@ -1673,8 +1673,8 @@
       "line": 148,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — MCT subtree vendored without pin/upstream policy; outside CI image pinning."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: the vendoring policy (record the upstream commit, digest-pin, extend the pin CI) + the measured state (8/29/11 pinned/unpinned/floating). Residual: the enforcement + the upstream record."
     },
     {
       "id": "FEAT-P2-001",
@@ -1684,8 +1684,8 @@
       "line": 143,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P0-001: partially-fixed — offsite backup outcomes not exported to monitoring/alerting."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P0-001: 2026-10-02 - the offsite outcomes are exported (falcon_backup_offsite_* metrics + rules, verified live)."
     },
     {
       "id": "FEAT-P2-002",
@@ -1695,8 +1695,8 @@
       "line": 160,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — imported MCT docs claim a fully deployed SOC stack the lab only partially runs."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - the mct/README.md scope banner now states the consolidated lab runs IRIS + OpenCanary only (upstream claims marked as VM-101 history)."
     },
     {
       "id": "FLEET-P2-003",
@@ -1761,8 +1761,8 @@
       "line": 103,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-001: regressed — run-folder lifecycle undefined; `ci/validate.py` fails on audit folders."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-001: 2026-10-01 - audit-run lifecycle policy + tool + tests delivered (dry-run default; live run untouched). Residual: the edge mirror + the first real archive (owner-gated)."
     },
     {
       "id": "HYGIENE-P2-002",
@@ -1772,8 +1772,8 @@
       "line": 116,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-001: regressed; prior ND-P2-003/ND-P3-004: still-open — stale pack and false/historical claims."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-001/003/004: 2026-10-01 - verify_pack PASS at the rebuilt package (the prior 86 mismatched/1,898 missing were the stale package)."
     },
     {
       "id": "HYGIENE-P2-003",
@@ -1783,8 +1783,8 @@
       "line": 129,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-002/ND-P2-013: still-open/partially-fixed — closeout/status artifacts stale/hardcoded."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-002/ND-P2-013: 2026-10-02 - FINAL_RESPONSE derived/APPROVED; the progress closure + R-29 row; PROGRAM_CLOSEOUT lacks a superseded banner (coordinator)."
     },
     {
       "id": "HYGIENE-P2-004",
@@ -1805,8 +1805,8 @@
       "line": 106,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-004: still-open — `PORT_PROTOCOL_MATRIX.md` stale (51820 vs live 5182)."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-004: 2026-10-02 - the matrix destination cells renamed mon:->falcon:, N-20 UDP 51820->5182, N-18 override text corrected; N-22..N-28 rows cover the honeypot/Wazuh/enroll/CP listeners."
     },
     {
       "id": "INFRA-P2-002",
@@ -1816,8 +1816,8 @@
       "line": 122,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-005: partially-fixed; prior ND-P2-006: still-open — VPN tests dial 51820; bootstrap/70 uses retired `veth-span-b`."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-005/006: 2026-10-02 - test_tunnel.sh now dials 5182 and bootstrap/70 validates Suricata on ens19 (the retired veth-span-b). Residual: the full rebuild-chain re-run."
     },
     {
       "id": "INFRA-P2-003",
@@ -1838,8 +1838,8 @@
       "line": 117,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P2-001: partially-fixed — dashboard adopted `cf7f5c4`; rules script still writes into falcon repo; unvalidated metric contract."
+      "status": "partially-fixed",
+      "note": "prior INTG-P2-001: 2026-10-02 - falcon-side done: 7 falcon-edge-* rules live incl. metrics-stale/control-plane-down. Residual: edge-side contract validation."
     },
     {
       "id": "INTG-P2-002",
@@ -1849,8 +1849,8 @@
       "line": 130,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P2-002: partially-fixed — no joint recovery/rebind procedure; central clean-host path does not reconstruct the edge side."
+      "status": "partially-fixed",
+      "note": "prior INTG-P2-002: 2026-10-02 - the joint recovery/rebind procedure written (docs/edge/JOINT_RECOVERY_REBIND.md; central->edge->rebind order, custody, host-only units). Residual: the edge-side execution + the tabletop."
     },
     {
       "id": "INTG-P2-003",
@@ -1860,8 +1860,8 @@
       "line": 143,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P2-003: still-open — central→edge control unmonitored; command state not authoritative."
+      "status": "partially-fixed",
+      "note": "prior INTG-P2-003: 2026-10-02 - the gaps documented (operator-cert expiry unalerted; directive state advisory). Residual: the edge-side metric/consumption fix (EDGE/owner)."
     },
     {
       "id": "INV-P2-001",
@@ -1882,8 +1882,8 @@
       "line": 126,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — data-breach notification process is a paragraph, not a procedure."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: the breach-notification procedure is written (all legal values OWNER/LEGAL-INPUT). Residual: the owner/legal inputs + a drill."
     },
     {
       "id": "IR-P2-002",
@@ -1893,8 +1893,8 @@
       "line": 137,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-002 class: still-open (not re-verified) — reboot/boot-order incidents recur; fixes await re-exercise."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-002 class: 2026-10-01 — the boot-order fix verified CLOSED (units byte-identical, multi-user.target, listeners + handshakes live); VM auto-start verified via the PVE API; a non-root read-only boot check added. Residual: a real VM start/hookscript exercise (owner window)."
     },
     {
       "id": "IR-P2-003",
@@ -1904,8 +1904,8 @@
       "line": 148,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — incident-support artefacts contradict live state."
+      "status": "verified-fixed",
+      "note": "new — 2026-10-01: the artefacts reconciled append-only (P7-G09; R-05/R-06 CLOSED; the verdict annotated; OD-12/OD-18 reconciled)."
     },
     {
       "id": "IR-P2-004",
@@ -1926,8 +1926,8 @@
       "line": 170,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — R-29 postmortem follow-through incomplete; escalation contacts placeholder (prior LIVE-P2-002 class)."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: the R-29 verification table + follow-through appended; the escalation-contacts template created (13 OWNER-INPUT rows); the authd rule proposed. Residual: the owner contacts/inputs."
     },
     {
       "id": "LIVE-P2-001",
@@ -1937,8 +1937,8 @@
       "line": 153,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-001: still-open — firing-proof coverage incomplete; one raw artifact contradicts its summary. Note: current-run LIVE-P2-001 is the firing-proof finding (not the prior panel finding)."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-001: 2026-10-02 - the 13-rule drill + the 5 wave-9 rules: coverage 62/76 proven (both relay paths; restores verified); corrected by the wave-9 close-out to consolidated coverage 75/76 (44 per-rule table + 5 wave-8 + 26 wave-7/wave-9 proofs; the 76th rule falcon-mom-series-absent proven in window D). Residual: 1 rule (falcon-memory-low, deliberately skipped - the unsafe 10-min <10% condition); owner confirmation of the count pending. 2026-10-03: 77 live rules (falcon-feed-stale-wazuh added after the migration silence had no rule); 75 of 77 proven (the wazuh rule resolved inside its window - not proven; memory-low deliberate skip); the wazuh feed was restored end-to-end."
     },
     {
       "id": "LIVE-P2-002",
@@ -1948,8 +1948,8 @@
       "line": 154,
       "owner": "falcon/ops",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-002 class: still-open (index hygiene not re-verified this wave)."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P2-002 class: 2026-10-01 - index hygiene re-verified (yellow expected; dynamic:false + 75 props; ISM 30/14/30/1 d; no test residue; DLQ 560 KB). Residuals: legacy-index mapping drift (DATA-P2-006) + canary_id."
     },
     {
       "id": "LIVE-P2-003",
@@ -1959,8 +1959,8 @@
       "line": 155,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P0-004: partially-fixed — 6 h TLS window; 7-day re-measure pending; trade-off undocumented."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P0-004: 2026-10-02 - the 10-07 plan dry-run rc=0; 0 TLS-silence lines. Residual: the 10-07 re-measure."
     },
     {
       "id": "LIVE-P2-004",
@@ -1970,8 +1970,8 @@
       "line": 156,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-001/004: still-open — operator screens can silently lie (panel netns, mapping drift, uptime reset)."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-001/004: 2026-10-02 - the netns residual re-verified (node-exporter sees only eth0/lo). Residual: the owner-owned Compose/scrape change."
     },
     {
       "id": "ND-P2-001",
@@ -1981,8 +1981,8 @@
       "line": 90,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-001: regressed — first documented command still red (verify_pack 37 mismatched/957 missing)."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-001: 2026-10-01 - not reproducible at HEAD (validate exit 0 in-tree + fresh clone; the register note conflated verify_pack)."
     },
     {
       "id": "ND-P2-002",
@@ -1992,8 +1992,8 @@
       "line": 102,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-002: still-open — quick start lists a disruptive root script as health step."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-002: 2026-10-01 - reproduced and fixed; the mutating probe test re-scoped out of the quick-start health block."
     },
     {
       "id": "ND-P2-003",
@@ -2003,8 +2003,8 @@
       "line": 114,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-003: still-open — fresh checkout cannot reach a running dev/test environment."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-003: 2026-10-01 - FRESH_CHECKOUT.md (Track A verified green) + README prerequisites. Residual: the clean-host rehearsal (owner-gated)."
     },
     {
       "id": "ND-P2-004",
@@ -2014,8 +2014,8 @@
       "line": 126,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-004/ND-P2-011: still-open — onboarding/verification artifacts bound to the lab host."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-004/011: 2026-10-01 - off-repo README links gone; 264 legacy host-bound index rows remain (caveat documented)."
     },
     {
       "id": "ND-P2-005",
@@ -2036,8 +2036,8 @@
       "line": 136,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — webhook auth static path token with a fail-open branch bound to Docker bridge gateways."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the per-source relay rate limit is implemented + deployed + tested (32 checks; live 429 proof). Residual: the documented replay residual (Grafana cannot sign)."
     },
     {
       "id": "NOTIF-P2-002",
@@ -2047,8 +2047,8 @@
       "line": 146,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P0-004: partially-fixed — noise concentrated in one rule; tuning only hours old."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P0-004: 2026-10-01 — the disk-warning `for` is 30m (12F/12R source, episodes <25m now suppressed); TLS-silence 0 since the 6h tune. Residual: the 7-day re-measure 2026-10-07."
     },
     {
       "id": "NOTIF-P2-003",
@@ -2058,8 +2058,8 @@
       "line": 156,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P1-007 class: still-open — notification config not reproducible; watcher can fail invisibly."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P1-007 class: 2026-10-01 — provision_ntfy.sh + relay.env.example + the notification/dead-man runbook make the config reproducible. Residual: the owner-side watcher/alt-instance."
     },
     {
       "id": "OBS-P2-001",
@@ -2069,8 +2069,8 @@
       "line": 154,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P0-004 + LIVE-P1-004: partially-fixed — TLS tuning works so far; 7-day re-measure and benign filters remain."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P0-004 + LIVE-P1-004: 2026-10-01 — benign-UniFi suppression + per-host dedupe live (budget 61 -> 11 above-threshold windows, <1 fire/week expected). Residual: the 7-day re-measure due 2026-10-07."
     },
     {
       "id": "OBS-P2-002",
@@ -2080,8 +2080,8 @@
       "line": 164,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-004: still-open — daily Suricata rotation invisible to its restart rule."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P2-004: 2026-10-01 — the rule fires on engine uptime resets (RestartCount secondary), runbook corrected; drill proved the firing + dual-path delivery."
     },
     {
       "id": "OBS-P2-003",
@@ -2091,8 +2091,8 @@
       "line": 174,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-001: still-open — firing-proof coverage incomplete; artifact/summary contradiction."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-001: 2026-10-02 - coverage 62/76; the proof table reconciled (incl. the drill6 honesty section + the failed-run/rule-window-repair record); corrected by the wave-9 close-out to 75/76 (see LIVE-P2-001). Residual: 1 rule (falcon-memory-low, deliberate skip). 2026-10-03: 77 live rules; 75 of 77 proven (falcon-feed-stale-wazuh added; not fired - feed recovered)."
     },
     {
       "id": "PERF-P2-001",
@@ -2102,8 +2102,8 @@
       "line": 120,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — memory/swap pressure unalerted; host-side memory outside monitoring."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: /proc/meminfo memory+swap metrics live + bool-safe rules (20%/75%). Residual: PVE-host memory; firing proofs."
     },
     {
       "id": "PERF-P2-002",
@@ -2113,8 +2113,8 @@
       "line": 129,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P1-005: still-open — offsite copies whole snapshot repository nightly; load spikes."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P1-005: 2026-10-01 — the delta upload is live (1,611 unchanged / 227 uploaded in 3,000s; the recovery run 13m40s with the full verification PASS vs the 3h48m full copy). Residual: the first scheduled 3-pass run 2026-10-02."
     },
     {
       "id": "PERF-P2-003",
@@ -2124,8 +2124,8 @@
       "line": 138,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — throughput ~77 % of approved budget with no runtime tracking."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the budget panel is live (94.1% of 120 docs/s). Residual: the >80% rule (owner confirmation)."
     },
     {
       "id": "PERF-P2-004",
@@ -2135,8 +2135,8 @@
       "line": 147,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-003: still-open (live mappings unverified this run) — mapping drift degrades aggregations."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P2-003: 2026-10-01 — the live template dynamic:false + 75 pinned props verified (current index matches; only canary_id extra). Residual: the legacy reindex (DATA-P2-006/SEARCH-P2-002)."
     },
     {
       "id": "PRIV-P2-001",
@@ -2157,8 +2157,8 @@
       "line": 134,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-002: still-open — retention for one index class only; audit logs/DLQ lack policies."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-002: 2026-10-02 - the per-class retention matrix written (docs/runbooks/RETENTION_MATRIX.md) from the live ISM policies + stores. Residual: the Wazuh-estate and IRIS retention decisions (owner)."
     },
     {
       "id": "PRIV-P2-003",
@@ -2179,8 +2179,8 @@
       "line": 196,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-002 class: still-open — reboot/boot-order failures recurred; controls host-only."
+      "status": "verified-fixed",
+      "note": "prior LIVE-P2-002 class: 2026-10-01 — the stale paths, veth-span-b and wg socket items verified fixed; the mount guard repo-provisioned; boot_order_check.sh 17/17 live and wired in. Residual: the PVE VM auto-start exercise (owner window)."
     },
     {
       "id": "RES-P2-002",
@@ -2201,8 +2201,8 @@
       "line": 218,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P1-006: still-open — incident-critical runbooks stale."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P1-006: 2026-10-01 - 4 incident runbooks reconciled (SENSOR_SILENCE, DISK_PRESSURE, RESTORE, CERT). Residual: the independent walk."
     },
     {
       "id": "REV-P2-001",
@@ -2256,8 +2256,8 @@
       "line": 137,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "new — SBOM coverage over shipped artifacts incomplete in both programs."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the coverage check is now a CI step. Residual: the review-package inclusion + signing (owner)."
     },
     {
       "id": "SBOM-P2-003",
@@ -2267,8 +2267,8 @@
       "line": 148,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "new — SBOM/vuln/license checks not enforced in CI; dispositions stale."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - coverage enforced in CI (--require-vuln off). Residual: the vuln refresh (~100 MB trivy DB; next patch window)."
     },
     {
       "id": "SBOM-P2-004",
@@ -2278,8 +2278,8 @@
       "line": 159,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior REV-P3-009: still-open — provenance not independently verifiable (no public key in delivery)."
+      "status": "partially-fixed",
+      "note": "prior REV-P3-009: 2026-10-02 - the provenance manifest is CI-verified. Residual: signing with an owner key."
     },
     {
       "id": "SC-P2-001",
@@ -2300,8 +2300,8 @@
       "line": 136,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-001: regressed — delivered repomix pack stale; packed-only verification INCOMPLETE."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-001: 2026-10-01 - the pack rebuilt + pack_fidelity wired (0 unexpected mismatches; notes published); verify_pack PASS."
     },
     {
       "id": "SC-P2-003",
@@ -2311,8 +2311,8 @@
       "line": 147,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-003: still-open — history-scan drift undetected; gate ledger still records clean history scan."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-003: 2026-10-01 — a fail-closed gitleaks history check + CI step (546 commits / 0 findings); the entropy history 20 classified; the P1-G06 note corrected."
     },
     {
       "id": "SC-P2-004",
@@ -2322,8 +2322,8 @@
       "line": 158,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "new this run — see report `11_supply_chain_dependency_secrets`."
+      "status": "verified-fixed",
+      "note": "new this run: 2026-10-02 - the CI tool downloads are hash-pinned (actionlint/shellcheck/ruff verified; pyyaml+zizmor via a hashed requirements file)."
     },
     {
       "id": "SEARCH-P2-001",
@@ -2344,8 +2344,8 @@
       "line": 116,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-003: still-open — mapping drift silently breaks keyword search/aggregations."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-003: 2026-10-01 — the template pins the queried fields (aggs/range queries verified). Residual: the drift-check runner + the reindex."
     },
     {
       "id": "SEARCH-P2-003",
@@ -2355,8 +2355,8 @@
       "line": 127,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — search/audit logs have no retention and store query text (prior LIVE-P2-002)."
+      "status": "verified-fixed",
+      "note": "new — 2026-10-01: security-auditlog 30d + top_queries 14d + ISM history 30d policies live."
     },
     {
       "id": "SEARCH-P2-004",
@@ -2366,8 +2366,8 @@
       "line": 138,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new this run — see report `31_search_indexing_privacy_audit`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - the R2 cold-tier registration/mount/lifecycle are documented (docs/runbooks/R2_COLD_TIER.md) with the idempotent procedure. Residual: the scripted bootstrap step + the owner bucket lifecycle."
     },
     {
       "id": "SEC-P2-001",
@@ -2388,8 +2388,8 @@
       "line": 159,
       "owner": "falcon/ops",
       "target": "this month",
-      "status": "open",
-      "note": "prior LIVE-P2-005 + REV-P3-011: still-open — cleartext `.env` sourced into capture environments."
+      "status": "partially-fixed",
+      "note": "prior LIVE-P2-005 + REV-P3-011: 2026-10-01 — the capture wrapper prefers a single-key 0600 file; no repo script sources .env. Residual: the owner deletes `sudo=` from .env."
     },
     {
       "id": "SEC-P2-003",
@@ -2421,8 +2421,8 @@
       "line": 205,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — public enrollment surfaces open (Wazuh 1516/1517; token-shared client-VPN)."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the owner paused the UniFi Ingest gateway forward; the public path is closed end-to-end (host DROP + gateway paused; closure check QUIET; daily metric live). Residual: the pending-device onboarding + the shared-token rotation after it."
     },
     {
       "id": "SECRET-P2-004",
@@ -2432,8 +2432,8 @@
       "line": 128,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "new — rotation evidence partial; signing seed unrotatable; governance records contradict execution."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the rotation runbook append (evidence ledger; the seed rotation outline proposed/owner-gated). Residual: the owner-gated execution."
     },
     {
       "id": "SECRET-P2-005",
@@ -2443,8 +2443,8 @@
       "line": 138,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior REV-P3-011: still-open — whole-file env export in capture/deploy/backup wrappers."
+      "status": "partially-fixed",
+      "note": "prior REV-P3-011: 2026-10-01 - all first-party whole-file env sources narrowed to exact keys (env_key.sh; 9 scripts; never executes the file) + regression tests. Residual: vendored MCT + edge-repo copies (documented)."
     },
     {
       "id": "SECRET-P2-006",
@@ -2454,8 +2454,8 @@
       "line": 148,
       "owner": "falcon/ops",
       "target": "this month",
-      "status": "open",
-      "note": "new — no owner-env inventory/validator; duplicate keys; undocumented agent token file."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-01 - check_owner_env.py names-only 7-key inventory, duplicates/unknowns/malformed fail closed; live .env PASS 0600; CI wiring lines documented."
     },
     {
       "id": "SECRET-P2-007",
@@ -2465,8 +2465,8 @@
       "line": 158,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — inherited Wazuh/MCT stores have no rotation execution; single-account blast radius."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - INHERITED_CREDENTIAL_ROTATION.md (10-class paths, [OWNER] steps) + rotation_status.py (20/20 pending, --fail-if-pending). Residual: the owner execution."
     },
     {
       "id": "TEST-P2-001",
@@ -2476,8 +2476,8 @@
       "line": 91,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — 'validation: ALL PASS' excludes the suite; commit gate does not run tests (prior ND-P3-011: partially-fixed)."
+      "status": "verified-fixed",
+      "note": "new — 2026-10-01: the gate runs 9 offline suites incl. scanner fixtures + a planted-failure self-test (minimal-env verified)."
     },
     {
       "id": "TEST-P2-002",
@@ -2487,8 +2487,8 @@
       "line": 107,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-003/REV-P3-004: still-open — secret scan fails at HEAD (working-tree exit 1; history REVIEW_REQUIRED)."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-003/REV-P3-004: 2026-10-02 - the P1-G06 note refreshed (36 classified findings). Residual: the owner disposition."
     },
     {
       "id": "TEST-P2-003",
@@ -2509,8 +2509,8 @@
       "line": 139,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "new — most evidence-backed test executions are ephemeral `/tmp/opencode` procedures."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the read-only p2-verify portion ported (consumer_query_check.sh). Residual: 12 recurring gaps."
     },
     {
       "id": "TEST-P2-005",
@@ -2520,8 +2520,8 @@
       "line": 155,
       "owner": "falcon",
       "target": "this month",
-      "status": "open",
-      "note": "prior ND-P2-011: still-open — 264/462 captures bind to a legacy symlink; CI skips them."
+      "status": "partially-fixed",
+      "note": "prior ND-P2-011: 2026-10-02 - 8 /tmp-scratch metas rebound to in-repo siblings. Residual: the 264 legacy metas (owner)."
     },
     {
       "id": "XREPO-P2-001",
@@ -2531,8 +2531,8 @@
       "line": 178,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P2-002/INTG-P3-001/ND-P2-004: partially-fixed/still-open — cross-repo documents contradict the live shared interface."
+      "status": "partially-fixed",
+      "note": "prior INTG-P2-002/INTG-P3-001/ND-P2-004: 2026-10-02 - falcon side reconciled (VPN .30/.31, matrix UDP/5182, pin 15140/15141). Residual: edge docs/mirror."
     },
     {
       "id": "XREPO-P2-002",
@@ -2553,8 +2553,8 @@
       "line": 196,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P1-002/INTG-P1-004: still-open — upgrade/rollback skew only partially covered."
+      "status": "verified-fixed",
+      "note": "prior INTG-P1-002/004: 2026-10-02 - the pair check runs in the probe and is OK on all three legs after the pin rebind (the release manifest/SBOM/image + the live CP at the pinned commit + the sensors at 0.1.1-lab). Residual: the CP runs from the repo tree (a restart after post-pin commits re-drifts; a pinned-deploy is the durable fix)."
     },
     {
       "id": "XREPO-P2-004",
@@ -2564,8 +2564,8 @@
       "line": 205,
       "owner": "both",
       "target": "this month",
-      "status": "open",
-      "note": "prior INTG-P1-002: still-open — live edge control plane runs from the repository working tree."
+      "status": "verified-fixed",
+      "note": "prior INTG-P1-002: 2026-10-02 - the edge CP reports source_commit=17a09a9 source_dirty=false (clean tree at the pinned commit). Residual: the pinned-deploy change."
     },
     {
       "id": "ACM-P3-001",
@@ -2630,8 +2630,8 @@
       "line": 155,
       "owner": "both",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `34_branch_protection_required_checks`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - the hotfix walkthrough + the break-glass drill record template added. Residual: the owner-run drill."
     },
     {
       "id": "BP-P3-002",
@@ -2641,8 +2641,8 @@
       "line": 167,
       "owner": "both",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `34_branch_protection_required_checks`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - the compensating controls documented (draft-by-default + the process + the label gate); tag rulesets plan-gated."
     },
     {
       "id": "CI-P3-001",
@@ -2652,8 +2652,8 @@
       "line": 156,
       "owner": "both",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `10_github_actions_cicd_governance`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - reconciled in CI_GOVERNANCE_RECONCILIATION.md."
     },
     {
       "id": "CI-P3-002",
@@ -2663,8 +2663,8 @@
       "line": 168,
       "owner": "both",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `10_github_actions_cicd_governance`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - reconciled; the SBOM/vuln refresh owner bits remain."
     },
     {
       "id": "CTR-P3-006",
@@ -2674,8 +2674,8 @@
       "line": 161,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `36_container_runtime_security`."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - no-new-privileges APPLIED live (opensearch + suricata recreated; drift metric all-0; both healthy). Residual: read-only rootfs/cap_drop (owner) + the OD-17 conflict + a rescan."
     },
     {
       "id": "CTR-P3-007",
@@ -2685,8 +2685,8 @@
       "line": 171,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `36_container_runtime_security`."
+      "status": "verified-fixed",
+      "note": "new: 2026-10-02 - .dockerignore + the repository-s3 artifact sha in bootstrap/60; the image id matches the lock. Residual: the owner clean-rebuild check."
     },
     {
       "id": "DATA-P3-007",
@@ -2696,8 +2696,8 @@
       "line": 167,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `07_data_schema_migration_runtime_validation`."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - fixtures verified deleted by the 1-day cleanup; code gates verified. Residual: the stray 0-byte control.db (owner-owned)."
     },
     {
       "id": "DQ-P3-009",
@@ -2707,8 +2707,8 @@
       "line": 211,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `44_data_quality_pipeline_fidelity_audit`."
+      "status": "partially-fixed",
+      "note": "new this run — 2026-10-01: the scorecard cites the raw artifact + owner/threshold columns. Residual: scheduling is manual (runtime follow-up)."
     },
     {
       "id": "EVID-P3-001",
@@ -2718,8 +2718,8 @@
       "line": 223,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `41_evidence_doctrine_gate_integrity_audit`."
+      "status": "partially-fixed",
+      "note": "2026-10-01 — the decision log now carries the ordering convention + the archive-provenance rule as a preamble (the four out-of-order transitions are documented, not rewritten); the signed review/verdict docs still cite the canonical path (their annotation is C1-rebind work)."
     },
     {
       "id": "EVOL-P3-001",
@@ -2729,8 +2729,8 @@
       "line": 160,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `19_platform_evolution_extensibility`."
+      "status": "partially-fixed",
+      "note": "new this run — 2026-10-01: the identity registry + the R-28 replace-on-apply hazard documented in the guide."
     },
     {
       "id": "EVOL-P3-002",
@@ -2740,8 +2740,8 @@
       "line": 172,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `19_platform_evolution_extensibility`."
+      "status": "partially-fixed",
+      "note": "new this run — 2026-10-01: the additive-deploy + canary/lab/stable + for-damping notes in the guide."
     },
     {
       "id": "FEAT-P3-001",
@@ -2751,8 +2751,8 @@
       "line": 177,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `03_feature_implementation_map`."
+      "status": "verified-fixed",
+      "note": "new this run: 2026-10-02 - the capability docs reconciled (flows live, audit index, 75 rules/73 panels/3 dashboards)."
     },
     {
       "id": "FLEET-P3-008",
@@ -2773,8 +2773,8 @@
       "line": 155,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `21_repo_hygiene_maintainability`."
+      "status": "verified-fixed",
+      "note": "new this run: 2026-10-01 - evidence tree clean; sha256sum -c evidence/MANIFEST.sha256 = 0 failures."
     },
     {
       "id": "HYGIENE-P3-002",
@@ -2784,8 +2784,8 @@
       "line": 168,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "prior ND-P3-005/008/010: still-open — dead/duplicate files, rows, misleading surfaces."
+      "status": "partially-fixed",
+      "note": "prior ND-P3-005/008/010: 2026-10-01 — mct/README.md carries an imported-snapshot banner. Residual: exception-register rows/closeout signpost (owner), root-owned outputs, the edge firstboot item."
     },
     {
       "id": "INFRA-P3-001",
@@ -2795,8 +2795,8 @@
       "line": 154,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `12_infra_deployment_environment_drift`."
+      "status": "verified-fixed",
+      "note": "new this run — 2026-10-01: run-all wording says core stages 10-40, not the full deploy (the README was already correct)."
     },
     {
       "id": "INFRA-P3-002",
@@ -2806,8 +2806,8 @@
       "line": 170,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `12_infra_deployment_environment_drift`."
+      "status": "verified-fixed",
+      "note": "new this run — 2026-10-01: guard text aligned to the 10 GiB default (the live unit text updates at the next bootstrap/96 run)."
     },
     {
       "id": "IR-P3-001",
@@ -2817,8 +2817,8 @@
       "line": 181,
       "owner": "both",
       "target": "this quarter",
-      "status": "open",
-      "note": "new/related BP-P2-001/IR-P1-002 — no CI/CD incident playbook; bake approval gap open."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - the CI/CD incident playbook delivered (6 scenarios). Residual: a drill + R-012 bake approval."
     },
     {
       "id": "ND-P3-001",
@@ -2828,8 +2828,8 @@
       "line": 150,
       "owner": "both",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `lens_new_developer`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - the glossary + cross-program signposting added. Residual: the edge side."
     },
     {
       "id": "NOTIF-P3-001",
@@ -2839,8 +2839,8 @@
       "line": 166,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `30_notification_email_push_delivery_audit`."
+      "status": "verified-fixed",
+      "note": "new this run — 2026-10-01: the three tests repointed to the self-hosted ntfy (repo-side; not executed - state-mutating)."
     },
     {
       "id": "NOTIF-P3-002",
@@ -2850,8 +2850,8 @@
       "line": 173,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `30_notification_email_push_delivery_audit`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - the runbook section verified against render() + server.yml. Residual: owner confirmation of the mobile-push transit path."
     },
     {
       "id": "PERF-P3-001",
@@ -2861,8 +2861,8 @@
       "line": 156,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new — no cost model/budgets/spend visibility."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: a cost register table with the measured quantities. Residual: the unit costs (owner/invoice)."
     },
     {
       "id": "PERF-P3-002",
@@ -2872,8 +2872,8 @@
       "line": 165,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new — CI captures no performance/build-time data."
+      "status": "partially-fixed",
+      "note": "new — 2026-10-01: validate.yml records the ci/validate.py duration in the job summary. Residual: not yet observed in CI."
     },
     {
       "id": "PRIV-P3-001",
@@ -2883,8 +2883,8 @@
       "line": 164,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new — governance documentation gaps: identifier inventory, processor/notice artifacts."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-02 - docs/privacy/DATA_GOVERNANCE.md (controller/processor map, identifier inventory, data flows). Residual: the owner/legal inputs."
     },
     {
       "id": "PRIV-P3-002",
@@ -2905,8 +2905,8 @@
       "line": 229,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `13_resilience_recovery_failure_modes`."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - the installed disk-guard unit re-provisioned from the repo (live SHA == repo; 10 GiB text). Residual: the peer-check key-set comparison."
     },
     {
       "id": "SBOM-P3-001",
@@ -2916,8 +2916,8 @@
       "line": 170,
       "owner": "both",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `35_sbom_license_policy`."
+      "status": "partially-fixed",
+      "note": "new this run: 2026-10-02 - the residuals documented (repo.cdx scope, ntopng rename)."
     },
     {
       "id": "SC-P3-001",
@@ -2927,8 +2927,8 @@
       "line": 169,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `11_supply_chain_dependency_secrets`."
+      "status": "verified-fixed",
+      "note": "new this run: 2026-10-02 - check_compose_digests wired into ci/validate.py; the full validate green."
     },
     {
       "id": "SEARCH-P3-005",
@@ -2938,8 +2938,8 @@
       "line": 149,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `31_search_indexing_privacy_audit`."
+      "status": "verified-fixed",
+      "note": "new this run — 2026-10-01: the test/fixture ISM cleanup (1d) deleted 5 leftovers; no production data touched."
     },
     {
       "id": "SEARCH-P3-006",
@@ -2949,8 +2949,8 @@
       "line": 160,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new this run — see report `31_search_indexing_privacy_audit`."
+      "status": "verified-fixed",
+      "note": "new this run: 2026-10-02 - the tunnel ingress + Access apps/policies verified read-only; no public dash.* route. Residual: per-operator identity."
     },
     {
       "id": "SEC-P3-001",
@@ -2960,8 +2960,8 @@
       "line": 220,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "new — CI secret-gate integrity (scanner invocation/allowlists, un-evidenced gitleaks run)."
+      "status": "verified-fixed",
+      "note": "new — 2026-10-01: the scanner fails closed on bad args; gitleaks is SHA-pinned; the allowlists are documented + narrow; a fail-closed history step is in CI."
     },
     {
       "id": "SECRET-P3-008",
@@ -2971,8 +2971,8 @@
       "line": 168,
       "owner": "falcon/ops",
       "target": "this quarter",
-      "status": "open",
-      "note": "new — break-glass custody open (OD-04); MCT runbook stale post-migration."
+      "status": "partially-fixed",
+      "note": "new: 2026-10-01 - BREAK_GLASS_CUSTODY.md (two-person rule, post-use rotation). Residual: the OD-04 owner decision."
     },
     {
       "id": "SECRET-P3-010",
@@ -2982,8 +2982,8 @@
       "line": 178,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "prior ND-P2-003: still-open — secret-scan allowlist gaps; history scan not re-recorded."
+      "status": "verified-fixed",
+      "note": "prior ND-P2-003: 2026-10-02 - ALLOW_PATH suffixes anchored; the history scan re-run (36 classified findings). Residual: the gitleaks path allowlists unscoped (owner)."
     },
     {
       "id": "TEST-P3-001",
@@ -2993,8 +2993,8 @@
       "line": 171,
       "owner": "falcon",
       "target": "this quarter",
-      "status": "open",
-      "note": "prior REV-P3-007: regressed — '161 tests' vs 163 at HEAD; unannotated failing capture."
+      "status": "verified-fixed",
+      "note": "prior REV-P3-007: 2026-10-01 — the '161 tests' claim is edge-side (not applicable in falcon; noted for the edge)."
     },
     {
       "id": "XREPO-P3-001",

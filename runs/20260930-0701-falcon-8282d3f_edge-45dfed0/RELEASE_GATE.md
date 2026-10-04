@@ -64,11 +64,11 @@ Must pause until the named conditions close: any production-readiness claim, cut
 
 | Condition | Status | Notes |
 |---|---|---|
-| C1 | OPEN (human) | Reviewer artifact + JPB disambiguation + approval re-review/rebind; owner-approved path (D1/D8) |
+| C1 | OPEN (human, reviewer artifact pending) | JPB confirmed as final reviewer (owner 2026-10-01); the package rebuilt + rebound (package `305d777`, publication `df934e5`, archive SHA-256 `e4ca5696...`, chain 0 failures); awaiting JPB's disposition (`docs/phase9/review/C1_REVIEW_BINDER.md`) + the owner adoption |
 | C2 | DONE | VT + cluster keys rotated, Shuffle key retired, repo/package scrubbed (live-verified); rebuild/rebind at C1 |
 | C3 | DONE | Frozen release `f2acd9c`; pin verifies; mutation test fails closed |
 | C4 | DONE | Relay/watcher/offsite blindness closed; three-path canary live (all 2xx); DO-side watcher threshold remains |
-| C5 | PARTIAL | Backup gauges/rules + verification fix; offsite pruner union + custody attestation remain |
+| C5 | DONE | Backup gauges/rules + verification fix; the offsite pruner union engaged live 2026-10-01; the decrypt drill + restore rehearsal executed 2026-10-01/02; the owner's custody attestation recorded 2026-10-02 (escrow in SharePoint; `docs/security/CUSTODY_ATTESTATION.md`) |
 | C6 | DONE | R1–R4 fail closed (tests + live); gates P2-G02/P2-G03 re-verified |
 | C7 | PARTIAL | Reclaim + drill + projections live; volume migration + 7-day observation remain |
 | C8 | THIS PASS | `verification_log.md`; `docs/CURRENT_STATE.md` in both repos; registers reconciled |

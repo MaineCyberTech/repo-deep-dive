@@ -131,3 +131,63 @@ Evidence: E-REVIEW-FIX `offsite-delta-seed/run`, `offsite-repair-stale` (interru
 `metrics-exporter-before/after`; ledger row 2026-09-30T23:25Z.
 
 - **Edge follow-up (2026-10-01)**: `DATA-P1-003`/`TEST-P2-003` fixed — `purge_expired()` cut at `now` (delete-all) while its count used `now - max_age`; the cut is now `now - max_age` for both, with a mixed-age boundary test that fails on the pre-fix code (evidence: queue-purge-mixed-before2/after, queue-full-suite 199 tests OK).
+
+- **DQ-P1-001 (2026-10-01)**: pipeline write-failure visibility — Vector internal metrics exposed on host loopback (internal_metrics + prometheus_exporter), exporter + two alert rules live; the write-rejection drill reproduced a 927-event drop that was previously invisible and the alert fired (proof capture). Residual: drops are alerted, not replayed.
+
+- **SECRET-P1-002 (2026-10-01)**: credential classes — root tooling reads per-class files under /srv/falcon/secrets; the owner `.env` reduced to user-side keys; validator gate added (evidence: secret-class-files, secret-env-reduction).
+
+- **ARCH-P1-003 (2026-10-01)**: port matrix reconciled with every live bind (corrections + N-22..N-28); drift check + metric + rule live; negative tests captured (the external sweep still needs a remote vantage).
+
+- **ARCH-P1-002 (2026-10-01, falcon side)**: repo->runtime boundary — bootstrap runs log their source digest, run-all refuses dirty trees (override recorded), runtime-source metrics + stale rule live; the edge control plane's dirty-tree execution + pin skew remain (residual).
+
+- **IR-P1-001/002 (2026-10-01)**: tabletop package + paper walkthrough delivered (docs/phase9/exercises/); 12 gaps recorded; the facilitated owner/JPB session remains.
+
+- **INV-P1-002 (2026-10-01, partial)**: live image pin check + `falcon_live_image_drift` metric live (27 containers: 18 OK / 9 drift); the drifted/vendored images remain outside the lock.
+
+- **DQ-P2-002 (2026-10-01, partial)**: duplicate/replay ratio measured + exported + alerted (live 0.0000); dedup/idempotency itself remains open.
+
+- **EVID-P2-001/003 + DOC-P2-001 (2026-10-01)**: phase-9 aggregate includes NOT_APPLICABLE (+ regression test), registers reconciled (C-31..C-33 added), VPN runbook/checklist refreshed.
+
+- **ARCH-P1-002 edge side + XREPO-P1-004 (2026-10-01)**: the control plane serves source_commit/source_dirty on /healthz (live 2d9df9e dirty=1); release_skew_check.sh automates pin<->delivery<->live skew (pin<->delivery OK; pin<->live CP and sensors DRIFT; mutation fails closed).
+
+- **INTG-P1-002 (2026-10-01, partial)**: joint release procedure + fail-closed joint_release_check.sh (pin<->delivery OK, pin<->live CP drift known); rollback pair record + edge-first order documented.
+
+- **EVID-P1-003/DOC-P2-002 + P3 batch (2026-10-01)**: docs/records refresh (state re-verified, closure section + C-34, owner-inputs, dead refs/banners) + five P3 items fixed (INFRA-P3-001/002, DATA-P3-007 partial, DQ-P3-009 partial, HYGIENE-P3-002 partial).
+
+- **OBS-P2-001/002/003 (2026-10-01)**: restart rule fires on uptime resets (drill-proven + delivered); 10 rules newly proofed + the envelope contradiction reconciled; syslog noise re-scoped with a measured budget (re-measure 2026-10-07); the memory-low V-5 edge fixed.
+
+- **XREPO-P1-004 + ARCH-P2-001/002 (2026-10-01)**: pair-state check wired into the probe (live failures=2: live CP + sensor drift; delivery OK); the wg0/9443 premise corrected + N-24 addendum + prepared narrowing; the edge trust-state gap list recorded.
+
+- **CTR-P2-003/004/005 (2026-10-01)**: running-vs-declared drift measured (0 property drift); the Wazuh estate + nginx digest-pinned -> live pin check 27 containers / **0 drift** (was 9); the certification delta captured.
+
+- **DQ-P2-003/004/005/006 (2026-10-01)**: event_time normalised live; the e2e assertion on a 15-min timer (inject->queryable 2 s); per-feed age/source-field metrics + rules; phase9 completeness on real fields; 66-rule catalogue. The live Wazuh containers were recreated with the pinned refs (drift 0) and the pair-state rules are live.
+
+- **DATA/SEARCH (2026-10-01)**: falcon-eve dynamic:false + 75 pinned props; 4 ISM policies live (audit/top_queries/ISM-history/test-cleanup); the DLQ bounded + metric; the retention matrix documented; 5 fixture leftovers cleaned (no production data touched).
+
+- **NOTIF + PERF (2026-10-01)**: the relay auth is fail-closed (empty token rejected; live) + the noise re-tuned (disk-warning 30m) + reproducible provisioning; host memory/swap metrics + rules live; the offsite delta and the mapping template verified-fixed; the cost register + CI timing.
+
+- **TEST cluster (2026-10-01)**: the gate runs 9 offline suites (incl. a planted-failure self-test); the secret scan is NO_FINDINGS at HEAD/worktree with the history at 20 recorded items (REVIEW_REQUIRED by design); TEST_PROCEDURES.md indexes the gaps; legacy_paths=264 documented.
+
+- **SEC/SC cluster (2026-10-01)**: the capture wrapper prefers a single-key 0600 file; the enroll service is hardened + deployed (per-device tokens; 14/14 tests); the scanner/gitleaks CI gate is fail-closed + SHA-pinned; the history check + the P1-G06 note corrected; the delivered pack's fidelity failure documented for the publication session.
+
+- **IR cluster (2026-10-01)**: the breach-notification procedure written (owner/legal inputs marked); the boot-order fix verified CLOSED + VM auto-start verified (PVE API) + a non-root boot check; the incident artefacts reconciled; the R-29 verification + escalation template + the authd rule proposal.
+
+- **EVOL cluster (2026-10-01)**: the evolution guide + the shared-tooling policy (the duplication map; option B recommended) + the MCT vendoring policy (8/29/11 pinned/unpinned/floating; a proven CI blind spot).
+
+- **SBOM cluster (2026-10-01)**: falcon-side coverage 12/24 -> 24/24 digest-bound; a read-only coverage check + an 18/18 offline suite; a SHA-256 provenance manifest + verify tool (unsigned - the signing key is an owner decision); the stale dispositions documented.
+
+- **RES cluster (2026-10-01)**: the freshness rules verified + 3 new (70 live; freeze drill 3/3 delivered on both relay paths); the boot-order items closed falcon-side with a new boot_order_check.sh (17/17) + the mount guard repo-provisioned; the new-services verification proven at HEAD; owner-gated state tables appended.
+
+- **Wave 6 (2026-10-01 evening)**: ND/HYGIENE (fresh-checkout path + audit-run lifecycle tooling + manifest 0 failures), SECRET/SC (single-key env reads + owner-env validator + rotation/custody docs + scanner patterns + compose-digest check), DQ/DATA (ISM-delete + spool-purge observability, mapping-drift runner, residuals narrowed). Owner items: DO watcher repo-versioned + hourly heartbeat + 2 h threshold (drill-proven), C5 rehearsal across all encrypted classes (1.47 M docs restored in 21 s), enrollment host-level closure (public 1516/1517 dropped; daily closure metric), C7 Docker prune + the capacity-blocked volume-migration tooling/runbook.
+
+- **Wave 6 LIVE/OBS/RES (2026-10-01)**: 8 rules firing-proven (proof table 44/70); index hygiene re-verified; the TLS window live + re-measure plan; the throughput panel annotated; the disk-guard unit re-provisioned; 4 runbooks reconciled; 3 OBS rules proposed. C7 volume migration executed the same evening (100 G disk; data LV 224 G; 32 G moved). Incident R-38 recorded (the edge cleanup deleted the pinned lab8 image; guard + fail-safe + test).
+
+- **Wave 9 (2026-10-02)**: IR/BP/CI (the CI/CD incident playbook, the hotfix/break-glass process, the governance reconciliation), SBOM/SC (hash-pinned CI tools, the SBOM coverage + provenance step, the compose-digest wiring - validate green), FEAT/DOC/DQ (the capability docs reconciled; the template pins + consumer checks; the P1-G06 note), OBS/PERF/LIVE (5 rules proven -> 49/75; the MoM self-heartbeat rule deployed -> 76 live). Same day: the edge pin rebound (2026.10.02-lab / 17a09a9; pair state all-green) and C5 closed (custody attestation).
+
+- **Wave 10 (2026-10-02)**: firing proofs extended to 62/76 (a 13-rule coordinated drill, both relay paths, restores verified); DQ-P2-003/007, CTR-P3-007 and DR-P2-002 verified-fixed; new read-only feed-rate/event-time-skew/retention/R2 checkers; the Oct-8 volume-deletion plan + script; the OD-17 decision package; the 45-action owner pack (OWNER_ACTIONS.md) + the C1 reviewer checklist, owner-adoption pre-fill, glossary and the EVOL/MCT/IRIS decision packages.
+
+- **Wave-9 close-out (2026-10-02, committed after wave 10)**: consolidated firing-proof coverage corrected to **75/76** (supersedes the wave-10 "62/76" line: 44 per-rule table + 5 wave-8 + 26 wave-7/wave-9 proofs; only `falcon-memory-low` lacks a proof - deliberately skipped, the unsafe 10-min <10% memory condition; owner confirmation of the count pending). The completed 13-rule drill was independently verified on both relay paths; the failed overlapping run (rc=3, byte-for-byte restore, not counted) and the final3 rule-window repair are recorded; the relay rule's episode-2 tail resolved 02:42:27/28Z (counter back at 0); see `docs/phase9/ALERT_FIRING_PROOFS.md`.
+
+- **Overnight offsite verification (2026-10-02)**: the first scheduled 3-pass run completed 03:35-04:50 with the delta upload, the post-prune read-back (0 mismatched) and the full verification of both repositories (OpenSearch 1,494 + Wazuh indexer 5,811 objects, 0 mismatched) - PASS; the success stamp advanced.
+
+- **C1 rebuild/rebind (2026-10-01)**: the package rebuilt from the final tree (package 305d777, publication df934e5), the pack + fidelity clean (0 unexpected mismatches), the delivery archived (e4ca5696..., 3,464 entries), the chain 0 failures; JPB's reviewer disposition + the owner adoption are the remaining C1 steps.
