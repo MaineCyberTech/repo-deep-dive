@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T07:58:37Z
-# files: 1160
+# generated: 2026-10-04T08:04:17Z
+# files: 1184
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -206,7 +206,7 @@ f944f051b99542867c767698a51d2d2feccdcda3357ec2c0e87e63189df5ab7a  ./runs/2026093
 61d639f25502957680401e4893ac559c6421d47bc3738616f02212ac622f2f91  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/sbom_license_policy_recommendation.md
 f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
 2eaaf62cc4e878b2607cd931102b5ce246226f50be6b1ffa99e7c53d0280dda4  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/verification_log.md
-07175cb86518904d7bc972bb8ab1cc458726dc986f587e18116973b71f6f94e4  ./runs/INDEX.md
+45ee7022fcc06f155d2d4ce7dbfb95642bd7ee6b913d3b15488a4054c7ab2271  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
 e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
@@ -489,6 +489,30 @@ ba0cd39bed5eb8a3cfbdb5552a11c35472e622adfbd4ac083a8e4e113920a879  ./runs/chat-20
 21904b59df6adf6e91064cc3bf93f23f44c5fadb69dd918f819342cfb8a87d2d  ./runs/chat-20261004-0700-develop-0695894/patch_plan.md
 f89240dc228af81a78d956293d898e8926d5eac9a21efd15fab75643e77b3018  ./runs/chat-20261004-0700-develop-0695894/risk_register.md
 3a9019b722c62a3fa70cf0c9c9482d33c60498f47415f470049b810d2620c33a  ./runs/chat-20261004-0700-develop-0695894/roadmap.md
+e78edd3dca584f264872fa9759627f70d12572cdae4aa60b747f6a8c0773d5d6  ./runs/chat-20261004-full-develop-0695894/01_repository_inventory.md
+6e9ef1d12b10e792ba7bd08f3d61682245c363910e44fb96df19525db572abc5  ./runs/chat-20261004-full-develop-0695894/02_architecture_runtime_topology.md
+cb4d6b309e1909e03d73d8e3e6f42c3536bd6a05be36844bf1670646e8cda980  ./runs/chat-20261004-full-develop-0695894/03_feature_implementation_map.md
+959a17ea525258bab17e835ba8cb5aa061af3c7b2d75f63316bdcad37b68fab9  ./runs/chat-20261004-full-develop-0695894/06_security_authz_tenancy_audit.md
+6f2ae6c727358e807074e5f7faa47ec0f9ac01229f2a1535ed87f2b3379e3c95  ./runs/chat-20261004-full-develop-0695894/07_data_schema_migration_runtime_validation.md
+ccf4e30280989c564bf217b0d9f4f263bd321659b6b1bab1a511c1c6fd16f56f  ./runs/chat-20261004-full-develop-0695894/08_api_contracts_realtime_integrations.md
+0beb4dd8c32fe5e3dc51d99f3b6b13ae56c424a7e5ea5c6f9048960020cb0d96  ./runs/chat-20261004-full-develop-0695894/09_testing_quality_release_confidence.md
+c825e7adc6d891efadd2f08e14f33610166ef404b51058f5d890e22b8fa0add9  ./runs/chat-20261004-full-develop-0695894/10_github_actions_cicd_governance.md
+8a5baf1a18869f60adc27f712ee5ce57a2779c2ebf4a09d359a22d47bb8dcdc3  ./runs/chat-20261004-full-develop-0695894/11_supply_chain_dependency_secrets.md
+18f03e08e232dad002fa22a3b8a75a143e4eebfce515f62e7ff1d955ca81a774  ./runs/chat-20261004-full-develop-0695894/21_repo_hygiene_maintainability.md
+5e4dbb8c07ef39c01a0282a7561be308b65f3b842dca5d6d12b917d9d0386d68  ./runs/chat-20261004-full-develop-0695894/22_final_risk_register_roadmap.md
+ddcdb64ce1d858aa7be684fc105145da763baf545d5608e550336b84b9768548  ./runs/chat-20261004-full-develop-0695894/23_executive_summary_release_gate.md
+055a2abb716011fc47b6f4a692df4f7554b32bd1efc0d42dc0b48fd0651c5321  ./runs/chat-20261004-full-develop-0695894/25_multi_tenant_isolation_attack_simulation.md
+a747997905d6bdf5adf384401bd28758d6478077e7de2aac32c656abaea2c71d  ./runs/chat-20261004-full-develop-0695894/37_supabase_rls_policy_deep_dive.md
+be6c2ca1f3c72ac7056c56157588673cb8a5d3510bdb00e46c4a9f6f20d42701  ./runs/chat-20261004-full-develop-0695894/EXECUTIVE_SUMMARY.md
+a68ea801e76abfbd866e11c42487d9f0c63d6f1675577626d2e198c986057d1d  ./runs/chat-20261004-full-develop-0695894/INDEX.md
+2e48f5760595659a21a3fcfe8fe9b23cc8e7541c5aa79fc8c7dccdfe4843b17d  ./runs/chat-20261004-full-develop-0695894/RELEASE_GATE.md
+ad9060a054438d9598ca0c2b9f0dbab50e6de3484b780cd12bd091e443e5682f  ./runs/chat-20261004-full-develop-0695894/audit_manifest.json
+bf21b327ab40e552a09fa94dd001dfd52eedf8690334d3a00769f38aa007f101  ./runs/chat-20261004-full-develop-0695894/findings.json
+128c0e859c7104021752fba6fe8bb4626ec010f9462d7279708f3942d78a1c5a  ./runs/chat-20261004-full-develop-0695894/follow_up_register.md
+609e8160166799d3e39925446a8cbc5e9924340c22988247212dde6416b99c4f  ./runs/chat-20261004-full-develop-0695894/patch_plan.md
+128c0e859c7104021752fba6fe8bb4626ec010f9462d7279708f3942d78a1c5a  ./runs/chat-20261004-full-develop-0695894/risk_register.md
+3a05823071a86b588bd4bdbe62bc502b621c9d7e957ebeefc6929cd061ba6dcc  ./runs/chat-20261004-full-develop-0695894/roadmap.md
+5c931204875b83b00c6577b4cc98ee717c579920c865914c90e63c46659dfbc2  ./runs/chat-20261004-full-develop-0695894/verification_log.md
 e4560c346c42ce0f85e89785a25bdbdf72182ab0972f6e742ca2ff6f4f7a0cbe  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/01_repository_inventory.md
 7c699a03bb9f24205c2cd9c0484602a212a9bd507afa97ded337235bac9b47c6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/02_architecture_runtime_topology.md
 709725674f51cdae3579808af778c2b677ee6e4042d4a00b37b45a28e883ff26  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/03_feature_implementation_map.md
