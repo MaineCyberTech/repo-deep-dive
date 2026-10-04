@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1234
+# files: 1235
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -26,7 +26,8 @@ c4dd58c3dffa1dd407b5acaddf402025659b1e211d1265ce4771b07e0a307f43  ./CONTRIBUTING
 0886904dbbf64dbe39709dd725d06d87627ad397bca96a4013b310da077fdc42  ./LICENSE
 688b7221796be92c2399b670e95683704580d76f223124438fdfa6076cfc08e8  ./OWNER_DECISIONS.md
 ba5274f026624721c194b40ed315bd3a71758c48e0b34efa2dc70727d70a91ef  ./README.md
-87f9219cfece7a2661b08d2aa7e728b654ca9772734e458d4cfddcda6392bf07  ./REAUDIT_QUEUE.md
+b80744b977318654b761289dc0d072d54ddfe5e2be22bea7b4aefcec4875860b  ./REAUDIT_QUEUE.md
+30b69b3e847fa53c41045630769ba199b005bcd144491dc1184b6a029b78d6b3  ./REAUDIT_REPORT_20261004.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 c3715a4e8c0dc0596cdbc0df05dc1d979a87b2f208d6d8d32f6caad7037a87d5  ./REVIEW_INDEX.md
 3e50a74a7332f00dd710375633a049911b7154148d92e919d29a9b7bff7373c5  ./SECURITY.md
@@ -263,8 +264,8 @@ fd3dd40e797a9844c0e28e71bb2e266f0cf56af13f886f011bfe3d134680d4f5  ./runs/buddy-2
 7fa1484e2891ee6a7a864b55224c3055194fea8086c7194f380a608337693693  ./runs/buddy-20261003-0018-master-99abf29/audit_manifest.json
 5b223b3b58a856b7f67ac05c4011376909a186d5b139a9098b5364c714ce8596  ./runs/buddy-20261003-0018-master-99abf29/dashboard.html
 9e01b6054c0604b14d226c964da0be36a63175911b4b0dd15bf962751c612728  ./runs/buddy-20261003-0018-master-99abf29/dashboard.md
-8246c61ecaa4410b249c796918794a635bd30e9e064881cc2b62addd17bf6a6a  ./runs/buddy-20261003-0018-master-99abf29/findings.json
-27220355df209b471c1d4e35f9dc19f71fc88eb5a5d01554e2d15244b8aec329  ./runs/buddy-20261003-0018-master-99abf29/follow_up_register.md
+6a052b589e1d57aa4a30985cbb34d8c935cefa2453f614fdf4fe38d9c4e9d7fd  ./runs/buddy-20261003-0018-master-99abf29/findings.json
+44a252fdea2fb70b50a56913ab83b7c5918f36b2fa7bd955aae5ed160a4821ab  ./runs/buddy-20261003-0018-master-99abf29/follow_up_register.md
 eca7df5f18501939f68f0512eaef72404401b2c766d0ce70653b0e6f8fb36f10  ./runs/buddy-20261003-0018-master-99abf29/inventory.json
 87429271c4036f11553c2f7b316fe7d6f8cb6c6cd5f40edd364712ea6869618f  ./runs/buddy-20261003-0018-master-99abf29/patch_plan.md
 b70062626ba916c58c06618a376c9bd14982c6f64d6ba1a3ffc9511573458c89  ./runs/buddy-20261003-0018-master-99abf29/pr_comment.md
@@ -341,7 +342,7 @@ a16c4f18ad3a46e30b6e9dc280fca889e31828b0b61338d6ed65df41c7bee858  ./runs/buddy-2
 8f67b2759c43d1c8c2ff5e65208aeac870e5348170afd8b533f1911a5590e408  ./runs/buddy-20261003-0018-master-99abf29/remediation/PS-U04/pr_body.md
 50d4ba76cef0e5015ca94b852572c3adff3728cc07f1b5234d9ebf707c2793fb  ./runs/buddy-20261003-0018-master-99abf29/remediation/PS-U04/verify.log
 bbcc47f470ebe769b9208739549e881951a45b4c78aae14d3795110bcbbbf928  ./runs/buddy-20261003-0018-master-99abf29/remediation_plan.json
-42ba2a06fe722aca85bcaf8f1f94e484d76fe19bcfee55459a6a5bc97705f79d  ./runs/buddy-20261003-0018-master-99abf29/risk_register.md
+ac5836f06b468a18474395d65009bf124ea5e38487da75a18730ea5815b95641  ./runs/buddy-20261003-0018-master-99abf29/risk_register.md
 93b97bc0fbb663db8f53ffdf3969e9137c58bc128d3b0c2cf799345909a16e5b  ./runs/buddy-20261003-0018-master-99abf29/risk_score.json
 e951f8609aeffd01f07e025c8f0c9882c5ba46f78b04f257d4d42c0d30e98f49  ./runs/buddy-20261003-0018-master-99abf29/roadmap.md
 5936fea0cdc5be9c2aa2a4f364d86432ec5bbb821c992dc6e4017aa453c89c3a  ./runs/buddy-20261003-0018-master-99abf29/verification_log.md
@@ -374,8 +375,8 @@ be2aa4a50666577de38fea32b6ce6f13f0ecd5253d3d7658642c0bb1a13a9464  ./runs/chat-20
 a9d14935663449aef0abf265e402c7d2959db348813eb2e51677d0c0f0d99a97  ./runs/chat-20261003-0018-develop-a72b8cc/audit_manifest.json
 26a2673c46c9abe3aae5aea1ddd3eef6a22698acd69c06664cf55192b5ae425a  ./runs/chat-20261003-0018-develop-a72b8cc/dashboard.html
 7ab12871b2e54e328b30f23e0b755c8e6832fd48f3a78cfdb06aec0ae64f66c7  ./runs/chat-20261003-0018-develop-a72b8cc/dashboard.md
-39f102fc94960e69d735627d8ddfff599b98ffc6132f8529c37e862db3d9cd09  ./runs/chat-20261003-0018-develop-a72b8cc/findings.json
-2fe6afad433cbc66f862d6314cb1a98ae80636ea576f42be78f50f439ce45516  ./runs/chat-20261003-0018-develop-a72b8cc/follow_up_register.md
+2f69ac48face3aa98620ccd4f4e1569a9ad44e308bfcdd8b18dc8d73fd765d56  ./runs/chat-20261003-0018-develop-a72b8cc/findings.json
+ad17125deb91f075d9cdd6f6d28e78f6798b5a6f8cf065783456b00bcacdc29e  ./runs/chat-20261003-0018-develop-a72b8cc/follow_up_register.md
 0ff9702021865c7249ee5f62758bc70fd3fa06d97d0d6a748b0fdb8fbf0567f2  ./runs/chat-20261003-0018-develop-a72b8cc/inventory.json
 c36227b81ad72aa4e1a8a37f713508581d59eafd78e23e2b15ca3a7579697e0e  ./runs/chat-20261003-0018-develop-a72b8cc/lens_lab_verification.md
 9028a7ebc1dc4c27f3a2b7108dbf9eff0cf786daeb3ae03b6babfb347944f1ec  ./runs/chat-20261003-0018-develop-a72b8cc/patch_plan.md
@@ -568,8 +569,8 @@ a606d33dbde5ccd5ba3679a26d96e2f35f3437e2f09805219027ff06fca90de3  ./runs/falcon-
 25444a82073c65fd8aac096a94a8f978f01cb216533644c5f0048553a979666c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/audit_manifest.json
 00b77b74af3dc4c033bc2cefc94617378462942f05f112f954f45103f2a1e881  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/dashboard.html
 360632d45d901215b29154cd21ba58f2fe643819bb5d45fa289660e5cf0d6265  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/dashboard.md
-9dccb36177fef0fcc774b11b9f9379b24e53bd2b6ff363608e4e2146d3bcd42d  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/findings.json
-f8ccce06a4425ace35b12a57791693de036cd2448598996b42dfe5fba7871d93  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/follow_up_register.md
+f94ab4269fabf05226a4e815b0a49351ed4022181d81f9d612d845864157c370  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/findings.json
+3650832be399d8d28ec8b420f037a215ce85fa75d95bba96978372f21bb0c3ad  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/follow_up_register.md
 b464f12bbacb90ff5c5da4661d7a4f83b1fbf5b358c5dcb8096a6b487e09dc03  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/inventory.json
 50585f3321b358b81c502f6640f1b392e6b9a41a80a19741e4b37702a5ed3cac  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/patch_plan.md
 fc6af9b1edcc587bce45c648b309ea7f0742e750389479dcaf99202c7d0b5afa  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/pr_comment.md
@@ -681,7 +682,7 @@ c8ecd29caf0fba08a44302eb9fbabdd6e2a2fec8e06133a43aeb798c08c2d283  ./runs/falcon-
 bfac91e865a2f263b4eb4fcdcb8135d91129a0b468ea84c3758f552752b0ad5f  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U13/verify-merged.log
 2b437ff22e22afe4beb9bb2ac7fadffcb6c29469c63bacb041fae39ab567b032  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation/PS-U13/verify.log
 47a0d8af389c66d04d3d38a1789006f8f8cf5cf6c906a3a893f4b9d8e42e374e  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/remediation_plan.json
-dae02c835ebc9225c638b1a18b5c29a6acdf38d5dc5ed7bb642c210118c050a6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/risk_register.md
+4c16ecd0a7a489bcd35994ccf3a3b8ab06964c4ab5829d973cda26f90d8bd702  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/risk_register.md
 4539311b7335758f72c9a2f87b578e1ca6dd3f3ebf362ee4289afbbb7ed6b10c  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/risk_score.json
 1388bcedc1322bce125dd629ed512600ff45159d913e116d496efd1f78c1472a  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/roadmap.md
 f18e578f07709b7acec9d5023993a829e0594553338c210aa0e18a057fb0772e  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/verification_log.md
@@ -714,8 +715,8 @@ f2302acb226ad5cef644add974b6a60aaca4ceecd50bf1f3f85249390152bb74  ./runs/falcon-
 14498d06e408c6d5e700aa377ba659602acc5aeeb0eb74cf0cfcb84d9e86a4be  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/audit_manifest.json
 771755bc403da58258ec9c84e3a1521588523f3ca873969a1c016bb3986bf3dd  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/dashboard.html
 9ef86842dcd98e1d0747ad68100c23274ec172606f53a8d4978cfce7fce98b92  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/dashboard.md
-43ce839f6ff5581fd4b453cddbb85daf5baa46105ac018144ee589a3998d7443  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/findings.json
-b8edab933e2618a54ec59a1044f35f744264750c15eab87dd62fccd05878c740  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/follow_up_register.md
+c29ba012cb7b10a3bd6cf6e1c77d9ccb10258fcaa6e9ccebb93fcfcd065b21c8  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/findings.json
+a9c8913bf6fe60356dc85246fba33c549cdcbf2c482103a0b84e8ee0597e3bd8  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/follow_up_register.md
 7adc3f06471b45517e5fedaa3103a4e141119e71e5df4c19d8aa3cc870dc6f9e  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/inventory.json
 fb9a6a333c9627c5ba47a153a17e73c628d12a08cd6d50a09246bfdc9ffbace9  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/patch_plan.md
 911017fe53aeac845accfdcb3701d97fcc3ba009c55922695c43682e44fc2bd7  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/pr_comment.md
@@ -827,8 +828,8 @@ c48f8151d10accf192db43f703a4e3ba147424e5be252960dd8361c9b1ef20dd  ./runs/mainecy
 097c1dfff18546115ca19dd8a172ff306311acdc396d80723b722b452eea0fcf  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/audit_manifest.json
 e19c2068dbdd733f84299f3845d8f635e4e7172e2ccfa4167e2b2315a3ec492e  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/dashboard.html
 74d034780bc67309e5b1c1f42be80407588f3ff00da81f0688f499f2ae6ad394  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/dashboard.md
-f6ad34f190ef2e60625c995330bfd374d5f863b4c1121aa53104a9c3853ec88e  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/findings.json
-02b6a0ad904f3911efb97f9336d0220459918ae30c7268c2a573c21d7a5d9894  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/follow_up_register.md
+3cfa9907b685785c88eacf4f261210723509340c240302f3ece34a953dd5fb44  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/findings.json
+357cbd60220c2ff61af75a14838dcb74e7aa45102e054588363748c8dc257a30  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/follow_up_register.md
 6abd749588fa90a3997ec77b71ce03a8bf58619fadf22a654f1174008eb32f68  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/inventory.json
 71352049f37121a2840f13d724341e0bb3dbcf8a6ed0b93c80d92b39e0ee4e78  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/patch_plan.md
 9bff24f70ca4b5586926a25796a54b1f5e67a842b46441a27449702f04443f3a  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/pr_comment.md
@@ -959,8 +960,8 @@ cd1610175896b22385e5868c869c6b39c66c8158d32579a865f3a13fba28639a  ./runs/repo-de
 eca0ab4f22322360925dd2bf9722a41f38c91deddb3c36b3f57fb089a581de73  ./runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
 e9d74900c2feb0a78c5ff92c0b04e93bcf3eb66fa0695458fd3132d2ce914666  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.html
 cbc20e976700c6f8e807bb1bba5d3e52f04ca50f68dfdf3e996436ff7f2c1af3  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.md
-6ea546a7b2d250e0e62bb73ff75665b9d7f4a1333e9bf702df4d098121368719  ./runs/repo-deep-dive-20261003-0018-main-7bac320/findings.json
-d8083f95a8b1c3fc8f19402dec0bb563062231c8077c728d1e27febb5cff5b70  ./runs/repo-deep-dive-20261003-0018-main-7bac320/follow_up_register.md
+0c1d67d05253725729bed3dfd2a44057c64ace77a2054a22ab8e7cbd305319a9  ./runs/repo-deep-dive-20261003-0018-main-7bac320/findings.json
+8882d8b6c876adb47167cb19bbbe491dbed8c21da013be56941290633aa2fea9  ./runs/repo-deep-dive-20261003-0018-main-7bac320/follow_up_register.md
 37b7454c983e3e5939a5047b19b9c99e4eddce7c9b26c4cc7a286bab94b75702  ./runs/repo-deep-dive-20261003-0018-main-7bac320/inventory.json
 1c31ca56048f5a4bb05e89162376b58c24262b6a37754838588c278d45a69d2b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/patch_plan.md
 636cae2e0a0933d9044068e9268cec8ec72686d69068f42c6e57b10957d7ca5e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/pr_comment.md
@@ -1014,7 +1015,7 @@ d2def048275cb3752d8657fcff6e6c843d7aff9567799c2ffa04f58fa198b930  ./runs/repo-de
 9d72fa6d2fb0509c1db46651e4960f4b1953104accf3dcb656288da10a080734  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/verify.log
 1e6fee96c89c30ba6c760a6e929f51d6c7f02d6bdb5971a4ba5daf57f4b8ecf6  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-011/verify.sh
 95376115229b6dc3c3f102276bc1176331829f06ced8bdaadf2913620cc81850  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation_plan.json
-b297b37ccd48192cb88cf30b16ed5102b646e10c4ae7012241046ea5247df46a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_register.md
+9f0a31b1db325c11f2010b9cf3518d04031e6f957d5d75d4ab8b90065959cacf  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_register.md
 6b835d7c6ba3a55b90bd01d4dbfd50f691b27c508bf5984d11922af0a8b55f17  ./runs/repo-deep-dive-20261003-0018-main-7bac320/risk_score.json
 3466393320c5890b43823e6ab801bb52e9b8bf4776936b7942c9281f6c820e1f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/roadmap.md
 c5ee55fac8d5b5c73f1ff1a6e26340f96e559c590eddd8d107cec7693ecd6588  ./runs/repo-deep-dive-20261003-0018-main-7bac320/verification_log.md
@@ -1051,8 +1052,8 @@ dea542a06966c6b247832d60025b0a7fe87784b1584f6846c238830546820ee5  ./runs/snowrid
 44f13b32bd09fe6132039f988ce891dfb611b7041cb8e3e74184e54365d19d5c  ./runs/snowride-20261003-0018-main-59e12b9/changelog_draft.md
 be66a85662768363809930aa3eba22de637724daf19e1e524fe397c70f8d3cf1  ./runs/snowride-20261003-0018-main-59e12b9/dashboard.html
 315e2643db754a9cb338421cfb9f90e347f25706f86be4aa0bc65eec6048105d  ./runs/snowride-20261003-0018-main-59e12b9/dashboard.md
-12349ab0649e5bc00e51f5cb5765e475cff117894625070f0a863859151d9d69  ./runs/snowride-20261003-0018-main-59e12b9/findings.json
-0e09f925ac05330b5b6c2b01d6d62b3adc54bbc6987b6b69dd93510b8e6eb5bb  ./runs/snowride-20261003-0018-main-59e12b9/follow_up_register.md
+c9c55cdd49b0a97b40865f8e6fd8b04ddd82ef9fe52a7c42cf18537a5bf6d402  ./runs/snowride-20261003-0018-main-59e12b9/findings.json
+ad9b25a79a895f02a01958acc003eb9bb21afdd0a7e25c5169dc2133d4ee0937  ./runs/snowride-20261003-0018-main-59e12b9/follow_up_register.md
 addeb79bccdcaeb8a9ef8b31ef28bd3accb0ad63e9578c7c4a517711414f6a42  ./runs/snowride-20261003-0018-main-59e12b9/incident_tabletop_scenarios.md
 8add511b9b77ac59c345b0df0c996cf264db3180b448e4865a2bb4cdb56c9249  ./runs/snowride-20261003-0018-main-59e12b9/inventory.json
 3131f6d71b2f6b3b25fcdb7b0a69fe26f672a513652b4922dcddd919e6d39fe4  ./runs/snowride-20261003-0018-main-59e12b9/patch_plan.md
@@ -1152,7 +1153,7 @@ f908876035ad091483342dfb6067fe1544a453eec02c7873927acb96ea0a6441  ./runs/snowrid
 1dc1de8ae5ac6f61424b58ebb21575660444c9e1228b04cc7dd6f16a46dfaf23  ./runs/snowride-20261003-0018-main-59e12b9/remediation/PS-U13/pr_body.md
 d8b91d48eb9bdf50a4e81e2b549a410563f8626592d2f1f34304c47703e98660  ./runs/snowride-20261003-0018-main-59e12b9/remediation/PS-U13/verify.log
 15f89381d73e4a263e3d00862c73378c6fbe54c51d07385647dc6b8b27ac4308  ./runs/snowride-20261003-0018-main-59e12b9/remediation_plan.json
-d4d196a1bb16d93919f89f85bd455b5c60493bfc998aca042a0af5ba674844f8  ./runs/snowride-20261003-0018-main-59e12b9/risk_register.md
+877c1958747de297560039aaa2fa61918e82a14ac972c001c0d6b6aa686a32a8  ./runs/snowride-20261003-0018-main-59e12b9/risk_register.md
 11bcc791cdff313dcd63f8fc118fb7349b447a695d69e904f5ac2c9612e29f00  ./runs/snowride-20261003-0018-main-59e12b9/risk_score.json
 a080adadf8b1e1d3cad9d20258890fff064fe4a4cae3e70a7e7e32e8b4486ecc  ./runs/snowride-20261003-0018-main-59e12b9/roadmap.md
 da83096d14b3d4c09ce82a05f5d5bbb5eff101f2e4b4d4cd7076eb7097d242ac  ./runs/snowride-20261003-0018-main-59e12b9/sbom_license_policy_recommendation.md

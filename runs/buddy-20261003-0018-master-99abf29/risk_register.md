@@ -11,17 +11,17 @@ Counts: **P0 0 · P1 11 · P2 24 · P3 5 · total 40**.
 
 | ID | Title | Area | Effort | Owner | Status | Patch set |
 |---|---|---|---|---|---|---|
-| ARCH-P1-001 | Entire game is client-authoritative with no server trust boundary | ARCH | L | backend+game | open | PS-08 (future) |
-| ARCH-P1-002 | Adventure results update store but not device local state | ARCH | M | frontend | open | PS-03 |
-| FEAT-P1-001 | Achievement system implemented but never invoked | FEAT | M | gameplay | open | PS-06 |
-| FEAT-P1-002 | Lifecycle evolution and skills not wired into game loop | FEAT | M | gameplay | open | PS-06 |
-| DATA-P1-001 | `loadGame` silently downgrades every save to version 1 | DATA | S | frontend | open | PS-04 |
-| DATA-P1-002 | No runtime schema validation for loaded/imported saves | DATA | M | frontend | open | PS-04 |
-| CI-P1-001 | No CI workflows; quality gate never automated | CI | S | maintainer | open | PS-01 |
-| CI-P1-002 | No enforced review/required checks (branch protection unverified) | CI | S | maintainer | open | PS-01 |
-| SUPPLY-P1-001 | No LICENSE; distribution rights undefined | SUPPLY | S | legal | open | PS-02 |
-| FINAL-P1-001 | No release process binding artifacts to a commit | FINAL | M | maintainer | open | PS-01 |
-| EXEC-P1-001 | Unresolved P1s preclude unconditional GO | EXEC | M | lead | open | — |
+| ARCH-P1-001 | Entire game is client-authoritative with no server trust boundary | ARCH | L | backend+game | verified-fixed | PS-08 (future) |
+| ARCH-P1-002 | Adventure results update store but not device local state | ARCH | M | frontend | verified-fixed | PS-03 |
+| FEAT-P1-001 | Achievement system implemented but never invoked | FEAT | M | gameplay | verified-fixed | PS-06 |
+| FEAT-P1-002 | Lifecycle evolution and skills not wired into game loop | FEAT | M | gameplay | verified-fixed | PS-06 |
+| DATA-P1-001 | `loadGame` silently downgrades every save to version 1 | DATA | S | frontend | verified-fixed | PS-04 |
+| DATA-P1-002 | No runtime schema validation for loaded/imported saves | DATA | M | frontend | verified-fixed | PS-04 |
+| CI-P1-001 | No CI workflows; quality gate never automated | CI | S | maintainer | verified-fixed | PS-01 |
+| CI-P1-002 | No enforced review/required checks (branch protection unverified) | CI | S | maintainer | still-open | PS-01 |
+| SUPPLY-P1-001 | No LICENSE; distribution rights undefined | SUPPLY | S | legal | still-open | PS-02 |
+| FINAL-P1-001 | No release process binding artifacts to a commit | FINAL | M | maintainer | verified-fixed | PS-01 |
+| EXEC-P1-001 | Unresolved P1s preclude unconditional GO | EXEC | M | lead | still-open | — |
 
 ## P2 — Medium
 

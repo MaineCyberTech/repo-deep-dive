@@ -1,21 +1,7 @@
 {
-  "run": "20261003-0018-fix-backup-abort-markers-20b5e57",
-  "generated": "2026-10-03T05:21:33Z",
-  "sourceReports": [
-    "01_repository_inventory.md",
-    "02_architecture_runtime_topology.md",
-    "03_feature_implementation_map.md",
-    "06_security_authz_tenancy_audit.md",
-    "07_data_schema_migration_runtime_validation.md",
-    "08_api_contracts_realtime_integrations.md",
-    "09_testing_quality_release_confidence.md",
-    "10_github_actions_cicd_governance.md",
-    "11_supply_chain_dependency_secrets.md",
-    "14_observability_monitoring_incident_readiness.md",
-    "21_repo_hygiene_maintainability.md",
-    "22_final_risk_register_roadmap.md",
-    "23_executive_summary_release_gate.md"
-  ],
+  "run": "falcon-20261003-0018-fix-backup-abort-markers-20b5e57",
+  "generated": "2026-10-04T18:36:18Z",
+  "sourceReports": 13,
   "counts": {
     "bySeverity": {
       "P0": 4,
@@ -47,10 +33,10 @@
       "title": "Production-readiness claim is unsupportable at this commit (release integrity)",
       "report": "22_final_risk_register_roadmap.md",
       "line": 44,
-      "owner": "owner",
-      "target": "immediate",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P0-001",
@@ -58,10 +44,10 @@
       "title": "Publication digest and closeout declare commits that do not match the audited tree",
       "report": "21_repo_hygiene_maintainability.md",
       "line": 66,
-      "owner": "owner",
-      "target": "immediate",
-      "status": "partially-fixed",
-      "note": "digest `b595354f`, closeout `605fc100`, HEAD `20b5e57`"
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P0-002",
@@ -69,10 +55,10 @@
       "title": "The mandated publication-chain verifier could not be reproduced and the chain is not bound to HEAD",
       "report": "21_repo_hygiene_maintainability.md",
       "line": 87,
-      "owner": "owner",
-      "target": "immediate",
-      "status": "open",
-      "note": "no bash on audit host"
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P0-001",
@@ -80,10 +66,10 @@
       "title": "Prometheus scrapes only 3 targets; nearly all `falcon_*` signals hinge on the node-exporter textfile collector",
       "report": "14_observability_monitoring_incident_readiness.md",
       "line": 62,
-      "owner": "observability",
-      "target": "immediate",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "API-P1-001",
@@ -91,10 +77,10 @@
       "title": "Cross-repo pairing contract cannot be verified in this environment",
       "report": "08_api_contracts_realtime_integrations.md",
       "line": 63,
-      "owner": "release owner",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "ARCH-P1-001",
@@ -102,10 +88,10 @@
       "title": "Single-host concentration: host loss is total pipeline loss",
       "report": "02_architecture_runtime_topology.md",
       "line": 75,
-      "owner": "owner/ops",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "ARCH-P1-002",
@@ -113,10 +99,10 @@
       "title": "Abort-marker contract is self-contradictory and normal failure exits leave no marker",
       "report": "02_architecture_runtime_topology.md",
       "line": 95,
-      "owner": "ops/resilience",
-      "target": "immediate",
-      "status": "open",
-      "note": "new in this run (audit of 20b5e57)"
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-001",
@@ -124,10 +110,10 @@
       "title": "CI tool downloads did not fail fast",
       "report": "10_github_actions_cicd_governance.md",
       "line": 63,
-      "owner": "CI/coordinator",
-      "target": "this week",
+      "owner": "",
+      "target": "",
       "status": "verified-fixed",
-      "note": "all downloads use `--fail` + sha256 at 20b5e57"
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-002",
@@ -135,10 +121,10 @@
       "title": "Branch protection and required checks are not enforced server-side",
       "report": "10_github_actions_cicd_governance.md",
       "line": 82,
-      "owner": "owner",
-      "target": "this week",
+      "owner": "",
+      "target": "",
       "status": "owner-accepted",
-      "note": "plan-blocked; label gate is compensating control"
+      "note": "re-audit 2026-10-04: still-open (owner-accepted; plan-gated)"
     },
     {
       "id": "DATA-P1-001",
@@ -146,10 +132,10 @@
       "title": "Wazuh and IRIS data have no retention (unbounded index growth)",
       "report": "07_data_schema_migration_runtime_validation.md",
       "line": 62,
-      "owner": "data owner",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "EXEC-P1-001",
@@ -157,10 +143,10 @@
       "title": "Lab \"GO\" can be misread as a production approval",
       "report": "23_executive_summary_release_gate.md",
       "line": 45,
-      "owner": "owner",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P1-001",
@@ -168,10 +154,10 @@
       "title": "Operational resilience remains incomplete across the backup lifecycle",
       "report": "22_final_risk_register_roadmap.md",
       "line": 65,
-      "owner": "ops/resilience",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "HYG-P1-001",
@@ -179,10 +165,10 @@
       "title": "Committed `review-package/` is a stale snapshot duplicate of the source tree",
       "report": "21_repo_hygiene_maintainability.md",
       "line": 107,
-      "owner": "owner",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "HYG-P1-002",
@@ -190,10 +176,10 @@
       "title": "Secret-scanner path allowlist was not separator-portable",
       "report": "21_repo_hygiene_maintainability.md",
       "line": 127,
-      "owner": "owner",
-      "target": "this week",
+      "owner": "",
+      "target": "",
       "status": "verified-fixed",
-      "note": "`secret_scan.py` normalizes `\\` → `/`"
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P1-001",
@@ -201,10 +187,10 @@
       "title": "Alert expressions mix `bool` and raw comparison forms with no linter",
       "report": "14_observability_monitoring_incident_readiness.md",
       "line": 82,
-      "owner": "observability",
-      "target": "this week",
-      "status": "partially-fixed",
-      "note": "expression test present"
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P1-002",
@@ -212,10 +198,10 @@
       "title": "Duplicate/overlapping rules and a self-contradictory firing-proof coverage total",
       "report": "14_observability_monitoring_incident_readiness.md",
       "line": 101,
-      "owner": "observability",
-      "target": "this week",
-      "status": "partially-fixed",
-      "note": "reconciliation section added"
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P1-003",
@@ -223,10 +209,10 @@
       "title": "Relay failure counter is all-or-nothing; partial-path degradation is caught only by the weekly canary",
       "report": "14_observability_monitoring_incident_readiness.md",
       "line": 120,
-      "owner": "observability",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-001",
@@ -234,10 +220,10 @@
       "title": "OpenCanary publishes six decoy services on all interfaces",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 73,
-      "owner": "ops+owner",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-002",
@@ -245,10 +231,10 @@
       "title": "Blanket `iifname \"wg0\" accept` grants every WireGuard peer host-wide access",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 92,
-      "owner": "ops+owner",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-003",
@@ -256,10 +242,10 @@
       "title": "Owner-directed open-inbound override state is contradictory across records",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 110,
-      "owner": "ops+owner",
-      "target": "this week",
-      "status": "partially-fixed",
-      "note": "EX-13 reconciled; runtime state still host-only"
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P1-001",
@@ -267,10 +253,10 @@
       "title": "Container digest gate scope hole: vendored `mct/compose` and `automation/wazuh` are ungated",
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 66,
-      "owner": "supply-chain",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P1-002",
@@ -278,10 +264,10 @@
       "title": "Vulnerability scanning is not gated and coverage is partial",
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 86,
-      "owner": "security/owner",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P1-001",
@@ -289,10 +275,10 @@
       "title": "Repo-local test ledger points at an out-of-repo, pre-rename lab tree",
       "report": "09_testing_quality_release_confidence.md",
       "line": 61,
-      "owner": "build/QA",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P1-002",
@@ -300,10 +286,10 @@
       "title": "The full gate does not complete within a short bounded run and shell suites are not executable off a bash host",
       "report": "09_testing_quality_release_confidence.md",
       "line": 80,
-      "owner": "build/QA",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-001",
@@ -311,10 +297,10 @@
       "title": "Enrollment API tokens have no expiry field",
       "report": "08_api_contracts_realtime_integrations.md",
       "line": 83,
-      "owner": "release owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-002",
@@ -322,10 +308,10 @@
       "title": "Ingest contract relies on a shared secret header, not request signing or idempotency keys",
       "report": "08_api_contracts_realtime_integrations.md",
       "line": 102,
-      "owner": "release owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U01 open c04c0068c182b7d61521978f154f5ac33ae42c2a https://github.com/MaineCyberTech/falcon/pull/21"
     },
     {
       "id": "ARCH-P2-001",
@@ -333,10 +319,10 @@
       "title": "Declared container hardening lags the running containers",
       "report": "02_architecture_runtime_topology.md",
       "line": 136,
-      "owner": "container/ops",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U02 open 41cd5a1e65e22f7ef1e957605bb0f0df2755328d https://github.com/MaineCyberTech/falcon/pull/22"
     },
     {
       "id": "ARCH-P2-002",
@@ -344,10 +330,10 @@
       "title": "Wazuh and vendored MCT stacks run tag-only images outside pin/SBOM scope",
       "report": "02_architecture_runtime_topology.md",
       "line": 154,
-      "owner": "supply-chain",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U02 open 41cd5a1e65e22f7ef1e957605bb0f0df2755328d https://github.com/MaineCyberTech/falcon/pull/22"
     },
     {
       "id": "ARCH-P2-003",
@@ -355,10 +341,10 @@
       "title": "Live ingest authentication is a shared secret header, not mTLS",
       "report": "02_architecture_runtime_topology.md",
       "line": 173,
-      "owner": "owner/ops",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U02 open 41cd5a1e65e22f7ef1e957605bb0f0df2755328d https://github.com/MaineCyberTech/falcon/pull/22"
     },
     {
       "id": "ARCH-P2-005",
@@ -366,10 +352,10 @@
       "title": "Only the backup job installs the abort trap; other long-running jobs lack it",
       "report": "02_architecture_runtime_topology.md",
       "line": 116,
-      "owner": "ops/resilience",
-      "target": "this week",
-      "status": "open",
-      "note": "new in this run"
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P2-001",
@@ -377,10 +363,10 @@
       "title": "`ci/validate.py` did not implement the evidence-index verification its docstring promises",
       "report": "10_github_actions_cicd_governance.md",
       "line": 102,
-      "owner": "CI/coordinator",
-      "target": "this month",
+      "owner": "",
+      "target": "",
       "status": "verified-fixed",
-      "note": "check_evidence_index wired + tested"
+      "note": "verified-fixed at base; PS-U03 added an offline regression guard (375c4fb)"
     },
     {
       "id": "CI-P2-002",
@@ -388,10 +374,10 @@
       "title": "Auto-merge workflow holds `contents: write` with no environment protection",
       "report": "10_github_actions_cicd_governance.md",
       "line": 122,
-      "owner": "owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "DATA-P2-001",
@@ -399,10 +385,10 @@
       "title": "Index template and `event_time` ownership are split with no consistency check",
       "report": "07_data_schema_migration_runtime_validation.md",
       "line": 82,
-      "owner": "data owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FEAT-P2-001",
@@ -410,10 +396,10 @@
       "title": "Vendored MCT services are present in Compose while the subtree policy calls the tree archive-only",
       "report": "03_feature_implementation_map.md",
       "line": 72,
-      "owner": "maintainer",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U06 open f19acdbbb7670673446fa86df51f0e3374cd3057 https://github.com/MaineCyberTech/falcon/pull/33"
     },
     {
       "id": "FEAT-P2-002",
@@ -421,10 +407,10 @@
       "title": "Backup/offsite delivery is single-attempt with no retry, backoff, or dead-letter",
       "report": "03_feature_implementation_map.md",
       "line": 92,
-      "owner": "ops/resilience",
-      "target": "this week",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P2-001",
@@ -432,10 +418,10 @@
       "title": "Large generated SBOM/vulnerability JSON committed (39 files, up to ~122 KB each)",
       "report": "21_repo_hygiene_maintainability.md",
       "line": 145,
-      "owner": "owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U08 open 3a200c9fe33c51c97a9e348fc5f32c846344a72b https://github.com/MaineCyberTech/falcon/pull/26"
     },
     {
       "id": "INV-P2-001",
@@ -443,10 +429,10 @@
       "title": "Repository is majority generated/derived content with no in-repo regeneration or drift check",
       "report": "01_repository_inventory.md",
       "line": 74,
-      "owner": "release owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U09 open e31523a59c945126e1b3e1e6ea9e630559292812 https://github.com/MaineCyberTech/falcon/pull/32"
     },
     {
       "id": "SEC-P2-001",
@@ -454,10 +440,10 @@
       "title": "Public-facing routers have no origin authentication; `ntfy-auth` is dead config",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 130,
-      "owner": "ops+owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "SEC-P2-002",
@@ -465,10 +451,10 @@
       "title": "Cloudflare API token is passed on the `curl` command line",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 149,
-      "owner": "ops+owner",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-001",
@@ -476,10 +462,10 @@
       "title": "`.gitleaks.toml` allowlists are broader than the documented classified set",
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 106,
-      "owner": "supply-chain",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-002",
@@ -487,10 +473,10 @@
       "title": "Image lock freshness is not gated",
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 125,
-      "owner": "supply-chain",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-001",
@@ -498,10 +484,10 @@
       "title": "No backup/offsite/restore end-to-end test runs in the standard gate",
       "report": "09_testing_quality_release_confidence.md",
       "line": 100,
-      "owner": "build/QA",
-      "target": "this month",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P3-001",
@@ -509,10 +495,10 @@
       "title": "Local and CI shellcheck semantics diverged",
       "report": "10_github_actions_cicd_governance.md",
       "line": 141,
-      "owner": "CI/coordinator",
-      "target": "this quarter",
+      "owner": "",
+      "target": "",
       "status": "verified-fixed",
-      "note": "both use `--severity=warning --format=gcc`"
+      "note": "verified-fixed at base; PS-U03 added an offline regression guard (375c4fb)"
     },
     {
       "id": "INV-P3-001",
@@ -520,10 +506,10 @@
       "title": "Legacy host-absolute evidence paths require manual rewrite to resolve in a clone",
       "report": "01_repository_inventory.md",
       "line": 93,
-      "owner": "release owner",
-      "target": "this quarter",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "remediation PS-U09 open e31523a59c945126e1b3e1e6ea9e630559292812 https://github.com/MaineCyberTech/falcon/pull/32"
     },
     {
       "id": "SEC-P3-001",
@@ -531,10 +517,10 @@
       "title": "Default-deny `forward`/`output` policies are inert at the managed-table level",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 167,
-      "owner": "ops+owner",
-      "target": "this quarter",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P3-001",
@@ -542,10 +528,10 @@
       "title": "`pins/verify-digests.sh` compares only the first RepoDigest entry",
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 145,
-      "owner": "supply-chain",
-      "target": "this quarter",
-      "status": "open",
-      "note": ""
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     }
   ]
 }

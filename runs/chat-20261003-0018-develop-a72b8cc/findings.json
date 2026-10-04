@@ -1,22 +1,7 @@
 {
-  "run": "20261003-0018-develop-a72b8cc",
-  "generated": "2026-10-03T05:53:42Z",
-  "sourceReports": [
-    "01_repository_inventory.md",
-    "02_architecture_runtime_topology.md",
-    "03_feature_implementation_map.md",
-    "06_security_authz_tenancy_audit.md",
-    "07_data_schema_migration_runtime_validation.md",
-    "08_api_contracts_realtime_integrations.md",
-    "09_testing_quality_release_confidence.md",
-    "10_github_actions_cicd_governance.md",
-    "11_supply_chain_dependency_secrets.md",
-    "14_observability_monitoring_incident_readiness.md",
-    "21_repo_hygiene_maintainability.md",
-    "22_final_risk_register_roadmap.md",
-    "23_executive_summary_release_gate.md",
-    "lens_lab_verification.md"
-  ],
+  "run": "chat-20261003-0018-develop-a72b8cc",
+  "generated": "2026-10-04T18:36:18Z",
+  "sourceReports": 14,
   "counts": {
     "bySeverity": {
       "P0": 1,
@@ -51,8 +36,8 @@
       "line": 49,
       "owner": "",
       "target": "",
-      "status": "partially-fixed",
-      "note": "Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows."
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P1-001",
@@ -62,8 +47,8 @@
       "line": 44,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P1-001",
@@ -73,8 +58,8 @@
       "line": 51,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P1-002",
@@ -84,8 +69,8 @@
       "line": 72,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "BLD-P1-001",
@@ -95,8 +80,8 @@
       "line": 40,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-001",
@@ -106,8 +91,8 @@
       "line": 40,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-002",
@@ -117,8 +102,8 @@
       "line": 60,
       "owner": "",
       "target": "",
-      "status": "partially-fixed",
-      "note": "Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows."
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-003",
@@ -128,8 +113,8 @@
       "line": 79,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-004",
@@ -139,8 +124,8 @@
       "line": 99,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P1-001",
@@ -150,8 +135,8 @@
       "line": 44,
       "owner": "",
       "target": "",
-      "status": "partially-fixed",
-      "note": "Draft PR #56 opened; deletion-only change removes deploy-time Management API SQL (RLS users_select USING(true), workspace_members DDL, auth token/identity/password UPDATEs, seed-file execution) from both deploy workflows."
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P1-002",
@@ -161,8 +146,8 @@
       "line": 64,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "EXEC-P1-001",
@@ -172,8 +157,8 @@
       "line": 31,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FEAT-P1-001",
@@ -183,8 +168,8 @@
       "line": 44,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FEAT-P1-002",
@@ -194,8 +179,8 @@
       "line": 64,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P1-001",
@@ -205,8 +190,8 @@
       "line": 32,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P1-002",
@@ -216,8 +201,8 @@
       "line": 52,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P1-001",
@@ -227,8 +212,8 @@
       "line": 45,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed by chat#95 @ 6924305 (Prometheus+Alertmanager wired to ntfy)"
     },
     {
       "id": "SEC-P1-002",
@@ -238,8 +223,8 @@
       "line": 72,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-003",
@@ -249,8 +234,8 @@
       "line": 91,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-004",
@@ -260,8 +245,8 @@
       "line": 111,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-005",
@@ -271,8 +256,8 @@
       "line": 130,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-006",
@@ -282,8 +267,8 @@
       "line": 151,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-007",
@@ -293,8 +278,8 @@
       "line": 170,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-008",
@@ -304,8 +289,8 @@
       "line": 191,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P1-001",
@@ -315,8 +300,8 @@
       "line": 42,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P1-001",
@@ -326,8 +311,8 @@
       "line": 42,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-002",
@@ -337,8 +322,8 @@
       "line": 64,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-003",
@@ -348,8 +333,8 @@
       "line": 84,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-004",
@@ -370,8 +355,8 @@
       "line": 93,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U02 open 5dbe6652c1039f3d0b0bb518fef45ae2eca64c0d https://github.com/MaineCyberTech/chat/pull/73"
     },
     {
       "id": "ARCH-P2-004",
@@ -381,8 +366,8 @@
       "line": 113,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U02 open 5dbe6652c1039f3d0b0bb518fef45ae2eca64c0d https://github.com/MaineCyberTech/chat/pull/73"
     },
     {
       "id": "CI-P2-005",
@@ -392,8 +377,8 @@
       "line": 119,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P2-006",
@@ -403,8 +388,8 @@
       "line": 138,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P2-007",
@@ -414,8 +399,8 @@
       "line": 157,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U03 open 8e5ab8a47a84f97d6e77847d0a33d4c70ca20fb3 https://github.com/MaineCyberTech/chat/pull/68"
     },
     {
       "id": "DATA-P2-003",
@@ -436,8 +421,8 @@
       "line": 103,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P2-005",
@@ -447,8 +432,8 @@
       "line": 122,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U04 open 937b43983fd3efc836f19af8407e4f06e8fcfbc2 https://github.com/MaineCyberTech/chat/pull/74"
     },
     {
       "id": "EXEC-P2-002",
@@ -458,8 +443,8 @@
       "line": 49,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FEAT-P2-003",
@@ -469,8 +454,8 @@
       "line": 84,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U06 open 92ef54074256aec75e3858f3339a28c21a980d4e https://github.com/MaineCyberTech/chat/pull/69"
     },
     {
       "id": "FEAT-P2-004",
@@ -491,8 +476,8 @@
       "line": 70,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P2-001",
@@ -513,8 +498,8 @@
       "line": 62,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U08 open cc41daee2b2e7d8bc4b27beafafe43ad59708a7b https://github.com/MaineCyberTech/chat/pull/75"
     },
     {
       "id": "INV-P2-001",
@@ -535,8 +520,8 @@
       "line": 65,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P2-003",
@@ -546,8 +531,8 @@
       "line": 84,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P2-002",
@@ -557,8 +542,8 @@
       "line": 64,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P2-003",
@@ -568,8 +553,8 @@
       "line": 84,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PATCH-12 open d458b82e1a6ba11dd87b91b07d60aa7c53396f28 https://github.com/MaineCyberTech/chat/pull/66"
     },
     {
       "id": "OBS-P2-004",
@@ -579,8 +564,8 @@
       "line": 103,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "SEC-P2-009",
@@ -590,8 +575,8 @@
       "line": 211,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P2-010",
@@ -601,8 +586,8 @@
       "line": 230,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-002",
@@ -612,8 +597,8 @@
       "line": 61,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-003",
@@ -623,8 +608,8 @@
       "line": 81,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U12 open a202fad83cd2fceb244dc6e815d76da7d8cb9978 https://github.com/MaineCyberTech/chat/pull/78"
     },
     {
       "id": "SUPPLY-P2-004",
@@ -634,8 +619,8 @@
       "line": 101,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-002",
@@ -645,8 +630,8 @@
       "line": 62,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U13 open fe04ab3a01cd04ff3dcc8c9a4cce6153c0340f9b https://github.com/MaineCyberTech/chat/pull/79"
     },
     {
       "id": "TEST-P2-003",
@@ -678,8 +663,8 @@
       "line": 121,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U01 open 43ad5e62db6ce224c696cf4c24c7887333ae41c5 https://github.com/MaineCyberTech/chat/pull/72"
     },
     {
       "id": "ARCH-P3-005",
@@ -689,8 +674,8 @@
       "line": 133,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P3-003",
@@ -700,8 +685,8 @@
       "line": 82,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed by chat#95 @ 6924305 (TODO removed)"
     },
     {
       "id": "HYG-P3-004",
@@ -711,8 +696,8 @@
       "line": 101,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U08 open cc41daee2b2e7d8bc4b27beafafe43ad59708a7b https://github.com/MaineCyberTech/chat/pull/75"
     },
     {
       "id": "INV-P3-001",
@@ -733,8 +718,8 @@
       "line": 124,
       "owner": "",
       "target": "",
-      "status": "open",
-      "note": ""
+      "status": "partially-fixed",
+      "note": "remediation PS-U09 open 3a46f2f8c3ab723d3f07402e1559bca9094e21a1 https://github.com/MaineCyberTech/chat/pull/76"
     },
     {
       "id": "SUPPLY-P3-005",

@@ -1,21 +1,7 @@
 {
-  "run": "20261003-0018-master-99abf29",
-  "generated": "2026-10-03T05:14:06Z",
-  "sourceReports": [
-    "01_repository_inventory.md",
-    "02_architecture_runtime_topology.md",
-    "03_feature_implementation_map.md",
-    "06_security_authz_tenancy_audit.md",
-    "07_data_schema_migration_runtime_validation.md",
-    "08_api_contracts_realtime_integrations.md",
-    "09_testing_quality_release_confidence.md",
-    "10_github_actions_cicd_governance.md",
-    "11_supply_chain_dependency_secrets.md",
-    "14_observability_monitoring_incident_readiness.md",
-    "21_repo_hygiene_maintainability.md",
-    "22_final_risk_register_roadmap.md",
-    "23_executive_summary_release_gate.md"
-  ],
+  "run": "buddy-20261003-0018-master-99abf29",
+  "generated": "2026-10-04T18:36:18Z",
+  "sourceReports": 13,
   "counts": {
     "bySeverity": {
       "P1": 11,
@@ -45,280 +31,440 @@
       "severity": "P1",
       "title": "Entire game is client-authoritative with no server trust boundary",
       "report": "02_architecture_runtime_topology.md",
-      "line": 107
+      "line": 107,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P1-002",
       "severity": "P1",
       "title": "Adventure results update the store but not the device component's local state",
       "report": "02_architecture_runtime_topology.md",
-      "line": 129
+      "line": 129,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-001",
       "severity": "P1",
       "title": "No CI workflows, so lint/typecheck/test/build never run automatically",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 89
+      "line": 89,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P1-002",
       "severity": "P1",
       "title": "No repository-enforced review/required checks (branch protection unverified)",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 109
+      "line": 109,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "DATA-P1-001",
       "severity": "P1",
       "title": "loadGame silently downgrades every save to version 1, contradicting writers",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 99
+      "line": 99,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P1-002",
       "severity": "P1",
       "title": "No runtime schema validation for loaded or imported saves (zod unused)",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 120
+      "line": 120,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "EXEC-P1-001",
       "severity": "P1",
       "title": "Unresolved P1 findings preclude an unconditional GO",
       "report": "23_executive_summary_release_gate.md",
-      "line": 93
+      "line": 93,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "FEAT-P1-001",
       "severity": "P1",
       "title": "Achievement system is implemented but never invoked during gameplay",
       "report": "03_feature_implementation_map.md",
-      "line": 102
+      "line": 102,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FEAT-P1-002",
       "severity": "P1",
       "title": "Lifecycle evolution and skill progression are not wired into the game loop",
       "report": "03_feature_implementation_map.md",
-      "line": 122
+      "line": 122,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P1-001",
       "severity": "P1",
       "title": "No release/versioning process binds artifacts to a commit",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 87
+      "line": 87,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P1-001",
       "severity": "P1",
       "title": "No LICENSE file; distribution/derivative rights are undefined",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 100
+      "line": 100,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "API-P2-001",
       "severity": "P2",
       "title": "No API contract or versioning discipline exists to govern the planned save-sync API",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 89
+      "line": 89,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "API-P2-002",
       "severity": "P2",
       "title": "Google Fonts is an uncached runtime dependency with privacy implications",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 109
+      "line": 109,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P2-001",
       "severity": "P2",
       "title": "Service worker uses a static cache name and no cache versioning",
       "report": "02_architecture_runtime_topology.md",
-      "line": 149
+      "line": 149,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P2-002",
       "severity": "P2",
       "title": "Guest identity is weakly generated and not restored after reload",
       "report": "02_architecture_runtime_topology.md",
-      "line": 168
+      "line": 168,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P2-003",
       "severity": "P2",
       "title": "Autosave module is dead code; persistence happens only on discrete actions",
       "report": "02_architecture_runtime_topology.md",
-      "line": 189
+      "line": 189,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P2-001",
       "severity": "P2",
       "title": "No dependency or security scanning in the pipeline",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 129
+      "line": 129,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P2-001",
       "severity": "P2",
       "title": "No real save migration strategy despite a version field",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 140
+      "line": 140,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "EXEC-P2-001",
       "severity": "P2",
       "title": "Validation evidence is manual and unbound to the audited commit",
       "report": "23_executive_summary_release_gate.md",
-      "line": 112
+      "line": 112,
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "CI gate + Dependabot + CODEOWNERS + coverage thresholds; draft PR #3 awaiting human review"
     },
     {
       "id": "FEAT-P2-001",
       "severity": "P2",
       "title": "Item catalogue and economy are non-functional (no use, sell, or equip)",
       "report": "03_feature_implementation_map.md",
-      "line": 142
+      "line": 142,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P2-001",
       "severity": "P2",
       "title": "Phase completion reports claim \"None\" P0/P1 while this audit finds unresolved P1s",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 107
+      "line": 107,
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": ""
     },
     {
       "id": "FINAL-P2-002",
       "severity": "P2",
       "title": "No accepted/deferred-risk record or owner sign-off",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 127
+      "line": 127,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P2-001",
       "severity": "P2",
       "title": "Multiple exported functions and constants are defined but never used in production",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 91
+      "line": 91,
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "hygiene + deterministic generation; draft PR #10; lab lint/typecheck/test green (110 tests), gitleaks clean"
     },
     {
       "id": "HYG-P2-002",
       "severity": "P2",
       "title": "`hashString` is implemented twice with divergent callers",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 114
+      "line": 114,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P2-001",
       "severity": "P2",
       "title": "No root README or operator documentation",
       "report": "01_repository_inventory.md",
-      "line": 113
+      "line": 113,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P2-002",
       "severity": "P2",
       "title": "Provided inventory.json contradicts the actual application",
       "report": "01_repository_inventory.md",
-      "line": 132
+      "line": 132,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P2-001",
       "severity": "P2",
       "title": "No error tracking, metrics, or structured logging; only console output",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 91
+      "line": 91,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P2-002",
       "severity": "P2",
       "title": "No React error boundary, so a render error can blank the whole app",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 110
+      "line": 110,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P2-001",
       "severity": "P2",
       "title": "Save import performs no schema validation (arbitrary state injection)",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 101
+      "line": 101,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P2-002",
       "severity": "P2",
       "title": "No HTTP security headers or Content-Security-Policy configured",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 120
+      "line": 120,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-001",
       "severity": "P2",
       "title": "Dependencies are pinned but unmanaged and include aged/EOL lines",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 119
+      "line": 119,
+      "owner": "",
+      "target": "",
+      "status": "partially-fixed",
+      "note": "PS-08 supply-chain + inventory hardening; draft PR #12; lab lint/typecheck/test 109 green, CycloneDX SBOM 17 components, gitleaks clean; npm audit non-clean (3 prod advisories) triaged to Dependabot/Next upgrade; API-P2-001 deferred (no server); INV-P2-002 run inventory.json corrected."
     },
     {
       "id": "SUPPLY-P2-002",
       "severity": "P2",
       "title": "No SBOM, license policy, or dependency-vulnerability scanning",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 139
+      "line": 139,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-003",
       "severity": "P2",
       "title": "Vendored prompt-pack content has unclear provenance and third-party references",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 158
+      "line": 158,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "TEST-P2-001",
       "severity": "P2",
       "title": "No component/UI tests despite React Testing Library being installed",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 92
+      "line": 92,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-002",
       "severity": "P2",
       "title": "Persistence layer (IndexedDB, save migration, import/export) is untested",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 112
+      "line": 112,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P3-001",
       "severity": "P3",
       "title": "Content label typo and no enforced formatting/lint gate",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 134
+      "line": 134,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P3-001",
       "severity": "P3",
       "title": "Committed prompt-pack docs dominate the repository with no index",
       "report": "01_repository_inventory.md",
-      "line": 152
+      "line": 152,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P3-001",
       "severity": "P3",
       "title": "No release/build marker exposed at runtime",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 129
+      "line": 129,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P3-001",
       "severity": "P3",
       "title": "Guest identity uses non-cryptographic randomness and is predictable",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 139
+      "line": 139,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P3-001",
       "severity": "P3",
       "title": "No coverage configuration or thresholds, and test setup is empty",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 132
+      "line": 132,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     }
   ]
 }
