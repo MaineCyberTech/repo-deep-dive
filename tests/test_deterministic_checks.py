@@ -129,5 +129,56 @@ class RunChecksTest(unittest.TestCase):
         self.assertEqual(det.run_checks(self.root), det.run_checks(self.root))
 
 
+class SecretGateTest(unittest.TestCase):
+    """repo-deep-dive-CI-001: the P1 secret gate must catch real SEC findings."""
+
+    def setUp(self):
+        if shutil.which("git") is None:
+            self.skipTest("git not available")
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = self.tmp.name
+        subprocess.run(["git", "init", "-q", self.root], check=True)
+        subprocess.run(["git", "-C", self.root, "config", "user.email", "t@t"],
+                       check=True)
+        subprocess.run(["git", "-C", self.root, "config", "user.name", "t"],
+                       check=True)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_planted_tracked_env_reaches_p1_secret_gate(self):
+        # A tracked .env is emitted by check_secrets as a P1 SEC finding; the
+        # gate helper must report it (previously it matched ids starting
+        # "SEC-", which deterministic findings never use).
+        with open(os.path.join(self.root, ".env"), "w", encoding="utf-8") as fh:
+            fh.write("API_KEY=placeholder\n")
+        subprocess.run(["git", "-C", self.root, "add", ".env"], check=True)
+        subprocess.run(["git", "-C", self.root, "commit", "-qm", "plant"], check=True)
+
+        findings = det.run_checks(self.root)
+        hits = det.p1_secret_hits(findings)
+        self.assertTrue(hits, "planted .env did not reach the P1 SEC gate: %r" % findings)
+        self.assertTrue(all(f["subcode"] == "SEC" for f in hits))
+        self.assertTrue(all(f["severity"] == "P1" for f in hits))
+
+    def test_gate_classifies_structured_and_legacy_findings(self):
+        structured = [{"id": "DET-P1-001", "severity": "P1", "subcode": "SEC",
+                       "title": "gitleaks: aws-access-token (1 hit(s))"}]
+        legacy = [{"id": "DET-P1-002", "severity": "P1",
+                   "title": "[SEC] gitleaks: github-pat (1 hit(s))"}]
+        self.assertEqual(len(det.p1_secret_hits(structured)), 1)
+        self.assertEqual(len(det.p1_secret_hits(legacy)), 1)
+
+    def test_gate_ignores_non_p1_and_non_secret(self):
+        noise = [
+            {"id": "DET-P2-001", "severity": "P2", "subcode": "SEC",
+             "title": "[SEC] gitleaks: generic-api-key (1 hit(s))"},
+            {"id": "DET-P1-003", "severity": "P1", "subcode": "CI",
+             "title": "[CI] actionlint reported workflow problems"},
+            {"id": "DET-P1-004", "severity": "P1", "title": "unstructured"},
+        ]
+        self.assertEqual(det.p1_secret_hits(noise), [])
+
+
 if __name__ == "__main__":
     unittest.main()
