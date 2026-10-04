@@ -1,0 +1,6 @@
+# Line-ending policy for the pack.
+# The bash tools and PACK_DIGEST.txt sha256 hashes assume LF; a CRLF working
+# tree breaks Linux CI and the digest. Normalize text to LF in the index and in
+# checkouts. See HYG-P2-001 and docs/OBSERVABILITY.md.
+* text=auto eol=lf
+*.sh text eol=lf
