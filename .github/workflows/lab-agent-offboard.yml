@@ -40,7 +40,7 @@ jobs:
         run: |
           set -e
           printf '%s' "$NAME" | grep -Eq '^[A-Za-z0-9_.-]{1,32}$' || { echo "::error::invalid agent_name"; exit 1; }
-          [ -n "$HOST" ] && [ -n "$USER" ] || { echo "::error::endpoint host/user not configured"; exit 1; }
+          if [ -z "$HOST" ] || [ -z "$USER" ]; then echo "::error::endpoint host/user not configured"; exit 1; fi
           [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::LAB_ENDPOINT_SSH_KEY not set"; exit 1; }
 
       - name: Configure SSH

@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T09:09:26Z
+# generated: 2026-10-04T09:12:19Z
 # files: 1232
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
@@ -8,14 +8,14 @@ b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/depe
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
 6c1ece68d8eacc80a46b451d127c1ab5c1a62bd2ba1ab3c9d1d20f2479204c90  ./.github/workflows/audit.yml
 27bdbd24d03ce3470be7363fc58a1da918b12e5abb2ad06b5eacc509e3dedd86  ./.github/workflows/deep-dive-deterministic.yml
-0c82ed355eaa8d585720320e7512227fe323ad954c9e5e24f6dddc567bae8ce2  ./.github/workflows/lab-agent-offboard.yml
+63d7e4212d4e4c4c3d14fbefd174d7d9b1ab64302358a79dbc0974ba9913c222  ./.github/workflows/lab-agent-offboard.yml
 64a1621d71f6b2138b8b5387c8e86bb74da1c9af9a5e8a10a9dfa588dbb1c047  ./.github/workflows/lab-agent-onboard.yml
-2f1fcabf33c26f62cac719f08d4d770814721d7f555b9fc73ea8b30eab3c9b65  ./.github/workflows/lab-overlay-health.yml
-b2c06c7cda36c62008c637bd0e40fd9e4bd4b181bf5c55755384c68de1e8a52b  ./.github/workflows/lab-preflight.yml
+cfda3569b297c0378cff522904897efb6e7839aa3e4fc827aa598458b89cc3f7  ./.github/workflows/lab-overlay-health.yml
+ee2d43a7e60781a6974593e453376a69e1b246aa375fc5264a0afa0a57602d4f  ./.github/workflows/lab-preflight.yml
 fe39f5b075e4ee6f0213e9ef0c444b79153b9ccc2bb5c0af9c90b34e64e48278  ./.github/workflows/lab-tests.yml
 f78806fe8a6daa1364c33ca73f7a7955c426345050f62d17635dea567172373f  ./.github/workflows/pack-tests.yml
 967fef4e14e5f0dd7f1e1cdd7674a3ae2651d7134018aacbdd7bad1643f13b42  ./.github/workflows/remediation-board.yml
-0dcc18b2fe26e935865264b28750e5a91a009d2bab4ff72618e7cb39a6b8810b  ./.github/workflows/remediation.yml
+6a94ea3d3708a064c494e0c1ce22870f0e72241dddc4b858de056122c9121321  ./.github/workflows/remediation.yml
 e990f949fe5a00659320f132e712e4bf238e4426f9b44864e590a334b3c6a97e  ./.github/workflows/verify-remediation.yml
 7df052da6bb16f644d1faaa8fec9f8a41e9fda3407adaa71313fd70e8ba0f626  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml

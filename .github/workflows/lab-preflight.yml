@@ -52,7 +52,7 @@ jobs:
       - name: Configure SSH
         run: |
           set -e
-          [ -n "$HOST" ] && [ -n "$USER" ] || { echo "::error::LAB_ENDPOINT_HOST/USER not configured"; exit 1; }
+          if [ -z "$HOST" ] || [ -z "$USER" ]; then echo "::error::LAB_ENDPOINT_HOST/USER not configured"; exit 1; fi
           [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
           install -m700 -d ~/.ssh
           printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
