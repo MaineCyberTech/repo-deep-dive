@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T03:28:31Z
+# generated: 2026-10-04T03:30:45Z
 # files: 1030
 # format: sha256  path
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -12,24 +12,24 @@ d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/work
 83ae827bb42049bae6e48ebdc44202425160d6918103bbbe85519f46a805753d  ./.github/workflows/verify-remediation.yml
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
-f9dadc72410d160930d7b5a9dea435e2d1742f465d9b7847ec7c53a234fbf96b  ./CHANGELOG.md
+9c883bfd0ea2426255986f9456a5c32bd4fe672debd17078d389e137337806fb  ./CHANGELOG.md
 6d0d4f121324b673fe85aa0502df10e8b7ec940a32e06b90b0747cb57d1f2402  ./CONTRIBUTING.md
-a16e75422c0d38c633f8be539f46d9124516a2419c0df4e3f7ba2cbb339fef1e  ./README.md
+1035efcba2a3abfb920f83ff0d2ea3666c46a87f833241b5a7c20d9fa1cbedb0  ./README.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 5f7c72cc3258a110336b8b68907dfe78b38bfe6112597cca0b7f0c31379885f3  ./REVIEW_INDEX.md
-7d072b48526b023950e4c48db01e8c273554a6401119f5691e7589ba9bc65d9d  ./VERSION
+acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
 45e3d8c92ead3f8c35cc36be964698ca8b12abad0d803f26ae6b0f8d1f3fc8ab  ./ci/audit.yml
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
-875320501d09dc55c55f29e7e6089fd8c43ee1b4f2f59b16d20d079ca784b4fa  ./examples/audit_manifest.example.json
-f7c083bfcdb7a78f637b03cae9da64f17326f9260bc1ba11a90a1cf63513d2e1  ./examples/audit_manifest.falcon-lab.example.json
+1925dc816657728fc8394d6273e8c005e54e9b759ef33e38b5432803628e5bd8  ./examples/audit_manifest.example.json
+fd544d6581e08d4faa36f309a3534c55c1d6613e67e320e2ef6b2d522557dc01  ./examples/audit_manifest.falcon-lab.example.json
 b54e2c8db738d91ddebed89b9ab10504f1ef6e3f29722c4d0c53d2a383dd8abe  ./lenses/README.md
 65b8cff17fba67c4644fd2802584d5418752b68eafaff5a5d510aaeeeb1d96f4  ./lenses/independent_reviewer.md
 68d24ff34d52210fa63bc5be9fba38175f1941ed2574e4ad4533b0520c09e53d  ./lenses/integration.md
 45fa9cd87f013499f7598910b594bd681254ec1e488041f0fec4a0429d2f9ccd  ./lenses/live_operations.md
 6f765f52035d67b31e8394a186753cc224e6746d409531948974a43b939066dd  ./lenses/new_developer.md
 ace8db3a318f469526a2f8f1c782041605477ad7bc1110c1d5774e8b386e6f33  ./lenses/security_adversary.md
-b92d576d478d27d15de802dde581d403bb52358c895af020ec28c8ef6e96d961  ./profiles/falcon-lab.manifest.json
+71581650e8b24cf23ef8e430086688e955f1b065039b3b8b53d060a54ae68a80  ./profiles/falcon-lab.manifest.json
 b642d80eba43bbe1757beb9222876a143b6a1e8fe2136ce3723c6ec481f9219d  ./profiles/falcon-lab.md
 c7ffda1be91b473bc684014ca2349fdb31de6907761a6517803fac0a9ecd3a97  ./profiles/remediation.md
 f7de09e0b65002952e07c8d4bd55002a247fc193559009137991fb03b21fa32b  ./prompts/00_SHARED_AUDIT_RULES.md

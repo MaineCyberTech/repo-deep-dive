@@ -2,7 +2,7 @@
   "profile": "falcon-lab",
   "profileVersion": "1.1.0",
   "basePack": "repo-deep-dive-full-hardening-audit-pack",
-  "basePackVersion": "1.4.1",
+  "basePackVersion": "1.5.0",
   "promptCount": 46,
   "auditName": "repo-deep-dive",
   "runNaming": "YYYYMMDD-HHMM-falcon-<sha7>_edge-<sha7>",

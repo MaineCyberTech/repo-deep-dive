@@ -1,6 +1,6 @@
 # repo-deep-dive — Full Hardening Audit Pack
 
-**Falcon-lab consolidated edition** — 2026-10-03 · base edition v1.4.1.
+**Falcon-lab consolidated edition** — 2026-10-03 · base edition v1.5.0.
 
 A prompt-driven, **evidence-first** repository audit framework **and remediation runner**. It produces
 domain reports, findings (P0–P3), a risk register, a roadmap, a patch plan, an executive summary and a

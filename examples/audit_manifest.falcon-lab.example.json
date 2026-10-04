@@ -1,6 +1,6 @@
 {
   "pack": "repo-deep-dive-full-hardening-audit-pack",
-  "packVersion": "1.4.1",
+  "packVersion": "1.5.0",
   "profile": "falcon-lab",
   "profileVersion": "1.1.0",
   "recommendedName": "repo-deep-dive",

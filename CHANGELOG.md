@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-03 — Remediation runner, deterministic checks, org runner (v1.4.1)
+## 2026-10-03 — Remediation runner, deterministic checks, org runner (v1.5.0)
 
 - **Remediation runner**: `prompts/REMEDIATION_RUNNER.md` (branch → minimal change → lab tests →
   gitleaks gate → draft PR → advisory review → reconcile), `tools/remediation_plan.py`
@@ -23,6 +23,9 @@
 - **Lab integration**: `tools/lab_runner.py` (HTTP client for the Proxmox lab job API —
   `POST /run` on ci-runner / edge-builder) and `tools/normalize_register.py` (keeps
   `risk_register.md` / `follow_up_register.md` tables consistent so `check_run` stays green).
+- **Versions**: base pack `1.4.1 → 1.5.0` (falcon-lab profile unchanged at `1.1.0`); `VERSION`,
+  `README.md`, the base/falcon-lab example manifests, and `profiles/falcon-lab.manifest.json`
+  version fields are back in sync.
 
 ## 2026-10-02 — Base edition v1.4.1 (verification feedback + vocabulary gate)
 

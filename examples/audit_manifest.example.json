@@ -1,7 +1,7 @@
 {
   "pack": "repo-deep-dive-full-hardening-audit-pack",
   "profile": "base",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "promptCount": 42,
   "recommendedName": "repo-deep-dive",
   "outputRoot": "docs/audits/{name}/{run}/",
