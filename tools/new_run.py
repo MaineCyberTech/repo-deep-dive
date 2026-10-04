@@ -34,6 +34,20 @@ RUNNERS = {
     "falcon-lab": "prompts/MASTER_RUNNER_FALCON_LAB.md",
 }
 
+# Wave 0 placeholder finals so a fresh base scaffold already passes
+# tools/check_run.sh; the audit replaces them with real content. falcon-lab
+# also requires lens reports + a follow-up register, which Wave 0 leaves to
+# the lens prompts.
+PLACEHOLDERS = {
+    "base": {
+        "EXECUTIVE_SUMMARY.md": "# Executive Summary\n\npending (prompt 23)\n",
+        "RELEASE_GATE.md": "# Release Gate\n\npending (prompt 23)\n",
+        "risk_register.md": "# Risk Register\n\npending (prompt 22)\n",
+        "roadmap.md": "# Roadmap\n\npending (prompt 22)\n",
+        "patch_plan.md": "# Patch Plan\n\npending (prompt 22)\n",
+    },
+}
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
@@ -118,6 +132,12 @@ pending (prompt 22)
     with open(os.path.join(run_dir, "INDEX.md"), "w",
               encoding="utf-8") as fh:
         fh.write(index)
+
+    for name, body in PLACEHOLDERS.get(args.profile, {}).items():
+        path = os.path.join(run_dir, name)
+        if not os.path.exists(path):
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(body)
 
     print("created %s" % run_dir)
     print("manifest: audit_manifest.json (seed: %s)" % EXAMPLES[args.profile])

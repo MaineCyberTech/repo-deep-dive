@@ -8,7 +8,11 @@
   "properties": {
     "run": { "type": "string" },
     "generated": { "type": "string" },
-    "sourceReports": { "type": "integer", "minimum": 0 },
+    "sourceReports": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of source reports scanned for findings (e.g. tools/collect_findings.py emits len(reports))."
+    },
     "counts": {
       "type": "object",
       "required": ["total", "bySeverity", "byArea"],

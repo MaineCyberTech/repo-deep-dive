@@ -72,19 +72,64 @@ for d in runs/*/; do
     sed 's/^/    /' "$TMP/dash.out"
   fi
 
-  if python3 - "$d" <<'PY' > /dev/null 2>&1
+  # Schema contract: regenerate findings.json from the run's reports in a TMP
+  # copy (archived findings.json predate the integer `sourceReports` contract)
+  # and validate the whole document, types included, against the schema.
+  rm -rf "$TMP/schema-run"
+  cp -R "$d" "$TMP/schema-run"
+  if ./tools/collect_findings.py "$TMP/schema-run" --write > /dev/null 2>&1 \
+    && python3 - "$TMP/schema-run/findings.json" <<'PY' > /dev/null 2>&1
 import json, re, sys
+
 schema = json.load(open("schemas/findings.schema.json"))
-run = json.load(open(sys.argv[1] + "/findings.json"))
-for key in schema["required"]:
-    assert key in run, key
-pat = re.compile(schema["properties"]["findings"]["items"]["properties"]["id"]["pattern"])
-assert all(pat.match(f["id"]) for f in run["findings"]), "id pattern"
+doc = json.load(open(sys.argv[1]))
+
+
+def check(val, spec, path):
+    if "enum" in spec:
+        assert val in spec["enum"], path
+    t = spec.get("type")
+    if t == "object":
+        assert isinstance(val, dict), path
+        for k in spec.get("required", []):
+            assert k in val, "%s: missing %s" % (path, k)
+        props = spec.get("properties", {})
+        for k, sub in props.items():
+            if k in val:
+                check(val[k], sub, "%s.%s" % (path, k))
+        extra = spec.get("additionalProperties")
+        if isinstance(extra, dict):
+            for k, v in val.items():
+                if k not in props:
+                    check(v, extra, "%s.%s" % (path, k))
+    elif t == "array":
+        assert isinstance(val, list), path
+        if "items" in spec:
+            for i, v in enumerate(val):
+                check(v, spec["items"], "%s[%d]" % (path, i))
+    elif t == "integer":
+        assert isinstance(val, int) and not isinstance(val, bool), path
+        if "minimum" in spec:
+            assert val >= spec["minimum"], path
+    elif t == "string":
+        assert isinstance(val, str), path
+        if "minLength" in spec:
+            assert len(val) >= spec["minLength"], path
+        if "pattern" in spec:
+            assert re.match(spec["pattern"], val), path
+
+
+try:
+    import jsonschema
+except ImportError:
+    check(doc, schema, "$")
+else:
+    jsonschema.validate(doc, schema)
 PY
   then
-    ok "findings.schema.json conformance ${d%/}"
+    ok "findings.schema.json type conformance ${d%/} (regenerated)"
   else
-    bad "findings.schema.json conformance ${d%/}"
+    bad "findings.schema.json type conformance ${d%/} (regenerated)"
   fi
 done
 [[ $found_runs -gt 0 ]] || bad "no archived runs found under runs/"

@@ -1,9 +1,19 @@
 {
   "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "profile": "base",
   "version": "1.4.1",
   "promptCount": 42,
   "recommendedName": "repo-deep-dive",
   "outputRoot": "docs/audits/{name}/{run}/",
+  "scope": {
+    "repos": [],
+    "hosts": []
+  },
+  "findings": {
+    "bySeverity": { "P0": 0, "P1": 0, "P2": 0, "P3": 0 },
+    "byArea": {},
+    "total": 0
+  },
   "executionOrder": [
     "00_audit_orchestrator.md",
     "01_repository_inventory.md",
