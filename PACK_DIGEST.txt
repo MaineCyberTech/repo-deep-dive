@@ -29,7 +29,7 @@ accc21a2d314642923312266d0e4943ef26a515cee5939793a7fe10123375cf8  ./.github/work
 45443ca5c118f76000c9d86af591de47fb327980a23958ce40eda537bfd1fa3b  ./.github/workflows/pack-tests.yml
 d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
 d798bc9bc65b99d412a14b311daa630625c4fed59a7d0505b37a90ea0158f9c6  ./.github/workflows/remediation.yml
-3e4db81f236c5c2f839da836a72ea8828481cdbfce804e627e54a44198289ca7  ./.github/workflows/verify-remediation.yml
+d26e5ebdc13202971c9700a3fbca886ba8bd5461e899666f916d42cb8fa85802  ./.github/workflows/verify-remediation.yml
 1901417f77cc78c633a09e80e61270b57c80643470381a01465730caab633a6c  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 65b8cff17fba67c4644fd2802584d5418752b68eafaff5a5d510aaeeeb1d96f4  ./lenses/independent_reviewer.md
