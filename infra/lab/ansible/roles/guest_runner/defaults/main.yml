@@ -1,0 +1,35 @@
+---
+# guest_runner defaults. Mirrors the current ci-runner toolchain
+# (node/pnpm/docker/gitleaks/rg/python) plus the GitHub Actions runner service.
+runner_user: runner
+runner_group: runner
+runner_labels: "self-hosted,linux,x64,lab,ci-runner"
+runner_name: "{{ inventory_hostname }}"
+runner_scope: org                 # org | repo
+runner_org: "{{ lab_org | default('MaineCyberTech') }}"
+runner_repo: ""                   # required when runner_scope == repo
+runner_version: "2.319.1"
+runner_install_dir: /opt/actions-runner
+runner_workdir: /opt/actions-runner/_work
+runner_ephemeral: false           # true => runner exits after one job
+runner_replace: true
+runner_register: false            # gate: only register when a token is supplied
+runner_registration_token: ""     # set from $RUNNER_TOKEN via group_vars; never in the repo
+
+node_major: "20"
+pnpm_version: ""                  # e.g. "9.15.0"; empty keeps corepack's default
+runner_install_docker: true
+gitleaks_version: "8.21.2"
+
+runner_packages:
+  - git
+  - curl
+  - jq
+  - ca-certificates
+  - build-essential
+  - python3
+  - python3-pip
+  - python3-venv
+  - ripgrep
+  - unzip
+  - tar

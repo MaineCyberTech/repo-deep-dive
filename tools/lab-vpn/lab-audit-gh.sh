@@ -97,10 +97,21 @@ run_cmd() {
 case "${1:-}" in
   onboard) shift; onboard "$@" ;;
   run) shift; run_cmd "$@" ;;
+  approvals)
+    # confirm repo approvals: pass through to tools/repo_approvals.py
+    shift
+    python3 "$HERE/../repo_approvals.py" "${@:---org ${LAB_ORG:-MaineCyberTech} --repos repo-deep-dive}" ;;
+  setup)
+    # pack + lab + approvals in one step: setup <peer-name> [--repos r1,r2 ...]
+    shift
+    name="${1:?usage: lab-audit-gh.sh setup <peer-name> [--repos r1,r2 ...]}"; shift || true
+    if ! ip link show "${IFACE:-lab-audit}" >/dev/null 2>&1; then onboard "$name"; fi
+    bash "$HERE/lab-audit-preflight.sh" --mode local --no-pack || echo "[setup] preflight did not PASS (see above)"
+    python3 "$HERE/../repo_approvals.py" "${@:---org ${LAB_ORG:-MaineCyberTech} --repos repo-deep-dive}" ;;
   status)
     need_gh || exit 1
     gh run list -R "$PACK_REPO" --limit 8 \
       --json displayTitle,name,status,conclusion,createdAt \
       --template '{{range .}}{{.createdAt}}  {{.name}}  {{.status}}/{{.conclusion}}  {{.displayTitle}}{{"\n"}}{{end}}' ;;
-  *) echo "usage: lab-audit-gh.sh onboard <name> | run --repo <r> --command \"<cmd>\" [--runner <r>] | status" >&2; exit 2 ;;
+  *) echo "usage: lab-audit-gh.sh onboard <name> | setup <name> [--repos r1,r2 ...] | approvals [--repos ...] | run --repo <r> --command \"<cmd>\" [--runner <r>] | status" >&2; exit 2 ;;
 esac
