@@ -62,7 +62,7 @@ Every pull request and every push to `main` runs the pack CI
 | Check | What it runs |
 |---|---|
 | `pack lint + self-test` | `tools/lint_pack.sh` and `tools/self_test.sh` on Linux |
-| `changed-run gate` (PR only) | validates each run folder changed by the PR and fails on any P0 finding |
+| `changed-run gate` (PR and push to `main`) | validates each run folder changed by the diff and fails on any P0 or P1 finding (override the blocking levels with the `RUN_GATE_SEVERITIES` repo variable, e.g. `P0`) |
 
 `main` should require a pull request, at least one review (routing in
 `.github/CODEOWNERS`), and both checks above before merge. Branch protection,
@@ -70,8 +70,10 @@ required reviews, and required status checks are GitHub server-side settings and
 must be enabled by a repository admin; the files here express the intent but
 cannot enforce it. Enumerate the checks by their workflow job names above.
 
-Bypass policy: force-pushing to `main` and admin-merging bypass the gate. Do not
-use them. If a bypass is unavoidable, record the reason and a follow-up in
+The `changed-run gate` fails closed: if it cannot resolve a base commit for a
+push (no `github.event.before`, no `HEAD~1`) the job exits non-zero rather than
+skipping the check. Force-pushing to `main` and admin-merging bypass the gate; do
+not use them. If a bypass is unavoidable, record the reason and a follow-up in
 `CHANGELOG.md` so the exception is auditable.
 
 ## Post-run pack review
