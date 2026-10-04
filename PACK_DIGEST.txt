@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T07:58:37Z
-# files: 1160
+# generated: 2026-10-04T08:27:54Z
+# files: 1162
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -30,6 +30,7 @@ fbac3f47281fa06abd0440f07ce01231baf0601af9a3c79f34ea9ca16fa8dc54  ./.gitignore
 c3715a4e8c0dc0596cdbc0df05dc1d979a87b2f208d6d8d32f6caad7037a87d5  ./REVIEW_INDEX.md
 3e50a74a7332f00dd710375633a049911b7154148d92e919d29a9b7bff7373c5  ./SECURITY.md
 acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
+393b39c49a37c50d0e5a0890b7d89763f64121191e2023623732ee614549e167  ./approvals.yml
 45e3d8c92ead3f8c35cc36be964698ca8b12abad0d803f26ae6b0f8d1f3fc8ab  ./ci/audit.yml
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 9085dd6643e604a6fe81e2e9aae46fb3171d3ec50f11d9baa8aa6f272db2ee33  ./docs/DEEP_DIVE_ROADMAP.md
@@ -1122,6 +1123,7 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 75b7f9747ba21eabe1f23b7f708407cbf6103d359c7ba5a885b4a4c19d7b6d5c  ./tests/test_lib_findings.py
 87e8aea750804ce5991efb69f2c73fdf81a246f42f754d567aaea0b7ee1b8cdc  ./tests/test_repo_inventory.py
 4b77ad57ba5a912dc55bd0a3a93fd10327b4856a39088bb91c81fe60280fb477  ./tools/aggregate_findings.py
+5c0c4cfe71fc838086291f520592ae93d4cb6a8ef7fcf4b45effce0cadff4055  ./tools/apply_approvals.py
 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
 da6a9b7eaa62a42e1cb8e2b76b692d513ad478b13ae5e3d1d0eff70ca335501d  ./tools/collect_findings.py
 5ddc3a28eea998d4b946d321d5ec1418952c843d96abada96b714bf7078b8d57  ./tools/deterministic_checks.py
