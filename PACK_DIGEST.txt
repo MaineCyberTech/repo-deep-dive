@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T09:12:19Z
+# generated: 2026-10-04T09:15:08Z
 # files: 1232
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
@@ -12,11 +12,11 @@ ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull
 64a1621d71f6b2138b8b5387c8e86bb74da1c9af9a5e8a10a9dfa588dbb1c047  ./.github/workflows/lab-agent-onboard.yml
 cfda3569b297c0378cff522904897efb6e7839aa3e4fc827aa598458b89cc3f7  ./.github/workflows/lab-overlay-health.yml
 ee2d43a7e60781a6974593e453376a69e1b246aa375fc5264a0afa0a57602d4f  ./.github/workflows/lab-preflight.yml
-fe39f5b075e4ee6f0213e9ef0c444b79153b9ccc2bb5c0af9c90b34e64e48278  ./.github/workflows/lab-tests.yml
+5ad6cdd4742ea762feb98e841bc7f2ade7bb7750e854abf7ac977b72ca169543  ./.github/workflows/lab-tests.yml
 f78806fe8a6daa1364c33ca73f7a7955c426345050f62d17635dea567172373f  ./.github/workflows/pack-tests.yml
 967fef4e14e5f0dd7f1e1cdd7674a3ae2651d7134018aacbdd7bad1643f13b42  ./.github/workflows/remediation-board.yml
-6a94ea3d3708a064c494e0c1ce22870f0e72241dddc4b858de056122c9121321  ./.github/workflows/remediation.yml
-e990f949fe5a00659320f132e712e4bf238e4426f9b44864e590a334b3c6a97e  ./.github/workflows/verify-remediation.yml
+19de2b5a65bba537b1c1cbd4f9d65f92d52ce1e696634c6073d1c8a730384fa7  ./.github/workflows/remediation.yml
+95c09b90072b2ceba3f9cfb99fc49021916439d27f52a75eb3591886c1990aef  ./.github/workflows/verify-remediation.yml
 7df052da6bb16f644d1faaa8fec9f8a41e9fda3407adaa71313fd70e8ba0f626  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 480b4197df1825f0d82dca24df35860a6e7016b8a16cfabd137bd5d633b600d7  ./AGENTS.md
