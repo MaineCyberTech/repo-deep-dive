@@ -1,0 +1,48 @@
+name: Pack tests
+
+# Unit tests for the pack's parsing/inventory/deterministic logic, plus an
+# archived self-test log for the tested commit (TEST-P3-004, FINAL-P2-001).
+#
+# Kept as its own workflow file so it stays disjoint from the audit CI
+# (.github/workflows/audit.yml) and the deterministic-scan hardening
+# (.github/workflows/deep-dive-deterministic.yml).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  unit:
+    name: unit tests + self-test log
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Self-test (captured to log)
+        run: |
+          set -o pipefail
+          bash tools/self_test.sh 2>&1 | tee self_test.log
+
+      - name: Upload self-test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-test-log-${{ github.sha }}
+          path: self_test.log
+          if-no-files-found: warn
