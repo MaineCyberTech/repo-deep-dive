@@ -802,11 +802,11 @@ a8230109f4062e2808813b246be87d477e921b66314cf1aa4fa5b9ceb88fd963  ./runs/falcon-
 62903a5344fc78e4e6ac3dad3e63cd26d987b27adb4cdd10fea3b4012869d413  ./runs/falcon-edge-20261004-0700-main-b272357/INDEX.md
 88bf9d8e6a5e21bfbf626c1db537813322c519b2a07c5d71d764e57473414947  ./runs/falcon-edge-20261004-0700-main-b272357/RELEASE_GATE.md
 9b5cfe0466ea2414dffb2e1b8ecb8d73abf7abfd3d04f32647feb24f3082ac18  ./runs/falcon-edge-20261004-0700-main-b272357/audit_manifest.json
-106b3cb46204875a99a0f9cac90b85c33535e304d8ef0c3bf66cee37e6f52d49  ./runs/falcon-edge-20261004-0700-main-b272357/findings.json
-735100ac4ee5325de862a76e74d3ead22b06b248ca40fb1ab769ce6778363f61  ./runs/falcon-edge-20261004-0700-main-b272357/follow_up_register.md
+7606acc277155f6e0fafd2a2a0c11f7a0b4b0516b304d19aa99f3fd575add504  ./runs/falcon-edge-20261004-0700-main-b272357/findings.json
+0ed6cf13ad47f660190db4029aaf0e73b1a7c13b4707eba6e468423d01740545  ./runs/falcon-edge-20261004-0700-main-b272357/follow_up_register.md
 f7e9574bdf2472a859634438a657555c2e99b9f3615f228c4fd3d5283978f0d7  ./runs/falcon-edge-20261004-0700-main-b272357/lens_focused_security_supply_chain_ci.md
 e6dbbebd29cec86f7f1efd72b1ad22a0ab93b83036937a21698a3c1cc660c379  ./runs/falcon-edge-20261004-0700-main-b272357/patch_plan.md
-735100ac4ee5325de862a76e74d3ead22b06b248ca40fb1ab769ce6778363f61  ./runs/falcon-edge-20261004-0700-main-b272357/risk_register.md
+0ed6cf13ad47f660190db4029aaf0e73b1a7c13b4707eba6e468423d01740545  ./runs/falcon-edge-20261004-0700-main-b272357/risk_register.md
 997a09a66a33221831eccb6ab5a68af1906d5928087aeffc495caca5dce0cb8b  ./runs/falcon-edge-20261004-0700-main-b272357/roadmap.md
 a4f4a1d3db391c6708f698e060c1493785563dbe3eff457593c27822589f73ca  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/01_repository_inventory.md
 872af104de4834981dd8db208c0fb23eba071e7c9d0a77e6416d4d3be0b73a4a  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/02_architecture_runtime_topology.md
