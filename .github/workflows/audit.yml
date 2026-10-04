@@ -4,9 +4,10 @@ name: repo-deep-dive audit
 #
 # - pack: lint the pack and run the end-to-end smoke harness on every pull
 #   request and every push to main (TEST-P1-001, TEST-P2-002).
-# - run-gate: on pull requests, validate each archived run folder changed by the
-#   PR and fail on any P0 finding. The run folder is derived from the pull-request
-#   diff, never a fixed "latest" path (CI-P2-006).
+# - run-gate: on pull requests AND pushes to main, validate each archived run
+#   folder changed by the diff and fail on any P0/P1 finding. Override the
+#   blocking levels with the RUN_GATE_SEVERITIES repo variable. The run folder is
+#   derived from the diff, never a fixed "latest" path (CI-P2-006, CI-003).
 #
 # The reusable vendored-layout example lives in ci/audit.yml.
 
@@ -42,8 +43,14 @@ jobs:
 
   run-gate:
     name: changed-run gate
-    if: github.event_name == 'pull_request'
+    # Runs on pull requests AND pushes to main (CI-003). On push, the base is
+    # github.event.before (falling back to HEAD~1); if no base can be resolved
+    # the gate fails closed rather than skipping.
     runs-on: ubuntu-latest
+    env:
+      # Severity levels that block a changed run. Default P0,P1; override with
+      # the repo variable RUN_GATE_SEVERITIES (e.g. "P0" for advisory P1s).
+      GATE_SEVERITIES: ${{ vars.RUN_GATE_SEVERITIES || 'P0,P1' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -54,14 +61,29 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Validate changed runs and enforce the P0 gate
-        env:
-          BASE_REF: ${{ github.base_ref }}
+      - name: Validate changed runs and enforce the severity gate
         run: |
           set -euo pipefail
-          git fetch --no-tags origin "${BASE_REF}" >/dev/null 2>&1
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags origin "${{ github.base_ref }}" >/dev/null 2>&1
+            BASE="origin/${{ github.base_ref }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            BEFORE="${{ github.event.before }}"
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+               || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              BEFORE="$(git rev-parse HEAD~1 2>/dev/null || true)"
+            fi
+            if [ -z "$BEFORE" ]; then
+              echo "::error::cannot determine a base commit for this push; failing closed"
+              exit 1
+            fi
+            BASE="$BEFORE"
+          else
+            echo "::error::unsupported event ${{ github.event_name }}; failing closed"
+            exit 1
+          fi
           mapfile -t runs < <(
-            git diff --name-only "origin/${BASE_REF}...HEAD" -- 'runs/**' \
+            git diff --name-only "$BASE...HEAD" -- 'runs/**' \
               | awk -F/ 'NF >= 3 { print $1 "/" $2 }' \
               | sort -u
           )
@@ -78,14 +100,18 @@ jobs:
             python3 tools/run_toolchain.py "${run}" --write
             python3 - "${run}/findings.json" <<'PY'
           import json
+          import os
           import sys
 
           with open(sys.argv[1], encoding="utf-8") as fh:
               doc = json.load(fh)
-          p0 = int(doc.get("counts", {}).get("bySeverity", {}).get("P0", 0))
-          if p0 > 0:
-              raise SystemExit("P0 findings present: %d" % p0)
-          print("P0 gate: no P0 findings")
+          # GATE_SEVERITIES defaults to P0,P1 (CI-003): P0/P1 findings block.
+          sev = [s.strip() for s in os.environ.get("GATE_SEVERITIES", "P0,P1").split(",") if s.strip()]
+          counts = doc.get("counts", {}).get("bySeverity", {})
+          blocking = {s: int(counts.get(s, 0)) for s in sev if int(counts.get(s, 0)) > 0}
+          if blocking:
+              raise SystemExit("blocking findings present (%s): %s" % (",".join(sev), blocking))
+          print("severity gate (%s): no findings" % ",".join(sev))
           PY
             echo "::endgroup::"
           done

@@ -5,7 +5,7 @@
 1f9815cb465ffa6ea817d0d1b4ac2fd641d2888d3ad63bf479954e70a0dbb08a  ./AGENTS.md
 9c883bfd0ea2426255986f9456a5c32bd4fe672debd17078d389e137337806fb  ./CHANGELOG.md
 45e3d8c92ead3f8c35cc36be964698ca8b12abad0d803f26ae6b0f8d1f3fc8ab  ./ci/audit.yml
-6d0d4f121324b673fe85aa0502df10e8b7ec940a32e06b90b0747cb57d1f2402  ./CONTRIBUTING.md
+c4dd58c3dffa1dd407b5acaddf402025659b1e211d1265ce4771b07e0a307f43  ./CONTRIBUTING.md
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 9085dd6643e604a6fe81e2e9aae46fb3171d3ec50f11d9baa8aa6f272db2ee33  ./docs/DEEP_DIVE_ROADMAP.md
 8b97f6bc7dadc0d98bc39c7651c0149a4380048c4794fd4ad0772003b3f818ca  ./docs/LAB_VPN.md
@@ -19,7 +19,7 @@ fd544d6581e08d4faa36f309a3534c55c1d6613e67e320e2ef6b2d522557dc01  ./examples/aud
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
-e2f28c2cc18d527e59763924a0315606dbe460e30f0c3dd239cd8666069d707a  ./.github/workflows/audit.yml
+a318eddef6d4f26fa5e095213bfee294ff6e579a1750090ccf6351d7c9171650  ./.github/workflows/audit.yml
 9e9a1d8a9358aecf16fddf6e63c7e47458c72ed56abef7e31776801ea2b638d3  ./.github/workflows/deep-dive-deterministic.yml
 0c82ed355eaa8d585720320e7512227fe323ad954c9e5e24f6dddc567bae8ce2  ./.github/workflows/lab-agent-offboard.yml
 72951dd3c25e5952d77f0923967aded53df8777926311064c4027741409d152b  ./.github/workflows/lab-agent-onboard.yml
