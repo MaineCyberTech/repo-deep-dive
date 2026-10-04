@@ -35,7 +35,8 @@ jobs:
   # Fail-closed gate: verify lab access before dispatching verification to the lab.
   preflight:
     uses: ./.github/workflows/lab-preflight.yml
-    secrets: inherit
+    secrets:
+      LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}
 
   verify:
     needs: preflight
