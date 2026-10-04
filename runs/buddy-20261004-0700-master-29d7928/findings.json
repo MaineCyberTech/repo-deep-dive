@@ -1,0 +1,191 @@
+{
+  "run": "20261004-0700-master-29d7928",
+  "generated": "2026-10-04T07:11:23Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 9,
+    "bySeverity": {
+      "P1": 2,
+      "P2": 3,
+      "P3": 4
+    },
+    "byArea": {
+      "DEP": 2,
+      "SUPPLY": 2,
+      "CI": 3,
+      "PORT": 1,
+      "CONF": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "DEP-P1-001",
+      "severity": "P1",
+      "title": "Next.js 14.2.35 is EOL and ships unpatched known CVEs",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 24,
+      "area": "DEP",
+      "evidence": [
+        "package.json:24 \"next\": \"^14.2.0\",",
+        "package-lock.json:6185-6187 node_modules/next \"version\": \"14.2.35\" (production)",
+        "package.json:5-6 engines node >=20 (no framework-version guard)",
+        ".github/workflows/release.yml:85 packages .next into buddy-<tag>.tar.gz",
+        "docs/release-readiness.md:42 requires CI gate; no dependency gate"
+      ],
+      "impact": "Next.js 14 left Maintenance LTS on 2025-10-26 and receives no security fixes; the release artifact embeds the .next build. The deterministic CVEs (CVE-2026-44573 middleware/i18n bypass, CVE-2026-64641 Server Action DoS, CVE-2026-64645 SSRF in rewrites() etc.) affect 14.x and are fixed only in 15.5.x/16.3.x. Real exploitability is low because the app uses the App Router with no middleware, i18n, API routes/use server, dynamic rewrites/redirects, and images are unoptimized; the risk is the permanently unpatched EOL line.",
+      "recommendation": "Upgrade to a supported line (15.5.26+ or 16.3.6+); if deferred, record a dated risk acceptance and re-check advisories monthly.",
+      "deterministic_ref": "DET-P1-001",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "DEP-P2-001",
+      "severity": "P2",
+      "title": "Vulnerable transitive copies: nanoid 3.3.15 and nested postcss 8.4.31",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 6144,
+      "area": "DEP",
+      "evidence": [
+        "package-lock.json:6144-6146 node_modules/nanoid \"version\": \"3.3.15\" (transitive, dev via postcss)",
+        "package-lock.json:6235-6236 node_modules/next/node_modules/postcss \"version\": \"8.4.31\" (production)",
+        "package-lock.json:6772-6774 node_modules/postcss \"version\": \"8.5.15\" (\"dev\": true)"
+      ],
+      "impact": "nanoid 3.3.15 is below the CVE-2026-67213/67214 fixes (3.3.18/3.3.16): infinite-loop DoS on size 0/negative. Top-level postcss 8.5.15 is patched for CVE-2026-45623 (8.5.12) and CVE-2026-41305 (8.5.10) but still vulnerable to CVE-2026-73646 (8.5.18) and CVE-2026-69153 (8.5.19). The production copy next/node_modules/postcss 8.4.31 is vulnerable to all of these including arbitrary file read via sourceMappingURL. Build-time reachability only; not reached by the shipped client in normal use.",
+      "recommendation": "Bump the direct postcss dev dep to >=8.5.19 and nanoid to a fixed 3.3.x; defer the Next.js-pinned nested postcss to the framework upgrade in buddy-DEP-001.",
+      "deterministic_ref": "DET-P1-001",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P1-001",
+      "severity": "P1",
+      "title": "Release workflow runs install scripts and unpinned actions with a write token",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 13,
+      "area": "SUPPLY",
+      "evidence": [
+        ".github/workflows/release.yml:13-16 permissions: contents: write, id-token: write, attestations: write",
+        ".github/workflows/release.yml:38-39 run: npm ci (executes dependency lifecycle scripts)",
+        ".github/workflows/release.yml:88 uses: actions/attest-build-provenance@v1",
+        ".github/workflows/release.yml:93 uses: softprops/action-gh-release@v2",
+        ".github/workflows/release.yml:28,33 actions/checkout@v4, actions/setup-node@v4",
+        ".github/workflows/ci.yml:24,27 actions/checkout@v4, actions/setup-node@v4"
+      ],
+      "impact": "All six uses: refs are moving major tags, not 40-hex SHAs. The release job, including npm ci's postinstall scripts, runs with a workflow-scoped token that can write releases (contents: write) and mint OIDC tokens (id-token: write). A compromised dependency or a hijacked third-party action tag (softprops/action-gh-release@v2, attest-build-provenance@v1) inherits that capability and could publish or tamper with releases/attestations.",
+      "recommendation": "Pin every uses: to a full commit SHA; scope permissions to the job/step that needs writes and keep npm ci under contents: read; prefer npm ci --ignore-scripts or isolate install in a read-only job; bump stale majors (checkout/setup-node v4->v7, attest-build-provenance v1->v4, action-gh-release v2->v3).",
+      "deterministic_ref": "DET-P2-005",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "No dependency-vulnerability, license, or secret-scanning gate in CI",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 32,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/ci.yml:32-48 steps install/lint/typecheck/test/coverage/build (no scan step)",
+        "package.json:17 \"audit\": \"npm audit --omit=dev\" (never invoked by a workflow)",
+        "package.json:18 \"sbom\": \"npm sbom --sbom-format cyclonedx --omit=dev\" (not invoked by CI)",
+        ".github/dependabot.yml:2-35 opens update PRs but does not block vulnerable merges"
+      ],
+      "impact": "The CI gate proves correctness but does not detect vulnerable dependencies, license obligations, or secret leakage, which is why the DET-P1/2/3 dependencies reached master. Detection (not cure) gap.",
+      "recommendation": "Add CI jobs: npm audit --audit-level=high --omit=dev, actions/dependency-review-action on PRs, a gitleaks/secret scan, and a license allow/deny check once a policy exists.",
+      "deterministic_ref": "DET-P1-001",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Release is not gated by environment protection or protected tags",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 7,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/release.yml:7-10 on: push: tags: [\"v*\"] (no environment: key)",
+        ".github/workflows/release.yml:13-16 workflow-scoped write permissions, no needs/approval gate",
+        ".github/CODEOWNERS:3 * @JulianB-MCT (does not itself enforce review)",
+        "docs/release-readiness.md:42 condition requires 'protection enabled'; no repo artifact records branch protection"
+      ],
+      "impact": "Publishing a v* tag immediately runs the release and publishes a GitHub Release with contents: write. There is no GitHub Environment with required reviewers, no protected-tag rule, and no in-repo evidence of required status checks / branch protection; a maintainer or a stolen write token can tag an unmerged commit. Branch protection is not stored in the repository and was not verifiable from the clone.",
+      "recommendation": "Create a release GitHub Environment with required reviewers, apply a v* tag protection rule, and enable branch protection on master requiring the CI check and CODEOWNERS review; document in docs/release-process.md.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "Release SBOM includes dev dependencies, inconsistent with the npm script",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 63,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/release.yml:63 npm sbom --sbom-format cyclonedx > sbom.cdx.json (no --omit=dev)",
+        "package.json:18 \"sbom\": \"npm sbom --sbom-format cyclonedx --omit=dev\"",
+        ".github/workflows/release.yml:85,99 SBOM packed and published with the release"
+      ],
+      "impact": "The released SBOM describes the full tree including dev dependencies while the documented script describes production only. SBOM consumers cannot tell which set is authoritative, and dev-only CVEs (e.g. nanoid) are mis-attributed to the shipped artifact.",
+      "recommendation": "Use one SBOM definition; if the release ships production code, generate npm sbom --omit=dev and state excluded items explicitly.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-001",
+      "severity": "P3",
+      "title": ".gitattributes missing (no line-ending policy)",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 21,
+      "area": "PORT",
+      "evidence": [
+        ".gitattributes is absent at the repo root (git ls-files returns no .gitattributes)",
+        ".github/workflows/ci.yml:21 runs-on: ubuntu-latest (Linux CI) with a Windows dev environment"
+      ],
+      "impact": "Without a normalization policy, checkouts differ between Windows (CRLF) and Linux (LF), causing churn and potentially breaking shell-sensitive tooling.",
+      "recommendation": "Add .gitattributes with '* text=auto eol=lf' and mark binary asset types as binary.",
+      "deterministic_ref": "DET-P3-004",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "Product docs still claim saves are not runtime-validated",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 20,
+      "area": "CONF",
+      "evidence": [
+        "README.md:20-21 'loaded/imported saves are not runtime-validated'",
+        "docs/README.md:61 Save validation ... DATA-P1-002 / SEC-P2-001 no runtime save validation ... open (tracked)",
+        "lib/storage/schema.ts:177 export function validateSave(input: unknown): SaveValidationResult",
+        "lib/storage/indexeddb.ts:3,50,96 imports and calls validateSave on load and import"
+      ],
+      "impact": "The code now validates and migrates saves with zod, bounded numbers and a MAX_IMPORT_LENGTH size cap, but the README and reconciled audit matrix still mark the gap open. Generated status artifacts contradict their source of truth, so reviewers/AI agents may re-implement an existing control or mis-state release risk.",
+      "recommendation": "Update README.md:19-22 and the docs/README.md status matrix to verified-fixed with commit evidence.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-001",
+      "severity": "P3",
+      "title": "License is explicitly pending and vendored prompt-pack provenance is unconfirmed",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 1,
+      "area": "SUPPLY",
+      "evidence": [
+        "LICENSE:1 LICENSE - PENDING",
+        "README.md:118-121 'No license has been chosen yet. Absent an explicit license grant, all rights are reserved'",
+        "docs/README.md:28-35 vendored prompt pack authorship/ownership and licensing 'unconfirmed'"
+      ],
+      "impact": "The repository is all-rights-reserved by default and a large vendored prompt pack has unconfirmed authorship/licensing, leaving distribution/derivative rights undefined and an unvetted third-party-content supply-chain item.",
+      "recommendation": "Choose a license (or keep proprietary + internal-only) and record the prompt-pack provenance/ownership decision in NOTICE; add a license-policy gate if the project opens up.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    }
+  ]
+}

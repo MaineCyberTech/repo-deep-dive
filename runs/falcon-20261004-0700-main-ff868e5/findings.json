@@ -1,0 +1,276 @@
+{
+  "run": "20261004-0700-main-ff868e5",
+  "generated": "2026-10-04T07:11:22Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 14,
+    "bySeverity": {
+      "P2": 6,
+      "P3": 8
+    },
+    "byArea": {
+      "SEC": 3,
+      "DEP": 1,
+      "SUPPLY": 4,
+      "CI": 2,
+      "PORT": 2,
+      "GIT": 1,
+      "CONF": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "gitleaks curl-auth-user allowlist is unanchored and suppresses every curl line",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 20,
+      "area": "SEC",
+      "evidence": [
+        ".gitleaks.toml:20-24 \"[[allowlists]] rules = [\\\"curl-auth-user\\\"] regexTarget = \\\"line\\\" regexes = ['.*curl.*']\"",
+        "docs/security/SCANNER_ALLOWLIST_CHANGES.md:100 \"documented curl calls pass runtime variables / healthcheck users; command lines, not literals\"",
+        "automation/validation/central_health.sh:62 curl ... -u kibanaserver:kibanaserver (public OpenSearch demo user; rejection test)"
+      ],
+      "impact": "A literal credential passed on a curl command line (curl -u user:pass, --user, Authorization header) would be silently whitelisted by the independent gitleaks gate, creating a false-negative blind spot.",
+      "recommendation": "Remove the line-scoped .*curl.* allowlist; allowlist by path/rule instead, or require the credential value to be a variable/$(cat ...) reference. Add a negative fixture with a literal curl credential that must still fail.",
+      "deterministic_ref": "DET-P2-004",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Retired DFIR-IRIS API key literal still committed in vendored scripts; rotation PENDING",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 23,
+      "area": "SEC",
+      "evidence": [
+        "mct/scripts/p61-agents-ci.sh:23 and mct/scripts/p62-agents-ci.sh:20 contain a 40+ hex credential-shaped literal (value not printed)",
+        "ledgers/redactions.md:25-26 \"retired DFIR-IRIS API key retained as the literal-detector value\"",
+        "docs/security/SCANNER_ALLOWLIST_CHANGES.md:181-184 hash-only ALLOW_VALUE_SHA256 entry added; \"rotation owner-side\"",
+        "mct/runbooks/credential-rotation-checklist.md:41 row 12 DFIR-IRIS API credential status PENDING"
+      ],
+      "impact": "A cleartext credential literal remains in a shipped repository and is suppressed by a hash allowlist. Records call it 'retired' while the rotation tracker says PENDING; if it was never revoked this is a live committed credential (P1).",
+      "recommendation": "Confirm revocation with IRIS, then replace the literal in both scripts with a placeholder or a SHA-256 comparison; remove the ALLOW_VALUE_SHA256 entry and record name-only rotation evidence plus a negative test.",
+      "deterministic_ref": null,
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "All 20 inherited credentials are PENDING rotation; vendored scripts source credential files wholesale",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 7,
+      "area": "SEC",
+      "evidence": [
+        "docs/security/INHERITED_CREDENTIAL_ROTATION.md:7 \"20/20 PENDING as of 2026-10-01\"",
+        "docs/security/INHERITED_CREDENTIAL_ROTATION.md:88 \"20 items, 0 rotated, 20 pending\"",
+        "docs/security/INHERITED_CREDENTIAL_ROTATION.md:69-75 \"28 scripts under mct/scripts/ and mct/deploy-scripts/ still set -a-source ops/creds.env ... treat their process environments as credential-bearing\"",
+        "mct/runbooks/credential-rotation-checklist.md:9-49 rows 1-20 all PENDING (DO Spaces, Wazuh admin/indexer/API, VirusTotal, PVE, Security Onion, Cloudflare, IRIS, MISP, Shuffle, DB/Redis)"
+      ],
+      "impact": "No completed rotation evidence for the inherited credential estate; whole-file sourcing by 28 vendored scripts can expose all keys via process environments, captures, or crash dumps.",
+      "recommendation": "Execute the documented rotation order with name-only evidence and negative tests; migrate the 28 scripts to single-key reads (automation/validation/lib/env_key.sh) or restrict them to the interactive account.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "DEP-P2-001",
+      "severity": "P2",
+      "title": "Dependabot covers only GitHub Actions; Python dependencies and container images are unmanaged",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 2,
+      "area": "DEP",
+      "evidence": [
+        ".github/dependabot.yml:2-7 only update entry is package-ecosystem: github-actions, directory: /, weekly",
+        "ci/requirements-ci.txt hash-pinned pyyaml and zizmor (manual updates only)",
+        "pins/images.lock 24 pinned images refreshed only by manual pins/pull-and-record.sh + pins/verify-digests.sh"
+      ],
+      "impact": "CVEs in Python tooling or stale/unpatched base images raise no automated PR; updates depend on a human running the manual pin refresh.",
+      "recommendation": "Add pip/uv and docker ecosystems to .github/dependabot.yml, or add renovate.json with digest pinning, preserving the existing hash-pin policy for CI deps.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P2-001",
+      "severity": "P2",
+      "title": "Release and SBOM artifacts are integrity-checked but unsigned (SLSA ~0-1)",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 99,
+      "area": "SUPPLY",
+      "evidence": [
+        "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:99-105 \"All are SHA-256 integrity bindings; none is cryptographically signed ... SLSA ~0-1 remains\"",
+        "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:115-120 recommended signing/attestation control not implemented (owner decision D1)"
+      ],
+      "impact": "Verification proves integrity of the artifact set, not authorship; a party able to rewrite the tree and its .sha256 manifests produces a self-consistent, apparently valid delivery.",
+      "recommendation": "Implement D1: owner-held ed25519/GPG signature over sbom/SBOM_MANIFEST.sha256 with the public key published and the manifest hash bound in PACKAGE_DIGEST.txt, or use GitHub artifact attestations (actions/attest-build-provenance).",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "Branch protection and required checks are plan-gated, so validate is advisory",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 3,
+      "area": "CI",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:3-8 status not enforceable on the current GitHub plan; apply attempt returned 403 Upgrade to GitHub Pro (evidence/raw/REVIEW-FIX/20260930T202746Z_bp-branch-protection.*)",
+        "docs/security/BRANCH_PROTECTION.md:90-97 enforcement matrix: required status checks No, force-push/deletion No, '[skip ci] can skip a push/PR run', bypass audit trail No",
+        ".github/CODEOWNERS:1-14 CODEOWNERS and PR template are advisory only"
+      ],
+      "impact": "A failing or skipped validate does not block a push/merge to main; owner direct pushes land unchecked with no server-side bypass audit.",
+      "recommendation": "Owner decision: upgrade to GitHub Pro/Team and apply the ready payload (BRANCH_PROTECTION.md:16-51), or record a per-merge attestation that validate was green and treat direct pushes as break-glass with the documented record.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-001",
+      "severity": "P3",
+      "title": "90 tracked shell scripts lack the executable bit",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 1,
+      "area": "PORT",
+      "evidence": [
+        "git ls-files --stage: 90 .sh entries at mode 100644 vs 536 at 100755",
+        "examples: automation/alerting/do_watcher/install.sh, automation/validation/migrate_docker_volumes.sh, automation/validation/rotate_wazuh_vt_key.sh, automation/validation/tests/*.sh",
+        "tracked ./ callers resolve to 100755 files (automation/validation/export_monitor_metrics.sh, bootstrap/90-alerting.sh), so bash-based CI is unaffected"
+      ],
+      "impact": "./script.sh fails on Linux for the affected files; Windows checkouts/transfers can silently drop the bit.",
+      "recommendation": "git update-index --chmod=+x on intended entrypoints and add a CI check asserting exec bits on shebang-bearing scripts under automation/**.",
+      "deterministic_ref": "DET-P2-002",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-002",
+      "severity": "P3",
+      "title": "CRLF committed in four markdown files despite text eol=lf",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 28,
+      "area": "PORT",
+      "evidence": [
+        "git ls-files --eol -> i/mixed attr/text eol=lf for the 4 docs/phase8/reviews/*.md",
+        "HEAD blob CRLF/LF: INDEPENDENT_REVIEW_2026-09-23.md 255/268, _UPDATE.md 174/185, _UPDATE2.md 147/155, _UPDATE3.md 137/146",
+        ".gitattributes:28 *.md text eol=lf",
+        "evidence/raw/P9-G09/*.out are attr/-text byte-exact captures (CRLF expected) - false positive for DET-P2-003"
+      ],
+      "impact": "Inconsistent line endings despite the declared policy; hashes/line-based tooling can differ by platform.",
+      "recommendation": "git add --renormalize . for the affected .md files only; leave -text .out evidence captures untouched.",
+      "deterministic_ref": "DET-P2-003",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "GIT-P3-001",
+      "severity": "P3",
+      "title": "No LICENSE file",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 121,
+      "area": "GIT",
+      "evidence": [
+        "git ls-files shows no LICENSE/COPYING/NOTICE; only ci/license_check.py (dependency gate) and docs reports",
+        "README.md:121 '## License / ownership' names the owner but grants no license terms"
+      ],
+      "impact": "Default all-rights-reserved is ambiguous for a repository shipped to third-party reviewers.",
+      "recommendation": "Add a LICENSE or a proprietary review-only notice consistent with the owner decision; dependency licensing is separately covered by ci/license_check.py.",
+      "deterministic_ref": "DET-P3-001",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-001",
+      "severity": "P3",
+      "title": "Vendored mct/compose images are unpinned under a blanket waiver",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 14,
+      "area": "SUPPLY",
+      "evidence": [
+        "mct/compose/docker-compose.velociraptor.yml:14 image velociraptor:latest",
+        "mct/compose/docker-compose.misp.yml:61 ghcr.io/misp/misp-docker/misp-modules:latest",
+        "mct/compose/docker-compose.greenbone.yml:152 gvm-config:latest, :161 nginx:latest, :76 pg-gvm:stable",
+        "pins/supply-chain-waivers.json:4-10 waives root mct/compose ref * (reason TB-8 'imported and not deployed', review_by 2026-12-31)",
+        "deployed compose/** has no image without @sha256 (automation/validation/check_compose_digests.py scan)"
+      ],
+      "impact": "If the MCT stack is ever imported/deployed, floating tags plus docker.sock mounts (mct/compose/docker-compose.shuffle.yml:48,87) create supply-chain and container-escape risk.",
+      "recommendation": "Scope the waiver to specific refs, add an explicit deploy-blocking guard for mct/compose, and remove or justify the docker.sock mounts.",
+      "deterministic_ref": "DET-P3-007",
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-002",
+      "severity": "P3",
+      "title": "Vulnerability scan coverage for 12 images is stale/pending, gated only by expiring waivers",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 96,
+      "area": "SUPPLY",
+      "evidence": [
+        ".github/workflows/validate.yml:96-99 sbom_coverage_check.sh --require-vuln --vuln-waivers pins/supply-chain-waivers.json",
+        "pins/supply-chain-waivers.json:33-45 twelve images in vuln_scan_pending, review_by 2026-12-31",
+        "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:52-59 vuln JSONs from 2026-09-22; 12 newly pinned images have no scan"
+      ],
+      "impact": "The gate passes only via waivers; a HIGH/CRITICAL CVE in an unscanned/stale image is not surfaced until the review-by date forces re-review.",
+      "recommendation": "Run automation/validation/vuln-summary.sh in the next patch window, refresh waivers to real dispositions, keep the DD-15 threshold, and add a scheduled scan job.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P3-003",
+      "severity": "P3",
+      "title": "Image/SBOM-component license allow/deny gate is not enforced",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 18,
+      "area": "SUPPLY",
+      "evidence": [
+        "docs/security/LICENSE_GATE.md:18-21 'Manual/collection-side coverage (SBOMs, image licenses) remains the follow-up in SBOM-P2-001/002/003'",
+        "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:88-92,143 image/SBOM license allow-deny gate remains the SBOM-P1-001 follow-up"
+      ],
+      "impact": "Copyleft or unknown-license components inside shipped images are not gated; only installed Python distributions are.",
+      "recommendation": "Add pins/licenses.allow plus a check over sbom/*.cdx.json license fields (allow MIT/BSD/Apache/ISC; deny GPL/AGPL/LGPL/SSPL unless the documented self-hosted exception applies).",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "dependabot-merge merges without pinning the checked commit and holds broad write scope",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 17,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/dependabot-merge.yml:17-19 workflow-level permissions contents: write, pull-requests: write",
+        ".github/workflows/dependabot-merge.yml:46-48 gh pr checks then gh pr merge --squash --delete-branch (no --match-head-commit)",
+        ".github/workflows/dependabot-merge.yml:42-45 merges only app/dependabot PRs carrying the owner-applied dependabot-approved label"
+      ],
+      "impact": "Author+label gating is effective, but a head changed between the checks query and the merge is not pinned; contents: write is broader than strictly needed.",
+      "recommendation": "Add --match-head-commit to gh pr merge and scope permissions to the minimum; extend the ci_governance_guard_test.sh guard to pin the new flag.",
+      "deterministic_ref": null,
+      "confidence": "medium",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "SBOM coverage doc contradicts the live validate workflow on --require-vuln",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 71,
+      "area": "CONF",
+      "evidence": [
+        "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:71-83 shows the CI step without --require-vuln and says '--require-vuln stays off'",
+        ".github/workflows/validate.yml:96-99 runs sbom_coverage_check.sh --require-vuln --vuln-waivers pins/supply-chain-waivers.json"
+      ],
+      "impact": "A reviewer reading the doc believes vuln coverage is unenforced, while the live gate is stricter (waiver-backed); this is the docs-vs-records drift class the repo tracks.",
+      "recommendation": "Append a dated correction section (append-only) stating --require-vuln --vuln-waivers is live and naming the waiver file as the compensating control.",
+      "deterministic_ref": null,
+      "confidence": "high",
+      "status": "open"
+    }
+  ]
+}

@@ -19,3 +19,7 @@
 - Canonical copies live in the repositories (`docs/audits/repo-deep-dive/{run}/`); the copies here keep the pack portable.
 - Machine-readable findings for a run: `findings.json` (generate with `tools/collect_findings.py <run> --write`).
 - New rows are append-only; compare runs with `tools/diff_runs.py <old> <new>`.
+| [buddy-20261004-0700-master-29d7928](buddy-20261004-0700-master-29d7928/) | 2026-10-04 | buddy @ `29d7928` | focused (security/supply-chain/CI) | P0 ×0 · P1 ×2 · P2 ×3 · P3 ×4 | GO | published by tools/publish_audit.py |
+| [falcon-20261004-0700-main-ff868e5](falcon-20261004-0700-main-ff868e5/) | 2026-10-04 | falcon @ `ff868e5` | focused (security/supply-chain/CI) | P0 ×0 · P1 ×0 · P2 ×6 · P3 ×8 | GO | published by tools/publish_audit.py |
+| [chat-20261004-0700-develop-0695894](chat-20261004-0700-develop-0695894/) | 2026-10-04 | chat @ `0695894` | focused (security/supply-chain/CI) | P0 ×0 · P1 ×2 · P2 ×10 · P3 ×10 | GO | published by tools/publish_audit.py |
+| [snowride-20261004-0700-main-d79d0d7](snowride-20261004-0700-main-d79d0d7/) | 2026-10-04 | snowride @ `d79d0d7` | focused (security/supply-chain/CI) | P0 ×0 · P1 ×1 · P2 ×3 · P3 ×6 | GO | published by tools/publish_audit.py |

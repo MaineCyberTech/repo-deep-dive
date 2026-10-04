@@ -38,6 +38,13 @@ subagents or others) use it to audit repos and to open remediation PRs.
     CI (`Lab preflight`) and as a `needs:` gate on the remediation/lab workflows, and
     `tools/lab_runner.py` refuses to dispatch unless the lab API is healthy.
 
+11. **Publish after every audit (standard pipeline).** After an audit, follow
+    `runbooks/POST_AUDIT_PIPELINE.md`: publish the **full audit first** with
+    `tools/publish_audit.py` (writes a `check_run.sh`-valid `runs/<repo>-<run>/`, updates
+    `runs/INDEX.md`, and opens a **draft** audit PR in the repo), then run remediation agents for
+    a plan + draft remediation PRs, then merge **only on explicit authorization** — audit PR first,
+    then remediation PRs — and either finish the queue or stop for delegation.
+
 ## Working on the pack itself
 
 - **Keep the digest current.** After ANY file change, run `tools/pack_digest.sh`, then
@@ -77,6 +84,7 @@ This is **separate** from the falcon telemetry VPN (`wg0`) — never reuse or ed
 | Need | Location |
 |---|---|
 | Lab WireGuard access | `docs/LAB_VPN.md` + `tools/lab-vpn/` |
+| Post-audit pipeline | `runbooks/POST_AUDIT_PIPELINE.md` + `tools/publish_audit.py` |
 | Audit runner (generic) | `prompts/MASTER_RUNNER_FULL_HARDENING.md` |
 | Audit runner (falcon lab) | `prompts/MASTER_RUNNER_FALCON_LAB.md` + `profiles/falcon-lab.md` |
 | Remediation runner | `prompts/REMEDIATION_RUNNER.md` + `profiles/remediation.md` |

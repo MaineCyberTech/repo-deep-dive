@@ -1,0 +1,205 @@
+{
+  "run": "20261004-0700-main-d79d0d7",
+  "generated": "2026-10-04T07:11:23Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 10,
+    "bySeverity": {
+      "P1": 1,
+      "P2": 3,
+      "P3": 6
+    },
+    "byArea": {
+      "SUPPLY": 3,
+      "CI": 2,
+      "PORT": 1,
+      "SEC": 2,
+      "SECRET": 1,
+      "CONF": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "SUPPLY-P1-001",
+      "severity": "P1",
+      "title": "Vulnerable runtime transitive dependency @grpc/grpc-js 1.14.4 with a non-blocking audit gate",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 1003,
+      "area": "SUPPLY",
+      "evidence": [
+        "package-lock.json:1003-1005 \"node_modules/@grpc/grpc-js\": { \"version\": \"1.14.4\" }",
+        "apps/realtime/package.json:22 \"@opentelemetry/sdk-node\": \"0.222.0\" (production dep pulls the gRPC exporters)",
+        ".github/workflows/ci-foundation.yml:38-39 continue-on-error: true / npm audit --omit=dev --audit-level=high",
+        ".github/workflows/supply-chain.yml:54-55 continue-on-error: true / npm audit --omit=dev --audit-level=high"
+      ],
+      "impact": "CVE-2026-101916 (high, getAuthContext authorization confusion) and CVE-2026-101915 (low) ship in the runtime image; both fixed in 1.14.5/1.13.6, but CI treats npm audit as advisory so the vulnerable version can reach production.",
+      "recommendation": "Bump @grpc/grpc-js to 1.14.5 (overrides or lockfile refresh), then make the high-severity audit step blocking in both workflows.",
+      "deterministic_ref": "DET-P1-001, DET-P3-002",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P2-001",
+      "severity": "P2",
+      "title": "GitHub Action upload-artifact@v4 not pinned to a commit SHA",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 55,
+      "area": "SUPPLY",
+      "evidence": [
+        ".github/workflows/ci-foundation.yml:55 uses: actions/upload-artifact@v4",
+        ".github/workflows/ci-foundation.yml:84 uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2 (sibling call is pinned)"
+      ],
+      "impact": "A mutable major tag can be repointed upstream and execute arbitrary code in CI with the repository read token.",
+      "recommendation": "Pin line 55 to the same ea165f8d... SHA and add a guard/Dependabot rule preventing tag refs.",
+      "deterministic_ref": "DET-P2-006",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P2-002",
+      "severity": "P2",
+      "title": "Container base and CI service images not pinned by digest",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 4,
+      "area": "SUPPLY",
+      "evidence": [
+        "apps/web/Dockerfile:4,38 FROM node:24.20.0-bookworm-slim (tag only)",
+        "apps/realtime/Dockerfile:4,21,38 FROM node:24.20.0-bookworm-slim (tag only)",
+        "Dockerfile.p2runtime:1 FROM node:24.20.0-bookworm-slim (tag only)",
+        ".github/workflows/ci-foundation.yml:96 image: postgres:17-alpine (mutable tag)",
+        "infra/compose/docker-compose.yml:191,216,247,305 ancillary images ARE digest-pinned"
+      ],
+      "impact": "Mutable base/service tags break reproducibility and are a tag-repointing supply-chain vector; the app images are less hardened than the ancillary compose images.",
+      "recommendation": "Pin every node: and postgres: reference by @sha256 digest, or document a periodic digest-refresh step.",
+      "deterministic_ref": "DET-P3-007 (derived)",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "Supply-chain license/vulnerability workflow is not a required branch-protection check",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 1,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/supply-chain.yml:1-7 states these are merge-gating supply-chain checks",
+        ".github/branch-protection.json:5 \"contexts\": [\"foundation\", \"migrations\", \"e2e\"] (no license-and-vulnerability)",
+        "scripts/verify-branch-protection.mjs:21 WORKFLOW_PATH = .github/workflows/ci-foundation.yml (validator never inspects supply-chain.yml)"
+      ],
+      "impact": "License allow-list and production audit results do not block merges to main, contradicting the workflow's stated purpose; the policy validator cannot detect the drift.",
+      "recommendation": "Add license-and-vulnerability to requiredStatusChecks.contexts and extend verify-branch-protection.mjs to enumerate all workflow files.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-001",
+      "severity": "P3",
+      "title": "Six tracked shell scripts lack the executable bit",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 30,
+      "area": "PORT",
+      "evidence": [
+        "scripts/ci-db-tests.sh, scripts/ci-migrations-dryrun.sh, scripts/install-clean.sh, scripts/migrations-manifest.sh, scripts/repo-secret-scan.sh, scripts/verify-all.sh (git ls-files -s mode 100644)",
+        ".github/workflows/ci-foundation.yml:30,112,116,120 invokes them via bash scripts/...",
+        "scripts/verify-all.sh:5 uses ./scripts/preflight-disk.sh which is mode 100755"
+      ],
+      "impact": "Low: ./script.sh fails on POSIX, but every documented invocation uses an explicit bash interpreter.",
+      "recommendation": "git update-index --chmod=+x on the six files for consistency.",
+      "deterministic_ref": "DET-P2-003",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "Secret scan allowlists whole files, masking future real secrets",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 15,
+      "area": "SEC",
+      "evidence": [
+        ".gitleaks.toml:15-21 path-level allowlist including evidence/recovery/recovery_ledger_r71\\.jsonl$ and scripts/bundle-secret-gate\\.mjs$",
+        "evidence/phase2/20260908T2110Z-p2/G06-authorization/full_actor_operation_matrix.sql:123 literal test value 'anon-key-1'",
+        "scripts/bundle-secret-gate.mjs:82 fixture sb_secret_FixTuRe... (placeholder)"
+      ],
+      "impact": "All 16 generic-api-key hits are benign fixtures, but path-level allowlisting means a real credential later appended to those files bypasses CI detection.",
+      "recommendation": "Replace whole-file allowlists with rule/regex-scoped allowlists and periodically re-scan allowlisted files.",
+      "deterministic_ref": "DET-P2-005",
+      "confidence": "Medium",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P3-002",
+      "severity": "P3",
+      "title": "Metrics token compared non-constant-time and has no rotation path",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 2011,
+      "area": "SEC",
+      "evidence": [
+        "apps/realtime/src/server.ts:2011 if (configured && token === configured) return true;",
+        "apps/realtime/src/server.ts:1286 if (token !== configured) { ... }",
+        "apps/realtime/src/config.ts:231 METRICS_TOKEN static optional secret; .env.example:80"
+      ],
+      "impact": "Static never-rotated ops credential; non-constant-time comparison is a low network timing-side-channel.",
+      "recommendation": "Use crypto.timingSafeEqual on equal-length buffers and document METRICS_TOKEN rotation in the secret rotation runbook.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "open"
+    },
+    {
+      "id": "SECRET-P3-001",
+      "severity": "P3",
+      "title": "Empty service-role key silently disables persistence; no committed rotation evidence",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 43,
+      "area": "SECRET",
+      "evidence": [
+        "apps/realtime/src/config.ts:43 RM_SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default(\"\")",
+        "apps/realtime/src/services/supabase.ts:39-44 if (!key) { ... return null; } disables trusted run persistence",
+        "docs/archive/agent_final_response.json:695 \"R-021 OPEN_PENDING_ROTATION: owner-side .env plaintext credentials - rotation is an owner action\""
+      ],
+      "impact": "A misconfigured production deploy can run without trusted persistence/scoring instead of failing closed; rotation is unverifiable from the repository.",
+      "recommendation": "Fail boot/readiness when NODE_ENV=production and the service-role key is empty; commit a dated rotation runbook.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "CODEOWNERS is a personal account; release/hotfix branch rules absent",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 5,
+      "area": "CI",
+      "evidence": [
+        ".github/CODEOWNERS:5 * @MaineCyberTech (comment: personal account, not an org team)",
+        ".github/branch-protection.json protects only main (branch: main)",
+        "docs/runbooks/BRANCH_PROTECTION.md:20-22 claims tests/branch-protection.test.ts guards drift"
+      ],
+      "impact": "Required CODEOWNERS review resolves to a single personal account (bus-factor / merge-authority ambiguity); release and hotfix branches are not covered by the declared policy; live policy is unverifiable from the repo without a token.",
+      "recommendation": "Replace with an organization team handle and add a release/hotfix ruleset to the declared policy.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "Residual CRLF files and hadolint DL3025 HEALTHCHECK warnings",
+      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "line": 6,
+      "area": "CONF",
+      "evidence": [
+        "git ls-files --eol at d79d0d7: i/crlf only for docs/archive/reviewer.md and evidence/phase2/20260908T2110Z-p2/G16-supply-chain/g16_finding_disposition_ledger.csv",
+        ".gitattributes:6 * text=auto eol=lf",
+        "apps/web/Dockerfile:50, apps/realtime/Dockerfile:49, Dockerfile.p2runtime:11 hadolint DL3025 (HEALTHCHECK shell-form CMD)"
+      ],
+      "impact": "Cosmetic: the deterministic '21 CRLF files' claim is not reproducible at HEAD; hadolint only flags HEALTHCHECK lines, while real CMD lines are already JSON.",
+      "recommendation": "git add --renormalize the two files; optionally convert HEALTHCHECK to JSON array form.",
+      "deterministic_ref": "DET-P2-004, DET-P3-008",
+      "confidence": "High",
+      "status": "open"
+    }
+  ]
+}
