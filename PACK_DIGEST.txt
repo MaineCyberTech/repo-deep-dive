@@ -25,7 +25,7 @@ e2f28c2cc18d527e59763924a0315606dbe460e30f0c3dd239cd8666069d707a  ./.github/work
 72951dd3c25e5952d77f0923967aded53df8777926311064c4027741409d152b  ./.github/workflows/lab-agent-onboard.yml
 2f1fcabf33c26f62cac719f08d4d770814721d7f555b9fc73ea8b30eab3c9b65  ./.github/workflows/lab-overlay-health.yml
 accc21a2d314642923312266d0e4943ef26a515cee5939793a7fe10123375cf8  ./.github/workflows/lab-preflight.yml
-75c995ffac4cf08c7c2fe54a3fab56e835c17e49f87bef1dfcc7099d6ac344b2  ./.github/workflows/lab-tests.yml
+b3ac79692d48d9ac1d97a37c60a7835021ae2248828c3c4fe0e9828d3fc71fbc  ./.github/workflows/lab-tests.yml
 45443ca5c118f76000c9d86af591de47fb327980a23958ce40eda537bfd1fa3b  ./.github/workflows/pack-tests.yml
 d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
 d798bc9bc65b99d412a14b311daa630625c4fed59a7d0505b37a90ea0158f9c6  ./.github/workflows/remediation.yml
