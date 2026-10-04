@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T08:36:58Z
-# files: 1192
+# generated: 2026-10-04T08:42:32Z
+# files: 1222
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -17,7 +17,7 @@ accc21a2d314642923312266d0e4943ef26a515cee5939793a7fe10123375cf8  ./.github/work
 d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
 d798bc9bc65b99d412a14b311daa630625c4fed59a7d0505b37a90ea0158f9c6  ./.github/workflows/remediation.yml
 3e4db81f236c5c2f839da836a72ea8828481cdbfce804e627e54a44198289ca7  ./.github/workflows/verify-remediation.yml
-fbac3f47281fa06abd0440f07ce01231baf0601af9a3c79f34ea9ca16fa8dc54  ./.gitignore
+7df052da6bb16f644d1faaa8fec9f8a41e9fda3407adaa71313fd70e8ba0f626  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 480b4197df1825f0d82dca24df35860a6e7016b8a16cfabd137bd5d633b600d7  ./AGENTS.md
 9c883bfd0ea2426255986f9456a5c32bd4fe672debd17078d389e137337806fb  ./CHANGELOG.md
@@ -35,7 +35,8 @@ acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
 c8b9df7a9ea79cebfe073cb2a72b1167d9a6add1ca883ea665b6383eb2216d84  ./docs/ARCHITECTURE.md
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 9085dd6643e604a6fe81e2e9aae46fb3171d3ec50f11d9baa8aa6f272db2ee33  ./docs/DEEP_DIVE_ROADMAP.md
-5ee7303e6618adac98b4b95128b635b2f2e009b96e05866f3f32de8f576c344b  ./docs/LAB_ARCHITECTURE.md
+38299405f259a096c604da4dda64c0275e67c1aec2e361da7bee4d843c3c267b  ./docs/LAB_ARCHITECTURE.md
+9046212d5338395ded191ca9ae9c68ebc93f5363afb4418476ed49c3ab3561f8  ./docs/LAB_IAC.md
 022ddfdfb9788ca9b89856f1364c7ba71378bf0b2ca2b35b41987a41d256497d  ./docs/LAB_VPN.md
 8e8d4464abe5d3accb3cda5b9bba9c9e00fc8d64a90ebe2bdadf49a8e2e54c7a  ./docs/OBSERVABILITY.md
 22689ec18c1a279cd478236d2d714f7a231deb94a279eadd058c497090e12708  ./docs/OWNER_REMEDIATION_DECISIONS.md
@@ -54,6 +55,35 @@ c446ae1cab3b30709dc6dceaecfe04c624c57e394557397850d260ea1a12f989  ./docs/audits/
 313e6054e3e5f6bf75ec3f60049a5d6c647cbb5b371e70f5a720f7ef6aad878b  ./docs/audits/repo-deep-dive/20261004-0700-main-49f46a8/roadmap.md
 1925dc816657728fc8394d6273e8c005e54e9b759ef33e38b5432803628e5bd8  ./examples/audit_manifest.example.json
 fd544d6581e08d4faa36f309a3534c55c1d6613e67e320e2ef6b2d522557dc01  ./examples/audit_manifest.falcon-lab.example.json
+c7fbf3a95049707ab489b962bee878ab80d0b05521971ffff34e663b714abe02  ./infra/lab/README.md
+addba3a80961df8dfd1ab28ea1fe865f9015c643246bf5d48b8465ac6af6c9d4  ./infra/lab/ansible/ansible.cfg
+ee00d00aae8e3cf33be24095d04382c203b1a8e03f26c93a2e43e6e033e5fc8d  ./infra/lab/ansible/group_vars/all.yml
+d47a0281008b1cf571d45db29ffff691aec04280b170d39b1b1c4d7b2a490bcd  ./infra/lab/ansible/inventory.example.ini
+7dbdf070a8f0fe0d9e755e2d5042842cd2713b2a43f5a77b2a2f615cf64cd213  ./infra/lab/ansible/requirements.yml
+ade63f0d03ae275de0f26cc248a6e3bd6fa2d81b72de1396deecfa0baf86e067  ./infra/lab/ansible/roles/base/defaults/main.yml
+1c38929efc9c1ee616d8568983b67adf93019ace03ba26ded1da6df8c6c978e9  ./infra/lab/ansible/roles/base/handlers/main.yml
+f9822b1cc0e2fd5acd56294c85a91d14cfe54039921373139790b0912d59e17e  ./infra/lab/ansible/roles/base/tasks/main.yml
+8bd0bc869fc5101311a8d64aecaf0d599801c4bf5f8ae7ad3635546b75ad271d  ./infra/lab/ansible/roles/guest_edge/defaults/main.yml
+ad158f5b4b692c308eb4796ad037d78942a97f1b0383c43c52fd6d8ba5b236db  ./infra/lab/ansible/roles/guest_edge/tasks/main.yml
+92fda9b0b366a818328770b95c28918819ad92c0e97ac69ddb2d09fb00fd605c  ./infra/lab/ansible/roles/guest_runner/defaults/main.yml
+a19a6a8d9268c487d689d24a44402610d083443941cc83c47639481724919bdc  ./infra/lab/ansible/roles/guest_runner/tasks/main.yml
+1d5377a9c1df40d273501e33a3e148a5fc5933cdeaaafe1548284aab58874862  ./infra/lab/ansible/roles/proxmox_host/defaults/main.yml
+7da9c4f2eb82c357bff5803a22f6498cc6dbc532b8be4b10ae9f0636b118d8b4  ./infra/lab/ansible/roles/proxmox_host/handlers/main.yml
+fcdd08d561a8bb3e324c3b05e0a860d00fcde40f7ed2aa94bdf505e024952144  ./infra/lab/ansible/roles/proxmox_host/tasks/main.yml
+815a903e5fc766265d26c55075c42a5e624f584e620e7a74fbeb24879b8e0bdc  ./infra/lab/ansible/roles/proxmox_host/templates/interfaces.j2
+838ec434b372d908b5a64e16e65071cbe51e0bdbb6305bd360250a1079e22bef  ./infra/lab/ansible/roles/proxmox_host/templates/zfs-arc-max.conf.j2
+76b97d045a75a737c35c32d5767917749648b14775456063fb33497e8d5b921f  ./infra/lab/ansible/site.yml
+934915b460f6399ff5032e5e2b64bcc932aac998d21fe0373ffe5a227668de24  ./infra/lab/runners/README.md
+5d71253b71125bb1a7370eb31599c6502f3cafddd3b4f8a782ed828f2dcc3d85  ./infra/lab/runners/arc-values.yaml
+236d8030981e000eb06e82dfdf4d0d4452310c195a0fdd557848676db129f32a  ./infra/lab/runners/bootstrap-runner.sh
+a28f6208315d8047970bc8ddf6b44778a94e01dc8775d03aca95a26819d6465a  ./infra/lab/terraform/cloud-init/edge.yaml.tftpl
+159229070a8bfd891e87cd220751bc7417896d65386354e7612aa249ed7348d3  ./infra/lab/terraform/cloud-init/runner.yaml.tftpl
+0a6767f2a22bdc1709e9c5a9aac879220841dd7d32d3158f1c9665e3a49632c7  ./infra/lab/terraform/main.tf
+5fda3d47a80f01bee527542b38a66bb89f6989a93092f4d9625241aff781ec9c  ./infra/lab/terraform/outputs.tf
+759f4a1c9cd2b4f03930b811d283ab72847b209398e34eb089962e9a297811b6  ./infra/lab/terraform/providers.tf
+11ffcba5ddba47f0ad166e390cff34e11805310687ddc7844ca97f0328985eb5  ./infra/lab/terraform/terraform.tfvars.example
+3f0dd113f6785f9e1e29299f19516a9e70260c84a2b6f905ef771472edb80820  ./infra/lab/terraform/variables.tf
+bf938f01d369d25230993876158cb0dd858033e9d62bc04339e9765e7fdf7fdb  ./infra/lab/terraform/versions.tf
 b54e2c8db738d91ddebed89b9ab10504f1ef6e3f29722c4d0c53d2a383dd8abe  ./lenses/README.md
 65b8cff17fba67c4644fd2802584d5418752b68eafaff5a5d510aaeeeb1d96f4  ./lenses/independent_reviewer.md
 68d24ff34d52210fa63bc5be9fba38175f1941ed2574e4ad4533b0520c09e53d  ./lenses/integration.md
