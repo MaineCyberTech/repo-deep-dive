@@ -99,8 +99,8 @@
       "recommendation": "Pin all external `uses:` to full commit SHAs with a trailing `# vX.Y.Z` comment (Dependabot already updates github-actions weekly per .github/dependabot.yml, so pins stay current). Add a lint in tools/deterministic_checks.py (already exists) as a required check so tagged refs fail the pack CI.",
       "deterministic_ref": "DET-P2-005",
       "confidence": "High",
-      "status": "verified-fixed",
-      "note": "merged repo-deep-dive#19 @ e26b4e3"
+      "status": "regressed",
+      "note": "REGRESSED: #19 pin reverted by repo-deep-dive#33 @ 2626a84 and repo-deep-dive#35 @ 04aec9e; re-pinned in this PR #PRNUM."
     },
     {
       "id": "SUPPLY-P2-002",

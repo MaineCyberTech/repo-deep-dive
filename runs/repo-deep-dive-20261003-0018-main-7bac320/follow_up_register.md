@@ -4,15 +4,15 @@ Owner/Target/Status columns drive tools/collect_findings.py enrichment.
 
 | ID | Severity | Title | Owner | Target | Status | Post-audit note |
 |---|---|---|---|---|---|---|
-| CI-P1-001 | P1 | The audit CI example is not under `.github/workflows/` and never runs |  |  | partially-fixed | remediation PS-004 open ca641962f156f8320923e555ce1b8374f695b06a https://github.com/MaineCyberTech/repo-deep-dive/pull/3 |
-| CI-P1-002 | P1 | ci/audit.yml assumes a vendored PACK_DIR that does not match this repo |  |  | partially-fixed | remediation PS-004 open ca641962f156f8320923e555ce1b8374f695b06a https://github.com/MaineCyberTech/repo-deep-dive/pull/3 |
-| DATA-P1-001 | P1 | findings.json violates its own schema (`sourceReports` array vs integer) |  |  | partially-fixed | remediation PS-002 open 979777da9e758ed595b81c8c236201882994dd07 https://github.com/MaineCyberTech/repo-deep-dive/pull/1 |
-| DATA-P1-002 | P1 | Base-profile scaffold produces a manifest the pack's own gate rejects |  |  | partially-fixed | remediation PS-002 open 979777da9e758ed595b81c8c236201882994dd07 https://github.com/MaineCyberTech/repo-deep-dive/pull/1 |
-| INV-P1-001 | P1 | Run is bound to 7bac320 but the worktree is at 6cada03 |  |  | partially-fixed | remediation PS-009 open c7f59f8c375b9bf649ce6b452352ede37fd8a10b https://github.com/MaineCyberTech/repo-deep-dive/pull/4 |
-| SEC-P1-001 | P1 | CI executes remotely downloaded scripts and archives as root without pinning |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
-| SEC-P1-002 | P1 | PAT is embedded in the git clone URL, risking token exposure in logs |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
-| SUPPLY-P1-001 | P1 | GitHub Actions and downloaded tools are unpinned (mutable tags/branches) |  |  | partially-fixed | remediation PS-003 open e03c1168a4fb99e1f6ab49fa0d9f224d82150e31 https://github.com/MaineCyberTech/repo-deep-dive/pull/2 |
-| TEST-P1-001 | P1 | No CI job runs the pack's own lint/self-test or authorizes PRs |  |  | partially-fixed | remediation PS-004 open ca641962f156f8320923e555ce1b8374f695b06a https://github.com/MaineCyberTech/repo-deep-dive/pull/3 |
+| CI-P1-001 | P1 | The audit CI example is not under `.github/workflows/` and never runs |  |  | verified-fixed | merged repo-deep-dive#3 @ c97e73e |
+| CI-P1-002 | P1 | ci/audit.yml assumes a vendored PACK_DIR that does not match this repo |  |  | verified-fixed | merged repo-deep-dive#3 @ c97e73e |
+| DATA-P1-001 | P1 | findings.json violates its own schema (`sourceReports` array vs integer) |  |  | verified-fixed | merged repo-deep-dive#1 @ 85eff06 |
+| DATA-P1-002 | P1 | Base-profile scaffold produces a manifest the pack's own gate rejects |  |  | verified-fixed | merged repo-deep-dive#1 @ 85eff06 |
+| INV-P1-001 | P1 | Run is bound to 7bac320 but the worktree is at 6cada03 |  |  | verified-fixed | merged repo-deep-dive#4 @ 6c89296 |
+| SEC-P1-001 | P1 | CI executes remotely downloaded scripts and archives as root without pinning |  |  | verified-fixed | merged repo-deep-dive#2 @ 2d5b4f5 |
+| SEC-P1-002 | P1 | PAT is embedded in the git clone URL, risking token exposure in logs |  |  | verified-fixed | merged repo-deep-dive#2 @ 2d5b4f5 |
+| SUPPLY-P1-001 | P1 | GitHub Actions and downloaded tools are unpinned (mutable tags/branches) |  |  | regressed | PS-003 pin reverted by repo-deep-dive#33 @ 2626a84 and repo-deep-dive#35 @ 04aec9e; ci/audit.yml never pinned. Re-pinned in this PR #PRNUM. |
+| TEST-P1-001 | P1 | No CI job runs the pack's own lint/self-test or authorizes PRs |  |  | verified-fixed | merged repo-deep-dive#3 @ c97e73e |
 | API-P2-001 | P2 | Deterministic lens reuses domain area codes, risking duplicate finding IDs |  |  | partially-fixed | remediation PS-007 open c661a6c8d71381345cf0662183fbba453f229fe3 https://github.com/MaineCyberTech/repo-deep-dive/pull/7 |
 | API-P2-002 | P2 | Deterministic findings never reach the run findings flow |  |  | partially-fixed | remediation PS-007 open c661a6c8d71381345cf0662183fbba453f229fe3 https://github.com/MaineCyberTech/repo-deep-dive/pull/7 |
 | ARCH-P2-001 | P2 | Orchestration truth is duplicated across four artifacts with no drift check |  |  | partially-fixed | remediation PS-006 open 20f7a3d47f6f1dc4ecf8e2f9d5dae1d35cffec8c https://github.com/MaineCyberTech/repo-deep-dive/pull/6 |

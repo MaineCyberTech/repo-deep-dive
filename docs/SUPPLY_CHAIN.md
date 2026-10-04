@@ -10,7 +10,7 @@ licensing, and its own dependencies. It applies the pack's own prompt 35
 |---|---|---|---|
 | Python tools | `tools/*.py` | standard library only | no third-party Python packages |
 | Shell tools | `tools/*.sh` | bash | coreutils/bash only |
-| GitHub Actions | `.github/workflows/*.yml` | tracked by tag | pinning to full commit SHAs is **SUPPLY-P1-001** |
+| GitHub Actions | `.github/workflows/*.yml`, `ci/audit.yml` | full commit SHA + `# vX.Y.Z` | re-pinned after the PR #33/#35 regression (**SUPPLY-P1-001**) |
 | Downloaded scanners | `.github/workflows/deep-dive-deterministic.yml` | versioned releases | checksum-verify downloads (SUPPLY-P1-001) |
 
 Because the pack ships no `package.json`, lockfile, container image, or published
@@ -39,12 +39,25 @@ deliberate N/A, not an omission:
   `chat` MIT, `snowride` proprietary), which is exactly why the pack does not
   guess a license here.
 
-## CI pinning (tracked under SUPPLY-P1-001)
+## CI pinning (SUPPLY-P1-001 — regressed then re-fixed)
 
 Workflow `uses:` references and downloaded scanner binaries are pinned by
 commit SHA and version+sha256 under finding **SUPPLY-P1-001** (patch set PS-003),
 with **SUPPLY-P2-002** adding `.github/dependabot.yml` for `github-actions`.
 Those edits live in `.github/` and are intentionally not duplicated here.
+
+**Regression (2026-10-04).** The PS-003 pinning was reverted piecemeal after it
+landed: PR #33 (`ci-gate-23`) restored the four `.github/workflows/audit.yml`
+refs to mutable tags (`actions/checkout@v4`, `actions/setup-python@v5`), PR #35
+re-added `actions/checkout@v4` unpinned in `.github/workflows/pack-digest.yml`,
+and `ci/audit.yml` (which the original finding `SUPPLY-P1-001` explicitly cited at
+lines ~43/56/77) had never been pinned. The post-merge re-audit
+(`20261004-0700-main-49f46a8`, `SUPPLY-P2-001`) flagged the regression.
+
+**Fix.** Every external `uses:` in `.github/workflows/*.yml` and `ci/audit.yml`
+is re-pinned to a full 40-hex commit SHA with a trailing `# vX.Y.Z` comment:
+`actions/checkout` v4.4.0, `actions/setup-python` v5.6.0, and
+`actions/upload-artifact` v4.6.2. Dependabot keeps the pins current.
 
 ## Portability: org / repository identifiers (SEC-P3-005)
 
