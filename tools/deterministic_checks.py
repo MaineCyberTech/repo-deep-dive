@@ -195,15 +195,15 @@ def check_hygiene(root, add):
     if not any(n.upper().startswith("LICENSE") for n in names):
         add("GIT", "P3", "No LICENSE file", "Add a license.", [])
     large = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-        for f in filenames:
-            fp = os.path.join(dirpath, f)
-            try:
-                if os.path.getsize(fp) > LARGE_FILE_BYTES:
-                    large.append(os.path.relpath(fp, root).replace(os.sep, "/"))
-            except OSError:
-                pass
+    # Tracked files only: an ignored 45 MB generated ruleset must not read as a
+    # "large tracked file" (fix 2026-10-04; the prior os.walk flagged gitignored files).
+    for rel in git(root, "ls-files").splitlines():
+        fp = os.path.join(root, rel)
+        try:
+            if os.path.getsize(fp) > LARGE_FILE_BYTES:
+                large.append(rel)
+        except OSError:
+            pass
     if large:
         add("GIT", "P3", "%d large tracked file(s) (>5 MB)" % len(large),
             "Large blobs bloat clones; consider Git LFS or removal.", sorted(large)[:10])
