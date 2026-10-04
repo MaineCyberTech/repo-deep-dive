@@ -36,7 +36,7 @@
       "owner": "@release",
       "target": "CI",
       "status": "verified-fixed",
-      "note": "merged #89 @ b32bd0f (ancestor of develop 86bf76d); base was stale"
+      "note": "merged chat#89 @ b32bd0f"
     },
     {
       "id": "EXEC-P1-001",
@@ -80,7 +80,7 @@
       "owner": "@security",
       "target": "SEC",
       "status": "verified-fixed",
-      "note": "merged #88 @ 3115ab3 (ancestor of develop 86bf76d); base was stale"
+      "note": "merged chat#88 @ 3115ab3"
     },
     {
       "id": "ARCH-P2-001",
@@ -102,7 +102,7 @@
       "owner": "@api",
       "target": "AUTH",
       "status": "verified-fixed",
-      "note": "merged #90 @ e687345 (ancestor of develop 86bf76d)"
+      "note": "merged chat#90 @ e687345"
     },
     {
       "id": "CI-P2-001",
@@ -212,7 +212,7 @@
       "owner": "@security",
       "target": "SEC",
       "status": "verified-fixed",
-      "note": "merged #92 @ a498513 (ancestor of develop 86bf76d)"
+      "note": "merged chat#91 @ a70ebe1"
     },
     {
       "id": "SEC-P2-002",
@@ -245,7 +245,7 @@
       "owner": "@supply",
       "target": "SUPPLY",
       "status": "verified-fixed",
-      "note": "merged #92 @ a498513 (ancestor of develop 86bf76d)"
+      "note": "merged chat#92 @ a498513"
     },
     {
       "id": "TEST-P2-001",

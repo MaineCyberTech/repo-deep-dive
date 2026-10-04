@@ -2,15 +2,15 @@
 
 | Finding | Severity | Title | Owner | Target | Status | Note |
 |---|---|---|---|---|---|---|
-| CI-P1-001 | P1 | P1 secret gate in the org scan is inert: it matches 'SEC-' IDs but deterministic findings are namespaced 'DET-' | @owner | CI | open | Match on the subcode instead of the ID, e.g. `if f.get('severity') == 'P1' and str(f.get('title','')).startswith('[SEC]' |
-| SEC-P2-001 | P2 | PAT embedded in git clone URL in three workflows (contradicts the hardened extraheader pattern) | @owner | SEC | open | Use the extraheader form from deep-dive-deterministic.yml (or `git -c credential.helper=` with a header) in remediation. |
-| CI-P2-001 | P2 | verify-remediation executes arbitrary commands from a PR-controllable plan on the self-hosted lab runner | @owner | CI | open | Constrain `run`/`ref` to trusted refs (default branch, or an allowlisted set), pin the plan to a commit whose digest is  |
-| SUPPLY-P2-001 | P2 | 15 GitHub Action refs are tag-pinned (@v4/@v5), not commit-SHA pinned | @owner | SUPPLY | open | Pin all external `uses:` to full commit SHAs with a trailing `# vX.Y.Z` comment (Dependabot already updates github-actio |
-| SUPPLY-P2-002 | P2 | Two large third-party binaries are committed into an archived run with no checksum record | @owner | SUPPLY | open | Remove the binaries from the archived run (keep the verify.sh that downloads them by pinned version+SHA), or add a SHA25 |
-| SEC-P2-002 | P2 | publish_audit.py publishes findings/reports to the pack and a target-repo PR without a secret scan | @owner | SEC | open | Before writing/PR-ing, run gitleaks (--redact) over the assembled file set and fail closed on any hit; strip or redact s |
-| CI-P3-001 | P3 | The changed-run gate enforces only P0 and only on pull_request; pushes to main skip it | @owner | CI | open | Run the changed-run gate on push to main as well as pull_request, and make the gate severity configurable (fail on P0 by |
-| PORT-P3-001 | P3 | 35 tracked shell scripts carry mode 100644 (no exec bit) | @owner | PORT | open | Run `git update-index --chmod=+x` for the 35 scripts (a one-line loop over `git ls-files -s \| awk '$1=="100644" && /[.]s |
-| CI-P3-002 | P3 | actionlint reports shellcheck SC2015/SC2018 notes in four workflows | @owner | CI | open | Rewrite the three guards as explicit `if [ -z "$HOST" ] \|\| [ -z "$USER" ]; then echo ...; exit 1; fi` and replace `tr 'A |
+| CI-P1-001 | P1 | P1 secret gate in the org scan is inert: it matches 'SEC-' IDs but deterministic findings are namespaced 'DET-' | @owner | CI | verified-fixed | merged repo-deep-dive#15 @ abdf75d |
+| SEC-P2-001 | P2 | PAT embedded in git clone URL in three workflows (contradicts the hardened extraheader pattern) | @owner | SEC | verified-fixed | merged repo-deep-dive#17 @ 7a2aa6e |
+| CI-P2-001 | P2 | verify-remediation executes arbitrary commands from a PR-controllable plan on the self-hosted lab runner | @owner | CI | verified-fixed | merged repo-deep-dive#18 @ ec3d0c2 |
+| SUPPLY-P2-001 | P2 | 15 GitHub Action refs are tag-pinned (@v4/@v5), not commit-SHA pinned | @owner | SUPPLY | verified-fixed | merged repo-deep-dive#19 @ e26b4e3 |
+| SUPPLY-P2-002 | P2 | Two large third-party binaries are committed into an archived run with no checksum record | @owner | SUPPLY | verified-fixed | merged repo-deep-dive#20 @ b881482 |
+| SEC-P2-002 | P2 | publish_audit.py publishes findings/reports to the pack and a target-repo PR without a secret scan | @owner | SEC | verified-fixed | merged repo-deep-dive#21 @ 870bd9c |
+| CI-P3-001 | P3 | The changed-run gate enforces only P0 and only on pull_request; pushes to main skip it | @owner | CI | verified-fixed | merged repo-deep-dive#33 @ 2626a84 |
+| PORT-P3-001 | P3 | 35 tracked shell scripts carry mode 100644 (no exec bit) | @owner | PORT | verified-fixed | merged repo-deep-dive#24 @ e4403c8 |
+| CI-P3-002 | P3 | actionlint reports shellcheck SC2015/SC2018 notes in four workflows | @owner | CI | verified-fixed | merged repo-deep-dive#26 @ 508b580 |
 | CONF-P3-001 | P3 | gitleaks generic-api-key hits in shipped runs/ artifacts are false positives; allowlist does not cover them | @owner | CONF | open | Confirm the remaining seven hits and allowlist the known-safe run paths in .gitleaks.toml (e.g. `runs/.*/(diff\.patch\|pr |
-| CONF-P3-002 | P3 | secrets: inherit passes every repo/org secret into the reusable lab-preflight workflow | @owner | CONF | open | Replace `secrets: inherit` with an explicit `secrets: LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}` mapping |
-| CI-P3-003 | P3 | lab-tests.yml interpolates a dispatch input directly into a shell command on the lab runner | @owner | CI | open | Pass the command through an `env:` variable (e.g. `CMD: ${{ inputs.command }}`) and run `bash -o pipefail -c "$CMD"` so  |
+| CONF-P3-002 | P3 | secrets: inherit passes every repo/org secret into the reusable lab-preflight workflow | @owner | CONF | verified-fixed | merged repo-deep-dive#27 @ 161de65 |
+| CI-P3-003 | P3 | lab-tests.yml interpolates a dispatch input directly into a shell command on the lab runner | @owner | CI | verified-fixed | merged repo-deep-dive#29 @ 877e248 |
