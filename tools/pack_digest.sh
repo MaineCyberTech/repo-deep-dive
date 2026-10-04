@@ -14,6 +14,7 @@ find . -type f \
   ! -path '*/__pycache__/*' \
   ! -name 'PACK_DIGEST.txt' \
   ! -name 'opencode.json' \
+  ! -name 'self_test.log' \
   ! -name '.DS_Store' \
   ! -name 'Thumbs.db' \
   ! -name '*~' \

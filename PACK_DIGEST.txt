@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T04:30:15Z
+# generated: 2026-10-04T04:32:18Z
 # files: 1050
 # format: sha256  path
 2c68dc655cabe90b1cd897054b1a1e70b9a95f459c4a39e1e72cad1b577c66a6  ./AGENTS.md
@@ -22,7 +22,7 @@ e2f28c2cc18d527e59763924a0315606dbe460e30f0c3dd239cd8666069d707a  ./.github/work
 d3efcfea449794fcdb26ec71b305b76b3f9ac1840cec14de6853ca178309e9a9  ./.github/workflows/remediation-board.yml
 096232ac51992a3fd1ec14b54305cccc076275284427cbd0dc8fb9b1614b12f9  ./.github/workflows/remediation.yml
 83ae827bb42049bae6e48ebdc44202425160d6918103bbbe85519f46a805753d  ./.github/workflows/verify-remediation.yml
-de68252b84988b12a83acc20a63210462362443c203bc89de93832814377fc4f  ./.gitignore
+0bdc5e9824b98f587dd505a79d6e8093d8c9620c4f2856bb8ab26a0475bf5cb6  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
 65b8cff17fba67c4644fd2802584d5418752b68eafaff5a5d510aaeeeb1d96f4  ./lenses/independent_reviewer.md
 68d24ff34d52210fa63bc5be9fba38175f1941ed2574e4ad4533b0520c09e53d  ./lenses/integration.md
@@ -1035,11 +1035,11 @@ a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_r
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
 1bb87facd85a7d836ebd3f2cddf084b107c112f4029b915579e2d58d65594407  ./tools/lab_runner.py
 add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_findings.py
-48135c586e0f554bf190bfeb13d33428b08a84b16ef0a5f82e18e10490af16af  ./tools/lint_pack.sh
+94565415f253ccb7a49a2bc274c5be8e4d59d9a96312ef2fea262afd676fb9d8  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
 a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
-e1d6dfaa72c9ea348493002d3be88dd15698a01445f7efa29400541f321d2aa1  ./tools/pack_digest.sh
+307150367212bb121179737cc42c84eaef08d7a4e0ec7733d46ce3bb41502c99  ./tools/pack_digest.sh
 2933ab79d102c16969ef99dd3c02fcf0fa9291cdad9447fcc23666442f49924b  ./tools/remediation_plan.py
 061ef83b0702787d3b20b4a3b9edddc011ee1ee37d5ba2e0642d8854536cd0e5  ./tools/remediation_report.py
 24f0caf806120622d322f54d4b1e919091266115d17f2229ccd3e035dc8e9224  ./tools/remediation_status.py

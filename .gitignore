@@ -11,5 +11,8 @@ Thumbs.db
 # must stay out of the pack.
 opencode.json
 
+# Self-test output captured by the Pack tests workflow (and locally).
+self_test.log
+
 # Scratch output from tools/deterministic_checks.py (default -o deterministic-out)
 deterministic-out/

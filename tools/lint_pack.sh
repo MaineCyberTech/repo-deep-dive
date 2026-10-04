@@ -165,7 +165,7 @@ fi
 if python3 - <<'PY'
 import hashlib, pathlib
 root = pathlib.Path(".")
-skip_names = {"PACK_DIGEST.txt", "opencode.json", ".DS_Store", "Thumbs.db"}
+skip_names = {"PACK_DIGEST.txt", "opencode.json", ".DS_Store", "Thumbs.db", "self_test.log"}
 files = sorted(p for p in root.rglob("*") if p.is_file() and ".git" not in p.parts and "__pycache__" not in p.parts and p.name not in skip_names and not p.name.endswith("~"))
 current = {p.as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 digest = {}
