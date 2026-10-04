@@ -1,28 +1,32 @@
 {
   "repo": "C:\\temp\\repo-deep-dive",
-  "generated_at": "2026-10-03T04:18:38.552184+00:00",
+  "generated_at": "2026-10-03T14:17:45.675711+00:00",
   "git": {
     "branch": "main",
-    "sha": "7bac320",
+    "sha": "6cada03",
     "dirty": false
   },
   "totals": {
-    "files": 195,
-    "lines": 6847,
+    "files": 199,
+    "lines": 7334,
     "by_ext": {
       ".json": 9,
       ".md": 168,
-      ".py": 9,
+      ".py": 11,
       ".sh": 5,
       ".txt": 2,
-      ".yml": 1
+      ".yml": 2
     }
   },
-  "stacks": [],
+  "stacks": [
+    "github-actions"
+  ],
   "entry_points": [],
   "routes": [],
   "migrations": [],
-  "workflows": [],
+  "workflows": [
+    ".github/workflows/deep-dive-deterministic.yml"
+  ],
   "containers": [],
   "tests": {
     "files": 0,
@@ -45,16 +49,16 @@
       "files": 49
     },
     {
+      "dir": "tools",
+      "files": 16
+    },
+    {
       "dir": "templates",
       "files": 15
     },
     {
-      "dir": "tools",
-      "files": 14
-    },
-    {
       "dir": "(root)",
-      "files": 7
+      "files": 8
     },
     {
       "dir": "lenses",
@@ -77,6 +81,10 @@
       "files": 2
     },
     {
+      "dir": ".github",
+      "files": 1
+    },
+    {
       "dir": "ci",
       "files": 1
     },
@@ -89,5 +97,7 @@
       "files": 1
     }
   ],
-  "ci": []
+  "ci": [
+    "github-actions"
+  ]
 }
