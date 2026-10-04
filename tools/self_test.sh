@@ -21,6 +21,14 @@ else
   sed 's/^/    /' "$TMP/lint.out"
 fi
 
+# --- 1b. Gitleaks allowlists + negative fixture ---------------------------------
+if ./tools/verify_gitleaks_config.sh > "$TMP/gitleaks.out" 2>&1; then
+  ok "verify_gitleaks_config.sh"
+else
+  bad "verify_gitleaks_config.sh"
+  sed 's/^/    /' "$TMP/gitleaks.out"
+fi
+
 # --- 2. Per-run tool checks -----------------------------------------------------
 found_runs=0
 for d in runs/*/; do

@@ -1,9 +1,10 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1235
+# files: 1238
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
+491425bc3cc1f0040ed4f413e711abb01b9cc8f1cb736142dcb65b985543e201  ./.github/actionlint.yaml
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
 656732e487fb65fd46fb201d02e058a3b4a157ab4e4fed4db4e953038836eb2d  ./.github/workflows/audit.yml
@@ -19,7 +20,7 @@ f78806fe8a6daa1364c33ca73f7a7955c426345050f62d17635dea567172373f  ./.github/work
 19de2b5a65bba537b1c1cbd4f9d65f92d52ce1e696634c6073d1c8a730384fa7  ./.github/workflows/remediation.yml
 95c09b90072b2ceba3f9cfb99fc49021916439d27f52a75eb3591886c1990aef  ./.github/workflows/verify-remediation.yml
 7df052da6bb16f644d1faaa8fec9f8a41e9fda3407adaa71313fd70e8ba0f626  ./.gitignore
-365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
+5437790eabbe0d70c990987a44f0972d5cc5a6c7b6c8028f008e51a4cd2d42d2  ./.gitleaks.toml
 ba7eee35d957142f7785aefcf9e62959d68572eab38b0c3b185195ed41d0a90d  ./AGENTS.md
 d9c187e6d2a9ee5dfba8ed5ce951fff66fbf63eb906220b815a4f0213ed7c81d  ./CHANGELOG.md
 c4dd58c3dffa1dd407b5acaddf402025659b1e211d1265ce4771b07e0a307f43  ./CONTRIBUTING.md
@@ -1189,6 +1190,7 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 3c68061dddd01856b50c9cf2d16992f013761dbc1b2a1664aa3e4848846c24eb  ./templates/subagent_brief_template.md
 595248ecceebf3703836e06f36c65aadb4cac7f1fae9267a65cb3a184c50bd3e  ./templates/verification_log_template.md
 6f31619783ac0c0cad5a590bcfdc1e667672e4aef987c27235b96a2715762c4e  ./tests/__init__.py
+0b6cf3bdd4bcc3a27de07372732889b1a763ebfef86c83d960e7a08e8bd8debc  ./tests/fixtures/gitleaks-negative.env.fixture
 81dff2f8c7fcba3d21a484f4abcaed3b4002cf0e3793979ca2693fc7a8d703e5  ./tests/test_deterministic_checks.py
 75b7f9747ba21eabe1f23b7f708407cbf6103d359c7ba5a885b4a4c19d7b6d5c  ./tests/test_lib_findings.py
 44242c3eb29eb204184ffbe3331345df7c832d43878dc199438205688faafce5  ./tests/test_publish_audit.py
@@ -1233,7 +1235,8 @@ f17648cfd68e4108add83223190dc485ed40d00cf639f881ca454c4000e1d66b  ./tools/repo_i
 f8e835fce3153791f01f6eb3dbcf20732323c58112b3f7c5e53df50f4544c236  ./tools/review_index.py
 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
 c6bbcbb8b9d12407dff5182473169814b2b915b80a2b0868d73e793b3632ee14  ./tools/run_toolchain.py
-101b10c67a604792be29c9c69c57ecb0225cc1666e81dd588e80f60de8d5a10f  ./tools/self_test.sh
+409ed0cb079a526907fcf61863ab73ace5be297f085a0949e73c9421723acb53  ./tools/self_test.sh
 64335c984915774d613c036c490c6ee09e221a8bd530d4b2e69c4319d7f7302a  ./tools/setup_git_merge_driver.sh
+fb27ff5c3974941fdb2cef74cbcb0722d8c7baeb45456843bb88a2bc6f4e0ccd  ./tools/verify_gitleaks_config.sh
 94b75cad96cd3c97734134f4ef60fd1c916843b08a3185c60d3f8d4c0087254d  ./wiring/REPO_WIRING.md
 b0ed61e5a481f2c949a10a7870a1acf1f75c2003d9f2db4840c66d06a6280280  ./wiring/SUGGESTED_TOOLING.md
