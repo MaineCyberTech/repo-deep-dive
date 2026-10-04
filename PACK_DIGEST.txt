@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T08:48:16Z
-# files: 1222
+# generated: 2026-10-04T08:51:01Z
+# files: 1233
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -25,7 +25,7 @@ d798bc9bc65b99d412a14b311daa630625c4fed59a7d0505b37a90ea0158f9c6  ./.github/work
 0886904dbbf64dbe39709dd725d06d87627ad397bca96a4013b310da077fdc42  ./LICENSE
 688b7221796be92c2399b670e95683704580d76f223124438fdfa6076cfc08e8  ./OWNER_DECISIONS.md
 2d47c692ca198f666cea3cc164c252a66a99bcf1ee7ebe3d6ed29b307fd761b9  ./README.md
-2497b8390664786377fd0c4c5fab9c11762ede8ce008f8999720a5b693d4d1c1  ./REAUDIT_QUEUE.md
+87f9219cfece7a2661b08d2aa7e728b654ca9772734e458d4cfddcda6392bf07  ./REAUDIT_QUEUE.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 c3715a4e8c0dc0596cdbc0df05dc1d979a87b2f208d6d8d32f6caad7037a87d5  ./REVIEW_INDEX.md
 3e50a74a7332f00dd710375633a049911b7154148d92e919d29a9b7bff7373c5  ./SECURITY.md
@@ -241,7 +241,7 @@ f944f051b99542867c767698a51d2d2feccdcda3357ec2c0e87e63189df5ab7a  ./runs/2026093
 61d639f25502957680401e4893ac559c6421d47bc3738616f02212ac622f2f91  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/sbom_license_policy_recommendation.md
 f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
 2eaaf62cc4e878b2607cd931102b5ce246226f50be6b1ffa99e7c53d0280dda4  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/verification_log.md
-45ee7022fcc06f155d2d4ce7dbfb95642bd7ee6b913d3b15488a4054c7ab2271  ./runs/INDEX.md
+5109f4d3a4ac988d3609fa1b33d7e6ab3f95c19d58d52805896922dd5d9d3fd8  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
 e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
@@ -821,13 +821,13 @@ e347f31925f795c2c7f8fa87ea93142037067f62900cd7a1443cbb7b028d7b31  ./runs/mainecy
 2b9e396b0fcfe2e31e25d11f33148c95f7b968ef482b02926c38f8bfa8cf1a39  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/22_final_risk_register_roadmap.md
 2fdae10bd4ff1418250eacb013da7f41d14a75feab6cf39a6345d4d42774de5e  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/23_executive_summary_release_gate.md
 f58a57ad572b241ca3c3aac36aa5914cb332ebc6bca2f49b34be0a274aab01b2  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/EXECUTIVE_SUMMARY.md
-b4419829ac54b9f4941ca1436c4c0063e7379a9eddbe755e411ac8e176b70309  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/INDEX.md
+c48f8151d10accf192db43f703a4e3ba147424e5be252960dd8361c9b1ef20dd  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/INDEX.md
 1592906283d81684a7a7aae8a8b66d5a0e6dd46efd1a85925c806603d5002b64  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/RELEASE_GATE.md
 097c1dfff18546115ca19dd8a172ff306311acdc396d80723b722b452eea0fcf  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/audit_manifest.json
 e19c2068dbdd733f84299f3845d8f635e4e7172e2ccfa4167e2b2315a3ec492e  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/dashboard.html
 74d034780bc67309e5b1c1f42be80407588f3ff00da81f0688f499f2ae6ad394  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/dashboard.md
 f6ad34f190ef2e60625c995330bfd374d5f863b4c1121aa53104a9c3853ec88e  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/findings.json
-18e5df3bf26af5d11855aa48d029b5f83b8b75965aa172031e60765ca4d33e23  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/follow_up_register.md
+02b6a0ad904f3911efb97f9336d0220459918ae30c7268c2a573c21d7a5d9894  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/follow_up_register.md
 6abd749588fa90a3997ec77b71ce03a8bf58619fadf22a654f1174008eb32f68  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/inventory.json
 71352049f37121a2840f13d724341e0bb3dbcf8a6ed0b93c80d92b39e0ee4e78  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/patch_plan.md
 9bff24f70ca4b5586926a25796a54b1f5e67a842b46441a27449702f04443f3a  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/pr_comment.md
@@ -917,7 +917,7 @@ f46277858520533678e17e1da9739b5ea69a060d607851fc3040fa6df69f118e  ./runs/mainecy
 86f923c4784c9af4b6a1aed0c58790c600518521ec7bdca842e3f70d663d3f78  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/risk_register.md
 491340cd6e05dcfd0fd9d2bd6c415f6b89f56f65aefc644f3b8546f98971eafd  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/risk_score.json
 d46dcc712fe21c83dc8f3b55186e14b7c8508e7dea3cc4ad594596954df4e743  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/roadmap.md
-355db19b10103c8cd8a49a0ea2f57fb00b632fc2c4a5c29cfb133157d7796d3b  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/verification_log.md
+1dbadbb0d2eb9840464acf1db846c37c636efc2097d1e14a863d920744946b36  ./runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/verification_log.md
 734d23b32aafe489aa88670a0e113ebfc4c9b4c8d7f92d12f76c40444995983a  ./runs/mainecybertech-20261004-0700-main-178b91c/EXECUTIVE_SUMMARY.md
 8d882fcc1705cddb9383c8fc2ef097464d81fb808ebaa246b87cdf8c1e1b763b  ./runs/mainecybertech-20261004-0700-main-178b91c/INDEX.md
 0250f61fccbea99e44230c8ce590b345212f1e3af03c247bee46238f8690d338  ./runs/mainecybertech-20261004-0700-main-178b91c/RELEASE_GATE.md
@@ -928,6 +928,17 @@ d7512c8bcfe6697778569c1926aa004aa8dcb98e649a978770a1fccc6fe30a7b  ./runs/mainecy
 6a39ff591b2b9d1a66b528d6f224644a2231820f5733d1013416b528b77b4b89  ./runs/mainecybertech-20261004-0700-main-178b91c/patch_plan.md
 8cebbc50f9aead9ace460597a5503a93b83ef524638d2f3fada3862513175fa9  ./runs/mainecybertech-20261004-0700-main-178b91c/risk_register.md
 e1d54ef3793a169f5203b0d1df3c893c707c6138a39e12eee882c796c031cb07  ./runs/mainecybertech-20261004-0700-main-178b91c/roadmap.md
+c33bca8c35c2dbe6049e52b96c8c3c51bdce90ac6b4d33c5fb7f1a3e15fba239  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/00_verification_findings.md
+cd1d0f12361617a4567fadb5d12689726f91a93b186d018b00c8cba97f3b4382  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/EXECUTIVE_SUMMARY.md
+666db1b368931037814b359e86268235d206e7296b63dff9ff2379378ec8bc3d  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/INDEX.md
+cde91af157dccc8076cc829b4d4598346b9722b4d33da4604cb2615ef8b84959  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/RELEASE_GATE.md
+0a7420e89610aaf690b43beea3eac0e822658aca57a4a435604d1e345221556b  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/audit_manifest.json
+cd5f9a4878b9fedca92be7c0255f4bae940b52e9def9df8baca5f49d73bedd46  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/findings.json
+c01379b8eefe6eff2d90904f9f8945168115b0c9927b5b9e5c6552b3b6582e74  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/follow_up_register.md
+6bf6fa59c7df93441d8ee9c7ccd0c2180d8a24c8d6d5f97e7b8924924dbdb548  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/patch_plan.md
+d11e27552b0e40a66762b73298bef44a7b0c8784fe46e0c4b6436179bdbcf828  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/risk_register.md
+8580404391ff0f16534fd9cfc24d47bf906e6a2715066077bafe48385d74eb3d  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/roadmap.md
+786bc354bf669da96472f509226b0e359f58b9fab3c7cac9e7ebf6d5e05e5926  ./runs/mainecybertech-20261004-0840-verify-develop-a97425d/verification_log.md
 53ea972dba482a93f9b1e56a258fb34c93f3fb74029bbae4e5cb1c40690bc6e8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/01_repository_inventory.md
 0433784fa075d280e13110bc99e53ed64d69697556c0a2f75aeb803c01b9a5a2  ./runs/repo-deep-dive-20261003-0018-main-7bac320/02_architecture_runtime_topology.md
 16ff374ec50ad2e9e4c1ded7057baff426ba3e8d248d6901024bc57e8397d8a4  ./runs/repo-deep-dive-20261003-0018-main-7bac320/03_feature_implementation_map.md

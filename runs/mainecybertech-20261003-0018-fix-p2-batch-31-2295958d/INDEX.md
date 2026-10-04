@@ -69,3 +69,7 @@ By area: INV 4, ARCH 4, FEAT 3, SEC 5, DATA 3, API 3, TEST 3, CI 4, SUPPLY 4, OB
 2. Make SEC-P1-001 / SEC-P2-002 fail closed and provision the prod environment (CI-P1-001).
 3. Complete a restore drill (OBS-P2-003) and wire alerting (OBS-P2-001).
 4. Validate when done: `python tools/run_toolchain.py C:\temp\proxmox-vm\audits\runs\mainecybertech\20261003-0018-fix-p2-batch-31-2295958d --write --dashboard` (orchestrator).
+
+## Post-merge verification
+
+- [mainecybertech-20261004-0840-verify-develop-a97425d](../mainecybertech-20261004-0840-verify-develop-a97425d/) — 34 verified-fixed · 9 partially-fixed · 1 still-open · 0 regressed at `a97425db` (the PR #72 integration of the remediation stranded on `fix/p2-batch-31`).
