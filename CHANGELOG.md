@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-04 — Non-conflicting, self-healing `PACK_DIGEST.txt`
+
+- **Merge race removed.** `.gitattributes` marks `PACK_DIGEST.txt` as `merge=ours`; a merge keeps
+  one side instead of conflicting. `ours` needs `git config merge.ours.driver true`, enabled once
+  per clone by the new `tools/setup_git_merge_driver.sh`.
+- **Self-heal on `main`.** New `.github/workflows/pack-digest.yml` regenerates the digest on every
+  push to `main` (and manual dispatch) and commits it as `github-actions[bot]` only when a hash
+  changed, using `github.token` (or the optional `PACK_DIGEST_TOKEN` secret).
+- **Deterministic digest.** `tools/pack_digest.sh` now pins `LC_ALL=C` and drops the wall-clock
+  `# generated:` timestamp, so it is idempotent — the workflow cannot loop and a no-op run leaves
+  the file byte-identical.
+- **Integrity unchanged.** `tools/lint_pack.sh` still fails when content changes without a matching
+  digest entry; the merge driver + self-heal remove conflicts, not the staleness check.
+
 ## 2026-10-03 — Remediation runner, deterministic checks, org runner (v1.5.0)
 
 - **Remediation runner**: `prompts/REMEDIATION_RUNNER.md` (branch → minimal change → lab tests →

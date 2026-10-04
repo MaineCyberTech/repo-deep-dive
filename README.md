@@ -162,5 +162,6 @@ Start at `runs/INDEX.md`; machine-readable findings live in each run's `findings
 
 - `CHANGELOG.md` records every change; `AGENTS.md` covers agent rules; `CONTRIBUTING.md` is the extension recipe.
 - `tools/pack_digest.sh` regenerates `PACK_DIGEST.txt`; `tools/lint_pack.sh` validates the pack itself; `tools/self_test.sh` exercises the toolchain.
+- `PACK_DIGEST.txt` merges with `merge=ours` (enable once: `tools/setup_git_merge_driver.sh`) and is regenerated on `main` by `.github/workflows/pack-digest.yml`.
 - `tools/check_run.sh <run-folder>` must print `PASS` before a run is treated as complete.
 - Record the pack version + digest in run manifests when vendoring or when running a released pack.

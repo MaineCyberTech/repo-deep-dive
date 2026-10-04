@@ -4,3 +4,15 @@
 # checkouts. See HYG-P2-001 and docs/OBSERVABILITY.md.
 * text=auto eol=lf
 *.sh text eol=lf
+
+# Generated-inventory merge policy.
+# PACK_DIGEST.txt hashes the whole tree, so any two PRs that each change a file
+# conflict on it and every rebase means regenerating it by hand. Let a merge keep
+# one side for this file (`merge=ours`) and let the push-to-main workflow
+# (.github/workflows/pack-digest.yml) regenerate the single source of truth.
+# `ours` is NOT a built-in driver: each clone must enable it once with
+#   git config merge.ours.driver true
+# (helper: tools/setup_git_merge_driver.sh). Without the driver Git falls back to
+# a normal 3-way merge, so this line is harmless in CI/fork clones that never
+# configure it. See CONTRIBUTING.md, "Generated digest".
+PACK_DIGEST.txt merge=ours
