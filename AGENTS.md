@@ -39,10 +39,26 @@ subagents or others) use it to audit repos and to open remediation PRs.
 - **Runs are flat.** Every folder under `runs/` must be a valid run (`tools/check_run.sh` → PASS);
   add it to `runs/INDEX.md`.
 
+## Lab access (agents & developers)
+
+The Proxmox lab (`172.23.128.0/20`) is reachable over a **dedicated** WireGuard overlay
+(`wgaudit0`, UDP `51900`) through the public endpoint `mct-portal-dev` (`138.197.105.82`).
+This is **separate** from the falcon telemetry VPN (`wg0`) — never reuse or edit `wg0`.
+
+- Full guide: [`docs/LAB_VPN.md`](docs/LAB_VPN.md) · toolkit: `tools/lab-vpn/`.
+- **To connect:** obtain a `<name>.conf` from the endpoint
+  (`ssh root@138.197.105.82 'bash /root/lab-audit-add-agent.sh <name>'`) and run
+  `bash tools/lab-vpn/lab-audit-connect.sh <name>.conf` (Linux/macOS/WSL), or import it in
+  the WireGuard app (Windows/macOS).
+- **To verify:** `ping 10.250.0.1`, `ping 172.23.128.51` / `172.23.128.52`, and
+  `curl http://172.23.128.51:8722/health`.
+- **Read-only inventory:** `bash lab-audit-endpoint.sh inventory` / `bash lab-audit-lab.sh inventory`.
+
 ## Map
 
 | Need | Location |
 |---|---|
+| Lab WireGuard access | `docs/LAB_VPN.md` + `tools/lab-vpn/` |
 | Audit runner (generic) | `prompts/MASTER_RUNNER_FULL_HARDENING.md` |
 | Audit runner (falcon lab) | `prompts/MASTER_RUNNER_FALCON_LAB.md` + `profiles/falcon-lab.md` |
 | Remediation runner | `prompts/REMEDIATION_RUNNER.md` + `profiles/remediation.md` |

@@ -52,6 +52,9 @@ This edition merges the original pack, the falcon-lab layer, LLM-free **determin
 - **Falcon lab (central + edge + shared host):** `profiles/falcon-lab.md` + `runbooks/OPERATOR_QUICKSTART_FALCON_LAB.md` + `prompts/MASTER_RUNNER_FALCON_LAB.md` + `wiring/REPO_WIRING.md`.
 - **Deterministic baseline (no LLM):** `tools/deterministic_checks.py <repo>` (or the `deep-dive-deterministic` workflow).
 - **Remediation:** `prompts/REMEDIATION_RUNNER.md` + `profiles/remediation.md` (see `docs/REMEDIATION_GUIDE.md`).
+- **Reach the Proxmox lab (agents/devs):** `docs/LAB_VPN.md` + `tools/lab-vpn/` — dedicated
+  WireGuard overlay (`wgaudit0`, UDP `51900`) via `mct-portal-dev`; separate from the falcon `wg0`
+  telemetry VPN. Connect with `bash tools/lab-vpn/lab-audit-connect.sh <name>.conf`.
 
 ## How an audit run flows
 

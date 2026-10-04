@@ -1,0 +1,144 @@
+name: Lab agent onboarding (WireGuard)
+
+# Self-service onboarding for the Proxmox lab audit overlay (wgaudit0, UDP 51900).
+# An agent/developer dispatches this workflow with a unique name. It registers a peer on the
+# public endpoint and produces the client config as a build artifact.
+#
+#   Preferred: generate a keypair locally (`wg genkey | tee private.key | wg pubkey > public.key`)
+#   and pass only the PUBLIC key in `agent_public_key` — your private key never leaves your machine.
+#   If `agent_public_key` is empty, the endpoint generates the keypair and the ready-to-use
+#   config (with private key) is uploaded as an artifact.
+#
+# Required repo configuration (never printed):
+#   secret    LAB_ENDPOINT_SSH_KEY   private key with access to the overlay endpoint
+#   variable  LAB_ENDPOINT_HOST      e.g. 138.197.105.82
+#   variable  LAB_ENDPOINT_USER      e.g. root
+#
+# See docs/LAB_VPN.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      agent_name:
+        description: 'Unique agent/developer name (peer label)'
+        required: true
+      agent_public_key:
+        description: 'Optional: your WireGuard PUBLIC key (keeps your private key local)'
+        required: false
+        default: ''
+      endpoint_host:
+        description: 'Overlay endpoint host (blank = repo variable)'
+        required: false
+        default: ''
+      endpoint_user:
+        description: 'Overlay endpoint SSH user (blank = repo variable)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  onboard:
+    runs-on: ubuntu-latest
+    env:
+      NAME: ${{ inputs.agent_name }}
+      AGENT_PUBKEY: ${{ inputs.agent_public_key }}
+      HOST: ${{ inputs.endpoint_host != '' && inputs.endpoint_host || vars.LAB_ENDPOINT_HOST }}
+      USER: ${{ inputs.endpoint_user != '' && inputs.endpoint_user || vars.LAB_ENDPOINT_USER }}
+    steps:
+      - name: Validate inputs / configuration
+        run: |
+          set -e
+          [ -n "$NAME" ] || { echo "::error::agent_name is required"; exit 1; }
+          [ -n "$HOST" ] || { echo "::error::endpoint_host input or LAB_ENDPOINT_HOST variable is required"; exit 1; }
+          [ -n "$USER" ] || { echo "::error::endpoint_user input or LAB_ENDPOINT_USER variable is required"; exit 1; }
+          [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
+          echo "Onboarding '$NAME' via $USER@$HOST"
+
+      - uses: actions/checkout@v4
+
+      - name: Install tooling
+        run: |
+          set -e
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq wireguard-tools openssh-client
+
+      - name: Configure SSH
+        run: |
+          set -e
+          install -m700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
+          chmod 600 ~/.ssh/lab_endpoint
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Register peer on the endpoint
+        id: add
+        run: |
+          set -e
+          scp -i ~/.ssh/lab_endpoint -o StrictHostKeyChecking=accept-new \
+            tools/lab-vpn/lab-audit-add-agent.sh "$USER@$HOST:/root/lab-audit-add-agent.sh"
+          if [ -n "$AGENT_PUBKEY" ]; then
+            OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" \
+              "AGENT_PUBKEY='$AGENT_PUBKEY' bash /root/lab-audit-add-agent.sh '$NAME' '$HOST'")
+          else
+            OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" \
+              "bash /root/lab-audit-add-agent.sh '$NAME' '$HOST'")
+          fi
+          printf '%s\n' "$OUT"
+          echo "$OUT" > /tmp/add.out
+          for k in AGENT AGENT_IP SERVER_PUB ENDPOINT CLIENT_PRIVATE_KEY CLIENT_CONF; do
+            v=$(grep -E "^${k}=" /tmp/add.out | tail -1 | cut -d= -f2- || true)
+            echo "${k}=${v}" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Assemble client config
+        run: |
+          set -e
+          mkdir -p out
+          if [ "${{ steps.add.outputs.CLIENT_PRIVATE_KEY }}" = "included-on-server" ]; then
+            scp -i ~/.ssh/lab_endpoint -o StrictHostKeyChecking=accept-new \
+              "$USER@$HOST:${{ steps.add.outputs.CLIENT_CONF }}" "out/lab-audit-$NAME.conf"
+          else
+            cat > "out/lab-audit-$NAME.conf" <<EOF
+          [Interface]
+          PrivateKey = <YOUR_LOCAL_PRIVATE_KEY>
+          Address = ${{ steps.add.outputs.AGENT_IP }}/24
+
+          [Peer]
+          PublicKey = ${{ steps.add.outputs.SERVER_PUB }}
+          Endpoint = ${{ steps.add.outputs.ENDPOINT }}
+          AllowedIPs = 10.250.0.0/24, 172.23.128.0/20
+          PersistentKeepalive = 25
+          EOF
+          fi
+          echo "--- generated ---"
+          sed -e 's/^PrivateKey = .*/PrivateKey = <redacted>/' "out/lab-audit-$NAME.conf"
+
+      - name: Upload client config artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab-audit-${{ inputs.agent_name }}
+          path: out/lab-audit-*.conf
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Summary
+        run: |
+          {
+            echo "## Lab onboarding: \`$NAME\`"
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| Overlay address | \`${{ steps.add.outputs.AGENT_IP }}\` |"
+            echo "| Endpoint | \`${{ steps.add.outputs.ENDPOINT }}\` |"
+            echo "| Server pubkey | \`${{ steps.add.outputs.SERVER_PUB }}\` |"
+            echo "| Private key | ${{ steps.add.outputs.CLIENT_PRIVATE_KEY == 'included-on-server' && 'in artifact (endpoint-generated)' || 'kept local (you supplied the pubkey)' }} |"
+            echo ""
+            echo "1. Download the \`lab-audit-$NAME\` artifact."
+            echo "2. Import the \`.conf\` into the WireGuard app, or run:"
+            echo '   `bash tools/lab-vpn/lab-audit-connect.sh lab-audit-'"$NAME"'.conf`'
+            echo "3. Verify: ping 10.250.0.1, 172.23.128.51, 172.23.128.52; then http://172.23.128.51:8722/health"
+            echo ""
+            echo "Full guide: [docs/LAB_VPN.md](../blob/main/docs/LAB_VPN.md)"
+          } >> "$GITHUB_STEP_SUMMARY"
