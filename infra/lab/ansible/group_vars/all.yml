@@ -1,0 +1,30 @@
+---
+# Non-secret defaults shared by every lab host. Per-host values are supplied by
+# roles/defaults or host_vars; secrets are resolved from the environment at run
+# time and never stored in the repo.
+
+# --- base ---------------------------------------------------------------------
+base_admin_user: labadmin
+base_admin_group: labadmin
+base_timezone: UTC
+base_extra_packages: []
+
+# Admin SSH keys are resolved per host from the environment (empty by default):
+#   LAB_ADMIN_SSH_KEY        an inline public key
+#   LAB_ADMIN_SSH_KEY_FILE   a path to a public key file
+base_admin_ssh_keys: >-
+  {{ ([lookup('ansible.builtin.env', 'LAB_ADMIN_SSH_KEY')]
+      if lookup('ansible.builtin.env', 'LAB_ADMIN_SSH_KEY') | length > 0 else [])
+     + ([lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'LAB_ADMIN_SSH_KEY_FILE'))]
+        if lookup('ansible.builtin.env', 'LAB_ADMIN_SSH_KEY_FILE') | length > 0 else []) }}
+
+# --- proxmox_host -------------------------------------------------------------
+proxmox_bridge_name: vmbr0
+proxmox_bridge_address: 172.23.128.50/24
+proxmox_bridge_gateway: 172.23.128.1
+
+# --- guest_runner / guest_edge ------------------------------------------------
+lab_org: MaineCyberTech
+# GitHub Actions registration token, resolved from $RUNNER_TOKEN. Marked no_log
+# where used. Never commit a value here.
+runner_registration_token: "{{ lookup('ansible.builtin.env', 'RUNNER_TOKEN', default='') }}"

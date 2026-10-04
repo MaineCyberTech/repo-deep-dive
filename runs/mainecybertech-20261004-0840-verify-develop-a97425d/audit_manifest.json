@@ -1,0 +1,45 @@
+{
+  "pack": "repo-deep-dive-full-hardening-audit-pack",
+  "profile": "base",
+  "version": "1.5.0",
+  "promptCount": 42,
+  "recommendedName": "repo-deep-dive",
+  "outputRoot": "docs/audits/{name}/{run}/",
+  "scope": {
+    "repos": [
+      "MaineCyberTech/mainecybertech"
+    ],
+    "hosts": [
+      "mct-portal-dev"
+    ]
+  },
+  "findings": {
+    "bySeverity": {
+      "P0": 1,
+      "P1": 3,
+      "P2": 26,
+      "P3": 14
+    },
+    "byArea": {
+      "API": 3,
+      "ARCH": 4,
+      "CI": 4,
+      "DATA": 3,
+      "FEAT": 3,
+      "FINAL": 3,
+      "HYG": 4,
+      "INV": 4,
+      "OBS": 4,
+      "SEC": 5,
+      "SUPPLY": 4,
+      "TEST": 3
+    },
+    "total": 44
+  },
+  "run": "20261004-0840-verify-develop-a97425d",
+  "verification": {
+    "mode": "post-merge",
+    "originalRun": "20261003-0018-fix-p2-batch-31-2295958d",
+    "commit": "a97425dbefc54b7db2a4e3ebe42470364dac0fab"
+  }
+}

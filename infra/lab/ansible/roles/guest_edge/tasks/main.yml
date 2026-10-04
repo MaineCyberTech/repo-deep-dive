@@ -1,0 +1,66 @@
+---
+# guest_edge: cross-build + image-bake toolchain for edge/arm artifacts.
+# Passwordless sudo and loop mounts are required by the bake workflows
+# (runbooks/CI_ON_LAB.md); keep this guest dedicated to trusted builds.
+
+- name: Install the edge build toolchain
+  ansible.builtin.apt:
+    name: "{{ edge_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Register qemu-user binfmt handlers for foreign-arch builds
+  ansible.builtin.command: /usr/libexec/qemu-binfmt/aarch64-binfmt-P --help
+  when: edge_enable_binfmt | bool
+  changed_when: false
+  failed_when: false
+
+- name: Ensure binfmt-support is running
+  ansible.builtin.service:
+    name: binfmt-support
+    state: started
+    enabled: true
+  when: edge_enable_binfmt | bool
+
+# --- Docker (buildx for multi-arch image builds) ------------------------------
+- name: Derive the Docker apt distro slug
+  ansible.builtin.set_fact:
+    edge_docker_distro: "{{ ansible_facts.distribution | lower }}"
+
+- name: Add the Docker apt repository
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: "https://download.docker.com/linux/{{ edge_docker_distro }}"
+    suites: "{{ ansible_facts.distribution_release }}"
+    components: stable
+    architectures: "{{ 'amd64' if ansible_facts.architecture == 'x86_64' else ansible_facts.architecture }}"
+    signed_by: "https://download.docker.com/linux/{{ edge_docker_distro }}/gpg"
+    state: present
+  when: edge_install_docker | bool
+
+- name: Install Docker Engine + buildx
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+    state: present
+    update_cache: true
+  when: edge_install_docker | bool
+
+- name: Enable and start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+  when: edge_install_docker | bool
+
+- name: Note the trusted-only boundary for the edge builder
+  ansible.builtin.debug:
+    msg: >-
+      edge-builder runs trusted build/bake jobs (sudo, loop mounts, QEMU). Do
+      NOT schedule untrusted pull_request jobs here; see docs/ARCHITECTURE.md
+      ("Fabric: runner policy").
