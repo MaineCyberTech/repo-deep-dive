@@ -1,21 +1,7 @@
 {
-  "run": "20261003-0018-main-59e12b9",
-  "generated": "2026-10-03T05:14:10Z",
-  "sourceReports": [
-    "01_repository_inventory.md",
-    "02_architecture_runtime_topology.md",
-    "03_feature_implementation_map.md",
-    "06_security_authz_tenancy_audit.md",
-    "07_data_schema_migration_runtime_validation.md",
-    "08_api_contracts_realtime_integrations.md",
-    "09_testing_quality_release_confidence.md",
-    "10_github_actions_cicd_governance.md",
-    "11_supply_chain_dependency_secrets.md",
-    "14_observability_monitoring_incident_readiness.md",
-    "21_repo_hygiene_maintainability.md",
-    "22_final_risk_register_roadmap.md",
-    "23_executive_summary_release_gate.md"
-  ],
+  "run": "snowride-20261003-0018-main-59e12b9",
+  "generated": "2026-10-04T18:36:18Z",
+  "sourceReports": 13,
   "counts": {
     "bySeverity": {
       "P1": 6,
@@ -45,322 +31,506 @@
       "severity": "P1",
       "title": "No evidence of branch protection or required status checks on `main`",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 43
+      "line": 43,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P1-001",
       "severity": "P1",
       "title": "Attested migration head (0055) is one behind the repository head (0056)",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 47
+      "line": 47,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: regression fixed by snowride#38 @ af7f796"
     },
     {
       "id": "FINAL-P1-001",
       "severity": "P1",
       "title": "Release trust is assembled from self-asserted and stale identities",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 41
+      "line": 41,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "OBS-P1-001",
       "severity": "P1",
       "title": "Alerting and scheduled detection are defined only on the host, not in the repository",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 50
+      "line": 50,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed by snowride#38 @ ce3f639 (assurance schedule version-controlled)"
     },
     {
       "id": "SEC-P1-001",
       "severity": "P1",
       "title": "Launch owner approval is unverified free text, so release identity binding is not enforced",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 51
+      "line": 51,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P1-001",
       "severity": "P1",
       "title": "No SBOM artifact generated or bound to the release commit",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 50
+      "line": 50,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-001",
       "severity": "P2",
       "title": "API contract is hand-maintained with no automated drift test",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 45
+      "line": 45,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P2-001",
       "severity": "P2",
       "title": "Compose services define no CPU, memory or PID limits",
       "report": "02_architecture_runtime_topology.md",
-      "line": 46
+      "line": 46,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P2-002",
       "severity": "P2",
       "title": "Readiness endpoint cannot fail when a dependency is unavailable",
       "report": "02_architecture_runtime_topology.md",
-      "line": 65
+      "line": 65,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P2-003",
       "severity": "P2",
       "title": "Authoritative lobby/LiveOps state is process-local and lost on restart",
       "report": "02_architecture_runtime_topology.md",
-      "line": 84
+      "line": 84,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "CI-P2-001",
       "severity": "P2",
       "title": "No dependency-vulnerability audit or repository secret scan in CI",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 63
+      "line": 63,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P2-002",
       "severity": "P2",
       "title": "GitHub Actions are pinned by mutable tags, not commit SHAs",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 83
+      "line": 83,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P2-001",
       "severity": "P2",
       "title": "RLS/negative SQL suites are manual and not gated in CI",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 67
+      "line": 67,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P2-002",
       "severity": "P2",
       "title": "No migration checksum/manifest; gaps are only documented",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 87
+      "line": 87,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "EXEC-P2-001",
       "severity": "P2",
       "title": "Release gate is conditional because release-identity controls are not yet enforced",
       "report": "23_executive_summary_release_gate.md",
-      "line": 41
+      "line": 41,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "FEAT-P2-001",
       "severity": "P2",
       "title": "Kill-switch defaults drift between repo documentation and production compose",
       "report": "03_feature_implementation_map.md",
-      "line": 50
+      "line": 50,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P2-001",
       "severity": "P2",
       "title": "Operational reliability controls are not version-controlled or exercised per release",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 60
+      "line": 60,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "HYG-P2-001",
       "severity": "P2",
       "title": "Only `apps/web` is linted; the other workspaces have no lint script",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 47
+      "line": 47,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "HYG-P2-002",
       "severity": "P2",
       "title": "Duplicated generated artifacts and a large binary inflate the repository",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 67
+      "line": 67,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "HYG-P2-003",
       "severity": "P2",
       "title": "Backup runbook contradicts the (fixed) assurance freshness check",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 87
+      "line": 87,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P2-001",
       "severity": "P2",
       "title": "Duplicate full-source repomix exports committed to the repository",
       "report": "01_repository_inventory.md",
-      "line": 52
+      "line": 52,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P2-002",
       "severity": "P2",
       "title": "Evidence tree dominates the repository by file count and size",
       "report": "01_repository_inventory.md",
-      "line": 73
+      "line": 73,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "OBS-P2-001",
       "severity": "P2",
       "title": "OTel traces are exported only to the collector `debug` exporter",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 70
+      "line": 70,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P2-002",
       "severity": "P2",
       "title": "No committed SLO/error-budget definitions",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 89
+      "line": 89,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P2-001",
       "severity": "P2",
       "title": "HTTP surface enforces no Origin/CORS allowlist",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 71
+      "line": 71,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P2-002",
       "severity": "P2",
       "title": "No repository-tree secret scanning in CI or pre-commit",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 91
+      "line": 91,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-001",
       "severity": "P2",
       "title": "License and vulnerability enforcement is host-only, not merge-gating",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 69
+      "line": 69,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SUPPLY-P2-002",
       "severity": "P2",
       "title": "Install scripts are allowlisted for several dependencies without provenance checks",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 88
+      "line": 88,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-001",
       "severity": "P2",
       "title": "No coverage thresholds and coverage never runs in CI",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 45
+      "line": 45,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-002",
       "severity": "P2",
       "title": "E2E matrix is Chromium-only despite a multi-browser product claim",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 64
+      "line": 64,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-003",
       "severity": "P2",
       "title": "SQL negative/RLS suites are not gated by any pipeline",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 84
+      "line": 84,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P3-001",
       "severity": "P3",
       "title": "Public operational endpoints are unauthenticated and unversioned",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 64
+      "line": 64,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "API-P3-002",
       "severity": "P3",
       "title": "No explicit CORS response headers for cross-origin HTTP dev/deploy",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 83
+      "line": 83,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P3-001",
       "severity": "P3",
       "title": "CI produces no durable artifacts bound to the commit",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 101
+      "line": 101,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P3-001",
       "severity": "P3",
       "title": "Production database schema state is unverified in this audit",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 106
+      "line": 106,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "FEAT-P3-001",
       "severity": "P3",
       "title": "`/launch-readiness` reports flags as `deployed: true` unconditionally",
       "report": "03_feature_implementation_map.md",
-      "line": 70
+      "line": 70,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P3-001",
       "severity": "P3",
       "title": "No release/version lineage in the repository",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 107
+      "line": 107,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P3-002",
       "severity": "P3",
       "title": "No `.gitattributes`; binary/large content handled plainly",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 126
+      "line": 126,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P3-001",
       "severity": "P3",
       "title": "Tracked `.log` files contradict the `*.log` gitignore rule",
       "report": "01_repository_inventory.md",
-      "line": 92
+      "line": 92,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "INV-P3-002",
       "severity": "P3",
       "title": "One-off review artifacts at repository root",
       "report": "01_repository_inventory.md",
-      "line": 111
+      "line": 111,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P3-001",
       "severity": "P3",
       "title": "Metrics are process-local counters with durable history only when the snapshot timer is enabled",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 108
+      "line": 108,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "SEC-P3-001",
       "severity": "P3",
       "title": "Claim-less SQL callers are treated as trusted by `social_guard_*`",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 111
+      "line": 111,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "SEC-P3-002",
       "severity": "P3",
       "title": "Service-role key delivered via environment rather than a Docker secret",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 130
+      "line": 130,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "SUPPLY-P3-001",
       "severity": "P3",
       "title": "Dependabot is configured but ungrouped for security updates",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 107
+      "line": 107,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P3-001",
       "severity": "P3",
       "title": "`test:unit` script resolves to a non-existent path",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 103
+      "line": 103,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P3-002",
       "severity": "P3",
       "title": "Local `verify-all.sh` is a weaker gate than CI, and audit could not reproduce tests",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 122
+      "line": 122,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     }
   ]
 }

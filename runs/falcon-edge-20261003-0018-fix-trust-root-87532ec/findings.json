@@ -1,21 +1,7 @@
 {
-  "run": "20261003-0018-fix-trust-root-87532ec",
-  "generated": "2026-10-03T05:21:35Z",
-  "sourceReports": [
-    "01_repository_inventory.md",
-    "02_architecture_runtime_topology.md",
-    "03_feature_implementation_map.md",
-    "06_security_authz_tenancy_audit.md",
-    "07_data_schema_migration_runtime_validation.md",
-    "08_api_contracts_realtime_integrations.md",
-    "09_testing_quality_release_confidence.md",
-    "10_github_actions_cicd_governance.md",
-    "11_supply_chain_dependency_secrets.md",
-    "14_observability_monitoring_incident_readiness.md",
-    "21_repo_hygiene_maintainability.md",
-    "22_final_risk_register_roadmap.md",
-    "23_executive_summary_release_gate.md"
-  ],
+  "run": "falcon-edge-20261003-0018-fix-trust-root-87532ec",
+  "generated": "2026-10-04T18:36:18Z",
+  "sourceReports": 13,
   "counts": {
     "bySeverity": {
       "P1": 3,
@@ -45,294 +31,462 @@
       "severity": "P1",
       "title": "Release gate condition: revocation must be terminal before broad/production rollout",
       "report": "23_executive_summary_release_gate.md",
-      "line": 49
+      "line": 49,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P1-001",
       "severity": "P1",
       "title": "Consolidated release blocker: revocation is not terminal on the enrollment path",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 44
+      "line": 44,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P1-001",
       "severity": "P1",
       "title": "Re-enrollment silently resets a REVOKED or RETIRED sensor to CONFIGURING",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 112
+      "line": 112,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-001",
       "severity": "P2",
       "title": "Contract documents cursor pagination that the implementation ignores",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 106
+      "line": 106,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "origin/main already contains merged keyset-pagination fix (71cffcd); PS-013 no-op avoided; >500 sensor fixture returns nextCursor at f5811d1; re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P2-002",
       "severity": "P2",
       "title": "`SensorSummary.queueDepth` is documented but never returned",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 125
+      "line": 125,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "No new PR: origin/main already contains merged fix a4b388b (SensorSummary.queueDepth populated from latest heartbeat sample + schema test). PS-012 no-op avoided.; re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P2-001",
       "severity": "P2",
       "title": "The control plane executes a mutable working tree, not a pinned release",
       "report": "02_architecture_runtime_topology.md",
-      "line": 114
+      "line": 114,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "ARCH-P2-002",
       "severity": "P2",
       "title": "Edge control plane is a co-tenant single point of failure on the shared lab host",
       "report": "02_architecture_runtime_topology.md",
-      "line": 134
+      "line": 134,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "CI-P2-001",
       "severity": "P2",
       "title": "Branch protection and required checks cannot be enforced; pushes to main are only advisory-gated",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 107
+      "line": 107,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "CI-P2-002",
       "severity": "P2",
       "title": "Dependabot auto-merge does not bind the merge to the exact checked commit",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 127
+      "line": 127,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P2-001",
       "severity": "P2",
       "title": "The idempotency table is unbounded and stores full response bodies",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 112
+      "line": 112,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P2-002",
       "severity": "P2",
       "title": "No foreign keys and no retention for events, state_reports, heartbeat history",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 131
+      "line": 131,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P2-003",
       "severity": "P2",
       "title": "No schema migration mechanism; only CREATE TABLE IF NOT EXISTS",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 150
+      "line": 150,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "EXEC-P2-001",
       "severity": "P2",
       "title": "Production readiness remains insufficient-evidence",
       "report": "23_executive_summary_release_gate.md",
-      "line": 69
+      "line": 69,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "FEAT-P2-001",
       "severity": "P2",
       "title": "`SensorSummary.queueDepth` is documented but never populated",
       "report": "03_feature_implementation_map.md",
-      "line": 114
+      "line": 114,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "No new PR: origin/main already contains merged fix a4b388b (SensorSummary.queueDepth populated from latest heartbeat sample + schema test). PS-012 no-op avoided.; re-audit 2026-10-04: closed"
     },
     {
       "id": "FINAL-P2-001",
       "severity": "P2",
       "title": "Cross-cutting theme: automation artifacts and claims are not continuously bound to their sources",
       "report": "22_final_risk_register_roadmap.md",
-      "line": 64
+      "line": 64,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "HYG-P2-001",
       "severity": "P2",
       "title": "Summary documentation drifts from the code (test counts, Dependabot cadence)",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 106
+      "line": 106,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P2-002",
       "severity": "P2",
       "title": "Committed derived artifacts (audit mirrors, closeout response, evidence) can go stale",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 127
+      "line": 127,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P2-001",
       "severity": "P2",
       "title": "900 raw evidence files committed with no retention or size policy",
       "report": "01_repository_inventory.md",
-      "line": 122
+      "line": 122,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P2-002",
       "severity": "P2",
       "title": "Wave-0 inventory tooling is blind to the route table, schema, and entry points",
       "report": "01_repository_inventory.md",
-      "line": 143
+      "line": 143,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "OBS-P2-001",
       "severity": "P2",
       "title": "No alert delivery path (no Alertmanager/pager); rules are visible only in Prometheus/Grafana",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 105
+      "line": 105,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "OBS-P2-002",
       "severity": "P2",
       "title": "Inventory alert metrics depend on host-side SSH to each sensor (single point of failure)",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 125
+      "line": 125,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "SC-P2-001",
       "severity": "P2",
       "title": "CI installs Python dependencies and tools without version pinning or hashes",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 109
+      "line": 109,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SC-P2-002",
       "severity": "P2",
       "title": "Secret scanning covers only the working tree, never git history",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 128
+      "line": 128,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SC-P2-003",
       "severity": "P2",
       "title": "CI downloads lint/scan binaries via curl without checksum verification",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 147
+      "line": 147,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SC-P2-004",
       "severity": "P2",
       "title": "Credential-bearing image artifacts and releases rely solely on private-repo access (owner-accepted)",
       "report": "11_supply_chain_dependency_secrets.md",
-      "line": 166
+      "line": 166,
+      "owner": "",
+      "target": "",
+      "status": "still-open",
+      "note": "re-audit 2026-10-04: still-open"
     },
     {
       "id": "SEC-P2-001",
       "severity": "P2",
       "title": "HTTP transport has no rate limiting, security headers, or slow-client protection",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 135
+      "line": 135,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P2-002",
       "severity": "P2",
       "title": "Inventory metrics collector disables SSH host-key verification",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 154
+      "line": 154,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "SEC-P2-003",
       "severity": "P2",
       "title": "Raw host inventory (MAC/IP/hostnames) is world-readable on sensors and read over the network",
       "report": "06_security_authz_tenancy_audit.md",
-      "line": 173
+      "line": 173,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-001",
       "severity": "P2",
       "title": "Test-count claims are stale and mutually inconsistent (163 vs 197 vs 253)",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 99
+      "line": 99,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P2-002",
       "severity": "P2",
       "title": "No regression test that re-enrollment of a REVOKED/RETIRED sensor is refused",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 120
+      "line": 120,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P3-001",
       "severity": "P3",
       "title": "Problem `instance` is a static string rather than the request path",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 163
+      "line": 163,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "API-P3-002",
       "severity": "P3",
       "title": "Vector ingest is at-least-once with no idempotency key or dedupe",
       "report": "08_api_contracts_realtime_integrations.md",
-      "line": 144
+      "line": 144,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "ARCH-P3-001",
       "severity": "P3",
       "title": "Bare stdlib HTTP transport has no connection or rate limits",
       "report": "02_architecture_runtime_topology.md",
-      "line": 154
+      "line": 154,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "CI-P3-001",
       "severity": "P3",
       "title": "CI documentation states a 20-minute Dependabot sweep; the workflow runs daily",
       "report": "10_github_actions_cicd_governance.md",
-      "line": 147
+      "line": 147,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "DATA-P3-001",
       "severity": "P3",
       "title": "Queue age-expiry is evaluable only on enqueue; `purge_expired` is unwired",
       "report": "07_data_schema_migration_runtime_validation.md",
-      "line": 169
+      "line": 169,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FEAT-P3-001",
       "severity": "P3",
       "title": "`destroyKeys` is recorded in the audit log but performs no key destruction server-side",
       "report": "03_feature_implementation_map.md",
-      "line": 134
+      "line": 134,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "FEAT-P3-002",
       "severity": "P3",
       "title": "`create-token` prints the plaintext bootstrap token to stdout when `--out` is omitted",
       "report": "03_feature_implementation_map.md",
-      "line": 154
+      "line": 154,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "HYG-P3-001",
       "severity": "P3",
       "title": "Hardcoded, drifted sensor endpoint/key list in the inventory metrics collector",
       "report": "21_repo_hygiene_maintainability.md",
-      "line": 148
+      "line": 148,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "INV-P3-001",
       "severity": "P3",
       "title": "Generated models, schemas, dashboard JSON, and audit mirrors are committed and can go stale",
       "report": "01_repository_inventory.md",
-      "line": 164
+      "line": 164,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "OBS-P3-001",
       "severity": "P3",
       "title": "Stale `pending_directives` metric is documented but unfixed",
       "report": "14_observability_monitoring_incident_readiness.md",
-      "line": 145
+      "line": 145,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P3-001",
       "severity": "P3",
       "title": "Coverage is reported informationally with no threshold gate",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 139
+      "line": 139,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     },
     {
       "id": "TEST-P3-002",
       "severity": "P3",
       "title": "HEAD explicitly lands a known-flaky time-relative test fixture",
       "report": "09_testing_quality_release_confidence.md",
-      "line": 157
+      "line": 157,
+      "owner": "",
+      "target": "",
+      "status": "verified-fixed",
+      "note": "re-audit 2026-10-04: closed"
     }
   ]
 }
