@@ -60,6 +60,10 @@ EOF
   grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
   sysctl -w net.ipv4.ip_forward=1 >/dev/null
   systemctl enable "wg-quick@${IFACE}" >/dev/null 2>&1 || true
+  # Self-heal: recreate the interface if the process ever dies.
+  mkdir -p "/etc/systemd/system/wg-quick@${IFACE}.service.d"
+  printf '[Service]\nRestart=always\nRestartSec=5\n' > "/etc/systemd/system/wg-quick@${IFACE}.service.d/restart.conf"
+  systemctl daemon-reload
   systemctl restart "wg-quick@${IFACE}"
   sleep 2
   echo "LAB_PUB=$(cat "$DIR/lab.pub")"

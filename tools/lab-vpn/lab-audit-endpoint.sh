@@ -96,6 +96,10 @@ EOF
   sysctl -w net.ipv4.ip_forward=1 >/dev/null
   ufw allow "${PORT}/udp" >/dev/null 2>&1 || true
   systemctl enable "wg-quick@${IFACE}" >/dev/null 2>&1 || true
+  # Self-heal: recreate the interface if the process ever dies.
+  mkdir -p "/etc/systemd/system/wg-quick@${IFACE}.service.d"
+  printf '[Service]\nRestart=always\nRestartSec=5\n' > "/etc/systemd/system/wg-quick@${IFACE}.service.d/restart.conf"
+  systemctl daemon-reload
   systemctl restart "wg-quick@${IFACE}"
   sleep 1
   echo "SERVER_PUB=$(cat "$DIR/server.pub")"

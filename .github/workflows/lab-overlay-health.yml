@@ -1,0 +1,58 @@
+name: Lab overlay health
+
+# Scheduled end-to-end health check of the lab audit WireGuard overlay. Runs `health` on the
+# endpoint via the scoped `labvpn` identity (checks handshake age + lab pings + lab API), and
+# pushes an ntfy alert on failure.
+#
+# Required repo configuration:
+#   secret    LAB_ENDPOINT_SSH_KEY   private key for the scoped `labvpn` identity
+#   variable  LAB_ENDPOINT_HOST      e.g. 138.197.105.82
+#   variable  LAB_ENDPOINT_USER      e.g. labvpn
+#   secret    NTFY_TOPIC             (optional) ntfy topic for alerts
+#   secret    NTFY_USERPASS          (optional) ntfy user:password
+#   variable  NTFY_URL               (optional) ntfy base URL, default https://ntfy.sh
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ vars.LAB_ENDPOINT_HOST }}
+      USER: ${{ vars.LAB_ENDPOINT_USER }}
+      NTFY_URL: ${{ vars.NTFY_URL != '' && vars.NTFY_URL || 'https://ntfy.sh' }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      NTFY_USERPASS: ${{ secrets.NTFY_USERPASS }}
+    steps:
+      - name: Configure SSH
+        run: |
+          set -e
+          [ -n "$HOST" ] && [ -n "$USER" ] || { echo "::error::LAB_ENDPOINT_HOST/USER not configured"; exit 1; }
+          [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::LAB_ENDPOINT_SSH_KEY not set"; exit 1; }
+          install -m700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
+          chmod 600 ~/.ssh/lab_endpoint
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Verify overlay from the endpoint
+        id: verify
+        run: |
+          set +e
+          OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" health 2>&1); RC=$?
+          printf '%s\n' "$OUT" | tee health.txt
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          exit $RC
+
+      - name: ntfy alert on failure
+        if: failure() && env.NTFY_TOPIC != ''
+        run: |
+          set +e
+          BODY=$( { echo "lab overlay health FAILED"; echo; tail -20 health.txt 2>/dev/null; echo; echo "run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; } )
+          curl -sS -m15 -u "$NTFY_USERPASS" -H "Title: Lab overlay health" -H "Priority: high" -H "Tags: rotating_light" \
+            -d "$BODY" "$NTFY_URL/$NTFY_TOPIC"

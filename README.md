@@ -54,7 +54,9 @@ This edition merges the original pack, the falcon-lab layer, LLM-free **determin
 - **Remediation:** `prompts/REMEDIATION_RUNNER.md` + `profiles/remediation.md` (see `docs/REMEDIATION_GUIDE.md`).
 - **Reach the Proxmox lab (agents/devs):** `docs/LAB_VPN.md` + `tools/lab-vpn/` — dedicated
   WireGuard overlay (`wgaudit0`, UDP `51900`) via `mct-portal-dev`; separate from the falcon `wg0`
-  telemetry VPN. Connect with `bash tools/lab-vpn/lab-audit-connect.sh <name>.conf`.
+  telemetry VPN. Self-service via the **Lab agent onboarding / offboarding / health** GitHub
+  workflows (scoped non-root identity); connect with
+  `bash tools/lab-vpn/lab-audit-connect.sh lab-audit-<name>.conf`.
 
 ## How an audit run flows
 

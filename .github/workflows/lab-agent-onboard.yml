@@ -2,7 +2,8 @@ name: Lab agent onboarding (WireGuard)
 
 # Self-service onboarding for the Proxmox lab audit overlay (wgaudit0, UDP 51900).
 # An agent/developer dispatches this workflow with a unique name. It registers a peer on the
-# public endpoint and produces the client config as a build artifact.
+# public endpoint through a SCOPED, non-root `labvpn` identity (forced SSH command; it can only
+# add/list/revoke peers) and produces the client config as a build artifact.
 #
 #   Preferred: generate a keypair locally (`wg genkey | tee private.key | wg pubkey > public.key`)
 #   and pass only the PUBLIC key in `agent_public_key` — your private key never leaves your machine.
@@ -10,9 +11,9 @@ name: Lab agent onboarding (WireGuard)
 #   config (with private key) is uploaded as an artifact.
 #
 # Required repo configuration (never printed):
-#   secret    LAB_ENDPOINT_SSH_KEY   private key with access to the overlay endpoint
+#   secret    LAB_ENDPOINT_SSH_KEY   private key for the scoped `labvpn` identity
 #   variable  LAB_ENDPOINT_HOST      e.g. 138.197.105.82
-#   variable  LAB_ENDPOINT_USER      e.g. root
+#   variable  LAB_ENDPOINT_USER      e.g. labvpn
 #
 # See docs/LAB_VPN.md.
 
@@ -51,12 +52,11 @@ jobs:
         run: |
           set -e
           [ -n "$NAME" ] || { echo "::error::agent_name is required"; exit 1; }
+          printf '%s' "$NAME" | grep -Eq '^[A-Za-z0-9_.-]{1,32}$' || { echo "::error::agent_name must match [A-Za-z0-9_.-]{1,32}"; exit 1; }
           [ -n "$HOST" ] || { echo "::error::endpoint_host input or LAB_ENDPOINT_HOST variable is required"; exit 1; }
           [ -n "$USER" ] || { echo "::error::endpoint_user input or LAB_ENDPOINT_USER variable is required"; exit 1; }
           [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
           echo "Onboarding '$NAME' via $USER@$HOST"
-
-      - uses: actions/checkout@v4
 
       - name: Install tooling
         run: |
@@ -72,18 +72,14 @@ jobs:
           chmod 600 ~/.ssh/lab_endpoint
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
-      - name: Register peer on the endpoint
+      - name: Register peer via scoped identity
         id: add
         run: |
           set -e
-          scp -i ~/.ssh/lab_endpoint -o StrictHostKeyChecking=accept-new \
-            tools/lab-vpn/lab-audit-add-agent.sh "$USER@$HOST:/root/lab-audit-add-agent.sh"
           if [ -n "$AGENT_PUBKEY" ]; then
-            OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" \
-              "AGENT_PUBKEY='$AGENT_PUBKEY' bash /root/lab-audit-add-agent.sh '$NAME' '$HOST'")
+            OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" "add-agent $NAME $AGENT_PUBKEY")
           else
-            OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" \
-              "bash /root/lab-audit-add-agent.sh '$NAME' '$HOST'")
+            OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" "add-agent $NAME")
           fi
           printf '%s\n' "$OUT"
           echo "$OUT" > /tmp/add.out
@@ -97,8 +93,8 @@ jobs:
           set -e
           mkdir -p out
           if [ "${{ steps.add.outputs.CLIENT_PRIVATE_KEY }}" = "included-on-server" ]; then
-            scp -i ~/.ssh/lab_endpoint -o StrictHostKeyChecking=accept-new \
-              "$USER@$HOST:${{ steps.add.outputs.CLIENT_CONF }}" "out/lab-audit-$NAME.conf"
+            ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" "get-client $NAME" > "out/lab-audit-$NAME.conf"
+            chmod 600 "out/lab-audit-$NAME.conf"
           else
             cat > "out/lab-audit-$NAME.conf" <<EOF
           [Interface]
@@ -112,7 +108,7 @@ jobs:
           PersistentKeepalive = 25
           EOF
           fi
-          echo "--- generated ---"
+          echo "--- generated (private key redacted) ---"
           sed -e 's/^PrivateKey = .*/PrivateKey = <redacted>/' "out/lab-audit-$NAME.conf"
 
       - name: Upload client config artifact
@@ -138,7 +134,7 @@ jobs:
             echo "1. Download the \`lab-audit-$NAME\` artifact."
             echo "2. Import the \`.conf\` into the WireGuard app, or run:"
             echo '   `bash tools/lab-vpn/lab-audit-connect.sh lab-audit-'"$NAME"'.conf`'
-            echo "3. Verify: ping 10.250.0.1, 172.23.128.51, 172.23.128.52; then http://172.23.128.51:8722/health"
+            echo "3. Verify: ping lab-endpoint (10.250.0.1), ci-runner.lab (172.23.128.51), edge-builder.lab (172.23.128.52)."
             echo ""
-            echo "Full guide: [docs/LAB_VPN.md](../blob/main/docs/LAB_VPN.md)"
+            echo "Offboard later: run the **Lab agent offboarding** workflow with this name."
           } >> "$GITHUB_STEP_SUMMARY"

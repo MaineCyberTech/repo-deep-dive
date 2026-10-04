@@ -1,0 +1,66 @@
+name: Lab agent offboarding (WireGuard)
+
+# Revoke a lab audit overlay peer. Dispatch with the agent name used at onboarding.
+# Uses the scoped `labvpn` forced command (revoke-agent), so it cannot do anything else.
+#
+# Required repo configuration:
+#   secret    LAB_ENDPOINT_SSH_KEY   private key for the scoped `labvpn` identity
+#   variable  LAB_ENDPOINT_HOST      e.g. 138.197.105.82
+#   variable  LAB_ENDPOINT_USER      e.g. labvpn
+#
+# See docs/LAB_VPN.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      agent_name:
+        description: 'Agent/developer name to revoke'
+        required: true
+      endpoint_host:
+        description: 'Overlay endpoint host (blank = repo variable)'
+        required: false
+        default: ''
+      endpoint_user:
+        description: 'Overlay endpoint SSH user (blank = repo variable)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  offboard:
+    runs-on: ubuntu-latest
+    env:
+      NAME: ${{ inputs.agent_name }}
+      HOST: ${{ inputs.endpoint_host != '' && inputs.endpoint_host || vars.LAB_ENDPOINT_HOST }}
+      USER: ${{ inputs.endpoint_user != '' && inputs.endpoint_user || vars.LAB_ENDPOINT_USER }}
+    steps:
+      - name: Validate
+        run: |
+          set -e
+          printf '%s' "$NAME" | grep -Eq '^[A-Za-z0-9_.-]{1,32}$' || { echo "::error::invalid agent_name"; exit 1; }
+          [ -n "$HOST" ] && [ -n "$USER" ] || { echo "::error::endpoint host/user not configured"; exit 1; }
+          [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::LAB_ENDPOINT_SSH_KEY not set"; exit 1; }
+
+      - name: Configure SSH
+        run: |
+          set -e
+          install -m700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
+          chmod 600 ~/.ssh/lab_endpoint
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Revoke peer
+        run: |
+          set -e
+          OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" "revoke-agent $NAME")
+          printf '%s\n' "$OUT"
+
+      - name: Summary
+        run: |
+          {
+            echo "## Lab offboarding: \`$NAME\`"
+            echo ""
+            echo "Peer revoked and client key material deleted on the endpoint."
+          } >> "$GITHUB_STEP_SUMMARY"
