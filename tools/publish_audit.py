@@ -109,6 +109,14 @@ def build_files(repo, branch, sha, run, items, source_dir, report_name, report_t
     area = Counter(f["area"] for f in findings)
     total = len(findings)
 
+    # Tooling-compatible report: findings must appear as `| ID | Px | title |` rows in a
+    # lens_*.md report (tools/lib_findings.py), so prepend the normalized table.
+    table = ["## Findings", "", "| ID | Severity | Title | Report |", "|---|---|---|---|"]
+    for f in findings:
+        table.append("| %s | %s | %s | %s |" % (f["id"], f["severity"], f["title"].replace("|", "\\|"), report_name))
+    report_text = ("# Focused security / supply-chain / CI deep-dive - %s\n\n" % repo
+                   + "\n".join(table) + "\n\n---\n\n" + report_text)
+
     idx = ["# Audit run %s - %s" % (run, repo), "",
            "Focused security / supply-chain / CI deep-dive (`%s` @ `%s`)." % (branch, short), "",
            "Counts: " + ", ".join("%s x%s" % (s, sev.get(s, 0)) for s in ("P0", "P1", "P2", "P3")), "",
@@ -255,7 +263,7 @@ def main():
     items = json.load(open(os.path.join(a.source_dir, "findings.json"), encoding="utf-8"))
     if isinstance(items, dict):
         items = items.get("findings", [])
-    report_name = "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md"
+    report_name = "lens_focused_security_supply_chain_ci.md"
     rpt = os.path.join(a.source_dir, "FINDINGS.md")
     if not os.path.isfile(rpt):
         rpt = os.path.join(a.source_dir, "REPORT.md")

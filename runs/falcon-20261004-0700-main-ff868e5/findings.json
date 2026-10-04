@@ -1,6 +1,6 @@
 {
   "run": "20261004-0700-main-ff868e5",
-  "generated": "2026-10-04T07:11:22Z",
+  "generated": "2026-10-04T07:17:01Z",
   "sourceReports": 1,
   "counts": {
     "total": 14,
@@ -23,7 +23,7 @@
       "id": "SEC-P2-001",
       "severity": "P2",
       "title": "gitleaks curl-auth-user allowlist is unanchored and suppresses every curl line",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 20,
       "area": "SEC",
       "evidence": [
@@ -41,7 +41,7 @@
       "id": "SEC-P2-002",
       "severity": "P2",
       "title": "Retired DFIR-IRIS API key literal still committed in vendored scripts; rotation PENDING",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 23,
       "area": "SEC",
       "evidence": [
@@ -60,7 +60,7 @@
       "id": "SEC-P2-003",
       "severity": "P2",
       "title": "All 20 inherited credentials are PENDING rotation; vendored scripts source credential files wholesale",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 7,
       "area": "SEC",
       "evidence": [
@@ -79,7 +79,7 @@
       "id": "DEP-P2-001",
       "severity": "P2",
       "title": "Dependabot covers only GitHub Actions; Python dependencies and container images are unmanaged",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 2,
       "area": "DEP",
       "evidence": [
@@ -97,7 +97,7 @@
       "id": "SUPPLY-P2-001",
       "severity": "P2",
       "title": "Release and SBOM artifacts are integrity-checked but unsigned (SLSA ~0-1)",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 99,
       "area": "SUPPLY",
       "evidence": [
@@ -114,7 +114,7 @@
       "id": "CI-P2-001",
       "severity": "P2",
       "title": "Branch protection and required checks are plan-gated, so validate is advisory",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 3,
       "area": "CI",
       "evidence": [
@@ -132,7 +132,7 @@
       "id": "PORT-P3-001",
       "severity": "P3",
       "title": "90 tracked shell scripts lack the executable bit",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 1,
       "area": "PORT",
       "evidence": [
@@ -150,7 +150,7 @@
       "id": "PORT-P3-002",
       "severity": "P3",
       "title": "CRLF committed in four markdown files despite text eol=lf",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 28,
       "area": "PORT",
       "evidence": [
@@ -169,7 +169,7 @@
       "id": "GIT-P3-001",
       "severity": "P3",
       "title": "No LICENSE file",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 121,
       "area": "GIT",
       "evidence": [
@@ -186,7 +186,7 @@
       "id": "SUPPLY-P3-001",
       "severity": "P3",
       "title": "Vendored mct/compose images are unpinned under a blanket waiver",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 14,
       "area": "SUPPLY",
       "evidence": [
@@ -206,7 +206,7 @@
       "id": "SUPPLY-P3-002",
       "severity": "P3",
       "title": "Vulnerability scan coverage for 12 images is stale/pending, gated only by expiring waivers",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 96,
       "area": "SUPPLY",
       "evidence": [
@@ -224,7 +224,7 @@
       "id": "SUPPLY-P3-003",
       "severity": "P3",
       "title": "Image/SBOM-component license allow/deny gate is not enforced",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 18,
       "area": "SUPPLY",
       "evidence": [
@@ -241,7 +241,7 @@
       "id": "CI-P3-001",
       "severity": "P3",
       "title": "dependabot-merge merges without pinning the checked commit and holds broad write scope",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 17,
       "area": "CI",
       "evidence": [
@@ -259,7 +259,7 @@
       "id": "CONF-P3-001",
       "severity": "P3",
       "title": "SBOM coverage doc contradicts the live validate workflow on --require-vuln",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 71,
       "area": "CONF",
       "evidence": [

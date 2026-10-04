@@ -1,6 +1,6 @@
 {
   "run": "20261004-0700-main-d79d0d7",
-  "generated": "2026-10-04T07:11:23Z",
+  "generated": "2026-10-04T07:17:01Z",
   "sourceReports": 1,
   "counts": {
     "total": 10,
@@ -23,7 +23,7 @@
       "id": "SUPPLY-P1-001",
       "severity": "P1",
       "title": "Vulnerable runtime transitive dependency @grpc/grpc-js 1.14.4 with a non-blocking audit gate",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 1003,
       "area": "SUPPLY",
       "evidence": [
@@ -42,7 +42,7 @@
       "id": "SUPPLY-P2-001",
       "severity": "P2",
       "title": "GitHub Action upload-artifact@v4 not pinned to a commit SHA",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 55,
       "area": "SUPPLY",
       "evidence": [
@@ -59,7 +59,7 @@
       "id": "SUPPLY-P2-002",
       "severity": "P2",
       "title": "Container base and CI service images not pinned by digest",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 4,
       "area": "SUPPLY",
       "evidence": [
@@ -79,7 +79,7 @@
       "id": "CI-P2-001",
       "severity": "P2",
       "title": "Supply-chain license/vulnerability workflow is not a required branch-protection check",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 1,
       "area": "CI",
       "evidence": [
@@ -97,7 +97,7 @@
       "id": "PORT-P3-001",
       "severity": "P3",
       "title": "Six tracked shell scripts lack the executable bit",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 30,
       "area": "PORT",
       "evidence": [
@@ -115,7 +115,7 @@
       "id": "SEC-P3-001",
       "severity": "P3",
       "title": "Secret scan allowlists whole files, masking future real secrets",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 15,
       "area": "SEC",
       "evidence": [
@@ -133,7 +133,7 @@
       "id": "SEC-P3-002",
       "severity": "P3",
       "title": "Metrics token compared non-constant-time and has no rotation path",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 2011,
       "area": "SEC",
       "evidence": [
@@ -151,7 +151,7 @@
       "id": "SECRET-P3-001",
       "severity": "P3",
       "title": "Empty service-role key silently disables persistence; no committed rotation evidence",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 43,
       "area": "SECRET",
       "evidence": [
@@ -169,7 +169,7 @@
       "id": "CI-P3-001",
       "severity": "P3",
       "title": "CODEOWNERS is a personal account; release/hotfix branch rules absent",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 5,
       "area": "CI",
       "evidence": [
@@ -187,7 +187,7 @@
       "id": "CONF-P3-001",
       "severity": "P3",
       "title": "Residual CRLF files and hadolint DL3025 HEALTHCHECK warnings",
-      "report": "FOCUSED_SECURITY_SUPPLY_CHAIN_CI.md",
+      "report": "lens_focused_security_supply_chain_ci.md",
       "line": 6,
       "area": "CONF",
       "evidence": [
