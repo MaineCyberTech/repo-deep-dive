@@ -46,8 +46,10 @@ Design for the audit/CI lab, written to be **portable to a bare-metal host**. Pa
 
 ## Next steps (tracked in the roadmap)
 
-- [ ] `infra/lab/` IaC (Ansible/Terraform) for host + guests + templates.
-- [ ] Ephemeral org runners (ARC) on a dedicated runner host.
+- [~] `infra/lab/` IaC (Ansible/Terraform) for host + guests + templates —
+  scaffolded (draft PR); see `infra/lab/README.md` and `docs/LAB_IAC.md`.
+- [~] Ephemeral org runners (ARC) on a dedicated runner host —
+  designed in `infra/lab/runners/`; not yet applied.
 - [ ] PBS + offsite backups + a restore drill.
 - [ ] Secret broker (OIDC) + enforced rotation register.
 - [ ] Lab observability + alerts.

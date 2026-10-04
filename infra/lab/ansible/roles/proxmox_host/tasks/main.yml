@@ -1,0 +1,87 @@
+---
+# Proxmox VE host: preflight, packages, bridges, ZFS notes.
+# Never runs destructive network changes unless proxmox_manage_network is true.
+
+- name: Preflight — confirm this is a Proxmox VE node
+  ansible.builtin.stat:
+    path: /etc/pve
+  register: proxmox_pve_dir
+
+- name: Preflight — fail if /etc/pve is missing
+  ansible.builtin.assert:
+    that:
+      - proxmox_pve_dir.stat.isdir | default(false)
+    fail_msg: "This host is not Proxmox VE (/etc/pve missing). Refusing to continue."
+
+- name: Capture the Proxmox VE version
+  ansible.builtin.command: pveversion
+  register: proxmox_pveversion
+  changed_when: false
+  failed_when: false
+
+- name: Show the Proxmox VE version
+  ansible.builtin.debug:
+    msg: "{{ proxmox_pveversion.stdout | default('pveversion unavailable') }}"
+
+- name: Install hypervisor packages
+  ansible.builtin.apt:
+    name: "{{ proxmox_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Enable IPv4 forwarding for guest/NAT traffic
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+  when: proxmox_enable_ip_forward | bool
+
+- name: Back up the current network config before any managed change
+  ansible.builtin.copy:
+    src: /etc/network/interfaces
+    dest: /etc/network/interfaces.bak
+    remote_src: true
+    mode: "0644"
+    force: false
+  when: proxmox_manage_network | bool
+
+- name: Render /etc/network/interfaces (managed)
+  ansible.builtin.template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+    validate: "ifquery --check --interfaces=%s -a || true"
+  when: proxmox_manage_network | bool
+  notify: Reload networking
+
+- name: Cap the ZFS ARC size (optional; 0 keeps the default)
+  ansible.builtin.template:
+    src: zfs-arc-max.conf.j2
+    dest: /etc/modprobe.d/zfs-arc-max.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: proxmox_zfs_arc_max_gb | int > 0
+  notify: Update initramfs
+
+- name: Show the ZFS pool status (read-only)
+  ansible.builtin.command: "zpool status {{ proxmox_zfs_pool }}"
+  register: proxmox_zpool_status
+  changed_when: false
+  failed_when: false
+
+- name: ZFS status
+  ansible.builtin.debug:
+    msg: "{{ proxmox_zpool_status.stdout_lines | default(['zpool not available']) }}"
+
+- name: Note the backup/DR gap in the log
+  ansible.builtin.debug:
+    msg: >-
+      Scaffold only: no PBS/vzdump schedule is configured here. See
+      infra/lab/README.md and docs/LAB_IAC.md for the PBS + offsite follow-up.
