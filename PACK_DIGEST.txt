@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T08:46:03Z
+# generated: 2026-10-04T08:51:01Z
 # files: 1233
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
@@ -7,7 +7,7 @@
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
 e2f28c2cc18d527e59763924a0315606dbe460e30f0c3dd239cd8666069d707a  ./.github/workflows/audit.yml
-9e9a1d8a9358aecf16fddf6e63c7e47458c72ed56abef7e31776801ea2b638d3  ./.github/workflows/deep-dive-deterministic.yml
+27bdbd24d03ce3470be7363fc58a1da918b12e5abb2ad06b5eacc509e3dedd86  ./.github/workflows/deep-dive-deterministic.yml
 0c82ed355eaa8d585720320e7512227fe323ad954c9e5e24f6dddc567bae8ce2  ./.github/workflows/lab-agent-offboard.yml
 72951dd3c25e5952d77f0923967aded53df8777926311064c4027741409d152b  ./.github/workflows/lab-agent-onboard.yml
 2f1fcabf33c26f62cac719f08d4d770814721d7f555b9fc73ea8b30eab3c9b65  ./.github/workflows/lab-overlay-health.yml
@@ -1189,14 +1189,14 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 3c68061dddd01856b50c9cf2d16992f013761dbc1b2a1664aa3e4848846c24eb  ./templates/subagent_brief_template.md
 595248ecceebf3703836e06f36c65aadb4cac7f1fae9267a65cb3a184c50bd3e  ./templates/verification_log_template.md
 6f31619783ac0c0cad5a590bcfdc1e667672e4aef987c27235b96a2715762c4e  ./tests/__init__.py
-2c2bbffbb7f3a416e9e98fd394f1e115d0d74e812f3288cc717b18065934b226  ./tests/test_deterministic_checks.py
+81dff2f8c7fcba3d21a484f4abcaed3b4002cf0e3793979ca2693fc7a8d703e5  ./tests/test_deterministic_checks.py
 75b7f9747ba21eabe1f23b7f708407cbf6103d359c7ba5a885b4a4c19d7b6d5c  ./tests/test_lib_findings.py
 87e8aea750804ce5991efb69f2c73fdf81a246f42f754d567aaea0b7ee1b8cdc  ./tests/test_repo_inventory.py
 4b77ad57ba5a912dc55bd0a3a93fd10327b4856a39088bb91c81fe60280fb477  ./tools/aggregate_findings.py
 5c0c4cfe71fc838086291f520592ae93d4cb6a8ef7fcf4b45effce0cadff4055  ./tools/apply_approvals.py
 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
 da6a9b7eaa62a42e1cb8e2b76b692d513ad478b13ae5e3d1d0eff70ca335501d  ./tools/collect_findings.py
-5ddc3a28eea998d4b946d321d5ec1418952c843d96abada96b714bf7078b8d57  ./tools/deterministic_checks.py
+6305974602de8120d5d10f63d28ccc8c5138a8952b60df75d244139199caba88  ./tools/deterministic_checks.py
 a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
 c56f0126000bbd588c9450e7a66da9f202d2fd278c717c3101be7603275f0b7a  ./tools/lab-vpn/lab-audit-add-agent.sh
