@@ -1,0 +1,38 @@
+---
+# infra/lab/ansible/site.yml — one playbook to build the lab host + guests.
+#
+# Idempotent and parameterized. It does NOT create the guests (that is the
+# Terraform layer / PVE templates); it configures them once they exist.
+#
+# Typical usage:
+#   ansible-playbook -i inventory.ini site.yml --check --diff        # dry run
+#   ansible-playbook -i inventory.ini site.yml --limit proxmox_host  # host only
+#   RUNNER_TOKEN=<token> ansible-playbook -i inventory.ini site.yml  # incl. runner
+#
+# No secrets are stored in the repo: group_vars/all.yml resolves them from the
+# environment ($LAB_ADMIN_SSH_KEY, $LAB_ADMIN_SSH_KEY_FILE, $RUNNER_TOKEN) and
+# the runner token is marked no_log where it is used.
+
+- name: Baseline for every lab host (hypervisor + guests)
+  hosts: lab_all
+  become: true
+  roles:
+    - role: base
+
+- name: Proxmox VE hypervisor (preflight, bridges, ZFS notes)
+  hosts: proxmox_host
+  become: true
+  roles:
+    - role: proxmox_host
+
+- name: CI runner guest (toolchain + GitHub Actions runner)
+  hosts: lab_runners
+  become: true
+  roles:
+    - role: guest_runner
+
+- name: Edge builder guest (arm/build toolchain)
+  hosts: lab_edge
+  become: true
+  roles:
+    - role: guest_edge

@@ -1,0 +1,254 @@
+{
+  "run": "20261004-0700-main-49f46a8",
+  "generated": "2026-10-04T07:45:47Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 12,
+    "bySeverity": {
+      "P1": 1,
+      "P2": 5,
+      "P3": 6
+    },
+    "byArea": {
+      "CI": 5,
+      "SEC": 2,
+      "SUPPLY": 2,
+      "PORT": 1,
+      "CONF": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "P1 secret gate in the org scan is inert: it matches 'SEC-' IDs but deterministic findings are namespaced 'DET-'",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 173,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/deep-dive-deterministic.yml:173 `if f.get(\"severity\") == \"P1\" and fid.startswith(\"SEC-\"):`",
+        "tools/deterministic_checks.py:361-365 `area = \"DET\" ... fid = \"%s-%s-%03d\" % (area, f[\"severity\"], counters[area])`",
+        "tools/deterministic_checks.py:365 `\"title\": \"[%s] %s\" % (f[\"subcode\"], f[\"title\"])` (the SEC subcode is only in the title, not the ID)",
+        "tools/deterministic_checks.py:124 `add(\"SEC\", \"P1\", \"%d tracked secret-adjacent file(s)\" ...)` and :153 `sev = \"P1\" if any(k in rule.lower() for k in high)` (aws/private-key/github/...)"
+      ],
+      "impact": "The weekly org-wide deterministic sweep 'Fail on P1 secret findings' step can never match a machine-detected secret. High-risk gitleaks rules (AWS keys, private keys, GitHub/Slack/Stripe tokens) and tracked .env/private-key files are emitted as DET-P1-NNN and pass the step, so a real secret in a scanned org repo does not fail the job. The one automated secret gate for the org fleet is dead code.",
+      "recommendation": "Match on the subcode instead of the ID, e.g. `if f.get('severity') == 'P1' and str(f.get('title','')).startswith('[SEC]')`, or (preferred) have deterministic_checks.py emit a machine-readable `subcode`/`area` field on each finding and gate on that. Add a unit/CI test that feeds a synthetic P1 SEC deterministic-findings.json through the gate and asserts a non-zero exit.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "PAT embedded in git clone URL in three workflows (contradicts the hardened extraheader pattern)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 61,
+      "area": "SEC",
+      "evidence": [
+        ".github/workflows/remediation.yml:61 `git clone -q \"https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${REPO}.git\" work/\"$REPO\"`",
+        ".github/workflows/verify-remediation.yml:61 `git clone -q \"https://x-access-token:${GH_TOKEN}@github.com/${ORG}/${REPO}.git\" \"$REPO_DIR\"`",
+        ".github/workflows/lab-tests.yml:49 `git clone -q \"https://x-access-token:${GH_TOKEN}@github.com/${OWNER}/${REPO}.git\" \"$DEST\"`",
+        ".github/workflows/remediation.yml:53 `GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}`",
+        ".github/workflows/deep-dive-deterministic.yml:139-146 comment and hardened pattern: `The PAT is passed via an HTTP header, never placed in the clone URL, so it cannot leak` / `-c http.extraheader=\"AUTHORIZATION: ${AUTH}\"`"
+      ],
+      "impact": "When the PAT is placed in the clone URL it can leak through git/shell error output, process listings, credential helpers, or a failed-clone diagnostic. The pack's own deterministic-scan workflow deliberately avoids this exact pattern, so the remediation/lab workflows regress a control the pack already knows about. ORG_READ_TOKEN is an org-scoped PAT reused across jobs.",
+      "recommendation": "Use the extraheader form from deep-dive-deterministic.yml (or `git -c credential.helper=` with a header) in remediation.yml, verify-remediation.yml and lab-tests.yml; never interpolate GH_TOKEN into the remote URL. Optionally use a short-lived GitHub App installation token or GITHUB_TOKEN with scoped permissions instead of a long-lived PAT.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "verify-remediation executes arbitrary commands from a PR-controllable plan on the self-hosted lab runner",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 42,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/verify-remediation.yml:42 `runs-on: [self-hosted, linux, x64, ci-runner]`",
+        ".github/workflows/verify-remediation.yml:83 `PLAN=\"runs/$RUN/remediation_plan.json\"` (RUN is a workflow_dispatch input)",
+        ".github/workflows/verify-remediation.yml:101 `p = subprocess.run([\"bash\", \"-lc\", cmd], cwd=repo_dir)` (cmd comes from the plan's `verification` array)",
+        ".github/workflows/verify-remediation.yml:13-15 `ref:` input is any `Branch/tag/SHA under verification`"
+      ],
+      "impact": "Anyone who can land a commit to a branch (e.g. a malicious/compromised PR that edits runs/**/remediation_plan.json) can place arbitrary shell in patch-set `verification` commands. A maintainer dispatching Verify remediation with that run/ref then executes that shell on the persistent self-hosted ci-runner with repo secrets (ORG_READ_TOKEN, LAB_ENDPOINT_SSH_KEY) available in the environment. This is a PR-content-to-RCE path on a long-lived runner.",
+      "recommendation": "Constrain `run`/`ref` to trusted refs (default branch, or an allowlisted set), pin the plan to a commit whose digest is verified, and run verification in an ephemeral/microVM runner or container with no org secrets. Treat remediation_plan.json verification commands as untrusted input and require an explicit approval-protected environment before executing them.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P2-001",
+      "severity": "P2",
+      "title": "15 GitHub Action refs are tag-pinned (@v4/@v5), not commit-SHA pinned",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 30,
+      "area": "SUPPLY",
+      "evidence": [
+        "audit.yml:30,48 `actions/checkout@v4`; audit.yml:33,53 `actions/setup-python@v5`",
+        "pack-tests.yml:27 `actions/checkout@v4`; :30 `actions/setup-python@v5`; :44 `actions/upload-artifact@v4`",
+        "lab-preflight.yml:47 `actions/checkout@v4`; lab-agent-onboard.yml:115 `actions/upload-artifact@v4`",
+        "remediation.yml:57 `actions/checkout@v4`; :114 `actions/upload-artifact@v4`",
+        "verify-remediation.yml:55 `actions/checkout@v4`; :110 `actions/upload-artifact@v4`",
+        "remediation-board.yml:19 `actions/checkout@v4`; :30 `actions/upload-artifact@v4`",
+        "deep-dive-deterministic.yml:60 `actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2` and :191 `actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1` show the intended standard"
+      ],
+      "impact": "Mutable major-version tags can be retargeted by an upstream compromise; a pin to a full 40-hex SHA is the supply-chain hardening standard the pack itself applies in deep-dive-deterministic.yml. Because the pack runs with ORG_READ_TOKEN and LAB_ENDPOINT_SSH_KEY, a compromised action in checkout/upload-artifact is a credential-theft path.",
+      "recommendation": "Pin all external `uses:` to full commit SHAs with a trailing `# vX.Y.Z` comment (Dependabot already updates github-actions weekly per .github/dependabot.yml, so pins stay current). Add a lint in tools/deterministic_checks.py (already exists) as a required check so tagged refs fail the pack CI.",
+      "deterministic_ref": "DET-P2-005",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SUPPLY-P2-002",
+      "severity": "P2",
+      "title": "Two large third-party binaries are committed into an archived run with no checksum record",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 62,
+      "area": "SUPPLY",
+      "evidence": [
+        "git ls-tree HEAD: `100644 blob c05eefe5... 6074530  runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/tools/actionlint`",
+        "git ls-tree HEAD: `100644 blob 5bcda813... 21958840 runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/tools/gitleaks`",
+        "runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/ (only diff.patch, manifest.json, pr_body.md, verify.log, verify.sh, tools/) - no SHA256SUMS or digest artifact for the binaries",
+        ".github/workflows/deep-dive-deterministic.yml:62-72 establishes the pack's policy of sha256-verified pinned tool downloads, not committed binaries"
+      ],
+      "impact": "A 21.96 MB gitleaks and a 6.07 MB actionlint binary are vendored in the pack. They bloat every clone, are version-less from the tree's perspective (no recorded checksum alongside), and invite a future maintainer/agent to execute committed binaries that were never verified at use time. This contradicts the pack's own sha256-verified-download policy.",
+      "recommendation": "Remove the binaries from the archived run (keep the verify.sh that downloads them by pinned version+SHA), or add a SHA256SUMS file and a check that verifies it before use. If the blobs must stay for provenance, move them to Git LFS and record their sha256 in the run manifest.",
+      "deterministic_ref": "DET-P3-002",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "publish_audit.py publishes findings/reports to the pack and a target-repo PR without a secret scan",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 282,
+      "area": "SEC",
+      "evidence": [
+        "tools/publish_audit.py:282-284 writes every generated file into runs/<repo>-<run>/ (`with open(os.path.join(dest, name), \"w\"...)`)",
+        "tools/publish_audit.py:219-229 `PUT /repos/%s/%s/contents/%s` commits the same content to the target repo under docs/audits/",
+        "tools/publish_audit.py:270 `report_text = open(rpt...).read()` then :118 `+ report_text` (raw audit write-up is embedded verbatim)",
+        "No `gitleaks`/`scan`/`redact` reference anywhere in tools/publish_audit.py (grep returned none)",
+        ".gitleaks.toml:11-17 allowlists only `runs/[^/]+/remediation/.*gitleaks...` logs, not the published audit markdown"
+      ],
+      "impact": "An audit write-up can contain a secret pasted into evidence, or an unredacted log/diff. publish_audit.py copies the source FINDINGS.md and optional deterministic lens into the pack and into a target-repo PR with no secret scan and no redaction pass, so a leaked credential can be committed to a second repo and its history. This violates the shared rules' 'do not print secret values' and prompt 41's redaction-consistency check.",
+      "recommendation": "Before writing/PR-ing, run gitleaks (--redact) over the assembled file set and fail closed on any hit; strip or redact secret-like strings in evidence; record the scan result in the run manifest. Alternatively call the existing deterministic secret check on the source dir and block publication on P1.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "The changed-run gate enforces only P0 and only on pull_request; pushes to main skip it",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 45,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/audit.yml:45 `if: github.event_name == 'pull_request'` (run-gate job)",
+        ".github/workflows/audit.yml:85-87 `p0 = int(doc.get(\"counts\", {}).get(\"bySeverity\", {}).get(\"P0\", 0))` / `if p0 > 0: raise SystemExit(...)`",
+        "CONTRIBUTING.md:65 `changed-run gate (PR only) | validates each run folder changed by the PR and fails on any P0 finding`",
+        "CONTRIBUTING.md:73-75 `Bypass policy: force-pushing to main and admin-merging bypass the gate. Do not use them.`"
+      ],
+      "impact": "A run folder that documents P1 findings (e.g. high-severity secrets, serious security/authz issues) passes the pack's changed-run gate, and a direct/force push to main is never run-gated at all. Combined with repo-deep-dive-CI-001 (inert P1 secret gate) there is no automated enforcement for P1 in either path.",
+      "recommendation": "Run the changed-run gate on push to main as well as pull_request, and make the gate severity configurable (fail on P0 by default, optionally P1). Keep documenting the admin/force-push bypass, but pair it with a branch-protection checklist and an auditable CHANGELOG exception entry (CONTRIBUTING.md:74 already asks for the latter).",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "PORT-P3-001",
+      "severity": "P3",
+      "title": "35 tracked shell scripts carry mode 100644 (no exec bit)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 5,
+      "area": "PORT",
+      "evidence": [
+        "git ls-files -s matched 35 `100644 ... *.sh` entries under runs/*/remediation/**, e.g. `100644 ... runs/buddy-20261003-0018-master-99abf29/remediation/PS-07/verify_at_commit.sh`",
+        "runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/verify.sh is 100644 (also listed)",
+        ".gitattributes:5-6 declares `* text=auto eol=lf` / `*.sh text eol=lf` but no `*.sh text eol=lf` exec policy (git cannot set exec via gitattributes)"
+      ],
+      "impact": "Archived remediation scripts cannot be invoked as `./verify.sh` on Linux. In practice verify-remediation.yml runs declared commands via `bash -lc`, so the immediate CI impact is low, but it is a portability/UX defect for operators following the archived runbooks, and it repeats for every Windows-originated export.",
+      "recommendation": "Run `git update-index --chmod=+x` for the 35 scripts (a one-line loop over `git ls-files -s | awk '$1==\"100644\" && /[.]sh$/ {print $4}'`), and add a lint (already detected by deterministic_checks.py check_portability) as a required check so new exports do not regress.",
+      "deterministic_ref": "DET-P2-003",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-002",
+      "severity": "P3",
+      "title": "actionlint reports shellcheck SC2015/SC2018 notes in four workflows",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 36,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/lab-overlay-health.yml:36 `[ -n \"$HOST\" ] && [ -n \"$USER\" ] || { echo \"::error::LAB_ENDPOINT_HOST/USER not configured\"; exit 1; }` (SC2015)",
+        ".github/workflows/lab-preflight.yml:55 same `A && B || C` pattern (SC2015)",
+        ".github/workflows/lab-agent-offboard.yml:43 `[ -n \"$HOST\" ] && [ -n \"$USER\" ] || { ... }` (SC2015)",
+        ".github/workflows/remediation.yml:101 `BR=\"remediation/$(echo \"$PATCH_SET\" | tr 'A-Z' 'a-z')...\"` (SC2018, use [:lower:])"
+      ],
+      "impact": "These are shellcheck info-level findings surfaced by actionlint. They are real correctness smells (A && B || C may run C when A is true), but 'info' severity makes the reported P2 overstate impact. Left unfixed they keep the pack's own deterministic scan noisy and eventually train reviewers to ignore actionlint output.",
+      "recommendation": "Rewrite the three guards as explicit `if [ -z \"$HOST\" ] || [ -z \"$USER\" ]; then echo ...; exit 1; fi` and replace `tr 'A-Z' 'a-z'` with `tr '[:upper:]' '[:lower:]'`. Alternatively add a targeted actionlint shellcheck-ignore if the idiom is intentional.",
+      "deterministic_ref": "DET-P2-001",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-001",
+      "severity": "P3",
+      "title": "gitleaks generic-api-key hits in shipped runs/ artifacts are false positives; allowlist does not cover them",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 54,
+      "area": "CONF",
+      "evidence": [
+        "runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/remediation/PS-003/pr_body.md:54 documents the placeholder `token=abcdef1234567890` and :56 `gitleaks generic-api-key false positive`",
+        "runs/mainecybertech-20261003-0018-fix-p2-batch-31-2295958d/remediation/PS-U04/diff.patch:73 `-    \"repo-deep-dive/<sha>/<file>.md\": \"<64-hex sha256>\",` (package-manifest digests, not secrets)",
+        "runs/20260930-0701-falcon-8282d3f_edge-45dfed0/21_repo_hygiene_maintainability.md:106 prose describing `long_hex` hits (`2 long_hex hits at docs/audits/...`)",
+        ".gitleaks.toml:13-17 allowlist covers only the config, examples/*.example.json, and runs/*/remediation/*gitleaks*.log|txt|json - not diff.patch / pr_body.md / audit markdown",
+        "tools/deterministic_checks.py:153 `generic-api-key` is not in the `high` tuple, so it is emitted as P2 (does not reach the intended P1 fail-closed path)"
+      ],
+      "impact": "Ten of the seventeen reported hits were sampled and all are non-secrets (an explicitly documented placeholder and SHA-256 manifest digests). They do not expose credentials, but they recur every time the pack scans itself, they hide real hits, and because they are P2 they pass the (already inert) P1 gate.",
+      "recommendation": "Confirm the remaining seven hits and allowlist the known-safe run paths in .gitleaks.toml (e.g. `runs/.*/(diff\\.patch|pr_body\\.md)$` plus the long-hex manifest pattern), or move published run artifacts to a gitleaks-clean serialization. Prefer narrowing by rule (`generic-api-key` with entropy/length guards) over broad path allowlists so a real key in a diff is still caught.",
+      "deterministic_ref": "DET-P2-004",
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CONF-P3-002",
+      "severity": "P3",
+      "title": "secrets: inherit passes every repo/org secret into the reusable lab-preflight workflow",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 40,
+      "area": "CONF",
+      "evidence": [
+        ".github/workflows/remediation.yml:40-41 `uses: ./.github/workflows/lab-preflight.yml` / `secrets: inherit`",
+        ".github/workflows/verify-remediation.yml:37-38 `uses: ./.github/workflows/lab-preflight.yml` / `secrets: inherit`",
+        ".github/workflows/lab-tests.yml:32-33 `uses: ./.github/workflows/lab-preflight.yml` / `secrets: inherit`",
+        ".github/workflows/lab-preflight.yml:19-22 declares only `LAB_ENDPOINT_SSH_KEY` as a required `workflow_call` secret"
+      ],
+      "impact": "The reusable workflow only needs LAB_ENDPOINT_SSH_KEY but receives ORG_READ_TOKEN, NTFY_USERPASS, and any other caller secret via inherit, widening the blast radius if lab-preflight is ever modified or an action inside it is compromised.",
+      "recommendation": "Replace `secrets: inherit` with an explicit `secrets: LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}` mapping in all three callers, matching the workflow_call contract already declared in lab-preflight.yml.",
+      "deterministic_ref": null,
+      "confidence": "High",
+      "status": "open"
+    },
+    {
+      "id": "CI-P3-003",
+      "severity": "P3",
+      "title": "lab-tests.yml interpolates a dispatch input directly into a shell command on the lab runner",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 62,
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/lab-tests.yml:62 `bash -o pipefail -c \"${{ inputs.command }}\"`",
+        ".github/workflows/lab-tests.yml:17-20 `command: description: Command to run in the repo` (free-form input)",
+        ".github/workflows/lab-tests.yml:37-39 `runs-on: [self-hosted, ...]` / `GH_TOKEN: ${{ secrets.ORG_READ_TOKEN || github.token }}`"
+      ],
+      "impact": "`${{ inputs.command }}` is expanded by GitHub Actions into the run script before bash parses it, so a value containing quotes/`;`/`$()` breaks out of the intended command. On a persistent self-hosted runner with GH_TOKEN exported, this is a script-injection primitive for any account allowed to dispatch the workflow (today, repo write access). It also makes the workflow unsafe to expose via workflow_call.",
+      "recommendation": "Pass the command through an `env:` variable (e.g. `CMD: ${{ inputs.command }}`) and run `bash -o pipefail -c \"$CMD\"` so the value is data, not script text; keep dispatch restricted to trusted users and drop GH_TOKEN from the step env unless needed.",
+      "deterministic_ref": null,
+      "confidence": "Medium",
+      "status": "open"
+    }
+  ]
+}

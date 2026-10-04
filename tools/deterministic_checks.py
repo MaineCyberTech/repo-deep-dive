@@ -129,10 +129,15 @@ def check_secrets(root, add):
     if have("gitleaks"):
         with tempfile.TemporaryDirectory() as td:
             rep = os.path.join(td, "gl.json")
-            subprocess.run(["gitleaks", "detect", "--source", root, "--no-git",
-                            "--redact", "--report-format", "json",
-                            "--report-path", rep, "--exit-code", "0"],
-                           capture_output=True, text=True, timeout=600)
+            cmd = ["gitleaks", "detect", "--source", root, "--no-git",
+                   "--redact", "--report-format", "json",
+                   "--report-path", rep, "--exit-code", "0"]
+            repo_cfg = os.path.join(root, ".gitleaks.toml")
+            if os.path.exists(repo_cfg):
+                # Honor the repo's reviewed allowlist (its own gate already uses it);
+                # otherwise reviewed false positives re-report as raw findings.
+                cmd += ["--config", repo_cfg]
+            subprocess.run(cmd, capture_output=True, text=True, timeout=600)
             leaks = []
             if os.path.exists(rep):
                 try:
