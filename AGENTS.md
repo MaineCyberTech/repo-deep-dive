@@ -22,6 +22,14 @@ subagents or others) use it to audit repos and to open remediation PRs.
    `gitleaks` the diff; if a gate cannot run, record it as `not run` and why — never fabricate.
 9. **Reconcile, don't rewrite.** Update finding statuses via `tools/remediation_status.py`; never
    edit the original finding reports.
+10. **Lab preflight first (fail closed).** Before any audit or remediation work — and before
+    dispatching work to the lab — run `bash tools/lab-vpn/lab-audit-preflight.sh`
+    (`--mode lab` when dispatching to the lab/CI; `--remote-key <labvpn key>` to classify the lab
+    remotely; `--conf <client.conf>` only as a local fallback). It MUST print `RESULT: PASS`.
+    If it does not: **STOP**. Specifically, when it reports `lab_up_local_down` fix **local access**;
+    when it reports `lab_down`, do **not** dispatch to the lab and attempt work **locally only**.
+    The same gate runs in CI (`Lab preflight`) and as a `needs:` gate on the remediation/lab
+    workflows, and `tools/lab_runner.py` refuses to dispatch unless the lab API is healthy.
 
 ## Working on the pack itself
 
@@ -76,9 +84,10 @@ This is **separate** from the falcon telemetry VPN (`wg0`) — never reuse or ed
 ## Verification before committing
 
 ```bash
-bash tools/pack_digest.sh          # regenerate PACK_DIGEST.txt
-bash tools/lint_pack.sh            # RESULT: PASS expected
-bash tools/self_test.sh            # toolchain self-test (optional)
+bash tools/pack_digest.sh                        # regenerate PACK_DIGEST.txt
+bash tools/lint_pack.sh                          # RESULT: PASS expected
+bash tools/self_test.sh                          # toolchain self-test (optional)
+bash tools/lab-vpn/lab-audit-preflight.sh        # RESULT: PASS expected before work
 ```
 
 Never commit with a failing `lint_pack.sh`. Never fabricate a test result in a PR body or finding.

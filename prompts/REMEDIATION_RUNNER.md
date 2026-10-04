@@ -23,6 +23,9 @@ the machine-readable plan produced by `tools/remediation_plan.py`.
 
 - **Never auto-merge, never self-approve.** PRs are opened as **draft** and require a human
   reviewer (the implementer cannot approve a review or release gate - see `00_SHARED_AUDIT_RULES.md`).
+- **Preflight before work.** Run `bash tools/lab-vpn/lab-audit-preflight.sh` and require
+  `RESULT: PASS` before compiling or applying any patch set and before dispatching lab
+  verification. If it fails, stop and record **blocked** - do not dispatch work to the lab.
 - **No fabrication.** Every claim in the PR (tests, lint, build) must cite real command output
   with exit codes. If a check cannot run, record it as `not run` and why.
 - **Scoped changes only.** Touch only the files in the patch set (plus minimal tests/docs the

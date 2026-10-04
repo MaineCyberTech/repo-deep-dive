@@ -34,7 +34,14 @@ permissions:
   contents: read
 
 jobs:
+  # Fail-closed gate: do not compile/scaffold remediation unless the lab overlay is
+  # built out and tested (see .github/workflows/lab-preflight.yml).
+  preflight:
+    uses: ./.github/workflows/lab-preflight.yml
+    secrets: inherit
+
   remediation:
+    needs: preflight
     runs-on: ubuntu-latest
     env:
       ORG: ${{ inputs.org }}

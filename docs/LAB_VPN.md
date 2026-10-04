@@ -146,6 +146,34 @@ lab access indefinitely.
 Note: GitHub disables scheduled workflows after 60 days of repo inactivity; re-enable or run it
 manually if that happens.
 
+## Preflight gate (required before any work)
+
+Lab access must be **set up and verified before work is dispatched**. This is enforced in four
+places, so a broken overlay fails closed instead of queueing or half-running jobs:
+
+1. **Agents/devs (local):** run `bash tools/lab-vpn/lab-audit-preflight.sh` (add
+   `--remote-key <labvpn key>` to classify the lab remotely, and `--conf <file>` for the local
+   fallback). It must print `RESULT: PASS` before you start an audit or remediation — see
+   `AGENTS.md` rule 10. It:
+   - checks the **lab state remotely first** (scoped `health`), independent of the local overlay;
+   - only makes a **local attempt** (bring the overlay up) when the lab is confirmed down or
+     unclassifiable — never when the lab is up;
+   - reports one of `ready` / `ready_local_only` / `lab_up_local_down` / `lab_down` / `unknown`:
+     - `lab_up_local_down` → the lab is fine; **fix local access** (onboard + `lab-audit-connect.sh`),
+       do not rebuild the lab.
+     - `lab_down` → **do not dispatch to the lab**; work may be attempted **locally only**.
+   - Mode: `--mode local` (default) requires local reachability; `--mode lab` passes when the lab is
+     up (dispatching to the lab / CI self-hosted runners), local overlay not required.
+   - Also checks pack lint, and writes a stamp `tools/lab-vpn/.lab-ready.json` (gitignored).
+2. **CI PR check:** the **Lab preflight** workflow (`lab-preflight.yml`) runs on PRs touching
+   audit/remediation material and lints the pack + verifies the overlay/lab. Make
+   `Lab preflight / lab` a **required status check** in branch protection.
+3. **Workflow dispatch gate:** `remediation.yml`, `lab-tests.yml` and `verify-remediation.yml`
+   declare `needs: preflight` (the reusable gate), so they will not dispatch to the lab unless the
+   gate passes.
+4. **API dispatch guard:** `tools/lab_runner.py` calls the lab `/health` endpoint and **refuses to
+   dispatch** `run`/`sync` unless it is healthy (`--no-preflight` overrides, not recommended).
+
 ## Remote lab API (dispatching lab jobs)
 
 Remote agents/CI can drive the lab job API through the pack's existing `tools/lab_runner.py` using

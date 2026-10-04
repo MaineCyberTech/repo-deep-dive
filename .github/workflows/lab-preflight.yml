@@ -1,0 +1,77 @@
+name: Lab preflight
+
+# Gate that proves the lab audit overlay is built out and tested BEFORE audit/remediation
+# work is allowed to proceed. It lints the pack and verifies the overlay + lab end-to-end
+# through the scoped `labvpn` identity (handshake, lab pings, lab API).
+#
+# Runs on pull requests that touch audit/remediation material, and can be invoked as a
+# reusable gate (`uses: ./.github/workflows/lab-preflight.yml`) by other workflows.
+# Make "Lab preflight / lab" a required status check in branch protection to enforce it.
+#
+# Required repo configuration:
+#   secret    LAB_ENDPOINT_SSH_KEY   private key for the scoped `labvpn` identity
+#   variable  LAB_ENDPOINT_HOST      e.g. 138.197.105.82
+#   variable  LAB_ENDPOINT_USER      e.g. labvpn
+#
+# See docs/LAB_VPN.md.
+
+on:
+  workflow_call:
+    secrets:
+      LAB_ENDPOINT_SSH_KEY:
+        required: true
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'prompts/**'
+      - 'profiles/**'
+      - 'runs/**'
+      - 'tools/remediation_plan.py'
+      - 'tools/remediation_status.py'
+      - 'tools/deterministic_checks.py'
+      - '.github/workflows/remediation.yml'
+      - '.github/workflows/verify-remediation.yml'
+      - '.github/workflows/lab-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lab:
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ vars.LAB_ENDPOINT_HOST }}
+      USER: ${{ vars.LAB_ENDPOINT_USER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pack lint
+        run: bash tools/lint_pack.sh
+
+      - name: Configure SSH
+        run: |
+          set -e
+          [ -n "$HOST" ] && [ -n "$USER" ] || { echo "::error::LAB_ENDPOINT_HOST/USER not configured"; exit 1; }
+          [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
+          install -m700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
+          chmod 600 ~/.ssh/lab_endpoint
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Verify overlay + lab end-to-end
+        run: |
+          set -e
+          OUT=$(ssh -i ~/.ssh/lab_endpoint "$USER@$HOST" health)
+          printf '%s\n' "$OUT"
+          printf '%s\n' "$OUT" | grep -q 'RESULT: PASS'
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Lab preflight"
+            echo ""
+            echo "Pack lint + overlay/lab end-to-end (handshake, lab pings, lab API) must both pass."
+            echo "Local equivalent: \`bash tools/lab-vpn/lab-audit-preflight.sh\`."
+          } >> "$GITHUB_STEP_SUMMARY"

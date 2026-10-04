@@ -37,6 +37,18 @@ def call(url, token, path, payload=None, timeout=1800):
     return json.load(urllib.request.urlopen(req, timeout=timeout))
 
 
+def preflight(url, token, timeout=10):
+    """True iff the lab API reports healthy, i.e. lab access is set up and verified.
+
+    Runs before any work is dispatched to the lab (run/sync), so a broken overlay or a
+    down lab fails closed instead of queueing/half-sending jobs."""
+    try:
+        res = call(url, token, "/health", timeout=timeout)
+        return str(res.get("status", "")).lower() == "ok"
+    except Exception:
+        return False
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -53,6 +65,8 @@ def main():
     ap.add_argument("--ref", default="", help="branch/tag/SHA for --sync")
     ap.add_argument("--github-token", default=os.environ.get("LAB_GITHUB_TOKEN", ""))
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--no-preflight", action="store_true",
+                    help="skip the lab health preflight before dispatching work (not recommended)")
     a = ap.parse_args()
 
     token = a.token
@@ -63,6 +77,13 @@ def main():
         return 2
 
     try:
+        # Fail closed: verify lab access before dispatching any work (run/sync).
+        if not a.repos and not a.no_preflight and not preflight(a.url, token):
+            print("error: lab preflight failed (%s/health not ok); refusing to dispatch work. "
+                  "Set up/verify lab access (docs/LAB_VPN.md) or pass --no-preflight."
+                  % a.url.rstrip("/"), file=sys.stderr)
+            return 3
+
         if a.repos:
             res = call(a.url, token, "/repos", timeout=60)
             if a.json:

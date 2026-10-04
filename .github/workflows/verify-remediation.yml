@@ -32,7 +32,13 @@ permissions:
   contents: read
 
 jobs:
+  # Fail-closed gate: verify lab access before dispatching verification to the lab.
+  preflight:
+    uses: ./.github/workflows/lab-preflight.yml
+    secrets: inherit
+
   verify:
+    needs: preflight
     runs-on: [self-hosted, linux, x64, ci-runner]
     env:
       ORG: ${{ github.repository_owner }}

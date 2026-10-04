@@ -55,6 +55,15 @@ Evidence is not the same as verification. In addition to citing evidence:
 - Do not connect to production systems unless the operator explicitly authorizes read-only access for this audit. If authorized: read-only means read-only (no restarts, reconfigurations, deployments, or failovers); timestamp observations; redact secrets; mark everything not verifiable as `unverified`.
 - Treat repository exports, logs, `.env` files, test artifacts, and generated outputs as sensitive.
 
+## Preflight (lab access)
+
+Lab access must be set up and verified **before** audit or remediation work is dispatched:
+
+- Run `bash tools/lab-vpn/lab-audit-preflight.sh` and require `RESULT: PASS` before starting.
+- If it fails, **STOP and report blocked** - do not dispatch work to the lab, and do not start
+  remediation. Lab-dependent work (remediation verification, lab tests) is additionally gated in
+  CI by the required `Lab preflight` check and by `needs: preflight` on those workflows.
+
 ## Severity model
 
 - `P0`: Critical. Exploitable security issue, tenant data exposure, data loss, production outage, release-blocking failure.
