@@ -867,8 +867,6 @@ aaae8cf6137456a2508ccbe72cdddfc4a8835d3f8319ab074c83e5e4ca35498a  ./runs/repo-de
 f22c38b4e8c1cc0f8abc6aea74d1755789b7f0f08da6a18ef28afe960470f609  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/diff.patch
 f61953cf94a567edf2d1070f9efaf52d16534b7520db383b03e8d80c32734d1d  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/manifest.json
 9d56af1c79e8b324581171c13e3b315927e04d9a89b8ea2d106d28cbd467ad4e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/pr_body.md
-c872d6db8c6bf83a8eaa704fc93999f027d55dffbc63b8a6abdccb47df5f4cd4  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/tools/actionlint
-88f91962aa2f93ac6ab281d553b9e125f5197bbbce38f9f2437f7299c32e5509  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/tools/gitleaks
 11d7b705c176bad47d2d2167928a5d7fc96751b740ddbcb99d743429f22bd89b  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/verify.log
 8a09d5784d5eaaaa4b3a1a335ed45d1e67e9a2bb92bc3129f5534e2edda3e96f  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-003/verify.sh
 f89b685c5f2caa5a7c7cca5e8e31627834f3be40e6a995308667d5e55480682e  ./runs/repo-deep-dive-20261003-0018-main-7bac320/remediation/PS-004/diff.patch
