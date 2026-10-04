@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T07:12:40Z
+# generated: 2026-10-04T07:14:24Z
 # files: 1117
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
@@ -194,7 +194,7 @@ f944f051b99542867c767698a51d2d2feccdcda3357ec2c0e87e63189df5ab7a  ./runs/2026093
 61d639f25502957680401e4893ac559c6421d47bc3738616f02212ac622f2f91  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/sbom_license_policy_recommendation.md
 f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
 2eaaf62cc4e878b2607cd931102b5ce246226f50be6b1ffa99e7c53d0280dda4  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/verification_log.md
-d6fbe1d5181a79f05f80fcb2f96aa15a54b41b5295444303b7d5b6520ecda83e  ./runs/INDEX.md
+3eaf66a5accdb40729755fc8fff2134bc98fb05a23c9d58726844e43d253aaa6  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
 e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
