@@ -88,12 +88,29 @@ if [ -z "$IP" ]; then
   IP="${SUBNET}.${n}"
 fi
 
-# ---- add peer to conf only if its public key is absent ----------------------
-if ! grep -qF "$PUB" "$CONF"; then
+# ---- upsert the peer block --------------------------------------------------
+# Idempotent by public key; and if the SAME name already exists with a DIFFERENT
+# key (key rotation), replace that block rather than adding a duplicate peer.
+if grep -qF "$PUB" "$CONF"; then
+  : # already present
+else
   cp -a "$CONF" "$CONF.bak-$(date -u +%Y%m%dT%H%M%SZ)"
-  printf '\n[Peer]\n# agent: %s\nPublicKey = %s\nAllowedIPs = %s/32\n' "$NAME" "$PUB" "$IP" >> "$CONF"
+  python3 - "$CONF" "$NAME" "$PUB" "$IP" <<'PY'
+import sys
+conf, name, pub, ip = sys.argv[1:5]
+s = open(conf).read()
+parts = s.split("\n[Peer]\n")
+out = [parts[0]]
+for b in parts[1:]:
+    if ("# agent: %s\n" % name) in b:
+        continue  # drop a stale block for this name (rotation)
+    out.append(b)
+s = "\n[Peer]\n".join(out).rstrip("\n") + \
+    "\n\n[Peer]\n# agent: %s\nPublicKey = %s\nAllowedIPs = %s/32\n" % (name, pub, ip)
+open(conf, "w").write(s)
+PY
   wg syncconf "$IFACE" <(wg-quick strip "$IFACE")
-  echo "PEER_ADDED=$NAME" >&2
+  echo "PEER_SET=$NAME" >&2
 fi
 
 # ---- registry upsert (tab separated: name, ip, pubkey, added-UTC) -----------

@@ -6,6 +6,7 @@
 set -euo pipefail
 CONF_IN="${1:?usage: lab-audit-connect.sh <client.conf> [iface]}"
 IFACE="${2:-lab-audit}"
+[ "${#IFACE}" -le 15 ] || { echo "iface name '$IFACE' too long (Linux max 15 chars)"; exit 1; }
 DEST="/etc/wireguard/${IFACE}.conf"
 
 say() { echo "[lab-audit] $*"; }

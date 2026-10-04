@@ -171,6 +171,8 @@ bash lab-audit-list-agents.sh             # peers + handshake age (endpoint)
 - Firewall must be opened in **two** places: `ufw` on the host **and** the DigitalOcean cloud firewall.
 - Client configs are secrets (private keys) — deliver out of band, `0600`, never commit.
 - Prefer **agent-generated keys**: with a public-key add, no private key is ever stored server-side.
+- **Key rotation:** re-adding the same name with a new public key **replaces** that peer's block (no
+  duplicates) and reuses its address; re-run onboarding to get a fresh config.
 
 ## Troubleshooting
 
