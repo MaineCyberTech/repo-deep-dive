@@ -36,6 +36,9 @@ subagents or others) use it to audit repos and to open remediation PRs.
 
 - **Keep the digest current.** After ANY file change, run `tools/pack_digest.sh`, then
   `tools/lint_pack.sh` (must print `RESULT: PASS`).
+- **Digest conflicts self-heal.** `PACK_DIGEST.txt` uses `merge=ours` plus a push-to-main
+  self-heal workflow. Enable the driver once per clone (`tools/setup_git_merge_driver.sh`); if a
+  merge or rebase yields a conflict-free but stale digest, re-run `tools/pack_digest.sh`.
 - **Line endings & exec bits.** Text files are LF; `*.sh` are executable (`100755`). Windows checkouts
   can silently drop both — verify with `git ls-files --eol` / `git ls-files -s`.
 - **Prompts must pass the structure gate.** A counted domain prompt (`NN_*.md`) needs the

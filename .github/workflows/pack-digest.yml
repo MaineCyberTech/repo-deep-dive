@@ -1,0 +1,69 @@
+name: Regenerate PACK_DIGEST
+
+# PACK_DIGEST.txt is a generated inventory: any content change rewrites it, so
+# two concurrent PRs conflict on it and every rebase needs a manual regen
+# (observed ~6x in one session). This workflow makes `main` self-healing: after
+# every push it regenerates the digest and commits it only if the hashes changed.
+#
+# Why it cannot loop: tools/pack_digest.sh is deterministic/idempotent (no
+# wall-clock timestamp), so a second run produces no diff; and a push made with
+# the workflow token does not trigger further workflow runs.
+#
+# If branch protection ever blocks a `github.token` push, create a fine-grained
+# PAT with repo `contents: write` and store it as the repository secret
+# `PACK_DIGEST_TOKEN` (Settings > Secrets and variables > Actions). The workflow
+# prefers that secret automatically; it never hardcodes a token. An unset secret
+# falls back to `github.token`, so no configuration is required on a normal repo.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Serialise self-heal runs; a newer push supersedes an in-flight regen.
+concurrency:
+  group: pack-digest-main
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    # Never run this repo-specific writer against a fork or a mirror.
+    if: github.repository == 'MaineCyberTech/repo-deep-dive'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Regenerate PACK_DIGEST.txt
+        run: bash tools/pack_digest.sh
+
+      - name: Commit and push if the digest changed
+        env:
+          # Fine-grained PAT fallback; unset -> github.token (contents: write).
+          GH_TOKEN: ${{ secrets.PACK_DIGEST_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- PACK_DIGEST.txt; then
+            echo "PACK_DIGEST.txt is already current; nothing to commit."
+            exit 0
+          fi
+
+          git add PACK_DIGEST.txt
+          git commit -m "chore: regenerate PACK_DIGEST"
+
+          # Authenticate the push via a header, not the remote URL, so the token
+          # cannot leak through git diagnostics or shell error output.
+          AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git -c credential.helper= \
+              -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+              push origin "HEAD:refs/heads/main"

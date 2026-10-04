@@ -1,8 +1,8 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T09:26:27Z
-# files: 1232
+# generated: deterministic inventory; do not hand-edit
+# files: 1234
 # format: sha256  path
-4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
+354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
@@ -13,18 +13,19 @@ a318eddef6d4f26fa5e095213bfee294ff6e579a1750090ccf6351d7c9171650  ./.github/work
 cfda3569b297c0378cff522904897efb6e7839aa3e4fc827aa598458b89cc3f7  ./.github/workflows/lab-overlay-health.yml
 ee2d43a7e60781a6974593e453376a69e1b246aa375fc5264a0afa0a57602d4f  ./.github/workflows/lab-preflight.yml
 a48484ba129f6aaf574b9f35ad41d1df7aab49d8c471e9e5e49174d3a393131a  ./.github/workflows/lab-tests.yml
+e4b903c23369f3e6654e0d4e95f926d77819f957e8d3b544bbf3c04111891d05  ./.github/workflows/pack-digest.yml
 f78806fe8a6daa1364c33ca73f7a7955c426345050f62d17635dea567172373f  ./.github/workflows/pack-tests.yml
 967fef4e14e5f0dd7f1e1cdd7674a3ae2651d7134018aacbdd7bad1643f13b42  ./.github/workflows/remediation-board.yml
 19de2b5a65bba537b1c1cbd4f9d65f92d52ce1e696634c6073d1c8a730384fa7  ./.github/workflows/remediation.yml
 95c09b90072b2ceba3f9cfb99fc49021916439d27f52a75eb3591886c1990aef  ./.github/workflows/verify-remediation.yml
 7df052da6bb16f644d1faaa8fec9f8a41e9fda3407adaa71313fd70e8ba0f626  ./.gitignore
 365b7ce31d9bd9e36a10b242b0620f16d3421f19652a1431cd5ff4ab9960e09a  ./.gitleaks.toml
-480b4197df1825f0d82dca24df35860a6e7016b8a16cfabd137bd5d633b600d7  ./AGENTS.md
-9c883bfd0ea2426255986f9456a5c32bd4fe672debd17078d389e137337806fb  ./CHANGELOG.md
+ba7eee35d957142f7785aefcf9e62959d68572eab38b0c3b185195ed41d0a90d  ./AGENTS.md
+d9c187e6d2a9ee5dfba8ed5ce951fff66fbf63eb906220b815a4f0213ed7c81d  ./CHANGELOG.md
 c4dd58c3dffa1dd407b5acaddf402025659b1e211d1265ce4771b07e0a307f43  ./CONTRIBUTING.md
 0886904dbbf64dbe39709dd725d06d87627ad397bca96a4013b310da077fdc42  ./LICENSE
 688b7221796be92c2399b670e95683704580d76f223124438fdfa6076cfc08e8  ./OWNER_DECISIONS.md
-2d47c692ca198f666cea3cc164c252a66a99bcf1ee7ebe3d6ed29b307fd761b9  ./README.md
+ba5274f026624721c194b40ed315bd3a71758c48e0b34efa2dc70727d70a91ef  ./README.md
 87f9219cfece7a2661b08d2aa7e728b654ca9772734e458d4cfddcda6392bf07  ./REAUDIT_QUEUE.md
 80a69cb9b6156f71459cb3d2e15fde26e41b6215acc9536f80cfe0da229a063e  ./REFERENCE_CARD.md
 c3715a4e8c0dc0596cdbc0df05dc1d979a87b2f208d6d8d32f6caad7037a87d5  ./REVIEW_INDEX.md
@@ -1218,7 +1219,7 @@ add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_fi
 a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
 774b868f32471077390fd1d37a127daf4213b44f73f3acebe4eb75c8d72235bb  ./tools/owner_decisions.py
-307150367212bb121179737cc42c84eaef08d7a4e0ec7733d46ce3bb41502c99  ./tools/pack_digest.sh
+ead1a191b5c1e89e3fa8244eede66c0d37273a63c739f58d52ca0d4808766f07  ./tools/pack_digest.sh
 e98832d3b59baf4559c66764397209b353898003a25521458d47fb3ac2b61c19  ./tools/pass.py
 4c8f532c3bb223017da20a4942cf04385aaa1098c600d5c618c13e9019bd9e2b  ./tools/publish_audit.py
 04d98cc8387b354a1d11e17d92fa934c76bf6e431542b9de78221c2a1160131d  ./tools/reaudit_queue.py
@@ -1232,5 +1233,6 @@ f8e835fce3153791f01f6eb3dbcf20732323c58112b3f7c5e53df50f4544c236  ./tools/review
 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
 c6bbcbb8b9d12407dff5182473169814b2b915b80a2b0868d73e793b3632ee14  ./tools/run_toolchain.py
 101b10c67a604792be29c9c69c57ecb0225cc1666e81dd588e80f60de8d5a10f  ./tools/self_test.sh
+64335c984915774d613c036c490c6ee09e221a8bd530d4b2e69c4319d7f7302a  ./tools/setup_git_merge_driver.sh
 94b75cad96cd3c97734134f4ef60fd1c916843b08a3185c60d3f8d4c0087254d  ./wiring/REPO_WIRING.md
 b0ed61e5a481f2c949a10a7870a1acf1f75c2003d9f2db4840c66d06a6280280  ./wiring/SUGGESTED_TOOLING.md
