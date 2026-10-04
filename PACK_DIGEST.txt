@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T08:29:55Z
-# files: 1189
+# generated: 2026-10-04T08:36:58Z
+# files: 1192
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -39,6 +39,7 @@ c8b9df7a9ea79cebfe073cb2a72b1167d9a6add1ca883ea665b6383eb2216d84  ./docs/ARCHITE
 022ddfdfb9788ca9b89856f1364c7ba71378bf0b2ca2b35b41987a41d256497d  ./docs/LAB_VPN.md
 8e8d4464abe5d3accb3cda5b9bba9c9e00fc8d64a90ebe2bdadf49a8e2e54c7a  ./docs/OBSERVABILITY.md
 22689ec18c1a279cd478236d2d714f7a231deb94a279eadd058c497090e12708  ./docs/OWNER_REMEDIATION_DECISIONS.md
+a97cede99d8ff27d760746d9cac7bfabb069ef1a2dd29e165dc5742014e23ce2  ./docs/PASS_CONTROL_PLANE.md
 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
 d62518d7d66a44f5bb092f960486e9839f49ac262265db579bb08b0823b752e6  ./docs/SUPPLY_CHAIN.md
 5df4e64a31c9ef36fa22d0f67ed4a2313e63e281fb4f5465a4311e2a496b6464  ./docs/audits/repo-deep-dive/20261004-0700-main-49f46a8/EXECUTIVE_SUMMARY.md
@@ -1128,6 +1129,7 @@ d56fd04ddc3ca7de3a9193bdc5d2f53ddef23818f6ad0d98d967c7fc44f924e3  ./runs/snowrid
 e86c63cf704c2b39c756e49d84d13ddb8a94e274fcc633dd2d78293eb4da9432  ./runs/snowride-20261004-0700-main-d79d0d7/risk_register.md
 8f7423cca9bb81a4ab9402b4f79c091732e553190b933f0ffd998f3ce5f48123  ./runs/snowride-20261004-0700-main-d79d0d7/roadmap.md
 262b651ed7d2f7bbd5126f772928897942bcd6f6cfb547697f8451860316589a  ./schemas/findings.schema.json
+54b9ba827b305542a56b4ed6454cc4bc5fd1b37c6595235f9883188ebcbb3893  ./schemas/org_pass.schema.json
 075c12d78d2ec45f70766b667b963721590f949c338639badf1a2d82432b6bf4  ./templates/audit_report_template.falcon.md
 0489aa34431a2bb958b181a4426d01d0a810b80365a0998628b5e270cb622d75  ./templates/audit_report_template.md
 424f1bcb63c4778a3fa13ccfa67d35150700e3104f1663a330cec7d960d018e9  ./templates/claim_sample_template.md
@@ -1177,6 +1179,7 @@ a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_ru
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
 774b868f32471077390fd1d37a127daf4213b44f73f3acebe4eb75c8d72235bb  ./tools/owner_decisions.py
 307150367212bb121179737cc42c84eaef08d7a4e0ec7733d46ce3bb41502c99  ./tools/pack_digest.sh
+e98832d3b59baf4559c66764397209b353898003a25521458d47fb3ac2b61c19  ./tools/pass.py
 e0a07c4337a90c91de365c22460c1ec42e6fac8d3f626b21bd84abd26ba52369  ./tools/publish_audit.py
 04d98cc8387b354a1d11e17d92fa934c76bf6e431542b9de78221c2a1160131d  ./tools/reaudit_queue.py
 2933ab79d102c16969ef99dd3c02fcf0fa9291cdad9447fcc23666442f49924b  ./tools/remediation_plan.py

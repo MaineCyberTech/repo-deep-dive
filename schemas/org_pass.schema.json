@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/repo-deep-dive/schemas/org_pass.schema.json",
+  "title": "repo-deep-dive org pass manifest",
+  "description": "State for one org-wide audit pass, as written by tools/pass.py at docs/audits/_org/<id>/manifest.json. Tracks the standard post-audit pipeline (sweep -> deepdive -> publish -> remediate -> merge -> reconcile) per repo, with evidence (run URL, PR numbers, commit SHAs).",
+  "type": "object",
+  "required": ["schema", "id", "org", "created_at", "lenses", "repos"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "org_pass/1",
+      "description": "Manifest format identifier."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "description": "Pass id; also the docs/audits/_org/<id>/ directory name."
+    },
+    "org": { "type": "string", "minLength": 1 },
+    "created_at": { "type": "string" },
+    "created_by": { "type": "string" },
+    "updated_at": { "type": "string" },
+    "lenses": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Lens ids applied during the deep-dive."
+    },
+    "stageOrder": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["sweep", "deepdive", "publish", "remediate", "merge", "reconcile"] },
+      "minItems": 1
+    },
+    "repos": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["stages"],
+        "additionalProperties": true,
+        "properties": {
+          "default_branch": { "type": "string" },
+          "audit_run": { "type": ["string", "null"], "description": "Run folder name under docs/audits/repo-deep-dive/." },
+          "stages": {
+            "type": "object",
+            "required": ["sweep", "deepdive", "publish", "remediate", "merge", "reconcile"],
+            "additionalProperties": false,
+            "properties": {
+              "sweep": { "$ref": "#/$defs/stage" },
+              "deepdive": { "$ref": "#/$defs/stage" },
+              "publish": { "$ref": "#/$defs/stage" },
+              "remediate": { "$ref": "#/$defs/stage" },
+              "merge": { "$ref": "#/$defs/stage" },
+              "reconcile": { "$ref": "#/$defs/stage" }
+            }
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "stage": {
+      "type": "object",
+      "required": ["status", "evidence"],
+      "additionalProperties": true,
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in_progress", "done", "blocked"] },
+        "updated_at": { "type": "string" },
+        "evidence": {
+          "type": "object",
+          "required": ["run_url", "pr_numbers", "commit_shas"],
+          "additionalProperties": true,
+          "properties": {
+            "run_url": { "type": ["string", "null"] },
+            "pr_numbers": {
+              "type": "array",
+              "items": { "type": ["integer", "string"] }
+            },
+            "commit_shas": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "note": { "type": "string" },
+            "detail": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}
