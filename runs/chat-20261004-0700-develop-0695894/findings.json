@@ -39,7 +39,8 @@
       "recommendation": "Remove RLS DDL from seed-database.yml; apply policies only via migrations. Block production seeding or require a protected environment. Never embed a shared password hash in CI.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #88 @ 3115ab3"
     },
     {
       "id": "CI-P1-001",
@@ -60,7 +61,8 @@
       "recommendation": "Attach a protected production environment to provision/build-images, require plan+approval before apply, and drop unused id-token: write.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #89 @ b32bd0f"
     },
     {
       "id": "AUTH-P2-001",
@@ -78,7 +80,8 @@
       "recommendation": "Resolve the dead letter to its workspace and require it be within req.adminWorkspaceIds before calling retryDeadLetter.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #90 @ e687345"
     },
     {
       "id": "SEC-P2-001",
@@ -97,7 +100,8 @@
       "recommendation": "Scope these queries to the caller's workspace co-members or use the user-scoped Supabase client instead of the service-role client.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #91 @ a70ebe1"
     },
     {
       "id": "CI-P2-001",
@@ -154,7 +158,8 @@
       "recommendation": "Remove SUPABASE_SERVICE_ROLE_KEY from x-common-env and inject it only into api and worker.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #92 @ a498513"
     },
     {
       "id": "DEP-P2-001",

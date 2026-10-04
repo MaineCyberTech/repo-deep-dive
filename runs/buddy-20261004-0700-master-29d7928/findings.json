@@ -36,7 +36,8 @@
       "recommendation": "Upgrade to a supported line (15.5.26+ or 16.3.6+); if deferred, record a dated risk acceptance and re-check advisories monthly.",
       "deterministic_ref": "DET-P1-001",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #25 @ 226396b"
     },
     {
       "id": "DEP-P2-001",
@@ -75,7 +76,8 @@
       "recommendation": "Pin every uses: to a full commit SHA; scope permissions to the job/step that needs writes and keep npm ci under contents: read; prefer npm ci --ignore-scripts or isolate install in a read-only job; bump stale majors (checkout/setup-node v4->v7, attest-build-provenance v1->v4, action-gh-release v2->v3).",
       "deterministic_ref": "DET-P2-005",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #24 @ 4f2fb9f"
     },
     {
       "id": "CI-P2-001",
@@ -94,7 +96,8 @@
       "recommendation": "Add CI jobs: npm audit --audit-level=high --omit=dev, actions/dependency-review-action on PRs, a gitleaks/secret scan, and a license allow/deny check once a policy exists.",
       "deterministic_ref": "DET-P1-001",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #26 @ daf4f17"
     },
     {
       "id": "CI-P2-002",
@@ -113,7 +116,8 @@
       "recommendation": "Create a release GitHub Environment with required reviewers, apply a v* tag protection rule, and enable branch protection on master requiring the CI check and CODEOWNERS review; document in docs/release-process.md.",
       "deterministic_ref": null,
       "confidence": "Medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #27 @ 2ef51b9"
     },
     {
       "id": "CI-P3-001",

@@ -35,7 +35,8 @@
       "recommendation": "Remove the line-scoped .*curl.* allowlist; allowlist by path/rule instead, or require the credential value to be a variable/$(cat ...) reference. Add a negative fixture with a literal curl credential that must still fail.",
       "deterministic_ref": "DET-P2-004",
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #34 @ bc58e7e"
     },
     {
       "id": "SEC-P2-002",
@@ -54,7 +55,8 @@
       "recommendation": "Confirm revocation with IRIS, then replace the literal in both scripts with a placeholder or a SHA-256 comparison; remove the ALLOW_VALUE_SHA256 entry and record name-only rotation evidence plus a negative test.",
       "deterministic_ref": null,
       "confidence": "medium",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #37 @ a146ae0"
     },
     {
       "id": "SEC-P2-003",
@@ -73,7 +75,8 @@
       "recommendation": "Execute the documented rotation order with name-only evidence and negative tests; migrate the 28 scripts to single-key reads (automation/validation/lib/env_key.sh) or restrict them to the interactive account.",
       "deterministic_ref": null,
       "confidence": "high",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #38 @ 01c176a"
     },
     {
       "id": "DEP-P2-001",

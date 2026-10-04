@@ -36,7 +36,8 @@
       "recommendation": "Bump @grpc/grpc-js to 1.14.5 (overrides or lockfile refresh), then make the high-severity audit step blocking in both workflows.",
       "deterministic_ref": "DET-P1-001, DET-P3-002",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #30 @ cb583a2"
     },
     {
       "id": "SUPPLY-P2-001",
@@ -53,7 +54,8 @@
       "recommendation": "Pin line 55 to the same ea165f8d... SHA and add a guard/Dependabot rule preventing tag refs.",
       "deterministic_ref": "DET-P2-006",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #31 @ 34347c0"
     },
     {
       "id": "SUPPLY-P2-002",
@@ -73,7 +75,8 @@
       "recommendation": "Pin every node: and postgres: reference by @sha256 digest, or document a periodic digest-refresh step.",
       "deterministic_ref": "DET-P3-007 (derived)",
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #32 @ 4c6e788"
     },
     {
       "id": "CI-P2-001",
@@ -91,7 +94,8 @@
       "recommendation": "Add license-and-vulnerability to requiredStatusChecks.contexts and extend verify-branch-protection.mjs to enumerate all workflow files.",
       "deterministic_ref": null,
       "confidence": "High",
-      "status": "open"
+      "status": "verified-fixed",
+      "note": "merged #34 @ b5d6921"
     },
     {
       "id": "PORT-P3-001",
