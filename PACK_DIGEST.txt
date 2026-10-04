@@ -1,5 +1,5 @@
 # repo-deep-dive pack digest
-# generated: 2026-10-04T03:39:32Z
+# generated: 2026-10-04T03:41:33Z
 # files: 1042
 # format: sha256  path
 4f068fe872edb4ada8b8723462695dbb5461a25d913d08b278a7712bf7ffe335  ./.gitattributes
@@ -803,7 +803,7 @@ b6341c35c73d25e7abde6d188fc419bc5d5878d9bc099e0cb7cfe0b5a2a3165c  ./runs/repo-de
 6cf272291912f8b673e250dd9877630af6970a083e7b68a28d606d2bc61cc8df  ./runs/repo-deep-dive-20261003-0018-main-7bac320/23_executive_summary_release_gate.md
 0a96209cf92a8b621bb8de5e707f77aeb89d673e1cbf1c2d60145ff93d1c012a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/EXECUTIVE_SUMMARY.md
 0ef133457e81bbb3a865c9402ded2b3df06bfa60de0b8f69fea9428afad30073  ./runs/repo-deep-dive-20261003-0018-main-7bac320/INDEX.md
-84f0a41892b4989d02c48b5dc3ed0ba6b3610daeb9844477a990b8c31a878c85  ./runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
+cd1610175896b22385e5868c869c6b39c66c8158d32579a865f3a13fba28639a  ./runs/repo-deep-dive-20261003-0018-main-7bac320/RELEASE_GATE.md
 eca0ab4f22322360925dd2bf9722a41f38c91deddb3c36b3f57fb089a581de73  ./runs/repo-deep-dive-20261003-0018-main-7bac320/audit_manifest.json
 e9d74900c2feb0a78c5ff92c0b04e93bcf3eb66fa0695458fd3132d2ce914666  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.html
 cbc20e976700c6f8e807bb1bba5d3e52f04ca50f68dfdf3e996436ff7f2c1af3  ./runs/repo-deep-dive-20261003-0018-main-7bac320/dashboard.md
