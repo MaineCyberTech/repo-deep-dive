@@ -110,7 +110,7 @@
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 55,
       "status": "regressed",
-      "note": "REGRESSED: the PS-003 pin was reverted by repo-deep-dive#33 @ 2626a84 (audit.yml tags restored) and repo-deep-dive#35 @ 04aec9e (unpinned checkout added to pack-digest.yml); ci/audit.yml was never pinned. Re-pinned in this PR #PRNUM."
+      "note": "REGRESSED: the PS-003 pin was reverted by repo-deep-dive#33 @ 2626a84 (audit.yml tags restored) and repo-deep-dive#35 @ 04aec9e (unpinned checkout added to pack-digest.yml); ci/audit.yml was never pinned. Re-pinned in PR #39 @ 7893e39."
     },
     {
       "id": "TEST-P1-001",

@@ -11,7 +11,7 @@ Owner/Target/Status columns drive tools/collect_findings.py enrichment.
 | INV-P1-001 | P1 | Run is bound to 7bac320 but the worktree is at 6cada03 |  |  | verified-fixed | merged repo-deep-dive#4 @ 6c89296 |
 | SEC-P1-001 | P1 | CI executes remotely downloaded scripts and archives as root without pinning |  |  | verified-fixed | merged repo-deep-dive#2 @ 2d5b4f5 |
 | SEC-P1-002 | P1 | PAT is embedded in the git clone URL, risking token exposure in logs |  |  | verified-fixed | merged repo-deep-dive#2 @ 2d5b4f5 |
-| SUPPLY-P1-001 | P1 | GitHub Actions and downloaded tools are unpinned (mutable tags/branches) |  |  | regressed | PS-003 pin reverted by repo-deep-dive#33 @ 2626a84 and repo-deep-dive#35 @ 04aec9e; ci/audit.yml never pinned. Re-pinned in this PR #PRNUM. |
+| SUPPLY-P1-001 | P1 | GitHub Actions and downloaded tools are unpinned (mutable tags/branches) |  |  | regressed | PS-003 pin reverted by repo-deep-dive#33 @ 2626a84 and repo-deep-dive#35 @ 04aec9e; ci/audit.yml never pinned. Re-pinned in PR #39 @ 7893e39. |
 | TEST-P1-001 | P1 | No CI job runs the pack's own lint/self-test or authorizes PRs |  |  | verified-fixed | merged repo-deep-dive#3 @ c97e73e |
 | API-P2-001 | P2 | Deterministic lens reuses domain area codes, risking duplicate finding IDs |  |  | partially-fixed | remediation PS-007 open c661a6c8d71381345cf0662183fbba453f229fe3 https://github.com/MaineCyberTech/repo-deep-dive/pull/7 |
 | API-P2-002 | P2 | Deterministic findings never reach the run findings flow |  |  | partially-fixed | remediation PS-007 open c661a6c8d71381345cf0662183fbba453f229fe3 https://github.com/MaineCyberTech/repo-deep-dive/pull/7 |

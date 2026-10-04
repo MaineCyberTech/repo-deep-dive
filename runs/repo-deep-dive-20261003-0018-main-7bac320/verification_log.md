@@ -12,4 +12,4 @@
 | 2026-10-03T16:36:09Z | PS-004 | open | partially-fixed | ca641962f156f8320923e555ce1b8374f695b06a https://github.com/MaineCyberTech/repo-deep-dive/pull/3 |  |
 | 2026-10-03T16:36:09Z | PS-005 | open | partially-fixed | c07a49a4b1a0001b5d6f38b4b2504d9a1a2c5289 https://github.com/MaineCyberTech/repo-deep-dive/pull/5 |  |
 | 2026-10-03T16:36:10Z | PS-010 | open | partially-fixed | bfbb0e005880f28e77892650a548e9817dd78924 https://github.com/MaineCyberTech/repo-deep-dive/pull/9 |  |
-| 2026-10-04T17:31:36Z | RDD-SUPPLY-REPIN | open | regressed | COMMIT_PLACEHOLDER https://github.com/MaineCyberTech/repo-deep-dive/pull/PRNUM | SUPPLY-P1-001 regression (PR #33/#35). Every external `uses:` in `.github/workflows/*.yml` + `ci/audit.yml` re-pinned to full commit SHAs; see docs/SUPPLY_CHAIN.md. |
+| 2026-10-04T17:31:36Z | RDD-SUPPLY-REPIN | open | regressed | 7893e39 https://github.com/MaineCyberTech/repo-deep-dive/pull/39 | SUPPLY-P1-001 regression (PR #33/#35). Every external `uses:` in `.github/workflows/*.yml` + `ci/audit.yml` re-pinned to full commit SHAs; see docs/SUPPLY_CHAIN.md. |
