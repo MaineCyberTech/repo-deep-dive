@@ -1,0 +1,10 @@
+﻿
+===== merge-train 2026-10-03T23:38:40.0565350-04:00 =====
+PR: #31
+branch: remediation/ps-u04-20261003-0018-fix-backup-abort-markers-20b5e57
+rebase onto b3055aa -> fix 22948f2 (ci/validate.py conflict resolved: PS-U08/12/13 checks + PS-U04 event-time check as #17 both kept) ; rebind commit 798504c ; merged: 9444f80fbb452ff5d8982996511628a248766d20
+lab-sync.ps1 -Repo falcon  -> exit 0 (synced:falcon, packs=3, HEAD 798504c)
+lab-run: chmod +x over /srv/work/falcon/*.sh  -> exit 0
+lab-run: HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py  -> exit 0, validation_failures=0 (41 suites; lock 13d<=30d; event_time template/Vector consistency)
+git push --force-with-lease origin <branch>  -> exit 0 (5fee5ae...798504c forced update)
+GitHub merge API PUT /pulls/31/merge  -> merged=True sha=9444f80fbb452ff5d8982996511628a248766d20

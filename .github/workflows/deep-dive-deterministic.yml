@@ -138,8 +138,11 @@ jobs:
             echo "::group::$r"
             # The PAT is passed via an HTTP header, never placed in the clone URL,
             # so it cannot leak through git/shell error or diagnostic output.
+            # GitHub git-over-HTTPS requires Basic auth (x-access-token:<pat>);
+            # a Bearer header is only valid for the REST API and is rejected here.
+            AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
             if git -c credential.helper= \
-                 -c http.extraheader="AUTHORIZATION: bearer ${GH_TOKEN}" \
+                 -c http.extraheader="AUTHORIZATION: ${AUTH}" \
                  clone -q "https://github.com/${ORG}/${r}.git" "work/$r"; then
               python3 tools/repo_inventory.py "work/$r" -o "out/$r.inventory.json" || failed=1
               python3 tools/deterministic_checks.py "work/$r" -o "out/$r" $EXTRA || failed=1

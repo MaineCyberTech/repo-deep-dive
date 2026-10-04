@@ -1,0 +1,10 @@
+﻿
+===== merge-train 2026-10-03T23:30:07.4489829-04:00 =====
+PR: #19
+branch: remediation/patch-02-20261003-0018-fix-backup-abort-markers-20b5e57
+rebase onto e7297e9 -> fix e589cbe ; rebind commit f372cea ; merged: d83be474e9e97bccbecae1f31064d99ce85c9c52
+lab-sync.ps1 -Repo falcon  -> exit 0 (synced:falcon, packs=3, HEAD f372cea)
+lab-run: chmod +x over /srv/work/falcon/*.sh  -> exit 0
+lab-run: HOME=/root FALCON_EVIDENCE_OPTIONAL=1 python3 ci/validate.py  -> exit 0, validation_failures=0
+git push --force-with-lease origin <branch>  -> exit 0 (a0366eb...f372cea forced update)
+GitHub merge API PUT /pulls/19/merge  -> merged=True sha=d83be474e9e97bccbecae1f31064d99ce85c9c52
