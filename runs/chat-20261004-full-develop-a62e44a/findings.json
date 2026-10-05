@@ -389,7 +389,7 @@
       "owner": "@ci",
       "target": "BP",
       "status": "open",
-      "note": "Same root cause as CI finding; server-side ruleset state = Unknown.",
+      "note": "Draft remediation chat#108 extends the in-repo gate to the default branch; server-side ruleset still owner-gated (live state: no rules).",
       "recommendation": "Record the live ruleset for develop and extend the in-repo gate."
     },
     {
@@ -415,7 +415,7 @@
       "owner": "@ci",
       "target": "CI",
       "status": "open",
-      "note": "Reaffirms pilot CI-P2-001; workflow provisions and deletes duplicate droplets on develop.",
+      "note": "Draft remediation chat#107 (manual/plan-only + development environment; unmerged).",
       "recommendation": "Gate behind `environment: development` with manual approval, or scope to a dry run."
     },
     {
@@ -441,7 +441,7 @@
       "owner": "@ci",
       "target": "CI",
       "status": "open",
-      "note": "Reaffirms pilot CI-P2-004; validate.yml branch-protection job hard-codes main.",
+      "note": "Draft remediation chat#108 extends the in-repo gate to the default branch; server-side ruleset still owner-gated (live state: no rules).",
       "recommendation": "Extend the gate to develop or make production only deploy from a protected branch."
     },
     {
@@ -467,7 +467,7 @@
       "owner": "@db",
       "target": "DATA",
       "status": "open",
-      "note": "Reaffirms pilot DATA-P2-001; both files still present at a62e44a.",
+      "note": "Reconciled 2026-10-05: the two migrations are intentional and documented in supabase/migrations/README.md, which explicitly forbids merging/editing/deleting applied migrations. The squash/drop recommendation conflicts with that documented owner decision; needs a DB-owner call (rename vs keep).",
       "recommendation": "Squash/drop one migration and add an order/duplicate gate."
     },
     {
@@ -597,7 +597,7 @@
       "owner": "@maintainer",
       "target": "INV",
       "status": "open",
-      "note": "Reaffirms pilot INV-P2-001 at a62e44a.",
+      "note": "Draft remediation chat#106 (remove stale root artifacts; unmerged).",
       "recommendation": "Delete the one-off reconciliation artifacts from the tree (keep audit history in docs/audits)."
     },
     {
@@ -687,8 +687,8 @@
       "area": "RLS",
       "owner": "@qa",
       "target": "RLS",
-      "status": "open",
-      "note": "TEST-P2-001 residual; `package.json` has test:rls but no workflow invokes it.",
+      "status": "verified-fixed",
+      "note": "Reconciled 2026-10-05: false positive. validate.yml migration-test runs every supabase/tests/*.sql (incl. rls_tenant_isolation.sql) inside the local Supabase Postgres via `docker exec ... psql` at a62e44a; the RLS test is executed by CI.",
       "recommendation": "Run the RLS SQL test in the validate workflow against a real Postgres service."
     },
     {
@@ -753,7 +753,7 @@
       "owner": "@security",
       "target": "SEC",
       "status": "open",
-      "note": "Reaffirms pilot SEC-P2-003 at a62e44a; key is optional in env.ts.",
+      "note": "Draft remediation chat#104 (DELIVER WEBHOOK_ENCRYPTION_KEY; unmerged).",
       "recommendation": "Add WEBHOOK_ENCRYPTION_KEY to infra/docker/.env.prod.example and the prod compose for api and worker."
     },
     {
@@ -766,7 +766,7 @@
       "owner": "@security",
       "target": "SEC",
       "status": "open",
-      "note": "Reaffirms pilot SEC-P2-002; validateWebhookUrl resolves DNS then delivery fetches later.",
+      "note": "Draft remediation chat#105 (redirect:'manual'; unmerged).",
       "recommendation": "Set redirect:'manual' (or re-validate every hop) and re-resolve/pin the IP used for the request."
     },
     {
@@ -791,8 +791,8 @@
       "area": "TEST",
       "owner": "@qa",
       "target": "TEST",
-      "status": "open",
-      "note": "Same as RLS-domain finding; confirmed absent from all workflows.",
+      "status": "verified-fixed",
+      "note": "Reconciled 2026-10-05: false positive. validate.yml migration-test runs every supabase/tests/*.sql (incl. rls_tenant_isolation.sql) inside the local Supabase Postgres via `docker exec ... psql` at a62e44a; the RLS test is executed by CI.",
       "recommendation": "Run it in validate against a Postgres service."
     },
     {
@@ -831,7 +831,7 @@
       "owner": "@security",
       "target": "WH",
       "status": "open",
-      "note": "Same root cause as SEC SSRF finding; owned here for the delivery path.",
+      "note": "Draft remediation chat#105 (redirect:'manual'; unmerged).",
       "recommendation": "redirect:'manual' + IP-pinned dispatch with per-hop re-validation."
     },
     {

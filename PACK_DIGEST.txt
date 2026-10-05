@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1949
+# files: 1950
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -771,6 +771,7 @@ ff4baf1f43fa6d4f4e44725d6d934d90e3542084d8bd8e4d2b1faaae816b8afb  ./runs/chat-20
 f3d94b3e558a219f96081d8d61ce44fe738aeb0a4a60e5e022b6e7147f832c2c  ./runs/chat-20261004-full-develop-a62e44a/45_exploit_chain_attack_path_audit.md
 f96b9f44706571f91c01d4226612ab1ce5de936efe2c40d54d0bfc1315b42eb9  ./runs/chat-20261004-full-develop-a62e44a/EXECUTIVE_SUMMARY.md
 417dac794d884844d5beee15ab8063d7ede390366e5b4f8d26e12b12a5c6bab8  ./runs/chat-20261004-full-develop-a62e44a/INDEX.md
+ca66d6d932d99d06aa7ed84451dfb385d3f68a4f3d1bd0a48057f9587715fb3d  ./runs/chat-20261004-full-develop-a62e44a/RECONCILIATION.md
 6ce02f057c2a299fea7e7984f2cf1c57659e09d0660a19685f5ec26af830af52  ./runs/chat-20261004-full-develop-a62e44a/RELEASE_GATE.md
 8987e71a54bbdf590da44825ce88ea346441f90326636e531eae761819a8e50d  ./runs/chat-20261004-full-develop-a62e44a/_domains/00_audit_orchestrator.json
 6fd9d958e7bb162b0ca34c280b4e9d4bac6de2ecb34d74e73cf82948d45021fb  ./runs/chat-20261004-full-develop-a62e44a/_domains/01_repository_inventory.json
@@ -822,13 +823,13 @@ dddaf89c4907890c4b7d739a84232db7b65b858883a6fce8bba55150c9dc74df  ./runs/chat-20
 bfe610c3f155c91a46cf6aa6e7c12470cf0fc62a865774136d2274f4c41cdb04  ./runs/chat-20261004-full-develop-a62e44a/changelog_draft.md
 4f2564969d1ec9f370a8fa5d30f4a46e0d3e1b9b5038f11ab3fce4e732cf5887  ./runs/chat-20261004-full-develop-a62e44a/coverage.md
 a62bf8f196d8402aa2bfaafec3d4da782f69faf35dcb521769b7c55e4c98a411  ./runs/chat-20261004-full-develop-a62e44a/deterministic-findings.json
-31f175ed15057876495553797a5baf7d81aa9ba6a2a82f1409e3e7429a48641c  ./runs/chat-20261004-full-develop-a62e44a/findings.json
-0bd02b165746bbced2e22c9dbe3819c6bbf0785fc873830930e581edc3f3219f  ./runs/chat-20261004-full-develop-a62e44a/follow_up_register.md
+7a1b8dd6de5297f9adb36cdc9543ab5f6ca8d3e7b26061005bac8e1611bac019  ./runs/chat-20261004-full-develop-a62e44a/findings.json
+944e50805fb02188dc1370dfa903fe1ba49fa7f57a5caa77b4bfeeab5430b1c9  ./runs/chat-20261004-full-develop-a62e44a/follow_up_register.md
 c67b64b210ecdf0ca9fc7f7bc0527c46ebba94c7907d082de83e7dc489b6a5a8  ./runs/chat-20261004-full-develop-a62e44a/incident_tabletop_scenarios.md
 f81e1668d2026440ce869860c4f3ac22011d42a41477e2f1fad3a7800d2e5565  ./runs/chat-20261004-full-develop-a62e44a/lens_deterministic.md
 7477ec584e2eff65b9c1f5a9d68916e9b54ae2c8ea7281ea3107a2ad8aba3e96  ./runs/chat-20261004-full-develop-a62e44a/patch_plan.md
 86d7755214d834c3e46713ecdfe51bee3a7f5585ed4f62205947586de68d74fa  ./runs/chat-20261004-full-develop-a62e44a/release_notes_draft.md
-0bd02b165746bbced2e22c9dbe3819c6bbf0785fc873830930e581edc3f3219f  ./runs/chat-20261004-full-develop-a62e44a/risk_register.md
+944e50805fb02188dc1370dfa903fe1ba49fa7f57a5caa77b4bfeeab5430b1c9  ./runs/chat-20261004-full-develop-a62e44a/risk_register.md
 8ba4ad866ebded6e1470d25ed33e8b7181fc4b8ee14f65b02abf30183995c98f  ./runs/chat-20261004-full-develop-a62e44a/roadmap.md
 e5fed669a68012ff9c3e45170f4752f9ea32589f4383e3f5e58ca77c144a5219  ./runs/chat-20261004-full-develop-a62e44a/sbom_license_policy_recommendation.md
 16e4299eb22b733e4156453a1c840d9b4057f8829c1ab034cfec8ac60f9edc5a  ./runs/chat-20261004-full-develop-a62e44a/secret_rotation_runbook.md
