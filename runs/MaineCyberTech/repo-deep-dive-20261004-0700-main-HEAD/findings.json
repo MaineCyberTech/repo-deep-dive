@@ -1,0 +1,30 @@
+{
+  "run": "20261004-0700-main-HEAD",
+  "generated": "2026-10-05T00:27:40Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 1,
+    "bySeverity": {
+      "P3": 1
+    },
+    "byArea": {
+      "GEN": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "GEN-P3-001",
+      "severity": "P3",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 1,
+      "area": "GEN",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "deterministic_ref": null,
+      "confidence": "",
+      "status": "open"
+    }
+  ]
+}

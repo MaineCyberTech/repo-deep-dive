@@ -1,0 +1,20 @@
+{
+  "run": "",
+  "generated": "2026-10-05T00:18:23.105586+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 1,
+    "bySeverity": {
+      "P0": 0,
+      "P1": 0,
+      "P2": 0,
+      "P3": 1
+    },
+    "byArea": {
+      "DET": 1
+    }
+  },
+  "score": 100,
+  "advisoryDecision": "GO",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}

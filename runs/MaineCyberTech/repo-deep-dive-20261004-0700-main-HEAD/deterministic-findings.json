@@ -1,0 +1,26 @@
+{
+  "run": "repo-deep-dive",
+  "generated": "2026-10-04T23:25:16Z",
+  "sourceReports": 1,
+  "counts": {
+    "bySeverity": {
+      "P3": 1
+    },
+    "byArea": {
+      "DET": 1
+    },
+    "total": 1
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "SEC",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 13,
+      "detail": "Install gitleaks in CI to enable the secret scan.",
+      "evidence": []
+    }
+  ]
+}
