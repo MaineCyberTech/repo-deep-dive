@@ -140,6 +140,11 @@ def counts(findings):
 
 GATES = ("GO", "GO WITH CONDITIONS", "NO-GO")
 
+# A finding with one of these statuses no longer blocks a release/changed-run gate.
+# `false-positive` is accepted here even though it is not a run-register status, so
+# a future vocabulary change does not silently weaken the gate.
+RESOLVED_STATUSES = frozenset({"verified-fixed", "owner-accepted", "false-positive"})
+
 
 def compute_gate(counts, override=None):
     """Single release-gate decision, shared by full_domain.py and publish_audit.py.

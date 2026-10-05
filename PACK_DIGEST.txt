@@ -1,13 +1,13 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1941
+# files: 1943
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
 491425bc3cc1f0040ed4f413e711abb01b9cc8f1cb736142dcb65b985543e201  ./.github/actionlint.yaml
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
-0a562aa324969c7af04571396f054e220e28fc2659abfb326cdcc2476f1a4eaf  ./.github/workflows/audit.yml
+4c942c9478086df741d68665e39c347be0804cd14dc13c83e695e26a2292b50f  ./.github/workflows/audit.yml
 006110372ed17c35c29430bec367c5e5698d439187dbfbd5746a1087cdb292e5  ./.github/workflows/deep-dive-deterministic.yml
 3bfe60e3cc5a527261751b69b24f85964acd527f1937f09500acf62f0fdb444d  ./.github/workflows/lab-agent-offboard.yml
 9680784abcd13bb4b19b4769d193cfbff81e7505125e562c5d49920361f4f8ca  ./.github/workflows/lab-agent-onboard.yml
@@ -1086,14 +1086,14 @@ ed4c686dcd694022aecec759e9b7efb44dbbf6a590f9b40b95f7ec52df3528f0  ./runs/falcon-
 b37bffe344d99d9c1e150cef12f3cf09e4588a1eeefbc77a759e357b9c26b880  ./runs/falcon-20261005-full-main-e267ce1/audit_manifest.json
 0a2fa1a755af9813e72453fdda5931638e6e287cb059f7d5a756dc4d497e62f1  ./runs/falcon-20261005-full-main-e267ce1/coverage.md
 d67bb6462410899d5efcfb6cd7eac41842be30aa7c1b2be346eaebfe37e4b0ac  ./runs/falcon-20261005-full-main-e267ce1/deterministic-findings.json
-837506e829de9d1e197dfa19a9f54744a0ebb61f32ade639ff39689752e4da97  ./runs/falcon-20261005-full-main-e267ce1/findings.json
-7f3aeb8fd5f32d30ce2634b59e00732c27ebb26f21a00d56c83bfb36e7f2575d  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
+8916b7bc8de4fde04c3451b8e82d9bb7aba1a47251178710c421769976a6f6cc  ./runs/falcon-20261005-full-main-e267ce1/findings.json
+f5d195e833dfd71719ec932b532e63d1c83680d2ddec661753e6ff9a7fc48d33  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
 88eb640212cce439b86fda1396860ccb1c2b00fdefadf80eac3a6b1472bc99c7  ./runs/falcon-20261005-full-main-e267ce1/lens_deterministic.md
 21c6167629bf5aebc4ad4646e56df84a1d7927ed6ac951bd2e0ba21102e6678b  ./runs/falcon-20261005-full-main-e267ce1/patch_plan.md
 b6dc9fc89924073a661b8e6fa4465cb5021a164266f176dfe264bb8332788b52  ./runs/falcon-20261005-full-main-e267ce1/remediation_plan.json
-a24dc65be6d82cd257f74b4a7439cc91b8b1ed550113e713cca4b9847fa03b68  ./runs/falcon-20261005-full-main-e267ce1/risk_register.md
+f5d195e833dfd71719ec932b532e63d1c83680d2ddec661753e6ff9a7fc48d33  ./runs/falcon-20261005-full-main-e267ce1/risk_register.md
 b62548a4f5872ca71fb2a8415adbbb85b33e5e4805758d02933b6321c64c9783  ./runs/falcon-20261005-full-main-e267ce1/roadmap.md
-eb1771f0bda51ee28337edc18c847f2c754f877bc741698094d6eadbe4a44e71  ./runs/falcon-20261005-full-main-e267ce1/verification_log.md
+d13249016f16b68ff59345cec88c28b97b21ed1383ab5884b1007301bfdb3e43  ./runs/falcon-20261005-full-main-e267ce1/verification_log.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md
@@ -1894,6 +1894,7 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 1a1fb818d793211775b55e82c94c8da498231a9e24d7d97654e099ef8df46ab6  ./tests/test_lib_findings.py
 92c90dcc41d584fa5e3fed4f94ae791ebbc6933318fca7aad84a0c0204aa0c73  ./tests/test_publish_audit.py
 87e8aea750804ce5991efb69f2c73fdf81a246f42f754d567aaea0b7ee1b8cdc  ./tests/test_repo_inventory.py
+8a347a0a23b65d032c3548a1d74454deeaf762e8d6fd0938315a41d11f1a1ab2  ./tests/test_run_gate.py
 4b77ad57ba5a912dc55bd0a3a93fd10327b4856a39088bb91c81fe60280fb477  ./tools/aggregate_findings.py
 5c0c4cfe71fc838086291f520592ae93d4cb6a8ef7fcf4b45effce0cadff4055  ./tools/apply_approvals.py
 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
@@ -1919,7 +1920,7 @@ bad1ba77f6445fcc22ec416907fbc8280273a3f0444fb36fb060f96a4113e51c  ./tools/lab-vp
 73e8168690e71e9ec4ed8efd50f839269f70bfef870ccc16d73c5bc477b05c44  ./tools/lab-vpn/labvpn-run.sh
 90e9799dce9fbdd1613b2dd3df14bd35be2a2e6bcdf2df82c4d53ebd6bccbece  ./tools/lab_api_server.py
 e8c72613b33aa177e5686780d5d57366fe932b8f936df1a90da12418018388ee  ./tools/lab_runner.py
-70f4e72e262f127aeb3c8b7a0c11abacc3fd7d6f696e82963fd51be894f320ce  ./tools/lib_findings.py
+98a54dc6be95d1f4161c721c7a14495b17cbc8bfe874b6f13f93bc3b24fe261b  ./tools/lib_findings.py
 24b97f86b95fae0dca13d4a040d0ca579828f41088b76ae11c44f6943516a1b7  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
 a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
@@ -1937,6 +1938,7 @@ df4454aedcaa7017231d07143311e1b496ecd0e7c3a0b92dc5a9e0a7155304a0  ./tools/publis
 f17648cfd68e4108add83223190dc485ed40d00cf639f881ca454c4000e1d66b  ./tools/repo_inventory.py
 f8e835fce3153791f01f6eb3dbcf20732323c58112b3f7c5e53df50f4544c236  ./tools/review_index.py
 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
+e0d8b6f83f85b3ebc1ef0e88765b12797f53f1a3982bd02730735489dddc9b33  ./tools/run_gate.py
 c6bbcbb8b9d12407dff5182473169814b2b915b80a2b0868d73e793b3632ee14  ./tools/run_toolchain.py
 409ed0cb079a526907fcf61863ab73ace5be297f085a0949e73c9421723acb53  ./tools/self_test.sh
 64335c984915774d613c036c490c6ee09e221a8bd530d4b2e69c4319d7f7302a  ./tools/setup_git_merge_driver.sh
