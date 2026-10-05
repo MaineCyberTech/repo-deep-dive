@@ -1,0 +1,26 @@
+{
+  "domain": "18_privacy_compliance_data_governance",
+  "file": "18_privacy_compliance_data_governance.md",
+  "findings": [
+    {
+      "id": "PRIV-P2-001",
+      "severity": "P2",
+      "title": "Google Analytics and Tawk.to load on public pages with no cookie-consent or opt-out gate",
+      "area": "PRIV",
+      "owner": "@web",
+      "target": "PRIV",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        "apps/web/app/(public)/layout.tsx:11,49 reads NEXT_PUBLIC_GA_ID / NEXT_PUBLIC_TAWKTO_ID",
+        "apps/web/app/(public)/layout.tsx:58-78 injects the GA gtag script and the Tawk.to embed unconditionally when the IDs are set (afterInteractive, nonce only)",
+        "apps/web/app/(public)/privacy/page.tsx:56-64 discloses Google Analytics and Tawk.to as processors",
+        "git grep for consent components found only the contact/intake form checkboxes (apps/web/components/marketing/ContactForm.tsx:313) — no cookie banner or consent-mode gate"
+      ],
+      "impact": "Analytics and live-chat third parties receive identifiers and set cookies before any consent, which is not defensible under GDPR/ePrivacy in the EU/UK and is inconsistent with the policy's 'cookies' disclosure.",
+      "recommendation": "Gate GA/Tawk behind a consent manager (or use Google Consent Mode v2 with analytics_storage denied by default), record consent, and add a visible opt-out; document subprocessors and DPAs.",
+      "note": "Verified at main 9c0b88c."
+    }
+  ],
+  "report": "Read-only analysis at main `9c0b88c` (2026-10-04). No findings identified for this domain in the 9c0b88c reconciliation pass. Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

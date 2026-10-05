@@ -1,0 +1,26 @@
+{
+  "domain": "17_mobile_pwa_responsive_access",
+  "file": "17_mobile_pwa_responsive_access.md",
+  "area": "MOB",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:18Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Service worker offline strategy is not covered by tests or a documented cache policy",
+      "status": "open",
+      "owner": "@web",
+      "target": "MOB",
+      "note": "SW + install prompt components exist; no test verifies cache/update safety.",
+      "evidence": [
+        "apps/web/public/sw.js",
+        "apps/web/components/pwa/pwa-provider.tsx",
+        "apps/web/components/pwa/update-notification.tsx"
+      ],
+      "impact": "Stale/broken offline behaviour can ship.",
+      "recommendation": "Document the cache policy and add an SW update test.",
+      "area": "MOB"
+    }
+  ],
+  "report": "PWA assets present (manifest, service worker,\ninstall/update prompts, push). No offline data story beyond the SW cache."
+}

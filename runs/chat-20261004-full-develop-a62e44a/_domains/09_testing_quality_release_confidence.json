@@ -1,0 +1,68 @@
+{
+  "domain": "09_testing_quality_release_confidence",
+  "file": "09_testing_quality_release_confidence.md",
+  "area": "TEST",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:14Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "E2E tests skipped without `test-signin.json` and were non-blocking (fixed)",
+      "status": "verified-fixed",
+      "owner": "@qa",
+      "target": "TEST",
+      "note": "validate.yml self-provisions and blocks.",
+      "evidence": [
+        ".github/workflows/validate.yml:485-513"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "TEST"
+    },
+    {
+      "severity": "P2",
+      "title": "Low coverage thresholds / non-blocking diff coverage (fixed)",
+      "status": "verified-fixed",
+      "owner": "@qa",
+      "target": "TEST",
+      "note": "vitest.config.base.ts:34-37 raised; no continue-on-error.",
+      "evidence": [
+        "vitest.config.base.ts:34-37"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "TEST"
+    },
+    {
+      "severity": "P2",
+      "title": "RLS tenant-isolation SQL test exists but is not run by CI",
+      "status": "open",
+      "owner": "@qa",
+      "target": "TEST",
+      "note": "Same as RLS-domain finding; confirmed absent from all workflows.",
+      "evidence": [
+        "package.json test:rls",
+        "supabase/tests/rls_tenant_isolation.sql",
+        "no workflow invokes it"
+      ],
+      "impact": "Tenant-isolation regressions are ungated.",
+      "recommendation": "Run it in validate against a Postgres service.",
+      "area": "TEST"
+    },
+    {
+      "severity": "P2",
+      "title": "Migration rollback was validated by file existence only (fixed)",
+      "status": "verified-fixed",
+      "owner": "@qa",
+      "target": "TEST",
+      "note": "Downs are executed in reverse.",
+      "evidence": [
+        ".github/workflows/validate.yml:395-428"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "TEST"
+    }
+  ],
+  "report": "Vitest thresholds, E2E self-provisioning\nand the migration gate are all blocking now. The real-database RLS test still\ndoes not run in CI."
+}

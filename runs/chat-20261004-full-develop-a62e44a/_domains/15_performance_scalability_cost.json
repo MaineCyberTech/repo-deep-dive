@@ -1,0 +1,26 @@
+{
+  "domain": "15_performance_scalability_cost",
+  "file": "15_performance_scalability_cost.md",
+  "area": "PERF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:17Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No performance budget / regression gate in CI",
+      "status": "open",
+      "owner": "@perf",
+      "target": "PERF",
+      "note": "k6 load/smoke tests exist but are not budget-enforced.",
+      "evidence": [
+        "tests/k6/load-test.js",
+        "tests/k6/smoke-test.js",
+        "no perf threshold gate in workflows"
+      ],
+      "impact": "Latency/cost regressions ship unnoticed.",
+      "recommendation": "Add p95 budgets and a nightly trend dashboard.",
+      "area": "PERF"
+    }
+  ],
+  "report": "Reviewed k6 assets, bundle analyzer, virtualised\nlists. No performance budget or CI trend gate; DB connection/cost model\nundocumented."
+}

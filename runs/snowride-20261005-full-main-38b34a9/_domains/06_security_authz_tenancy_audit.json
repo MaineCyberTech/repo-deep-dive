@@ -1,0 +1,29 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:05Z",
+  "findings": [
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "Ops/METRICS_TOKEN compared non-constant-time and has no rotation path",
+      "owner": "@owner",
+      "target": "SEC",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "server.ts:1286 if (token !== configured) { ... }",
+        "server.ts:2011 if (configured && token === configured) return true;",
+        "config.ts:231 METRICS_TOKEN static optional secret; .env.example",
+        "No METRICS_TOKEN entry in docs/runbooks or the secret-rotation runbook"
+      ],
+      "impact": "A static, never-rotated ops credential with a byte-comparison side-channel; compromise requires rotation but no procedure exists.",
+      "recommendation": "Use crypto.timingSafeEqual over equal-length buffers and document METRICS_TOKEN rotation alongside the other host secrets.",
+      "note": "",
+      "area": "SEC"
+    }
+  ],
+  "report": "Security core is sound: JWKS JWT verification with role claims, detached owner-signature verification for the launch gate (config.ts:285-306), Origin allowlist with Vary (server.ts:1328-1364), dependency-aware readiness, and non-root read-only containers. Residual: the /metrics and ops bearer token are compared with `===` (non-constant-time) and the token has no rotation path (server.ts:1286, 2011; config.ts:231)."
+}

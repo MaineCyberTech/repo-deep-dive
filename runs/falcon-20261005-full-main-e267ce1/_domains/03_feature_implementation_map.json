@@ -1,0 +1,25 @@
+{
+  "domain": "03_feature_implementation_map",
+  "file": "03_feature_implementation_map.md",
+  "area": "FEAT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:55Z",
+  "findings": [
+    {
+      "area": "FEAT",
+      "severity": "P2",
+      "title": "Vendored MCT services are present in Compose while the subtree policy calls the tree archive-only",
+      "evidence": [
+        "mct/compose/*.yml; mct/VENDORING.md archive-only policy",
+        "pins/supply-chain-waivers.json:5-10"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Make the vendored tree non-deployable (separate profile) or drop the archive-only claim.",
+      "detail": "Make the vendored tree non-deployable (separate profile) or drop the archive-only claim.",
+      "owner": "@owner",
+      "target": "FEAT"
+    }
+  ],
+  "report": ""
+}

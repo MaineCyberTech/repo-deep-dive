@@ -1,0 +1,24 @@
+{
+  "domain": "00_audit_orchestrator",
+  "file": "00_audit_orchestrator.md",
+  "area": "ORCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:03Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Full-domain driver runs the orchestrator as a flat parallel domain",
+      "evidence": [
+        "tools/full_domain.py:118-150 master_order()/select() treat 00 as one entry; no wave/verify gating",
+        "prompts/MASTER_RUNNER_FULL_HARDENING.md:34-77 defines sequential Wave 0 then parallel domain fan-out"
+      ],
+      "impact": "The orchestration semantics (sequencing, claim sampling, verification gates) of prompt 00 are not implemented by the driver; only report emission is.",
+      "recommendation": "Either implement wave ordering/verification gates in `full_domain.py` or document explicitly that 00 is advisory when the driver is used.",
+      "area": "ORCH",
+      "status": "open",
+      "owner": "@owner",
+      "target": "ORCH"
+    }
+  ],
+  "report": "Reviewed `tools/full_domain.py` against the master runner's wave model (`prompts/MASTER_RUNNER_FULL_HARDENING.md:34-77`) and the 00 prompt. `domains --full` parsed 42 prompt domains plus the deterministic lens."
+}

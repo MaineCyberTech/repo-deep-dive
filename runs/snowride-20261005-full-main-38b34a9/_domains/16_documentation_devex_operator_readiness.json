@@ -1,0 +1,28 @@
+{
+  "domain": "16_documentation_devex_operator_readiness",
+  "file": "16_documentation_devex_operator_readiness.md",
+  "area": "DOC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:08Z",
+  "findings": [
+    {
+      "id": "DOC-P3-001",
+      "severity": "P3",
+      "title": "AGENTS.md migration range is stale (0056 vs head 0057)",
+      "owner": "@owner",
+      "target": "DOC",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "AGENTS.md:15 'Ordered SQL migrations (0001-0056; 0032 never existed)'",
+        "supabase/migrations/0057_retire_consumable_category.sql is the head",
+        "node scripts/attested-migration-head-check.mjs -> 0057 OK"
+      ],
+      "impact": "A developer/agent following AGENTS.md can mis-state the schema head and miss the newest migration.",
+      "recommendation": "Update the range (or reference the directory/manifest) so the head is not duplicated in prose.",
+      "note": "",
+      "area": "DOC"
+    }
+  ],
+  "report": "Docs: README constitution, AGENTS.md working contract, runbooks, API reference and product docs are present and cross-linked. Residual: AGENTS.md still states the migration range as 0001-0056 while the head is 0057."
+}

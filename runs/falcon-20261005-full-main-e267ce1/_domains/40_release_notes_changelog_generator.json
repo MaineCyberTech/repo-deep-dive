@@ -1,0 +1,26 @@
+{
+  "domain": "40_release_notes_changelog_generator",
+  "file": "40_release_notes_changelog_generator.md",
+  "area": "REL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:02Z",
+  "findings": [
+    {
+      "area": "REL",
+      "severity": "P3",
+      "title": "No root CHANGELOG/release-notes generator; release notes live only in mct/",
+      "evidence": [
+        "mct/RELEASE-NOTES.md",
+        "README.md (no CHANGELOG reference)",
+        "docs/phase*/CLOSEOUT.md append-only records"
+      ],
+      "status": "open",
+      "confidence": "high",
+      "recommendation": "Add a root CHANGELOG/release-notes generator fed from the gate/decision ledgers.",
+      "detail": "Add a root CHANGELOG/release-notes generator fed from the gate/decision ledgers.",
+      "owner": "@owner",
+      "target": "REL"
+    }
+  ],
+  "report": ""
+}

@@ -1,0 +1,9 @@
+{
+  "domain": "13_resilience_recovery_failure_modes",
+  "file": "13_resilience_recovery_failure_modes.md",
+  "area": "RES",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [],
+  "report": "## Verification Performed\n\nFailure-mode analysis is directory-consistent with ARCH-P1-001 (single host). No independent finding beyond that single-root item.\n"
+}

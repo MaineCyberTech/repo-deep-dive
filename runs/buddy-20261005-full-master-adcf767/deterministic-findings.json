@@ -1,0 +1,24 @@
+{
+  "run": "buddy-20261005-full-master-adcf767",
+  "generated": "2026-10-05T04:05:06Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 1
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "SEC",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 13,
+      "detail": "Install gitleaks in CI to enable the secret scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ]
+}

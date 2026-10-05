@@ -1,0 +1,9 @@
+{
+  "domain": "37_supabase_rls_policy_deep_dive",
+  "file": "37_supabase_rls_policy_deep_dive.md",
+  "area": "RLS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:09Z",
+  "findings": [],
+  "report": "## Verification Performed\n\nNot applicable: repository does not use Supabase/Postgres RLS. No finding.\n"
+}

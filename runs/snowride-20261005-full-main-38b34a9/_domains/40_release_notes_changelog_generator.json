@@ -1,0 +1,28 @@
+{
+  "domain": "40_release_notes_changelog_generator",
+  "file": "40_release_notes_changelog_generator.md",
+  "area": "REL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:10Z",
+  "findings": [
+    {
+      "id": "REL-P3-001",
+      "severity": "P3",
+      "title": "Release notes/changelog are maintained manually",
+      "owner": "@owner",
+      "target": "REL",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "CHANGELOG.md documents the format but is hand-maintained",
+        "No script generates changelog/release notes from commits or tags",
+        "docs/EVIDENCE.md describes append-only closeouts"
+      ],
+      "impact": "Manual notes can drift or be omitted, weakening the release lineage the file promises.",
+      "recommendation": "Add a generator (e.g. conventional-commits or git-cliff) and wire it to the release process.",
+      "note": "",
+      "area": "REL"
+    }
+  ],
+  "report": "Release artifacts: CHANGELOG.md exists with an append-only Keep-a-Changelog format and a documented release lineage process, but generation is manual. Residual: no automated release-notes/changelog generator wired to tags."
+}

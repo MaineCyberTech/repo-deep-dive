@@ -1,0 +1,28 @@
+{
+  "domain": "26_admin_console_abuse_case_audit",
+  "file": "26_admin_console_abuse_case_audit.md",
+  "area": "ADMIN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:05Z",
+  "findings": [
+    {
+      "id": "ADMIN-P3-001",
+      "severity": "P3",
+      "title": "Admin mutations have no rate limit or step-up authentication",
+      "owner": "@owner",
+      "target": "ADMIN",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "config.ts:45-58 rate limits cover only ping/move/control/social/submit",
+        "server.ts:1174-1256 admin mutations rely solely on the admin role claim",
+        "0003_economy_and_submission.sql:252 record_admin_audit() records the action"
+      ],
+      "impact": "A stolen/loose admin token can issue unlimited economy, moderation, and LiveOps mutations; audit records aid forensics but not prevention.",
+      "recommendation": "Add a per-actor admin rate limit and require re-validation for high-impact mutations (refund, rollover, teardown).",
+      "note": "",
+      "area": "ADMIN"
+    }
+  ],
+  "report": "Admin surface (/admin/*): role-gated via the verified JWT `admin` claim; every mutation records an admin_audit_events row (0003_economy_and_submission.sql:252). Residual: admin routes have no dedicated rate limit or step-up check - the configured rate limits cover ping/move/control/social/submit only (config.ts:45-58), so a compromised admin token can drive mutations at line speed."
+}

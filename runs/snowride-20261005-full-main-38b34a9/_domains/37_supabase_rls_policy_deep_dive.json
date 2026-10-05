@@ -1,0 +1,28 @@
+{
+  "domain": "37_supabase_rls_policy_deep_dive",
+  "file": "37_supabase_rls_policy_deep_dive.md",
+  "area": "RLS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:05Z",
+  "findings": [
+    {
+      "id": "RLS-P3-001",
+      "severity": "P3",
+      "title": "Claim-less SQL callers are treated as trusted by social_guard_*",
+      "owner": "@owner",
+      "target": "RLS",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "supabase/migrations/* social_guard_* functions branch on auth.uid()/claims",
+        "supabase/tests/0006_social_negative.sql exercises caller roles",
+        "GRANT/REVOKE hardening in 0002_rls_and_grants.sql"
+      ],
+      "impact": "If a grant is ever widened, a claim-less caller (e.g. anon) could take the trusted branch; today the functions are service-role-only.",
+      "recommendation": "Make the trusted branch require an explicit service-role assertion rather than the absence of claims; add a negative test.",
+      "note": "",
+      "area": "RLS"
+    }
+  ],
+  "report": "RLS deep dive: 43 CREATE POLICY statements, 106 SECURITY DEFINER functions, owner-scoped SELECT with service-role writes, and 16 SQL negative suites run in CI. Residual: some social_guard_* SQL paths treat a caller with no JWT claims as trusted (resolved earlier as SEC-P3-001), which is safe only while those functions remain service-role-only."
+}

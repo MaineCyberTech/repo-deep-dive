@@ -1,0 +1,9 @@
+{
+  "domain": "03_feature_implementation_map",
+  "file": "03_feature_implementation_map.md",
+  "area": "FEAT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:04Z",
+  "findings": [],
+  "report": "Feature/flag map: 14 rollout switches are read at boot (config.ts, docs/runbooks/KILL_SWITCHES.md) and guarded by tests/feature-flag-drift.test.ts. The earlier kill-switch compose/doc drift (FEAT-P2-001) is closed. No new mapping defect found in this read-only pass."
+}

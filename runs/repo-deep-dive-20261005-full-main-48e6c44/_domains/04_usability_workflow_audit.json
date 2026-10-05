@@ -1,0 +1,24 @@
+{
+  "domain": "04_usability_workflow_audit",
+  "file": "04_usability_workflow_audit.md",
+  "area": "USE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "The end-to-end pass remains ~8 manual phases",
+      "evidence": [
+        "docs/DEEP_DIVE_ROADMAP.md:32-34 item 7 describes the missing one-command pipeline",
+        "runbooks/POST_AUDIT_PIPELINE.md and docs/PASS_CONTROL_PLANE.md require staging by hand"
+      ],
+      "impact": "High operator toil and drift between runs.",
+      "recommendation": "Implement the documented `tools/post_audit.py run` orchestrator.",
+      "area": "USE",
+      "status": "open",
+      "owner": "@owner",
+      "target": "USE"
+    }
+  ],
+  "report": "Assessed the operator workflow from scaffold to publish."
+}

@@ -1,0 +1,25 @@
+{
+  "domain": "24_access_control_matrix_audit",
+  "file": "24_access_control_matrix_audit.md",
+  "area": "ACM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No consolidated access-control matrix artifact is produced",
+      "evidence": [
+        "prompts/MASTER_RUNNER_FULL_HARDENING.md:98 requires access_control_matrix.md",
+        "tools/full_domain.py aggregate writes no such file",
+        "Access rules are spread across the ruleset, CODEOWNERS, workflow permissions and the lab token"
+      ],
+      "impact": "Reviewers cannot see the whole authorization model (who may push, which checks are required, who holds the lab token) in one place.",
+      "recommendation": "Generate access_control_matrix.md from the ruleset/CODEOWNERS/workflow permissions during aggregate.",
+      "area": "ACM",
+      "status": "open",
+      "owner": "@owner",
+      "target": "ACM"
+    }
+  ],
+  "report": "Enumerated access surfaces: GitHub ruleset `main-protection` (id 24481135), workflow `permissions:` blocks, CODEOWNERS routing, and the lab API bearer token. Live state read via `gh api` (no secrets printed)."
+}

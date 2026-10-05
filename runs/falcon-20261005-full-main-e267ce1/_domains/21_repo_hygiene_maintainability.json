@@ -1,0 +1,41 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "area": "HYGIENE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:57Z",
+  "findings": [
+    {
+      "area": "HYGIENE",
+      "severity": "P1",
+      "title": "Committed `review-package/` is a stale snapshot duplicate of the source tree",
+      "evidence": [
+        "REPOSITORY.md:184-191 (committed manifest stale; 4 mismatches)",
+        "review-package/ 3784 files committed",
+        "REAUDIT_REPORT_202604: HYG-P1-001 still-open"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Stop committing the generated package or rebuild+rebind it and gate content drift.",
+      "detail": "Stop committing the generated package or rebuild+rebind it and gate content drift.",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "area": "HYGIENE",
+      "severity": "P2",
+      "title": "Large generated SBOM/vulnerability JSON committed (39 files, up to ~122 KB each)",
+      "evidence": [
+        "sbom/*.cdx.json; sbom/vuln/*.json (39 files)",
+        "remediation PS-U08 open"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Move generated SBOM/vuln JSON to release artifacts or compress and gate regeneration.",
+      "detail": "Move generated SBOM/vuln JSON to release artifacts or compress and gate regeneration.",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    }
+  ],
+  "report": ""
+}

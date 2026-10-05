@@ -1,0 +1,49 @@
+{
+  "domain": "22_final_risk_register_roadmap",
+  "file": "22_final_risk_register_roadmap.md",
+  "findings": [
+    {
+      "id": "FINAL-P1-001",
+      "severity": "P1",
+      "title": "P0 data-loss path and unverified \"fixed\" claim block a clean release",
+      "area": "FINAL",
+      "owner": "@owner",
+      "target": "FINAL",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "docs/RELEASE_GATE.md at the commit records the P0 closure and gate state. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "FINAL-P2-001",
+      "severity": "P2",
+      "title": "Governance and observability gaps mean the platform cannot yet detect or control production failure",
+      "area": "FINAL",
+      "owner": "@owner",
+      "target": "FINAL",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "docs/RELEASE_GATE.md + docs/RELEASE.md governance/observability state. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "FINAL-P2-002",
+      "severity": "P2",
+      "title": "Residual authorization/secret defaults need explicit decisions",
+      "area": "FINAL",
+      "owner": "@owner",
+      "target": "FINAL",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "docs/RELEASE_GATE.md records the residual authorization/secret decisions. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    }
+  ],
+  "report": "Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

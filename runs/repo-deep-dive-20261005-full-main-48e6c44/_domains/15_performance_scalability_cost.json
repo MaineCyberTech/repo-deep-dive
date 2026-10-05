@@ -1,0 +1,25 @@
+{
+  "domain": "15_performance_scalability_cost",
+  "file": "15_performance_scalability_cost.md",
+  "area": "PERF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Full-domain passes are token-heavy with no inventory/deterministic caching",
+      "evidence": [
+        "docs/DEEP_DIVE_ROADMAP.md:75-78 item 20 notes per-repo inventory caching remains",
+        "tools/full_domain.py re-reads prompts per emit and re-derives reports at aggregate",
+        "46 prompt domains per full pass"
+      ],
+      "impact": "Cost scales linearly with domains and repos; repeated inventories are recomputed.",
+      "recommendation": "Cache per-repo inventory/deterministic output and feed it into the domain subagents.",
+      "area": "PERF",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    }
+  ],
+  "report": "Reviewed the full-domain cost model and roadmap cost items."
+}

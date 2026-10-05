@@ -1,0 +1,36 @@
+# Roadmap
+
+- OBS-P0-001 (P0) — Prometheus scrapes only 3 targets; nearly all `falcon_*` signals hinge on the node-exporter textfile collector
+- API-P1-001 (P1) — Cross-repo pairing contract cannot be verified in this environment
+- ARCH-P1-001 (P1) — Single-host concentration: host loss is total pipeline loss
+- BP-P1-001 (P1) — Branch protection and required checks are plan-gated and unenforceable server-side
+- CI-P1-001 (P1) — Branch protection and required checks are not enforced server-side
+- DATA-P1-001 (P1) — Wazuh and IRIS data have no retention (unbounded index growth)
+- FINAL-P1-001 (P1) — Operational resilience remains incomplete across the backup lifecycle
+- HYGIENE-P1-001 (P1) — Committed `review-package/` is a stale snapshot duplicate of the source tree
+- ADMIN-P2-001 (P2) — Admin/observability consoles are exposed through public routers without origin authentication
+- API-P2-001 (P2) — Ingest contract relies on a shared secret header, not request signing or idempotency keys
+- ARCH-P2-001 (P2) — Declared container hardening lags the running containers
+- ARCH-P2-002 (P2) — Wazuh and vendored MCT stacks run tag-only images outside pin/SBOM scope
+- ARCH-P2-003 (P2) — Live ingest authentication is a shared secret header, not mTLS
+- CI-P2-001 (P2) — Auto-merge workflow holds `contents: write` with no environment protection
+- FEAT-P2-001 (P2) — Vendored MCT services are present in Compose while the subtree policy calls the tree archive-only
+- HYGIENE-P2-001 (P2) — Large generated SBOM/vulnerability JSON committed (39 files, up to ~122 KB each)
+- INFRA-P2-001 (P2) — Generated/derived trees are not bound to HEAD by an automated drift gate
+- INV-P2-001 (P2) — Repository is majority generated/derived content with no in-repo regeneration or drift check
+- NOTIF-P2-001 (P2) — Public ntfy routers lack origin authentication; `ntfy-auth` middleware is not wired
+- SBOM-P2-001 (P2) — Release/SBOM artifacts are integrity-checked but unsigned; image/SBOM license gate not enforced
+- SEARCH-P2-001 (P2) — Search/index retention is enforced only for falcon-eve; Wazuh/IRIS indices grow unbounded
+- SEC-P2-001 (P2) — Public-facing routers have no origin authentication; `ntfy-auth` is dead config
+- SECRET-P2-001 (P2) — Inherited credential estate is still pending rotation and 28 vendored scripts source credential files wholesale
+- ACM-P3-001 (P3) — No consolidated access-control matrix; authorization is per-service basic-auth / console accounts
+- CHAIN-P3-001 (P3) — Chained path: anonymous public router → admin console abuse, plus docker.sock in vendored compose
+- CTR-P3-001 (P3) — Vendored MCT compose mounts docker.sock and uses floating tags under a blanket waiver
+- DET-P3-001 (P3) — [GIT] No LICENSE file
+- DET-P3-002 (P3) — [SUPPLY] 58 container image(s) without a digest pin
+- DET-P3-003 (P3) — [SUPPLY] hadolint not available on the check runner (Dockerfile lint skipped)
+- DET-P3-004 (P3) — [DEP] trivy not available on the check runner (dependency vuln scan skipped)
+- DR-P3-001 (P3) — Offsite/dead-man residuals remain owner-side; no scheduled restore assertion in CI
+- INV-P3-001 (P3) — Legacy host-absolute evidence paths require manual rewrite to resolve in a clone
+- REL-P3-001 (P3) — No root CHANGELOG/release-notes generator; release notes live only in mct/
+- WH-P3-001 (P3) — Webhook/relay delivery has no replay/idempotency evidence for Shuffle and ntfy paths

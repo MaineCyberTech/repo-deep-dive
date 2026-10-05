@@ -1,0 +1,42 @@
+{
+  "domain": "15_performance_scalability_cost",
+  "file": "15_performance_scalability_cost.md",
+  "findings": [
+    {
+      "id": "PERF-P3-001",
+      "severity": "P3",
+      "title": "No bundle-size or performance budget gate; the analyzer is opt-in only",
+      "area": "PERF",
+      "owner": "@web",
+      "target": "PERF",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        "apps/web/next.config.mjs:3,57 wraps the config in withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })",
+        "git grep for performance.budgets / size-limit / bundlewatch returns no config in the repo"
+      ],
+      "impact": "Web bundle growth is not measured in CI, so regressions ship unnoticed; the analyzer only runs when a developer sets ANALYZE=true locally.",
+      "recommendation": "Add a size-limit or Lighthouse-CI/bundle budget to the web CI and fail on threshold, or publish a bundle report on PRs.",
+      "note": "Verified at main 9c0b88c."
+    },
+    {
+      "id": "PERF-P3-002",
+      "severity": "P3",
+      "title": "API routes broadly select all columns (`select(\"*\")`) and pagination is ad hoc",
+      "area": "PERF",
+      "owner": "@api",
+      "target": "PERF",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        "apps/api/src/routes/approvals.ts:51,154,163 use .select(\"*\")",
+        "git grep -c '\\.select(\"\\*\")' shows all-star selects across many route files (e.g. assets.ts x6, approvals.ts x6, billing.ts x4)",
+        "only 24 of 64 files under apps/api/src/routes call .limit(), so list endpoints do not share a pagination contract"
+      ],
+      "impact": "Over-fetching increases DB and network cost and couples responses to schema changes; inconsistent pagination risks unbounded result sets as tenant data grows.",
+      "recommendation": "Project only needed columns, add a shared pagination/limit helper to list endpoints, and add a lint check for bare select(\"*\") on large tables.",
+      "note": "Verified at main 9c0b88c."
+    }
+  ],
+  "report": "Read-only analysis at main `9c0b88c` (2026-10-04). No findings identified for this domain in the 9c0b88c reconciliation pass. Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

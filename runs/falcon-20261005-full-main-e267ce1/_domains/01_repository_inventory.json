@@ -1,0 +1,41 @@
+{
+  "domain": "01_repository_inventory",
+  "file": "01_repository_inventory.md",
+  "area": "INV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:54Z",
+  "findings": [
+    {
+      "area": "INV",
+      "severity": "P2",
+      "title": "Repository is majority generated/derived content with no in-repo regeneration or drift check",
+      "evidence": [
+        "REPOSITORY.md:172-190 (source vs generated tree table; review-package drift deferred)",
+        "automation/validation/check_generated_drift.py (only binds evidence/MANIFEST.sha256)",
+        "runs/repo-deep-dive full run INV-P2-001"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Regenerate the derived trees and bind them to HEAD in CI; the review-package rebind is the open half.",
+      "detail": "Regenerate the derived trees and bind them to HEAD in CI; the review-package rebind is the open half.",
+      "owner": "@owner",
+      "target": "INV"
+    },
+    {
+      "area": "INV",
+      "severity": "P3",
+      "title": "Legacy host-absolute evidence paths require manual rewrite to resolve in a clone",
+      "evidence": [
+        "REPOSITORY.md:195-205 (264 legacy ../monitoring-build rows)",
+        "automation/validation/resolve_evidence_path.py"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Finish the evidence-index path normalization so every recorded path resolves in a clean clone.",
+      "detail": "Finish the evidence-index path normalization so every recorded path resolves in a clean clone.",
+      "owner": "@owner",
+      "target": "INV"
+    }
+  ],
+  "report": ""
+}

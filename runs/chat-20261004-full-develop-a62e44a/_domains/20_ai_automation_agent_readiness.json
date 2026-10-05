@@ -1,0 +1,25 @@
+{
+  "domain": "20_ai_automation_agent_readiness",
+  "file": "20_ai_automation_agent_readiness.md",
+  "area": "AI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:19Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "AI endpoint is a stub with no tenancy/data-governance or rate-limit contract",
+      "status": "open",
+      "owner": "@api",
+      "target": "AI",
+      "note": "New at a62e44a; safe today but will be a governance gap if replaced by an LLM.",
+      "evidence": [
+        "apps/api/src/modules/ai/routes.ts:49 lines, hard-coded rewrites",
+        "authenticate only; no rate limit or provider"
+      ],
+      "impact": "If upgraded to a real model, no PII redaction/cost/rate controls exist.",
+      "recommendation": "Define data-governance (no cross-tenant prompt data), per-user rate limits and cost caps before adding a provider.",
+      "area": "AI"
+    }
+  ],
+  "report": "The `ai` module is a deterministic text-transform\nstub (spell/format actions), not an LLM integration. No prompt/data-governance\ncontrols are needed yet, but the endpoint is unauthenticated-resistant only by\nthe global auth middleware."
+}

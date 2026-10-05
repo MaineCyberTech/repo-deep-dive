@@ -1,0 +1,9 @@
+{
+  "domain": "25_multi_tenant_isolation_attack_simulation",
+  "file": "25_multi_tenant_isolation_attack_simulation.md",
+  "area": "MT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:05Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. Snowride is a single-host, single-tenant consumer game: there is no organisation, tenant, or workspace model. Isolation boundaries are per-user (auth.users -> profiles with ON DELETE CASCADE) and enforced by owner-scoped RLS, not by tenant partition. No tenant-crossing surface exists to attack."
+}

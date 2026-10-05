@@ -1,0 +1,41 @@
+{
+  "domain": "13_resilience_recovery_failure_modes",
+  "file": "13_resilience_recovery_failure_modes.md",
+  "area": "RES",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:16Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Single-node failure domains: API, worker, Redis and DB proxy co-resident",
+      "status": "open",
+      "owner": "@infra",
+      "target": "RES",
+      "note": "Ambient/failure-domain analysis; overlaps ARCH/INFRA findings.",
+      "evidence": [
+        "infra/docker/docker-compose.prod.yml one host",
+        "tests/chaos/scenarios present but unscheduled"
+      ],
+      "impact": "Node loss takes all services down together.",
+      "recommendation": "Define failure domains and a warm standby; schedule chaos tests.",
+      "area": "RES"
+    },
+    {
+      "severity": "P3",
+      "title": "Chaos and load tests are not part of a scheduled pipeline",
+      "status": "open",
+      "owner": "@ops",
+      "target": "RES",
+      "note": "Tests exist under tests/chaos and tests/k6 but no schedule.",
+      "evidence": [
+        "tests/chaos/scenarios",
+        "tests/k6/load-test.js",
+        "workflows have no schedule trigger for them"
+      ],
+      "impact": "Resilience regressions go unnoticed.",
+      "recommendation": "Add a nightly chaos/load budget run.",
+      "area": "RES"
+    }
+  ],
+  "report": "Reviewed chaos scenarios, Redis recovery\nand single-node failure modes. Chaos/k6 assets exist but are not scheduled."
+}

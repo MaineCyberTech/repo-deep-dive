@@ -1,0 +1,45 @@
+{
+  "domain": "34_branch_protection_required_checks",
+  "file": "34_branch_protection_required_checks.md",
+  "area": "BP",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:06Z",
+  "findings": [
+    {
+      "id": "BP-P3-001",
+      "severity": "P3",
+      "title": "BRANCH_PROTECTION.md runbook lists a stale required-check set",
+      "owner": "@owner",
+      "target": "BP",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "docs/runbooks/BRANCH_PROTECTION.md:14-15 lists foundation, migrations, e2e",
+        ".github/branch-protection.json:5 adds license-and-vulnerability",
+        "node scripts/verify-branch-protection.mjs --self-test -> PASS (4 checks)"
+      ],
+      "impact": "An operator applying the runbook manually would omit the supply-chain required check, re-opening the gap fixed for CI-P2-001.",
+      "recommendation": "Update the runbook's required-check list (or make it reference the policy file as the single source).",
+      "note": "",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P3-002",
+      "severity": "P3",
+      "title": "Live branch protection not verified in this read-only pass",
+      "owner": "@owner",
+      "target": "BP",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "docs/runbooks/BRANCH_PROTECTION.md:38-45 requires GITHUB_TOKEN + administration:write",
+        "scripts/verify-branch-protection.mjs falls back to self-test without a token"
+      ],
+      "impact": "Repository policy is proven consistent; the live GitHub setting remains unverified evidence (as the runbook itself states).",
+      "recommendation": "Run the live audit with an admin token and store the raw PASS output under evidence/.",
+      "note": "",
+      "area": "BP"
+    }
+  ],
+  "report": "Declared policy (.github/branch-protection.json) requires foundation, migrations, e2e and license-and-vulnerability, strict, code-owner review, conversation resolution, and no force-push/delete. The self-test passed on the lab: 'PASS policy is complete and matches workflow jobs'. Residual: the operator runbook still lists only three checks, and live protection cannot be verified without an admin token."
+}

@@ -1,0 +1,28 @@
+{
+  "domain": "07_data_schema_migration_runtime_validation",
+  "file": "07_data_schema_migration_runtime_validation.md",
+  "area": "DATA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:05Z",
+  "findings": [
+    {
+      "id": "DATA-P3-001",
+      "severity": "P3",
+      "title": "Live production schema state unverified in this audit",
+      "owner": "@owner",
+      "target": "DATA",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "scripts/attested-migration-head-check.mjs verifies the declared head only",
+        "No production DATABASE_URL is available to this read-only pass",
+        "supabase/migrations/MANIFEST.sha256 covers 56 files"
+      ],
+      "impact": "Repository and CI prove the migration set is internally consistent; they cannot prove the deployed database is at the same head.",
+      "recommendation": "Capture a live `migration list`/schema-head export into evidence at the release commit, bound like the existing attested head.",
+      "note": "",
+      "area": "DATA"
+    }
+  ],
+  "report": "Migrations 0001-0057 (56 files; 0032 never existed) with a checksum manifest and CI-fresh-DB dry-run plus SQL negative suites (ci-foundation.yml migrations job). The attested head (0057) matches the repository head: the lab check printed 'LAUNCH_MIGRATION_HEAD OK'. Live production schema state could not be verified from this read-only pass."
+}
