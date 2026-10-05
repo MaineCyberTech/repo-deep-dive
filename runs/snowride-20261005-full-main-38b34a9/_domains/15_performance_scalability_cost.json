@@ -1,0 +1,28 @@
+{
+  "domain": "15_performance_scalability_cost",
+  "file": "15_performance_scalability_cost.md",
+  "area": "PERF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:08Z",
+  "findings": [
+    {
+      "id": "PERF-P3-001",
+      "severity": "P3",
+      "title": "No performance regression gate on pull requests",
+      "owner": "@owner",
+      "target": "PERF",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "scripts/frame-budget.mjs and capacity-regression.mjs exist",
+        "infra/ops/crontab capacity/perf lanes are commented out (opt-in)",
+        "ci-foundation.yml has no perf step"
+      ],
+      "impact": "Frame-budget/capacity regressions can merge undetected and surface only on the scheduled host lane.",
+      "recommendation": "Add a bounded frame-budget/capacity smoke gate to CI (or required check) with a documented threshold.",
+      "note": "",
+      "area": "PERF"
+    }
+  ],
+  "report": "Performance tooling exists (frame-budget.mjs, capacity-regression.mjs, loadtest.mjs, /perf endpoints, RUM sampling and a perf-budget view), but the capacity/perf lanes are optional host crontab entries, not PR gates. Residual: no perf regression gate on pull requests."
+}

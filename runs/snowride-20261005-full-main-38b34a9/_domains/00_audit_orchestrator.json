@@ -1,0 +1,9 @@
+{
+  "domain": "00_audit_orchestrator",
+  "file": "00_audit_orchestrator.md",
+  "area": "ORCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:04Z",
+  "findings": [],
+  "report": "Orchestration meta-domain. This pass was driven end to end by tools/full_domain.py (`domains --full`; init/emit/aggregate) over the 42 master-runner prompt domains plus the deterministic lens at snowride `38b34a9` (main). Per-domain coverage is in coverage.md; the machine-readable findings are in findings.json. No application code was modified; all writes are audit artifacts."
+}

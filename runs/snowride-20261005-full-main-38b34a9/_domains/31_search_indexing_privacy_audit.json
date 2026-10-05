@@ -1,0 +1,9 @@
+{
+  "domain": "31_search_indexing_privacy_audit",
+  "file": "31_search_indexing_privacy_audit.md",
+  "area": "SEARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:06Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. The product has no search feature or search index: content discovery is seed/curated lookup by biome (server.ts:981-1067), and there is no Elasticsearch/vector/external index. No indexing-privacy surface exists."
+}

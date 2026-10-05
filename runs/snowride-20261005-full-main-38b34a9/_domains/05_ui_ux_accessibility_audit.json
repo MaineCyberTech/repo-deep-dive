@@ -1,0 +1,27 @@
+{
+  "domain": "05_ui_ux_accessibility_audit",
+  "file": "05_ui_ux_accessibility_audit.md",
+  "area": "UX",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:08Z",
+  "findings": [
+    {
+      "id": "UX-P3-001",
+      "severity": "P3",
+      "title": "ESLint react-hooks/exhaustive-deps warning in the main game shell",
+      "owner": "@owner",
+      "target": "UX",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "Lab lint: apps/web/components/game/Home.tsx:844:6 react-hooks/exhaustive-deps (gameReady)",
+        "npm run lint exits 0 with warning (web only)"
+      ],
+      "impact": "A stale-closure risk in the primary game component; auth/session effects may not re-run when `gameReady` changes.",
+      "recommendation": "Fix the dependency array or add a documented eslint-disable with justification.",
+      "note": "",
+      "area": "UX"
+    }
+  ],
+  "report": "UI/UX/a11y: an axe-core lane (scripts/e2e-a11y-lane.mjs) and a11y Playwright specs run under chromium/firefox/webkit; components have focused tests and a skip-to-main pattern. Residual: `npm run lint` reports one react-hooks/exhaustive-deps warning in Home.tsx (0 errors)."
+}

@@ -1,0 +1,27 @@
+{
+  "domain": "17_mobile_pwa_responsive_access",
+  "file": "17_mobile_pwa_responsive_access.md",
+  "area": "MOB",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:08Z",
+  "findings": [
+    {
+      "id": "MOB-P3-001",
+      "severity": "P3",
+      "title": "PWA manifest provides only an SVG icon (no raster/maskable PNG)",
+      "owner": "@owner",
+      "target": "MOB",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "apps/web/app/manifest.ts:15-27 single /icon.svg for any + maskable",
+        "apps/web/public/sw.js caches only /_next/static and /assets/game"
+      ],
+      "impact": "Some installers expect a raster maskable icon; installability/branding may vary on older launchers.",
+      "recommendation": "Add a 512x512 PNG maskable icon alongside the SVG and validate installability in the mobile journey.",
+      "note": "",
+      "area": "MOB"
+    }
+  ],
+  "report": "Mobile/PWA: a Next manifest (standalone, maskable SVG icon) and a conservative service worker caching only immutable same-origin static assets; mobile-layout journeys run under chromium/firefox/webkit in emulated viewports. Residual: the PWA ships a single SVG icon (no raster maskable icon), and no offline/navigation caching is claimed by design."
+}

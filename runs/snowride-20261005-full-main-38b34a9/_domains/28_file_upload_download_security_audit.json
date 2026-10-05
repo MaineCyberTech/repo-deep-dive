@@ -1,0 +1,28 @@
+{
+  "domain": "28_file_upload_download_security_audit",
+  "file": "28_file_upload_download_security_audit.md",
+  "area": "FILE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:06Z",
+  "findings": [
+    {
+      "id": "FILE-P3-001",
+      "severity": "P3",
+      "title": "No application-layer maximum replay size bound",
+      "owner": "@owner",
+      "target": "FILE",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "replayStore.ts:180 const size = ghostCodecBytes.length (no cap)",
+        "supabase/migrations/0021_replay_object_store.sql size_bytes CHECK (size_bytes >= 0)",
+        "REPLAY_STORE_MAX_CONCURRENT/QUEUED bound concurrency, not object size"
+      ],
+      "impact": "A large-but-valid ghost could inflate storage/compute cost; the bound today is the storage provider's bucket policy, not the app.",
+      "recommendation": "Reject ghosts above a documented byte ceiling at admission, with a test, and reflect it in the bucket policy.",
+      "note": "",
+      "area": "FILE"
+    }
+  ],
+  "report": "Replay object store reviewed: content-addressed keys, upload read-back checksum verification, per-read download checksum, expiry-bound signed URLs (300s) with policy re-evaluated on every access, and a 4/64 concurrency/queue limiter (replayStore.ts:1-130). Residual: the application does not enforce a maximum replay byte size; it relies on the storage/RPC path and the bucket policy."
+}

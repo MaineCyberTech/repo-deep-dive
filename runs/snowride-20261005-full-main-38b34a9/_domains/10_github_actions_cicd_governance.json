@@ -1,0 +1,28 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:06Z",
+  "findings": [
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "CODEOWNERS is a personal account; required review is a single point",
+      "owner": "@owner",
+      "target": "CI",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        ".github/CODEOWNERS:5 * @MaineCyberTech (comment: personal, not an org team)",
+        ".github/branch-protection.json:9 requireCodeOwnerReviews: true",
+        "branch-protection.json:8 requiredApprovingReviewCount: 1"
+      ],
+      "impact": "Required CODEOWNERS review resolves to one personal account (bus-factor/merge-authority ambiguity).",
+      "recommendation": "Replace with an organisation team handle once the repo moves under the org; document the fallback reviewer.",
+      "note": "",
+      "area": "CI"
+    }
+  ],
+  "report": "CI governance reviewed: ci-foundation runs pinned actions with contents:read, self-hosted routing for same-repo PRs and GitHub-hosted for forks, gitleaks repo scan, production audit, SBOM, coverage thresholds, multi-engine e2e, migration dry-run and SQL negatives. Branch-protection policy now requires foundation/migrations/e2e/license-and-vulnerability. Residual: CODEOWNERS resolves to a personal account."
+}

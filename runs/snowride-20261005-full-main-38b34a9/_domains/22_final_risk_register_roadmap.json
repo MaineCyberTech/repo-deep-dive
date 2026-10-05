@@ -1,0 +1,47 @@
+{
+  "domain": "22_final_risk_register_roadmap",
+  "file": "22_final_risk_register_roadmap.md",
+  "area": "FINAL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:09Z",
+  "findings": [
+    {
+      "id": "FINAL-P1-001",
+      "severity": "P1",
+      "title": "Release identity is stale: attestation commit 9125913 != HEAD 38b34a9",
+      "owner": "@owner",
+      "target": "FINAL",
+      "status": "still-open",
+      "confidence": "Medium",
+      "evidence": [
+        "infra/compose/docker-compose.yml:145 LAUNCH_ATTESTED_COMMIT 9125913e5e...",
+        "config.ts:448-449 expectedCommit = GIT_COMMIT || ... || attestedCommit",
+        "apps/realtime/src/betaRelease.ts canPromoteRC commit-match requirement",
+        "docs/RELEASE_GATE.md:40 condition #1 'Re-attest the exact released HEAD'"
+      ],
+      "impact": "The gate correctly refuses to call HEAD an attested release (commit_mismatch), but until the owner re-attests at 38b34a9 the release-integrity claim cannot be made.",
+      "recommendation": "Capture a fresh owner detached signature over the canonical identity at the released commit + migration head (0057) and the built image digests.",
+      "note": "Mechanism fixed by SEC-P1-001; the attestation content is stale at this HEAD.",
+      "area": "FINAL"
+    },
+    {
+      "id": "FINAL-P3-001",
+      "severity": "P3",
+      "title": "Operational reliability drills are not exercised per release",
+      "owner": "@owner",
+      "target": "FINAL",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "docs/runbooks/RELIABILITY_DRILLS.md exists",
+        "No dated drill/tabletop transcript under evidence/ for 38b34a9",
+        "DR-P3-001 / IR-P3-001 record the same gap from two lenses"
+      ],
+      "impact": "Reliability controls are documented, not repeatedly exercised, so their per-release state is unproven.",
+      "recommendation": "Bind one restore drill + one tabletop to each release candidate and append the transcripts.",
+      "note": "",
+      "area": "FINAL"
+    }
+  ],
+  "report": "Final risk synthesis. The security core is sound and most 2026-10-03 P1 conditions are closed (branch protection, attested migration head, SBOM, signature-verified owner approval, version-controlled assurance schedule). The remaining release-integrity condition: the committed attestation covers commit 9125913, while HEAD is 38b34a9, so the runtime gate fails closed (commit_mismatch) and no attested release can be claimed at this revision. Verdict: GO WITH CONDITIONS for bounded runtime use; not an attested release."
+}

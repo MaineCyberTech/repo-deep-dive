@@ -1,0 +1,28 @@
+{
+  "domain": "30_notification_email_push_delivery_audit",
+  "file": "30_notification_email_push_delivery_audit.md",
+  "area": "NOTIF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:06Z",
+  "findings": [
+    {
+      "id": "NOTIF-P3-001",
+      "severity": "P3",
+      "title": "User notification preferences are recorded but never delivered",
+      "owner": "@owner",
+      "target": "NOTIF",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "apps/web/app/privacy/page.tsx:49-51 notification preferences collected",
+        "docs/runbooks/INCIDENT.md:46 ntfy.sh is the sole outbound transport (operator alerts)",
+        "No email/push sender or delivery log in the repository"
+      ],
+      "impact": "Preferences imply a delivery promise the product does not yet fulfil; users cannot receive or disable channel-specific notices.",
+      "recommendation": "Either label preferences as 'future' in the UI or implement a delivery path with opt-in, retry, and a delivery log.",
+      "note": "",
+      "area": "NOTIF"
+    }
+  ],
+  "report": "Notification preferences are stored per user (privacy notice section 'Social'), but user-facing delivery channels are not implemented: the only outbound transport is operator alerting via ntfy.sh (docs/runbooks/INCIDENT.md, infra/ops/crontab). There is no email/push sender to audit for replay, retry, or opt-in enforcement."
+}

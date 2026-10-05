@@ -1,0 +1,29 @@
+{
+  "domain": "01_repository_inventory",
+  "file": "01_repository_inventory.md",
+  "area": "INV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:04Z",
+  "findings": [
+    {
+      "id": "INV-P2-001",
+      "severity": "P2",
+      "title": "Evidence tree dominates the repository by file count and size",
+      "owner": "@owner",
+      "target": "INV",
+      "status": "owner-accepted",
+      "confidence": "Medium",
+      "evidence": [
+        "816 of 1542 tracked files are under evidence/ (53%)",
+        "48.5 MB tracked total; several evidence exports exceed 2 MB",
+        "evidence/production-acceptance/repomix-r71-repair/repomix-output.*.xml (2-4 MB each)",
+        "AGENTS.md rule 1: append-only evidence; never rewrite ledgers"
+      ],
+      "impact": "Clone/fetch size and review noise grow monotonically; large generated exports under evidence/ add little review value.",
+      "recommendation": "Move multi-MB generated exports to Git LFS or an artifact store, keeping only the hash-pinned ledgers in-tree; keep the append-only rule for ledgers.",
+      "note": "Size is intentional append-only evidence; recorded as owner-accepted.",
+      "area": "INV"
+    }
+  ],
+  "report": "Inventory at 38b34a9: 1542 tracked files, 48.5 MB tracked, of which 816 files (53%) live under evidence/. Largest tracked blobs are OSV/repomix exports exceeding 2 MB each. The evidence tree is append-only by doctrine (AGENTS.md rule 1) and hash-pinned (evidence/MANIFEST.sha256), so its size is intentional; the finding is a maintainability/clone-cost note, not a defect."
+}

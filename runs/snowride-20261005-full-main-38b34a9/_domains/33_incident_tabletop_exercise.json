@@ -1,0 +1,28 @@
+{
+  "domain": "33_incident_tabletop_exercise",
+  "file": "33_incident_tabletop_exercise.md",
+  "area": "IR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:07Z",
+  "findings": [
+    {
+      "id": "IR-P3-001",
+      "severity": "P3",
+      "title": "No committed incident tabletop exercise for the current revision",
+      "owner": "@owner",
+      "target": "IR",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "docs/runbooks/INCIDENT.md defines the process",
+        "docs/runbooks/RELIABILITY_DRILLS.md lists drills",
+        "No dated tabletop transcript under evidence/ for 38b34a9"
+      ],
+      "impact": "Incident response is documented but not exercised at this commit; role clarity and escalation timing are unproven.",
+      "recommendation": "Run a tabletop, capture the transcript append-only, and link it from the release gate.",
+      "note": "",
+      "area": "IR"
+    }
+  ],
+  "report": "Incident readiness: docs/runbooks/INCIDENT.md defines severity, timeline, alert log and the ntfy transport; SLO and assurance runbooks exist. Residual: no committed tabletop exercise record for the current revision."
+}
