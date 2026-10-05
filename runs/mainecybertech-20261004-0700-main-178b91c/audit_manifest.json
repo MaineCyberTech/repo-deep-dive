@@ -25,6 +25,17 @@
     ]
   },
   "findings": {
+    "bySeverity": {
+      "P2": 7,
+      "P3": 7
+    },
+    "byArea": {
+      "CI": 6,
+      "CONF": 2,
+      "PORT": 1,
+      "SEC": 3,
+      "SUPPLY": 2
+    },
     "total": 14
   }
 }
