@@ -6,7 +6,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 
 | Finding | Severity | Title | Owner | Target | Status | Note |
 |---|---|---|---|---|---|---|
-| FINAL-P1-001 | P1 | Release identity is stale: attestation commit 9125913 != HEAD 38b34a9 | @owner | FINAL | still-open | Mechanism fixed by SEC-P1-001; the attestation content is stale at this HEAD. |
+| FINAL-P1-001 | P1 | Release identity is stale: attestation commit 9125913 != HEAD 38b34a9 | @owner | FINAL | partially-fixed | Gate mechanism hardened (draft PR #44, commit ef15f41): expectedCommit is the running commit (GIT_COMMIT/LAUNCH_EXPECTED_COMMIT) and a missing/stale value fails closed (attestation_commit_unverified), so the stale committed attestation no longer self-validates. Residual owner-gated: capture a fresh detached owner signature at the released commit + migration head 0057 + built image digests. See OWNER_GATED_PROPOSALS.md. |
 | CHAIN-P2-001 | P2 | Low-severity credential-to-admin chain (no rotation + no admin rate limit + mode disclosure) | @owner | CHAIN | open |  |
 | DET-P2-001 | P2 | [PORT] 20 evidence/ files committed with mixed line endings | @owner | DET | owner-accepted | False-positive-by-design: evidence is append-only and hash-pinned. |
 | HYGIENE-P2-001 | P2 | Only apps/web is linted; four workspaces have no lint script | @owner | HYGIENE | open |  |
@@ -32,7 +32,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | FILE-P3-001 | P3 | No application-layer maximum replay size bound | @owner | FILE | open |  |
 | FINAL-P3-001 | P3 | Operational reliability drills are not exercised per release | @owner | FINAL | open |  |
 | INFRA-P3-001 | P3 | Committed host crontab references out-of-repo paths/binaries | @owner | INFRA | open |  |
-| INFRA-P3-002 | P3 | Committed launch attestation commit is stale versus repository HEAD | @owner | INFRA | open |  |
+| INFRA-P3-002 | P3 | Committed launch attestation commit is stale versus repository HEAD | @owner | INFRA | partially-fixed | Same root as FINAL-P1-001; the gate now fails closed on the stale committed attestation (draft PR #44). Re-attestation at the released HEAD remains owner-gated. See OWNER_GATED_PROPOSALS.md. |
 | IR-P3-001 | P3 | No committed incident tabletop exercise for the current revision | @owner | IR | open |  |
 | MOB-P3-001 | P3 | PWA manifest provides only an SVG icon (no raster/maskable PNG) | @owner | MOB | open |  |
 | NOTIF-P3-001 | P3 | User notification preferences are recorded but never delivered | @owner | NOTIF | open |  |

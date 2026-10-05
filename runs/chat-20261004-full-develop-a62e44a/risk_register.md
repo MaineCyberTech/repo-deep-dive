@@ -31,13 +31,13 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | API-P2-003 | P2 | Inconsistent error response shapes (fixed) | @api | API | verified-fixed | Error-envelope contract test passes. |
 | ARCH-P2-001 | P2 | Single-node topology: one droplet hosts all services and local Redis | @infra | ARCH | open | ARCH-P2-003 / pilot ARCH-P2-001 remain; no HA/warm standby at a62e44a. |
 | ARCH-P2-002 | P2 | Webhook service used an anonymous Supabase client (fixed) | @api | ARCH | verified-fixed | Closed by the 2026-10-03 remediation wave; re-verified at a62e44a. |
-| BP-P2-001 | P2 | In-repo branch-protection gate covers only `main`, not `develop` | @ci | BP | open | Same root cause as CI finding; server-side ruleset state = Unknown. |
+| BP-P2-001 | P2 | In-repo branch-protection gate covers only `main`, not `develop` | @ci | BP | open | Draft remediation chat#108 extends the in-repo gate to the default branch; server-side ruleset still owner-gated (live state: no rules). |
 | CHAIN-P2-001 | P2 | Webhook SSRF + missing encryption key form a plausible internal-reach chain | @security | CHAIN | open | Composite of SEC/WH findings; no P0/P1 chain found. |
-| CI-P2-001 | P2 | `infra-development` destroys infra on every push to `develop` | @ci | CI | open | Reaffirms pilot CI-P2-001; workflow provisions and deletes duplicate droplets on develop. |
+| CI-P2-001 | P2 | `infra-development` destroys infra on every push to `develop` | @ci | CI | open | Draft remediation chat#107 (manual/plan-only + development environment; unmerged). |
 | CI-P2-002 | P2 | Auto-commit workflows hold `contents: write` and push to main/develop | @ci | CI | open | Reaffirms pilot CI-P2-003; both workflows still request contents:write. |
-| CI-P2-003 | P2 | `develop` (auto-deploy target) is not covered by the branch-protection gate | @ci | CI | open | Reaffirms pilot CI-P2-004; validate.yml branch-protection job hard-codes main. |
+| CI-P2-003 | P2 | `develop` (auto-deploy target) is not covered by the branch-protection gate | @ci | CI | open | Draft remediation chat#108 extends the in-repo gate to the default branch; server-side ruleset still owner-gated (live state: no rules). |
 | CI-P2-004 | P2 | `workflow_dispatch` inputs interpolated into `run:` (script injection) (fixed) | @ci | CI | verified-fixed | Closed with the actionlint/CI hardening wave (#97). |
-| DATA-P2-001 | P2 | Duplicate `add_user_groups` migrations | @db | DATA | open | Reaffirms pilot DATA-P2-001; both files still present at a62e44a. |
+| DATA-P2-001 | P2 | Duplicate `add_user_groups` migrations | @db | DATA | open | Reconciled 2026-10-05: the two migrations are intentional and documented in supabase/migrations/README.md, which explicitly forbids merging/editing/deleting applied migrations. The squash/drop recommendation conflicts with that documented owner decision; needs a DB-owner call (rename vs keep). |
 | DATA-P2-002 | P2 | `gdpr_delete_user` is a hard multi-table delete with partial coverage | @db | DATA | open | Reaffirms original DATA-P2-005; not re-verified line-by-line (partial). |
 | DATA-P2-003 | P2 | Deploy workflows seeded production with test users (fixed) | @release | DATA | verified-fixed | Deploy no longer seeds; capability remains only in the disabled seed workflow. |
 | DATA-P2-004 | P2 | Rollback scripts were only proven to exist (fixed) | @ci | DATA | verified-fixed | validate.yml now executes downs in reverse and re-applies ups. |
@@ -47,25 +47,25 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | FILE-P2-001 | P2 | Uploads return a public URL from `chat-uploads` and trust client-declared content type | @api | FILE | open | New at a62e44a; no server-side magic-byte sniff and bucket visibility is unverified server-side. |
 | FINAL-P2-001 | P2 | Dependency risk-acceptances expire 2027-01-04 | @security | FINAL | open | Derivative of SC finding. |
 | INFRA-P2-001 | P2 | Single-droplet infrastructure has no environment isolation | @infra | INFRA | open | One droplet serves dev and (through the same module) prod flows. |
-| INV-P2-001 | P2 | Stale generated reconciliation artifacts remain tracked at the repository root | @maintainer | INV | open | Reaffirms pilot INV-P2-001 at a62e44a. |
+| INV-P2-001 | P2 | Stale generated reconciliation artifacts remain tracked at the repository root | @maintainer | INV | open | Draft remediation chat#106 (remove stale root artifacts; unmerged). |
 | MT-P2-001 | P2 | IDOR: admin dead-letter retry was not tenant-scoped (fixed) | @api | MT | verified-fixed | PR #90; re-verified tenant scoping in the admin webhooks routes. |
 | MT-P2-002 | P2 | Cross-tenant user directory via auth service (fixed) | @security | MT | verified-fixed | PR #91; directory now uses an RLS-aware caller client. |
 | NOTIF-P2-001 | P2 | Notifications are delivered only via Web Push; no durable multi-channel delivery/retry | @api | NOTIF | open | No email/SMS provider integration; push failures are not retried durably. |
 | OBS-P2-001 | P2 | No distributed tracing / correlation to a collector | @ops | OBS | open | OBS-P2-004 residual; request-id/trace-context exist but no OTLP exporter. |
 | PRIV-P2-001 | P2 | GDPR erasure path is a hard multi-table delete with partial coverage | @privacy | PRIV | open | Cross-ref DATA finding; the same defect is the privacy owner's concern. |
 | RES-P2-001 | P2 | Single-node failure domains: API, worker, Redis and DB proxy co-resident | @infra | RES | open | Ambient/failure-domain analysis; overlaps ARCH/INFRA findings. |
-| RLS-P2-001 | P2 | RLS policy test exists but is not executed by CI | @qa | RLS | open | TEST-P2-001 residual; `package.json` has test:rls but no workflow invokes it. |
+| RLS-P2-001 | P2 | RLS policy test exists but is not executed by CI | @qa | RLS | verified-fixed | Reconciled 2026-10-05: false positive. validate.yml migration-test runs every supabase/tests/*.sql (incl. rls_tenant_isolation.sql) inside the local Supabase Postgres via `docker exec ... psql` at a62e44a; the RLS test is executed by CI. |
 | SC-P2-001 | P2 | Production web container received the Supabase service-role key (fixed) | @supply | SC | verified-fixed | PR #92; web compose service no longer receives the service-role key. |
 | SC-P2-002 | P2 | GitHub Actions were not pinned to commit SHAs (fixed) | @supply | SC | verified-fixed | All external actions are 40-hex pinned at a62e44a. |
 | SC-P2-003 | P2 | Dependency vulnerability scanning was advisory-only (fixed) | @security | SC | verified-fixed | Trivy image scan blocks; dependency exceptions are dated to 2027-01-04. |
 | SC-P2-004 | P2 | Dependency risk-acceptances expire 2027-01-04 | @security | SC | open | Downgraded from pilot DEP-P2-001 (was 2026-11-03); same-major bumps applied #101. |
-| SEC-P2-001 | P2 | `WEBHOOK_ENCRYPTION_KEY` is not delivered by the production compose stack | @security | SEC | open | Reaffirms pilot SEC-P2-003 at a62e44a; key is optional in env.ts. |
-| SEC-P2-002 | P2 | Webhook SSRF validation does not constrain redirects or DNS rebinding | @security | SEC | open | Reaffirms pilot SEC-P2-002; validateWebhookUrl resolves DNS then delivery fetches later. |
+| SEC-P2-001 | P2 | `WEBHOOK_ENCRYPTION_KEY` is not delivered by the production compose stack | @security | SEC | open | Draft remediation chat#104 (DELIVER WEBHOOK_ENCRYPTION_KEY; unmerged). |
+| SEC-P2-002 | P2 | Webhook SSRF validation does not constrain redirects or DNS rebinding | @security | SEC | open | Draft remediation chat#105 (redirect:'manual'; unmerged). |
 | TEST-P2-001 | P2 | Low coverage thresholds / non-blocking diff coverage (fixed) | @qa | TEST | verified-fixed | vitest.config.base.ts:34-37 raised; no continue-on-error. |
-| TEST-P2-002 | P2 | RLS tenant-isolation SQL test exists but is not run by CI | @qa | TEST | open | Same as RLS-domain finding; confirmed absent from all workflows. |
+| TEST-P2-002 | P2 | RLS tenant-isolation SQL test exists but is not run by CI | @qa | TEST | verified-fixed | Reconciled 2026-10-05: false positive. validate.yml migration-test runs every supabase/tests/*.sql (incl. rls_tenant_isolation.sql) inside the local Supabase Postgres via `docker exec ... psql` at a62e44a; the RLS test is executed by CI. |
 | TEST-P2-003 | P2 | Migration rollback was validated by file existence only (fixed) | @qa | TEST | verified-fixed | Downs are executed in reverse. |
 | WH-P2-001 | P2 | Replay/idempotency key was regenerated per attempt (fixed) | @api | WH | verified-fixed | Key created once and reused on retry. |
-| WH-P2-002 | P2 | Webhook delivery follows redirects / does not pin the validated IP (SSRF) | @security | WH | open | Same root cause as SEC SSRF finding; owned here for the delivery path. |
+| WH-P2-002 | P2 | Webhook delivery follows redirects / does not pin the validated IP (SSRF) | @security | WH | open | Draft remediation chat#105 (redirect:'manual'; unmerged). |
 | ACM-P3-001 | P3 | Admin `/stats` leaks global cross-tenant counters | @api | ACM | open | Confirmed at a62e44a (admin.routes.ts /stats). |
 | ADMIN-P3-001 | P3 | Admin error buffer is in-memory only (lost on restart) | @api | ADMIN | open | Pilot OBS-P2-003 residual (admin/error-buffer.ts). |
 | ARCH-P3-001 | P3 | Worker health/metrics bind loopback but rely on a shared token | @ops | ARCH | open | Worker /metrics now token-gated; residual is shared-secret hygiene. |
