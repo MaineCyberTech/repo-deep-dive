@@ -5,7 +5,8 @@ name: repo-deep-dive audit
 # - pack: lint the pack and run the end-to-end smoke harness on every pull
 #   request and every push to main (TEST-P1-001, TEST-P2-002).
 # - run-gate: on pull requests AND pushes to main, validate each archived run
-#   folder changed by the diff and fail on any P0/P1 finding. Override the
+#   folder changed by the diff and fail on any UNRESOLVED P0/P1 finding (resolved
+#   statuses: verified-fixed, owner-accepted, false-positive). Override the
 #   blocking levels with the RUN_GATE_SEVERITIES repo variable. The run folder is
 #   derived from the diff, never a fixed "latest" path (CI-P2-006, CI-003).
 #
@@ -98,20 +99,6 @@ jobs:
             fi
             echo "::group::audit ${run}"
             python3 tools/run_toolchain.py "${run}" --write
-            python3 - "${run}/findings.json" <<'PY'
-          import json
-          import os
-          import sys
-
-          with open(sys.argv[1], encoding="utf-8") as fh:
-              doc = json.load(fh)
-          # GATE_SEVERITIES defaults to P0,P1 (CI-003): P0/P1 findings block.
-          sev = [s.strip() for s in os.environ.get("GATE_SEVERITIES", "P0,P1").split(",") if s.strip()]
-          counts = doc.get("counts", {}).get("bySeverity", {})
-          blocking = {s: int(counts.get(s, 0)) for s in sev if int(counts.get(s, 0)) > 0}
-          if blocking:
-              raise SystemExit("blocking findings present (%s): %s" % (",".join(sev), blocking))
-          print("severity gate (%s): no findings" % ",".join(sev))
-          PY
+            python3 tools/run_gate.py "${run}"
             echo "::endgroup::"
           done

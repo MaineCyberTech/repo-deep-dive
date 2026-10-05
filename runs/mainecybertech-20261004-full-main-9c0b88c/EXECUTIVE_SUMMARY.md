@@ -83,13 +83,29 @@ All six P0 entries above are `verified-fixed` at `9c0b88c` (evidence in `verific
 The automated **NO-GO** is fail-closed: `tools/full_domain.py` counts register severities
 regardless of status, and the verdict mirrors the repository's own pre-go-live
 `docs/RELEASE_GATE.md` (production is not provisioned; operator exit criteria remain open).
-The only open P1 in the latest authoritative verification ledger (`a97425d`, an ancestor of
-main) is `CI-P1-001` — provisioning the `prod` environment, an operator action.
 
-Rows from the `20261002-0344` full run are carried **unverified at this commit** and are
-marked as such in their notes; fail-closed discipline treats them as open until re-checked.
+### P1 reconciliation (2026-10-05)
+
+The P1 rows carried from the `20261002-0344` full run were **re-verified against `main`
+`9c0b88c`** on 2026-10-05 (the commit is also the merge `#93` that promoted `develop`'s full
+remediation to `main`, so most carried rows were already resolved in code). Result of the
+59 P1 rows:
+
+- **48 verified-fixed** at `9c0b88c` (evidence in the per-row notes; source files confirmed at
+  the bound commit — PR #97 only adds documentation under `docs/audits/`).
+- **7 partially-fixed** (code affordance landed; a drill, tag, or config residual remains):
+  `AI-P1-001`, `DR-P1-003`, `DR-P1-005`, `DR-P1-006`, `IR-P1-002`, `REL-P1-001`,
+  `SECRET-P1-001`.
+- **2 still-open, operator/owner-gated**: `CI-P1-001` and `CI-P1-003` (provision the
+  `prod`/`prod-approval` environment secrets and required reviewers).
+- **2 open, owner decisions**: `DATA-P1-003` (tombstones vs documented hard delete) and
+  `IR-P1-006` (runtime RLS-regression detection/alerting).
+
+The code-fixable gap found on `main` was `CI-P3-003` (deploy SSH host-key verification):
+the fix merged to `develop` (#94 `e4a8338b`, follow-up #95 `36584968`) had not reached the
+default branch. It was ported to `main` and opened as a draft PR (mainecybertech#98).
+
 Fresh findings at `9c0b88c`: `PERF-P3-001`, `PERF-P3-002`, `UX-P3-001`, `PRIV-P2-001`,
 `AN-P3-001`, `MOB-P3-001`, `EVOL-P3-001`, `DOC-P3-001`, and the lab deterministic
-`DET-P3-001` (3 container images without a digest pin). `CI-P3-003` was re-verified open on
-main: the fix merged to `develop` (#94) is not on the default branch.
+`DET-P3-001` (3 container images without a digest pin).
 

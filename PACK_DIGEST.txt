@@ -1,13 +1,13 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1948
+# files: 1956
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
 491425bc3cc1f0040ed4f413e711abb01b9cc8f1cb736142dcb65b985543e201  ./.github/actionlint.yaml
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
-0a562aa324969c7af04571396f054e220e28fc2659abfb326cdcc2476f1a4eaf  ./.github/workflows/audit.yml
+4c942c9478086df741d68665e39c347be0804cd14dc13c83e695e26a2292b50f  ./.github/workflows/audit.yml
 006110372ed17c35c29430bec367c5e5698d439187dbfbd5746a1087cdb292e5  ./.github/workflows/deep-dive-deterministic.yml
 3bfe60e3cc5a527261751b69b24f85964acd527f1937f09500acf62f0fdb444d  ./.github/workflows/lab-agent-offboard.yml
 9680784abcd13bb4b19b4769d193cfbff81e7505125e562c5d49920361f4f8ca  ./.github/workflows/lab-agent-onboard.yml
@@ -302,6 +302,7 @@ bd7750046cfd8fcdfc8f1827ae1b5a13e9a78e0d15f4fab3f535391dbe520005  ./runs/2026100
 55a3741f1f45fe8eb677732059f9c02adac660e306870bd00a2b0037a0be77aa  ./runs/20261004-full-main-ba4becb/45_exploit_chain_attack_path_audit.md
 fb8dd38a0f360241ffccb63d1096f1c2da5ccfad38ba9e2666582b6460efa663  ./runs/20261004-full-main-ba4becb/EXECUTIVE_SUMMARY.md
 4c0d5174f23a0a0f9e69a7d85ace8651f073e9b9f33969711cf91f24c139c932  ./runs/20261004-full-main-ba4becb/INDEX.md
+60e134014c38702d58aa3c58fae5b6e894aec5c0d20f251c330fa0c86024a9d4  ./runs/20261004-full-main-ba4becb/OWNER_GATED_PROPOSALS.md
 2e4aa5abc4d64f1a75f8855541664cd96f370aecf5c0196ba0c2b8a06b428211  ./runs/20261004-full-main-ba4becb/RELEASE_GATE.md
 7bfe734ba00f424495a1ed0031e1b73fb376aafdd31f7144e4e00c2131c4d484  ./runs/20261004-full-main-ba4becb/_domains/00_audit_orchestrator.json
 bd356719fea2fbf7f50571ba912a547f093d0cd3f5efb67f8656eae480e233d2  ./runs/20261004-full-main-ba4becb/_domains/01_repository_inventory.json
@@ -349,12 +350,14 @@ fea0e623e6a9085f4cd6484b80c608b71a3aacba4856b5389dadcfd9f2ca4af2  ./runs/2026100
 b361a07ace18e563f2733a779307ecd4420c1646e81577bba524669d248ad28a  ./runs/20261004-full-main-ba4becb/audit_manifest.json
 493bf43a4c7ae5130ab88a92f88fca16512cbfd80216ae5fe2b0bf7ea71bc781  ./runs/20261004-full-main-ba4becb/coverage.md
 d3533b1a49317e61694c1d8f92fb762db17c54d81aa78a0452015e67f11322c8  ./runs/20261004-full-main-ba4becb/deterministic-findings.json
-38683df555980a99d7b093d559abbf38d927d75796a814a62e5bbb34d5c0443f  ./runs/20261004-full-main-ba4becb/findings.json
-3d86dfe77a1cc3aff891c1c76f46b079e81f231b1fe09b040475b5c37cb6d723  ./runs/20261004-full-main-ba4becb/follow_up_register.md
+8363c0632bef0e4668af5b9bdfe63dbda5b07f751f8ec620ee38dd5b189dcdd8  ./runs/20261004-full-main-ba4becb/findings.json
+6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/follow_up_register.md
 b92493c206b03164bdadac74a71ebcec8cf20bbb3ad81ee486c0666dd9c66a14  ./runs/20261004-full-main-ba4becb/lens_deterministic.md
 fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/20261004-full-main-ba4becb/patch_plan.md
-3d86dfe77a1cc3aff891c1c76f46b079e81f231b1fe09b040475b5c37cb6d723  ./runs/20261004-full-main-ba4becb/risk_register.md
+12bf0f8237956ffb7eb5193b51ee6d5c499f58dae569b39db77de95377f47034  ./runs/20261004-full-main-ba4becb/remediation_plan.json
+6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
+a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
 faa1f33e38151dd4e0aac84e87e2aff3a606078c69f5e5c15938f03da2413404  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
@@ -1086,14 +1089,14 @@ ed4c686dcd694022aecec759e9b7efb44dbbf6a590f9b40b95f7ec52df3528f0  ./runs/falcon-
 b37bffe344d99d9c1e150cef12f3cf09e4588a1eeefbc77a759e357b9c26b880  ./runs/falcon-20261005-full-main-e267ce1/audit_manifest.json
 0a2fa1a755af9813e72453fdda5931638e6e287cb059f7d5a756dc4d497e62f1  ./runs/falcon-20261005-full-main-e267ce1/coverage.md
 d67bb6462410899d5efcfb6cd7eac41842be30aa7c1b2be346eaebfe37e4b0ac  ./runs/falcon-20261005-full-main-e267ce1/deterministic-findings.json
-837506e829de9d1e197dfa19a9f54744a0ebb61f32ade639ff39689752e4da97  ./runs/falcon-20261005-full-main-e267ce1/findings.json
-7f3aeb8fd5f32d30ce2634b59e00732c27ebb26f21a00d56c83bfb36e7f2575d  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
+8916b7bc8de4fde04c3451b8e82d9bb7aba1a47251178710c421769976a6f6cc  ./runs/falcon-20261005-full-main-e267ce1/findings.json
+f5d195e833dfd71719ec932b532e63d1c83680d2ddec661753e6ff9a7fc48d33  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
 88eb640212cce439b86fda1396860ccb1c2b00fdefadf80eac3a6b1472bc99c7  ./runs/falcon-20261005-full-main-e267ce1/lens_deterministic.md
 21c6167629bf5aebc4ad4646e56df84a1d7927ed6ac951bd2e0ba21102e6678b  ./runs/falcon-20261005-full-main-e267ce1/patch_plan.md
 b6dc9fc89924073a661b8e6fa4465cb5021a164266f176dfe264bb8332788b52  ./runs/falcon-20261005-full-main-e267ce1/remediation_plan.json
-a24dc65be6d82cd257f74b4a7439cc91b8b1ed550113e713cca4b9847fa03b68  ./runs/falcon-20261005-full-main-e267ce1/risk_register.md
+f5d195e833dfd71719ec932b532e63d1c83680d2ddec661753e6ff9a7fc48d33  ./runs/falcon-20261005-full-main-e267ce1/risk_register.md
 b62548a4f5872ca71fb2a8415adbbb85b33e5e4805758d02933b6321c64c9783  ./runs/falcon-20261005-full-main-e267ce1/roadmap.md
-eb1771f0bda51ee28337edc18c847f2c754f877bc741698094d6eadbe4a44e71  ./runs/falcon-20261005-full-main-e267ce1/verification_log.md
+d13249016f16b68ff59345cec88c28b97b21ed1383ab5884b1007301bfdb3e43  ./runs/falcon-20261005-full-main-e267ce1/verification_log.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md
@@ -1381,8 +1384,10 @@ c52b4ad9cdf28f38df17ce32f274e20af328060cac17f928865ac1d16f34e95b  ./runs/mainecy
 b12d8138f6d1e0b573f72c979fa253790ba2bab4def4b83eb00d8d57af6918f5  ./runs/mainecybertech-20261004-full-main-9c0b88c/39_analytics_tracking_privacy.md
 8c0c69aba3223447dce090f43458fae608aa501ecdce4fa8fbca64569336cd51  ./runs/mainecybertech-20261004-full-main-9c0b88c/40_release_notes_changelog_generator.md
 a361ac413bfbe2dd87ebd01b965734fba0ef8476f7d87e857a8279a37fe70e49  ./runs/mainecybertech-20261004-full-main-9c0b88c/45_exploit_chain_attack_path_audit.md
-bca413f3fda87360295314a55d01d5147875eb43a6be94f58eb1441a6073e9af  ./runs/mainecybertech-20261004-full-main-9c0b88c/EXECUTIVE_SUMMARY.md
+abe51ff617fff941b8e00bad753fd49b7c28a3461a269b7a394121e0d62c6911  ./runs/mainecybertech-20261004-full-main-9c0b88c/EXECUTIVE_SUMMARY.md
 447b6aea9f5faeb3b695c9496982d4ba89aecd0db9d827d310cc6f7de0eb6ba6  ./runs/mainecybertech-20261004-full-main-9c0b88c/INDEX.md
+8f2f0bcb0a0e393148084ad4b6a0bc04d2bdb257fb541ced89c8e9bc10afffdb  ./runs/mainecybertech-20261004-full-main-9c0b88c/OWNER_GATED_PROPOSALS.md
+89fe3528a2c3e1e4255862b3ae5afc263336e9e395aa149adf08c92ccade51d7  ./runs/mainecybertech-20261004-full-main-9c0b88c/P1_RECONCILIATION.md
 78e065a80aa880387c141bb730aa6425135cf5cfafa4dad1f1d70a225dca9329  ./runs/mainecybertech-20261004-full-main-9c0b88c/RELEASE_GATE.md
 5d4fbb4fb97f537e871ddc253bf15682a1cb9d2b477a82a527c45aa57ef4eebc  ./runs/mainecybertech-20261004-full-main-9c0b88c/_domains/00_audit_orchestrator.json
 a414fa4c588212bcef2ebaafb0cefc7dce9e4854ea039f0d61c4af4d07ce864f  ./runs/mainecybertech-20261004-full-main-9c0b88c/_domains/01_repository_inventory.json
@@ -1430,11 +1435,12 @@ e1059b01d06619cdcf87b8403695c3aa898533616a2c04b934913fa54beeb344  ./runs/mainecy
 670b62c3611e5d5c46f6b60b3bba754bb80e58bee6656ccd471eca5219d9525b  ./runs/mainecybertech-20261004-full-main-9c0b88c/audit_manifest.json
 77e6da6c9a86fe87dbdec288f3f44ab8f6973b3cabb33fb44f1ed4d986a7e285  ./runs/mainecybertech-20261004-full-main-9c0b88c/coverage.md
 37a7e0d25c590284bb4f666c60d4e0aa9660be773422a27d158703188e04fce5  ./runs/mainecybertech-20261004-full-main-9c0b88c/deterministic-findings.json
-9bee12a74fab99bf9457c9f6cdea0f91c50de1aa981455a6fac83778f220785f  ./runs/mainecybertech-20261004-full-main-9c0b88c/findings.json
-f4ec8b582e16bd830e1951c23359205cba83c5d056e2687c98cf225f32fba101  ./runs/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md
+7c704ba8682cc79e0322edd8e94f5ef67f26015c8fe45b425ec6085d3f88b4a2  ./runs/mainecybertech-20261004-full-main-9c0b88c/findings.json
+4db87d2ee8c2407c156648d6d7cc48bb9e94cc817b4080fa0009d891cd28663c  ./runs/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md
 8b4a35620f3a8dfe080907f49380c24d8ce07c93c892b1eeeebbb7843f617d7e  ./runs/mainecybertech-20261004-full-main-9c0b88c/lens_deterministic.md
 ef3ca31f9a3e19ac839b77ee470f28a1b7de93f23d796302d0de427faaec5b2f  ./runs/mainecybertech-20261004-full-main-9c0b88c/patch_plan.md
-f4ec8b582e16bd830e1951c23359205cba83c5d056e2687c98cf225f32fba101  ./runs/mainecybertech-20261004-full-main-9c0b88c/risk_register.md
+e31af45c67fe467ea27881d18d2b067f2c6a8e5e0b243a36602cfc0ece94d9a6  ./runs/mainecybertech-20261004-full-main-9c0b88c/remediation_plan.json
+4db87d2ee8c2407c156648d6d7cc48bb9e94cc817b4080fa0009d891cd28663c  ./runs/mainecybertech-20261004-full-main-9c0b88c/risk_register.md
 b15890e7d60a3f6828ffb52bd25d5c0cf373613895a6bb34476cb1233e4d2409  ./runs/mainecybertech-20261004-full-main-9c0b88c/roadmap.md
 c3ff84ffe7bb9658da39da9728a1b339a48c6835f7ad7f1ae91eabc519c737a9  ./runs/mainecybertech-20261004-full-main-9c0b88c/verification_log.md
 53ea972dba482a93f9b1e56a258fb34c93f3fb74029bbae4e5cb1c40690bc6e8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/01_repository_inventory.md
@@ -1865,9 +1871,9 @@ aae9536e4fe4031ed3da7b3608dc3ac974f81dbe2f0835921ae76fec2844136d  ./runs/snowrid
 74a36508c6ae93c128ff78faa94466eadd93cdca9347ccd65c7e6f061b274da0  ./runs/snowride-20261005-full-main-38b34a9/patch_plan.md
 2cb8222c0938c9f21fe8e65afa80cc9d75e3f6054e788dcbbe1cc8781cb40b58  ./runs/snowride-20261005-full-main-38b34a9/pr_comment.md
 8fb7d0d50a7f33db19f3cb58a3eac5ea7c663e028a97e240ad249f71b1d20dac  ./runs/snowride-20261005-full-main-38b34a9/release_notes_draft.md
-ad524ffe4a0a0c2b7fc07f933cde653754b2c6d5abec708eff1b985ea38f4cfd  ./runs/snowride-20261005-full-main-38b34a9/remediation/PS-01/diff.patch
-cc8fd75f9374a6190f313a0186e527288e1e0b076d4e839ef7b7f2f9b1362afc  ./runs/snowride-20261005-full-main-38b34a9/remediation/PS-01/manifest.json
-3fc5a5bfbbabf24ce5ecfb329be3255b0bd7df81e3959cd9e33e436bd6711ca4  ./runs/snowride-20261005-full-main-38b34a9/remediation/PS-01/verify.log
+437374cef5fcf098099172ff805062a2caf35e71c6fda20abd8bbd53b58110b7  ./runs/snowride-20261005-full-main-38b34a9/remediation/PS-01/diff.patch
+83ac296d66b9931649f00d76dcae305bfbf5a1380befc0e4c70b9af67df6f6e5  ./runs/snowride-20261005-full-main-38b34a9/remediation/PS-01/manifest.json
+f48e71192d4a4f8924c50caa23d0f0d6d5294408220c83750412abca83c82291  ./runs/snowride-20261005-full-main-38b34a9/remediation/PS-01/verify.log
 fc39cd4bb0b83a6c6acc7f08f2855864848c8c3b58154b8d25fd33cac32dce08  ./runs/snowride-20261005-full-main-38b34a9/remediation_plan.json
 12d422f300b00083280ff93c9902e19abb4db8971f0acbf0a2eafee8b581a393  ./runs/snowride-20261005-full-main-38b34a9/risk_register.md
 e2222251aa497ae088c72969d90223b580c6a8da70ff5f792fc88b484af55146  ./runs/snowride-20261005-full-main-38b34a9/risk_score.json
@@ -1901,6 +1907,7 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 1a1fb818d793211775b55e82c94c8da498231a9e24d7d97654e099ef8df46ab6  ./tests/test_lib_findings.py
 92c90dcc41d584fa5e3fed4f94ae791ebbc6933318fca7aad84a0c0204aa0c73  ./tests/test_publish_audit.py
 87e8aea750804ce5991efb69f2c73fdf81a246f42f754d567aaea0b7ee1b8cdc  ./tests/test_repo_inventory.py
+8a347a0a23b65d032c3548a1d74454deeaf762e8d6fd0938315a41d11f1a1ab2  ./tests/test_run_gate.py
 4b77ad57ba5a912dc55bd0a3a93fd10327b4856a39088bb91c81fe60280fb477  ./tools/aggregate_findings.py
 5c0c4cfe71fc838086291f520592ae93d4cb6a8ef7fcf4b45effce0cadff4055  ./tools/apply_approvals.py
 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
@@ -1926,7 +1933,7 @@ bad1ba77f6445fcc22ec416907fbc8280273a3f0444fb36fb060f96a4113e51c  ./tools/lab-vp
 73e8168690e71e9ec4ed8efd50f839269f70bfef870ccc16d73c5bc477b05c44  ./tools/lab-vpn/labvpn-run.sh
 90e9799dce9fbdd1613b2dd3df14bd35be2a2e6bcdf2df82c4d53ebd6bccbece  ./tools/lab_api_server.py
 e8c72613b33aa177e5686780d5d57366fe932b8f936df1a90da12418018388ee  ./tools/lab_runner.py
-70f4e72e262f127aeb3c8b7a0c11abacc3fd7d6f696e82963fd51be894f320ce  ./tools/lib_findings.py
+98a54dc6be95d1f4161c721c7a14495b17cbc8bfe874b6f13f93bc3b24fe261b  ./tools/lib_findings.py
 24b97f86b95fae0dca13d4a040d0ca579828f41088b76ae11c44f6943516a1b7  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
 a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
@@ -1944,6 +1951,7 @@ df4454aedcaa7017231d07143311e1b496ecd0e7c3a0b92dc5a9e0a7155304a0  ./tools/publis
 f17648cfd68e4108add83223190dc485ed40d00cf639f881ca454c4000e1d66b  ./tools/repo_inventory.py
 f8e835fce3153791f01f6eb3dbcf20732323c58112b3f7c5e53df50f4544c236  ./tools/review_index.py
 56b1c3a96eb925d9e9dede1d63a1778b76ea9d0f93d766aa8a79f58df0f97881  ./tools/risk_score.py
+e0d8b6f83f85b3ebc1ef0e88765b12797f53f1a3982bd02730735489dddc9b33  ./tools/run_gate.py
 c6bbcbb8b9d12407dff5182473169814b2b915b80a2b0868d73e793b3632ee14  ./tools/run_toolchain.py
 409ed0cb079a526907fcf61863ab73ace5be297f085a0949e73c9421723acb53  ./tools/self_test.sh
 64335c984915774d613c036c490c6ee09e221a8bd530d4b2e69c4319d7f7302a  ./tools/setup_git_merge_driver.sh
