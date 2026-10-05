@@ -57,7 +57,11 @@ done
 for name in lab-endpoint proxmox.lab ci-runner.lab edge-builder.lab testnuc.lab ci-runner2.lab edge-builder2.lab runner2.lab; do
   getent hosts "$name" >/dev/null 2>&1 && echo "OK   name $name -> $(getent hosts "$name" | awk '{print $1}')"
 done
-if curl -s -m6 http://172.23.128.51:8722/health >/dev/null 2>&1; then echo "PASS lab API (ci-runner:8722)"; else echo "WARN lab API not reachable (may need the lab up)"; fi
+api_ok=0
+for api in http://172.23.128.51:8722/health http://192.168.222.201:8722/health; do
+  curl -s -m6 "$api" >/dev/null 2>&1 && api_ok=1
+done
+if [ "$api_ok" = 1 ]; then echo "PASS lab API (8722)"; else echo "WARN lab API not reachable (may need the lab up)"; fi
 echo "[lab-audit] connected. Tear down with: $SUDO wg-quick down $IFACE"
 if [ "${NO_HOSTS:-0}" = "1" ]; then
   echo "[lab-audit] Windows hosts snippet (no /etc/hosts):"

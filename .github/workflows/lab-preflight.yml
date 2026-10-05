@@ -26,12 +26,15 @@ on:
       - 'prompts/**'
       - 'profiles/**'
       - 'runs/**'
+      - 'tools/lab-vpn/**'
+      - 'docs/LAB_VPN.md'
       - 'tools/remediation_plan.py'
       - 'tools/remediation_status.py'
       - 'tools/deterministic_checks.py'
       - '.github/workflows/remediation.yml'
       - '.github/workflows/verify-remediation.yml'
       - '.github/workflows/lab-tests.yml'
+      - '.github/workflows/lab-preflight.yml'
 
 permissions:
   contents: read
