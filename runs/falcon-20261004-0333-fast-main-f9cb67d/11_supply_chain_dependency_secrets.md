@@ -1,6 +1,6 @@
 # 11_supply_chain_dependency_secrets — Prompt 11 - Supply Chain, Dependency, and Secrets Audit
 
-- Run: `falcon-20261004-fast-main-f9cb67d`
+- Run: `falcon-20261004-0333-fast-main-f9cb67d`
 - Target: `falcon` @ `f9cb67d` (branch `main`)
 - Domain: `11_supply_chain_dependency_secrets.md` (area SC, prompt)
 

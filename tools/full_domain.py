@@ -183,7 +183,11 @@ def pack_version():
 
 
 def default_run(repo, mode, branch, sha):
-    return "%s-%s-%s-%s-%s" % (repo, datetime.now(timezone.utc).strftime("%Y%m%d"),
+    # Run ids must start with the UTC start time as `YYYYMMDD-HHMM-` so they
+    # satisfy the published-run lifecycle convention (`^[0-9]{8}-[0-9]{4}-`)
+    # enforced by consumer CI (e.g. falcon's audit_run_lifecycle.sh); the
+    # mode/branch/sha suffix follows the timestamp.
+    return "%s-%s-%s-%s-%s" % (repo, datetime.now(timezone.utc).strftime("%Y%m%d-%H%M"),
                                mode, branch or "manual", (sha or "manual")[:7])
 
 

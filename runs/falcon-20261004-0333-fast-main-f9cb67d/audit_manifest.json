@@ -5,7 +5,7 @@
   "promptCount": 3,
   "recommendedName": "repo-deep-dive",
   "outputRoot": "docs/audits/{name}/{run}/",
-  "run": "falcon-20261004-fast-main-f9cb67d",
+  "run": "falcon-20261004-0333-fast-main-f9cb67d",
   "scaffolded_at": "2026-10-05T03:26:13Z",
   "scaffolded_by": "tools/full_domain.py aggregate",
   "mode": "fast",

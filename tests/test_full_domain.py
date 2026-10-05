@@ -23,6 +23,18 @@ class RegistryTest(unittest.TestCase):
         self.assertEqual(len(fd.select("full")), len(fd.master_order()) + 1)
 
 
+class RunNameTest(unittest.TestCase):
+    def test_default_run_starts_with_utc_timestamp(self):
+        run = fd.default_run("falcon", "fast", "main", "a" * 40)
+        # Consumer CI requires run folders to start `YYYYMMDD-HHMM-` (see
+        # falcon's automation/validation/tests/audit_run_lifecycle_test.sh).
+        self.assertRegex(run, r"^falcon-[0-9]{8}-[0-9]{4}-fast-main-aaaaaaa$")
+
+    def test_default_run_falls_back_for_branch_and_sha(self):
+        run = fd.default_run("demo", "full", None, None)
+        self.assertRegex(run, r"^demo-[0-9]{8}-[0-9]{4}-full-manual-manual$")
+
+
 class AggregateTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

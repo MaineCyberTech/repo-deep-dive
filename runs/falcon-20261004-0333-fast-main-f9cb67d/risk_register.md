@@ -1,6 +1,6 @@
 # Follow-up register
 
-Run: `falcon-20261004-fast-main-f9cb67d` · Target: `falcon` @ `f9cb67d` · Profile: base
+Run: `falcon-20261004-0333-fast-main-f9cb67d` · Target: `falcon` @ `f9cb67d` · Profile: base
 
 Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 

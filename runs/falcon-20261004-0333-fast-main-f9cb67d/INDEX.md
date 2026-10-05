@@ -3,7 +3,7 @@
 ## Metadata
 
 - Name: falcon
-- Run: `falcon-20261004-fast-main-f9cb67d`
+- Run: `falcon-20261004-0333-fast-main-f9cb67d`
 - Mode: fast
 - Profile: base
 - Target repo: `C:\temp\falcon-main`
@@ -33,7 +33,7 @@
 
 ## Next Actions
 
-1. Validate: `tools/check_run.sh falcon-20261004-fast-main-f9cb67d`.
+1. Validate: `tools/check_run.sh falcon-20261004-0333-fast-main-f9cb67d`.
 2. Publish: `tools/publish_audit.py --repo falcon ...` (see runbook).
 3. Remediate unresolved P0/P1/P2 per `patch_plan.md`.
 

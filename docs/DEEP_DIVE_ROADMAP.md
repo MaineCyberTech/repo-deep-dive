@@ -52,7 +52,7 @@ Prioritized; each item is actionable.
     per-domain subagents that emit pack-schema findings, then aggregates — the "full-domain pass"
     becomes a supported mode, not a manual prompt run. **Done** (2026-10-04): driver +
     `emit`/`aggregate` pipeline; first `--fast` pilot for falcon at `f9cb67d`
-    (`runs/falcon-20261004-fast-main-f9cb67d`).
+    (`runs/falcon-20261004-0333-fast-main-f9cb67d`).
 14. **Cross-repo / org lens.** The deterministic rollup exists; add an **LLM org lens** that reads all
     per-repo findings and surfaces systemic patterns (shared credential estates, copy-pasted CI,
     shared base images) as org-level findings.

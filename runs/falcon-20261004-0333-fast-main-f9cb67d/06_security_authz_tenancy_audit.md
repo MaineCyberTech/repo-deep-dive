@@ -1,6 +1,6 @@
 # 06_security_authz_tenancy_audit — Prompt 06 - Security, Authorization, and Tenancy Audit
 
-- Run: `falcon-20261004-fast-main-f9cb67d`
+- Run: `falcon-20261004-0333-fast-main-f9cb67d`
 - Target: `falcon` @ `f9cb67d` (branch `main`)
 - Domain: `06_security_authz_tenancy_audit.md` (area SEC, prompt)
 
