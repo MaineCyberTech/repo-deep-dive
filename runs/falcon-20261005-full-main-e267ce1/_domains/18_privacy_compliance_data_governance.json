@@ -1,0 +1,9 @@
+{
+  "domain": "18_privacy_compliance_data_governance",
+  "file": "18_privacy_compliance_data_governance.md",
+  "area": "PRIV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:06Z",
+  "findings": [],
+  "report": "## Verification Performed\n\nData governance is documented (docs/privacy/DATA_GOVERNANCE.md, architecture/DATA_FLOW_AND_CLASSIFICATION.md); the retention enforcement gap is tracked under DATA-P1-001/SEARCH. No independent finding.\n"
+}

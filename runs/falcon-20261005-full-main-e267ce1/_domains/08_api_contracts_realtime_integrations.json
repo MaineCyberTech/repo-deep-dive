@@ -1,0 +1,41 @@
+{
+  "domain": "08_api_contracts_realtime_integrations",
+  "file": "08_api_contracts_realtime_integrations.md",
+  "area": "API",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:56Z",
+  "findings": [
+    {
+      "area": "API",
+      "severity": "P1",
+      "title": "Cross-repo pairing contract cannot be verified in this environment",
+      "evidence": [
+        "docs/edge/EDGE_RELEASE_PIN.md; docs/edge/JOINT_RELEASE_PROCEDURE.md",
+        "automation/validation/verify_edge_pin.py (wired into ci/validate.py)",
+        "REAUDIT_REPORT_202604: API-P1-001 still-open (edge-pin not vendored/verifiable from a clean clone)"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Vendor the edge pin + verifier inputs so the pairing contract verifies from a clean clone.",
+      "detail": "Vendor the edge pin + verifier inputs so the pairing contract verifies from a clean clone.",
+      "owner": "@owner",
+      "target": "API"
+    },
+    {
+      "area": "API",
+      "severity": "P2",
+      "title": "Ingest contract relies on a shared secret header, not request signing or idempotency keys",
+      "evidence": [
+        "config/vector/aggregator.yaml",
+        "remediation PS-U01 open"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Add request signing / idempotency keys to the vector ingest contract.",
+      "detail": "Add request signing / idempotency keys to the vector ingest contract.",
+      "owner": "@owner",
+      "target": "API"
+    }
+  ],
+  "report": ""
+}

@@ -1,0 +1,25 @@
+{
+  "domain": "12_infra_deployment_environment_drift",
+  "file": "12_infra_deployment_environment_drift.md",
+  "area": "INFRA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:58Z",
+  "findings": [
+    {
+      "area": "INFRA",
+      "severity": "P2",
+      "title": "Generated/derived trees are not bound to HEAD by an automated drift gate",
+      "evidence": [
+        "REPOSITORY.md:172-191 (review-package drift deliberately deferred)",
+        "automation/validation/check_generated_drift.py (evidence tree only)"
+      ],
+      "status": "open",
+      "confidence": "high",
+      "recommendation": "Add a generated-drift gate for review-package/sbom/closeout or record the deferral as an owner decision.",
+      "detail": "Add a generated-drift gate for review-package/sbom/closeout or record the deferral as an owner decision.",
+      "owner": "@owner",
+      "target": "INFRA"
+    }
+  ],
+  "report": ""
+}

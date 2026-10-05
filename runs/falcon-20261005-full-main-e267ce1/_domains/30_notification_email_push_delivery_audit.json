@@ -1,0 +1,26 @@
+{
+  "domain": "30_notification_email_push_delivery_audit",
+  "file": "30_notification_email_push_delivery_audit.md",
+  "area": "NOTIF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:59Z",
+  "findings": [
+    {
+      "area": "NOTIF",
+      "severity": "P2",
+      "title": "Public ntfy routers lack origin authentication; `ntfy-auth` middleware is not wired",
+      "evidence": [
+        "config/ntfy/server.yml",
+        "config/traefik/dynamic.yml ntfy router",
+        "SEC-P2-001 same root cause"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Wire the ntfy auth middleware or gate the public route behind Cloudflare Access.",
+      "detail": "Wire the ntfy auth middleware or gate the public route behind Cloudflare Access.",
+      "owner": "@owner",
+      "target": "NOTIF"
+    }
+  ],
+  "report": ""
+}

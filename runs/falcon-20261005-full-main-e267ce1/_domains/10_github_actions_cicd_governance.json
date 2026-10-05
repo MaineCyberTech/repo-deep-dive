@@ -1,0 +1,40 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:57Z",
+  "findings": [
+    {
+      "area": "CI",
+      "severity": "P1",
+      "title": "Branch protection and required checks are not enforced server-side",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:3-5 (PUT 403 Upgrade to GitHub Pro)",
+        ".github/CODEOWNERS advisory only"
+      ],
+      "status": "owner-accepted",
+      "confidence": "high",
+      "recommendation": "Upgrade the plan and apply the ready payload, or record a per-merge attestation.",
+      "detail": "Upgrade the plan and apply the ready payload, or record a per-merge attestation.",
+      "owner": "@owner",
+      "target": "CI"
+    },
+    {
+      "area": "CI",
+      "severity": "P2",
+      "title": "Auto-merge workflow holds `contents: write` with no environment protection",
+      "evidence": [
+        ".github/workflows/dependabot-merge.yml:17-19 permissions",
+        ".github/workflows/dependabot-merge.yml merge step"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Scope permissions to minimum and add --match-head-commit to the merge command.",
+      "detail": "Scope permissions to minimum and add --match-head-commit to the merge command.",
+      "owner": "@owner",
+      "target": "CI"
+    }
+  ],
+  "report": ""
+}

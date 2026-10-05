@@ -1,0 +1,66 @@
+{
+  "domain": "deterministic",
+  "file": "lens_deterministic.md",
+  "area": "DET",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:09Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "area": "DET",
+      "subcode": "GIT",
+      "title": "[GIT] No LICENSE file",
+      "detail": "Add a LICENSE or an explicit proprietary review-only notice consistent with the owner decision.",
+      "evidence": [
+        "git ls-files shows no LICENSE/COPYING/NOTICE",
+        "README.md names the owner but grants no license terms"
+      ],
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "severity": "P3",
+      "area": "DET",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] 58 container image(s) without a digest pin",
+      "detail": "Pin images by digest (image@sha256:...) for reproducible, tamper-evident deploys, or scope the waiver per ref.",
+      "evidence": [
+        "mct/compose/docker-compose.greenbone.yml:5 registry.community.greenbone.net/community/vulnerability-tests",
+        "mct/compose/docker-compose.misp.yml:43 valkey/valkey:7.2",
+        "mct/compose/docker-compose.greenbone.yml:76 registry.community.greenbone.net/community/pg-gvm:stable",
+        "pins/supply-chain-waivers.json:5-7 blanket mct/compose waiver review_by 2026-12-31"
+      ],
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "severity": "P3",
+      "area": "DET",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] hadolint not available on the check runner (Dockerfile lint skipped)",
+      "detail": "Install hadolint in the deterministic CI job so Dockerfile lint is not a coverage gap.",
+      "evidence": [
+        "lab runner: actionlint=MISSING hadolint=MISSING trivy=MISSING"
+      ],
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "severity": "P3",
+      "area": "DET",
+      "subcode": "DEP",
+      "title": "[DEP] trivy not available on the check runner (dependency vuln scan skipped)",
+      "detail": "Install trivy in the deterministic CI job so dependency/image scanning is enforced, not skipped.",
+      "evidence": [
+        "lab runner: trivy=MISSING"
+      ],
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ],
+  "report": "## Verification Performed\n\nDeterministic (LLM-free) lens via `tools/lab_runner.py` \u2192 `tools/deterministic_checks.py <falcon> --deep` on the lab. gitleaks was present and ran; actionlint/hadolint/trivy were not installed on the runner and are recorded as coverage gaps, not repository defects. A local cross-check at the bound commit e267ce1 produced the same structural results.\n"
+}

@@ -1,0 +1,26 @@
+{
+  "domain": "34_branch_protection_required_checks",
+  "file": "34_branch_protection_required_checks.md",
+  "area": "BP",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:00Z",
+  "findings": [
+    {
+      "area": "BP",
+      "severity": "P1",
+      "title": "Branch protection and required checks are plan-gated and unenforceable server-side",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:3-5 (403 Upgrade to GitHub Pro)",
+        "docs/security/BRANCH_PROTECTION.md:92-97 enforcement matrix",
+        "CI-P1-002 same root cause"
+      ],
+      "status": "owner-accepted",
+      "confidence": "high",
+      "recommendation": "Upgrade to GitHub Pro/Team and apply the ready payload, or record per-merge validate attestation.",
+      "detail": "Upgrade to GitHub Pro/Team and apply the ready payload, or record per-merge validate attestation.",
+      "owner": "@owner",
+      "target": "BP"
+    }
+  ],
+  "report": ""
+}
