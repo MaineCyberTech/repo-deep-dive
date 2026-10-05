@@ -1,0 +1,285 @@
+# PS-01 verify.log (FINAL-P1-001) - captured on the remediation branch
+# branch: remediation/ps-01-snowride-20261005-full-main-38b34a9
+# base: origin/main @ 75aba97d2fc6b3ffcddd143c14d7d6fb83d5716e
+
+
+=== npm ci ===
+exit: 0 (added 734 packages; 7 high severity advisories reported by npm audit - pre-existing, out of scope)
+
+=== npm run typecheck ===
+
+> snowride@0.1.0 typecheck
+> npm run build:packages && npm run typecheck --workspaces --if-present
+
+
+> snowride@0.1.0 build:packages
+> npm run build -w @snowride/contracts && npm run build -w @snowride/game-core
+
+
+> @snowride/contracts@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @snowride/game-core@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @snowride/realtime@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @snowride/web@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @snowride/contracts@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> @snowride/game-core@0.1.0 typecheck
+> tsc -p tsconfig.json --noEmit
+
+typecheck exit: 0
+
+=== vitest (changed suites) ===
+
+ RUN  v5.0.0 C:/temp/rem-snowride
+
+
+ Test Files  3 passed (3)
+      Tests  19 passed (19)
+   Start at  01:31:39
+   Duration  741ms (setup 47%, transform 28%, import 20%, tests 3%, worker 1%)
+
+exit: 0
+
+=== npm test (unit; integration excluded by script) ===
+
+> snowride@0.1.0 test
+> npm run build:packages && npm run build:realtime && vitest run --exclude '**/server.integration.test.ts'
+
+
+> snowride@0.1.0 build:packages
+> npm run build -w @snowride/contracts && npm run build -w @snowride/game-core
+
+
+> @snowride/contracts@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @snowride/game-core@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> snowride@0.1.0 build:realtime
+> npm run build -w apps/realtime
+
+
+> @snowride/realtime@0.1.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v5.0.0 C:/temp/rem-snowride
+
+ G�� packages/game-core/src/__tests__/perfMeasure.test.ts (4 tests | 1 failed) 138ms
+   G�� perfMeasure (headless host measurement) (4)
+     +� flags an impossible budget (cpuPct 0 under load) 43ms
+System.Management.Automation.RemoteException
+GĻGĻGĻGĻGĻGĻGĻ Failed Tests 1 GĻGĻGĻGĻGĻGĻGĻ
+System.Management.Automation.RemoteException
+ FAIL  packages/game-core/src/__tests__/perfMeasure.test.ts > perfMeasure (headless host measurement) > flags an impossible budget (cpuPct 0 under load)
+AssertionError: expected true to be false // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- false
++ true
+System.Management.Automation.RemoteException
+ G�� packages/game-core/src/__tests__/perfMeasure.test.ts:32:18
+     30|     const impossible: Budget = { cpuPct: 0 };
+     31|     const r = runPerfMeasure(impossible, { durationMs: 30 });
+     32|     expect(r.ok).toBe(false);
+       |                  ^
+     33|     expect(r.violations.some((v) => v.metric === "cpuPct")).toBe(true);
+     34|   });
+System.Management.Automation.RemoteException
+GĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻ[1/1]GĻ
+System.Management.Automation.RemoteException
+
+ Test Files  1 failed | 141 passed (142)
+      Tests  1 failed | 910 passed | 1 skipped (912)
+   Start at  01:31:55
+   Duration  28.78s (setup 36%, environment 27%, import 19%, transform 9%, tests 9%, worker 1%)
+
+    Isolate  142 workers spawned -+ ~615ms startup each (spawn + environment, per file)
+             at least ~11.86s faster with isolate: false G�� reuses workers across files instead of one per file
+
+npm test exit: 1
+
+=== npm run lint ===
+
+> snowride@0.1.0 lint
+> npm run lint --workspaces --if-present
+
+
+> @snowride/web@0.1.0 lint
+> eslint .
+
+
+C:\temp\rem-snowride\apps\web\components\game\Home.tsx
+  844:6  warning  React Hook useEffect has a missing dependency: 'gameReady'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+G�� 1 problem (0 errors, 1 warning)
+
+lint exit: 0
+
+=== npx prettier --check (changed files) ===
+Checking formatting...
+All matched files use Prettier code style!
+exit: 0
+
+=== node scripts/attested-migration-head-check.mjs ===
+LAUNCH_MIGRATION_HEAD OK: 0057_retire_consumable_category.sql (repository head; 56 migrations)
+exit: 0
+
+=== npx vitest run server.integration.test.ts -t launch ===
+
+ RUN  v5.0.0 C:/temp/rem-snowride
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed | 130 skipped (135)
+   Start at  01:32:59
+   Duration  2.51s (transform 45%, import 36%, tests 11%, setup 7%)
+
+exit: 0
+
+=== npm run test:integration (full) ===
+
+> snowride@0.1.0 test:integration
+> npm run build:packages && npm run build:realtime && vitest run apps/realtime/src/__tests__/server.integration.test.ts
+
+
+> snowride@0.1.0 build:packages
+> npm run build -w @snowride/contracts && npm run build -w @snowride/game-core
+
+
+> @snowride/contracts@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @snowride/game-core@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> snowride@0.1.0 build:realtime
+> npm run build -w apps/realtime
+
+
+> @snowride/realtime@0.1.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v5.0.0 C:/temp/rem-snowride
+
+ G�� apps/realtime/src/__tests__/server.integration.test.ts (135 tests | 2 failed) 52611ms
+   G�� server-observed control stream (review B/H9) (6)
+     +� shadow-accepts a session that matches the observed controls 3534ms
+   G�� P7-G13 backpressure and overload (2)
+     +� refuses oversized HTTP bodies with 413 and keeps serving 10ms
+System.Management.Automation.RemoteException
+GĻGĻGĻGĻGĻGĻGĻ Failed Tests 2 GĻGĻGĻGĻGĻGĻGĻ
+System.Management.Automation.RemoteException
+ FAIL  apps/realtime/src/__tests__/server.integration.test.ts > server-observed control stream (review B/H9) > shadow-accepts a session that matches the observed controls
+AssertionError: expected false to be true // Object.is equality
+System.Management.Automation.RemoteException
+- Expected
++ Received
+System.Management.Automation.RemoteException
+- true
++ false
+System.Management.Automation.RemoteException
+ G�� apps/realtime/src/__tests__/server.integration.test.ts:2319:37
+    2317|     };
+    2318|     expect(facts.sessionStream?.skipped).toBe(false);
+    2319|     expect(facts.sessionStream?.ok).toBe(true);
+       |                                     ^
+    2320|     expect(facts.sessionStream?.agreement).toBeGreaterThanOrEqual(0.9);
+    2321|     expect(srv.metricsSnapshot.sessionStream).toEqual({
+System.Management.Automation.RemoteException
+GĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻ[1/2]GĻ
+System.Management.Automation.RemoteException
+ FAIL  apps/realtime/src/__tests__/server.integration.test.ts > P7-G13 backpressure and overload > refuses oversized HTTP bodies with 413 and keeps serving
+TypeError: fetch failed
+Caused by: Error: read ECONNRESET
+GĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻ
+Serialized Error: { errno: -4077, code: 'ECONNRESET', syscall: 'read' }
+GĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻGĻ[2/2]GĻ
+System.Management.Automation.RemoteException
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 133 passed (135)
+   Start at  01:33:23
+   Duration  55.22s (tests 96%, transform 2%, import 2%)
+
+integration exit: 1
+
+=== baseline: the 2 integration failures are pre-existing on unmodified origin/main ===
+Reproduced with the workspace stashed (clean 75aba97 + rebuilt packages):
+  * server.integration.test.ts > server-observed control stream > shadow-accepts a session that matches the observed controls -> FAIL (same assertion)
+  * server.integration.test.ts > P7-G13 backpressure and overload > refuses oversized HTTP bodies with 413 and keeps serving -> FAIL (fetch ECONNRESET; Windows socket)
+Neither touches the launch gate; the 5 launch-gate integration tests pass on this branch.
+
+=== repository secret scan (gitleaks 8.30.1, via wsl) ===
+/tmp/tmp.bhuxatVzGL/gitleaks_8.30.1_linux_x64.tar.gz: OK
+repository secret scan: /tmp/tmp.bhuxatVzGL/gitleaks (8.30.1)
+[90m1:34AM[0m [32mINF[0m [1mscanned ~46100002 bytes (46.10 MB) in 7.07s[0m
+[90m1:34AM[0m [32mINF[0m [1mno leaks found[0m
+gitleaks exit: 0
+
+=== npm test re-run (the earlier failure was the flaky perfMeasure CPU-measurement test under full-suite load) ===
+
+> snowride@0.1.0 test
+> npm run build:packages && npm run build:realtime && vitest run --exclude '**/server.integration.test.ts'
+
+
+> snowride@0.1.0 build:packages
+> npm run build -w @snowride/contracts && npm run build -w @snowride/game-core
+
+
+> @snowride/contracts@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> @snowride/game-core@0.1.0 build
+> tsc -p tsconfig.json
+
+
+> snowride@0.1.0 build:realtime
+> npm run build -w apps/realtime
+
+
+> @snowride/realtime@0.1.0 build
+> tsc -p tsconfig.json
+
+
+ RUN  v5.0.0 C:/temp/rem-snowride
+
+
+ Test Files  142 passed (142)
+      Tests  911 passed | 1 skipped (912)
+   Start at  01:35:24
+   Duration  27.70s (setup 34%, environment 28%, import 19%, tests 9%, transform 8%, worker 1%)
+
+    Isolate  142 workers spawned -+ ~606ms startup each (spawn + environment, per file)
+             at least ~11.69s faster with isolate: false G�� reuses workers across files instead of one per file
+
+npm test re-run exit: 0
+perfMeasure in isolation (3x):
+Tests  4 passed (4)
+Duration  539ms (setup 43%, tests 33%, transform 18%, import 4%, worker 2%)
+Tests  4 passed (4)
+Duration  598ms (setup 43%, tests 31%, transform 21%, import 4%, worker 2%)
+Tests  4 passed (4)
+Duration  559ms (setup 42%, tests 32%, transform 20%, import 4%, worker 1%)
