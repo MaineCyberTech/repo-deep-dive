@@ -1,0 +1,110 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:14Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Production provision/deploy ran destructive Terraform with no approval (fixed)",
+      "status": "verified-fixed",
+      "owner": "@release",
+      "target": "CI",
+      "note": "PR #89; provision/build/deploy now use `environment: production`.",
+      "evidence": [
+        ".github/workflows/deploy-production.yml:58,154,249 environment: production"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "CI"
+    },
+    {
+      "severity": "P1",
+      "title": "Security scans were non-blocking (fixed)",
+      "status": "verified-fixed",
+      "owner": "@ci",
+      "target": "CI",
+      "note": "Trivy image scan now exit-code 1 for HIGH/CRITICAL.",
+      "evidence": [
+        ".github/workflows/build-push.yml:143,153 exit-code 1"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "`infra-development` destroys infra on every push to `develop`",
+      "status": "open",
+      "owner": "@ci",
+      "target": "CI",
+      "note": "Reaffirms pilot CI-P2-001; workflow provisions and deletes duplicate droplets on develop.",
+      "evidence": [
+        ".github/workflows/infra-development.yml:4-9 push develop paths infra/**",
+        "workflow deletes older droplets via DO API"
+      ],
+      "impact": "Self-inflicted dev outages; destructive without an environment gate.",
+      "recommendation": "Gate behind `environment: development` with manual approval, or scope to a dry run.",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Auto-commit workflows hold `contents: write` and push to main/develop",
+      "status": "open",
+      "owner": "@ci",
+      "target": "CI",
+      "note": "Reaffirms pilot CI-P2-003; both workflows still request contents:write.",
+      "evidence": [
+        ".github/workflows/audit-ci-autocommit.yml permissions contents:write",
+        ".github/workflows/audit-badges-autocommit.yml permissions contents:write"
+      ],
+      "impact": "Compromised workflow can rewrite the default branch.",
+      "recommendation": "Use a scoped bot token / PR-based update instead of direct push.",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "`develop` (auto-deploy target) is not covered by the branch-protection gate",
+      "status": "open",
+      "owner": "@ci",
+      "target": "CI",
+      "note": "Reaffirms pilot CI-P2-004; validate.yml branch-protection job hard-codes main.",
+      "evidence": [
+        ".github/workflows/validate.yml:273-292 branch='main'"
+      ],
+      "impact": "Auto-deploy branch has no enforced review/required checks.",
+      "recommendation": "Extend the gate to develop or make production only deploy from a protected branch.",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "`workflow_dispatch` inputs interpolated into `run:` (script injection) (fixed)",
+      "status": "verified-fixed",
+      "owner": "@ci",
+      "target": "CI",
+      "note": "Closed with the actionlint/CI hardening wave (#97).",
+      "evidence": [
+        "audit workflows now pass inputs via env, actionlint clean"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "13 workflows omit an explicit `permissions:` block",
+      "status": "open",
+      "owner": "@ci",
+      "target": "CI",
+      "note": "Reaffirms pilot CI-P3-002; measured at a62e44a.",
+      "evidence": [
+        "grep -L '^permissions:' .github/workflows/*.yml => 13 files"
+      ],
+      "impact": "Default token scope is broader than needed.",
+      "recommendation": "Add least-privilege permissions to every workflow.",
+      "area": "CI"
+    }
+  ],
+  "report": "Inspected all 22 workflows. Production\ndeploy/provision is gated behind the protected `production` environment;\nsecurity scans block; rollback executes. Residuals: destructive dev infra\nworkflow, auto-commit write scope, develop not branch-protected, and 13\nworkflows without explicit `permissions:`."
+}

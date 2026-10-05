@@ -1,0 +1,55 @@
+{
+  "domain": "27_webhook_delivery_replay_idempotency_audit",
+  "file": "27_webhook_delivery_replay_idempotency_audit.md",
+  "area": "WH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:21Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Webhook retries were not durable (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "WH",
+      "note": "Durable queue + worker processor verified.",
+      "evidence": [
+        "apps/api/src/lib/webhook-queue.ts",
+        "apps/worker/src/processors/webhook-delivery.ts"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Replay/idempotency key was regenerated per attempt (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "WH",
+      "note": "Key created once and reused on retry.",
+      "evidence": [
+        "service.ts:216",
+        "webhook-delivery.ts:183"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook delivery follows redirects / does not pin the validated IP (SSRF)",
+      "status": "open",
+      "owner": "@security",
+      "target": "WH",
+      "note": "Same root cause as SEC SSRF finding; owned here for the delivery path.",
+      "evidence": [
+        "packages/config/webhook-utils.ts validateWebhookUrl",
+        "delivery fetch has no redirect/DNS-pin guard"
+      ],
+      "impact": "Validated public URL can redirect to internal services.",
+      "recommendation": "redirect:'manual' + IP-pinned dispatch with per-hop re-validation.",
+      "area": "WH"
+    }
+  ],
+  "report": "Replay/idempotency/durability\nwalk of the webhook pipeline. Delivery is durable and idempotent; the SSRF\nredirect gap is carried here as the webhook-domain owner."
+}

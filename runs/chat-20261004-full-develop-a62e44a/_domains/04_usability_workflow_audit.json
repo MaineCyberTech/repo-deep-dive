@@ -1,0 +1,25 @@
+{
+  "domain": "04_usability_workflow_audit",
+  "file": "04_usability_workflow_audit.md",
+  "area": "USE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:11Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No end-to-end onboarding assertion for the invitation/membership flow",
+      "status": "open",
+      "owner": "@ux",
+      "target": "USE",
+      "note": "E2E focuses on core messaging; invite/accept path lacks a persistent E2E.",
+      "evidence": [
+        "tests/e2e",
+        "apps/web/app/(workspace)/[workspaceSlug]"
+      ],
+      "impact": "Invite regressions caught late.",
+      "recommendation": "Add an invite/accept E2E scenario.",
+      "area": "USE"
+    }
+  ],
+  "report": "Walked the primary sign-in -> workspace -> channel\n-> message -> attachment -> notifications flow from the web routes/components."
+}

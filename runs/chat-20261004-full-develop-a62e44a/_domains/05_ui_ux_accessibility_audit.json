@@ -1,0 +1,25 @@
+{
+  "domain": "05_ui_ux_accessibility_audit",
+  "file": "05_ui_ux_accessibility_audit.md",
+  "area": "UX",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:12Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Accessibility is audited by an ad-hoc script, not a CI gate",
+      "status": "open",
+      "owner": "@ux",
+      "target": "UX",
+      "note": "scripts/accessibility-audit.sh exists; no axe/pa11y gate in validate.",
+      "evidence": [
+        "scripts/accessibility-audit.sh",
+        "no @axe-core/pa11y in workflows"
+      ],
+      "impact": "A11y regressions unblocked.",
+      "recommendation": "Run axe on key routes in CI with a violation budget.",
+      "area": "UX"
+    }
+  ],
+  "report": "Accessibility script and component library reviewed.\nNo automated accessibility gate runs in CI."
+}

@@ -1,0 +1,67 @@
+{
+  "domain": "07_data_schema_migration_runtime_validation",
+  "file": "07_data_schema_migration_runtime_validation.md",
+  "area": "DATA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:13Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Duplicate `add_user_groups` migrations",
+      "status": "open",
+      "owner": "@db",
+      "target": "DATA",
+      "note": "Reaffirms pilot DATA-P2-001; both files still present at a62e44a.",
+      "evidence": [
+        "supabase/migrations/20260704000007_add_user_groups.sql",
+        "supabase/migrations/20260705000003_add_user_groups.sql"
+      ],
+      "impact": "Ambiguous migration history; re-runs can diverge.",
+      "recommendation": "Squash/drop one migration and add an order/duplicate gate.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "`gdpr_delete_user` is a hard multi-table delete with partial coverage",
+      "status": "open",
+      "owner": "@db",
+      "target": "DATA",
+      "note": "Reaffirms original DATA-P2-005; not re-verified line-by-line (partial).",
+      "evidence": [
+        "git grep gdpr_delete_user supabase/migrations"
+      ],
+      "impact": "Incomplete/irreversible erasure.",
+      "recommendation": "Cover every FK table or use ON DELETE CASCADE with a documented retention matrix.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Deploy workflows seeded production with test users (fixed)",
+      "status": "verified-fixed",
+      "owner": "@release",
+      "target": "DATA",
+      "note": "Deploy no longer seeds; capability remains only in the disabled seed workflow.",
+      "evidence": [
+        ".github/workflows/deploy-production.yml: no seed.test/encrypted_password"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Rollback scripts were only proven to exist (fixed)",
+      "status": "verified-fixed",
+      "owner": "@ci",
+      "target": "DATA",
+      "note": "validate.yml now executes downs in reverse and re-applies ups.",
+      "evidence": [
+        ".github/workflows/validate.yml:395-428"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "DATA"
+    }
+  ],
+  "report": "Reviewed all 78 migrations and\n76 rollback scripts; the migration up/down/up gate now executes downs in\nreverse. Two schema defects remain: duplicate `add_user_groups` migrations and\nthe hard multi-table `gdpr_delete_user`."
+}

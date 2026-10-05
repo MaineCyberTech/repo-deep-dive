@@ -1,0 +1,55 @@
+{
+  "domain": "02_architecture_runtime_topology",
+  "file": "02_architecture_runtime_topology.md",
+  "area": "ARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:10Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Single-node topology: one droplet hosts all services and local Redis",
+      "status": "open",
+      "owner": "@infra",
+      "target": "ARCH",
+      "note": "ARCH-P2-003 / pilot ARCH-P2-001 remain; no HA/warm standby at a62e44a.",
+      "evidence": [
+        "infra/terraform/main.tf: one digitalocean_droplet",
+        "infra/docker/docker-compose.prod.yml: redis service with local volume"
+      ],
+      "impact": "Droplet loss = full outage; Redis data loss window.",
+      "recommendation": "Define an RTO/RPO and either managed Postgres/Redis or a warm standby.",
+      "area": "ARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook service used an anonymous Supabase client (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "ARCH",
+      "note": "Closed by the 2026-10-03 remediation wave; re-verified at a62e44a.",
+      "evidence": [
+        "apps/api/src/modules/webhooks/service.ts uses getSupabaseAdmin()",
+        "apps/worker/src/processors/webhook-delivery.ts uses the service client"
+      ],
+      "impact": "Previously all webhook DB operations were RLS-denied.",
+      "recommendation": "n/a",
+      "area": "ARCH"
+    },
+    {
+      "severity": "P3",
+      "title": "Worker health/metrics bind loopback but rely on a shared token",
+      "status": "open",
+      "owner": "@ops",
+      "target": "ARCH",
+      "note": "Worker /metrics now token-gated; residual is shared-secret hygiene.",
+      "evidence": [
+        "apps/worker/src/health.ts: DEFAULT_HEALTH_HOST=127.0.0.1",
+        "apps/worker/src/lib/metrics-auth.ts: shared token check"
+      ],
+      "impact": "Token superset access if leaked.",
+      "recommendation": "Rotate the metrics token with the secret-rotation runbook.",
+      "area": "ARCH"
+    }
+  ],
+  "report": "Reviewed topology from `infra/terraform`\nand `infra/docker/docker-compose.prod.yml`; service clients from\n`apps/api/src/lib/supabase.ts`, `socket.ts`, `app.ts`. Confirmed the prior\nanonymous-client and unauth-worker-metrics findings are fixed."
+}

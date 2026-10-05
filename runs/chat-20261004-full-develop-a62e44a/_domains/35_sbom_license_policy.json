@@ -1,0 +1,40 @@
+{
+  "domain": "35_sbom_license_policy",
+  "file": "35_sbom_license_policy.md",
+  "area": "SBOM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:24Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "SBOMs are generated but not signed or attested",
+      "status": "open",
+      "owner": "@supply",
+      "target": "SBOM",
+      "note": "SUPPLY-P2-004 (prod SBOM) fixed; signing/attestation absent.",
+      "evidence": [
+        ".github/workflows/deploy-production.yml:213-238 sbom-production",
+        "no cosign/sigstore attest step"
+      ],
+      "impact": "SBOM integrity is not verifiable by consumers.",
+      "recommendation": "Sign SBOMs (cosign attest) and publish a provenance attestation.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "No license policy / dependency-review gate",
+      "status": "open",
+      "owner": "@supply",
+      "target": "SBOM",
+      "note": "LICENSE is present (proprietary all-rights-reserved); dependency licenses ungated.",
+      "evidence": [
+        "LICENSE all-rights-reserved",
+        "no dependency-review action / license allow-list in CI"
+      ],
+      "impact": "Copyleft/unknown licenses can enter unnoticed.",
+      "recommendation": "Add a license allow-list gate and dependency-review on PRs.",
+      "area": "SBOM"
+    }
+  ],
+  "report": "SBOMs are produced for production images (deploy\nworkflow) but not signed/attested; no dependency-review or license policy gate\nis wired."
+}

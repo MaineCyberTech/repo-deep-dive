@@ -1,0 +1,39 @@
+{
+  "domain": "24_access_control_matrix_audit",
+  "file": "24_access_control_matrix_audit.md",
+  "area": "ACM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:20Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "RBAC matrix is enforced per-route but not documented as a single ARtifact",
+      "status": "open",
+      "owner": "@security",
+      "target": "ACM",
+      "note": "requireAdmin centralised (ARCH-P3-005 fixed); no generated matrix/negative tests per role.",
+      "evidence": [
+        "apps/api/src/middleware/require-admin.ts:12 central helper",
+        "route-registry.ts enumerates routers without an authz annotation"
+      ],
+      "impact": "Role drift is hard to review when routes change.",
+      "recommendation": "Add an authz annotation to the route registry and a contract test asserting middleware per route.",
+      "area": "ACM"
+    },
+    {
+      "severity": "P3",
+      "title": "Admin `/stats` leaks global cross-tenant counters",
+      "status": "open",
+      "owner": "@api",
+      "target": "ACM",
+      "note": "Confirmed at a62e44a (admin.routes.ts /stats).",
+      "evidence": [
+        "apps/api/src/modules/admin/routes.ts:59-69 global users/messages counts, scoped workspaces/channels"
+      ],
+      "impact": "Low-sensitivity cross-tenant metadata disclosure.",
+      "recommendation": "Scope users/messages counts to getAdminWorkspaceIds(req).",
+      "area": "ACM"
+    }
+  ],
+  "report": "Built the role/resource matrix from\n`apps/api/src/middleware/require-admin.ts`, `authenticate.ts`, the module\nrouters and the RLS policies. Platform-admin vs workspace-admin are now a\nsingle helper; anonymous Supabase fallbacks are gone."
+}

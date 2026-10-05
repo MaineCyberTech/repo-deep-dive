@@ -1,0 +1,41 @@
+{
+  "domain": "37_supabase_rls_policy_deep_dive",
+  "file": "37_supabase_rls_policy_deep_dive.md",
+  "area": "RLS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:25Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Global `users_select USING (true)` policy (fixed)",
+      "status": "verified-fixed",
+      "owner": "@db",
+      "target": "RLS",
+      "note": "Current canonical policy is scoped; deploy no longer weakens it.",
+      "evidence": [
+        "supabase/policies/01_users.sql scoped policy",
+        "no CREATE POLICY ... USING (true) for users_select in deploy workflows"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "RLS"
+    },
+    {
+      "severity": "P2",
+      "title": "RLS policy test exists but is not executed by CI",
+      "status": "open",
+      "owner": "@qa",
+      "target": "RLS",
+      "note": "TEST-P2-001 residual; `package.json` has test:rls but no workflow invokes it.",
+      "evidence": [
+        "supabase/tests/rls_tenant_isolation.sql",
+        "scripts/test-db-rls.sh",
+        "no .github/workflows reference to rls_tenant_isolation/test-db-rls"
+      ],
+      "impact": "Tenant-isolation regressions are not gated.",
+      "recommendation": "Run the RLS SQL test in the validate workflow against a real Postgres service.",
+      "area": "RLS"
+    }
+  ],
+  "report": "Deep-dived every policy in\n`supabase/policies` and the migration chain that touches `public.users`,\n`messages`, `channels` and tenant tables. The `USING (true)` user-read policy\nis gone; the current policy is own-profile OR shared-workspace."
+}

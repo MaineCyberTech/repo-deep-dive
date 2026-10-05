@@ -1,0 +1,24 @@
+{
+  "domain": "31_search_indexing_privacy_audit",
+  "file": "31_search_indexing_privacy_audit.md",
+  "area": "SEARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:23Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No documented search data-flow / retention statement",
+      "status": "open",
+      "owner": "@privacy",
+      "target": "SEARCH",
+      "note": "No search module; privacy statement for query logs is absent.",
+      "evidence": [
+        "apps/api/src/modules/messages/routes.ts search handled inline"
+      ],
+      "impact": "Low.",
+      "recommendation": "Document that search is in-database and tenant-scoped, or add a search design doc if one is introduced.",
+      "area": "SEARCH"
+    }
+  ],
+  "report": "Not applicable / future readiness: there is\nno dedicated search index or external search backend. Message search, where\npresent, is a PostgREST query over tenant-scoped tables; no indexing of PII to\na third party was found."
+}
