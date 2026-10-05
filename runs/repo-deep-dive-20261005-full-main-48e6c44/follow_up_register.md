@@ -4,9 +4,9 @@ Run: `repo-deep-dive-20261005-full-main-48e6c44` · Target: `repo-deep-dive` @ `
 
 Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 
-| Finding | Severity | Title | Owner | Target | Status | Note |
+| Finding | Severity | Title | Owner | Target | Status | Post-audit note |
 |---|---|---|---|---|---|---|
-| EXEC-P1-001 | P1 | publish_audit release gate can never return NO-GO for a P0 | @owner | EXEC | open |  |
+| EXEC-P1-001 | P1 | publish_audit release gate can never return NO-GO for a P0 | @owner | EXEC | verified-fixed | merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (single shared lib_findings.compute_gate; a P0 yields NO-GO) |
 | AI-P2-001 | P2 | emit accepts findings with no evidence or citation requirement | @owner | AI | open |  |
 | API-P2-001 | P2 | Lab API has no rate limiting or request-body error signalling | @owner | API | open |  |
 | BP-P2-001 | P2 | Required checks and PR/review rules do not match the documented gates | @owner | BP | open |  |
@@ -20,15 +20,15 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | FEAT-P2-002 | P2 | publish_audit relabels any run as a focused security/supply-chain/CI pass | @owner | FEAT | open |  |
 | FINAL-P2-001 | P2 | Release gate ignores coverage and completeness | @owner | FINAL | open |  |
 | FINAL-P2-002 | P2 | Registers are generated from report tables, so ID drift is possible across reruns | @owner | FINAL | open |  |
-| HYGIENE-P2-001 | P2 | .gitignore is corrupted with intra-word spaces and an invalid inline comment | @owner | HYGIENE | open |  |
+| HYGIENE-P2-001 | P2 | .gitignore is corrupted with intra-word spaces and an invalid inline comment | @owner | HYGIENE | verified-fixed | merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (.gitignore patterns restored; lint_pack asserts git check-ignore matches sample secrets) |
 | INFRA-P2-001 | P2 | Lab IAC has no drift detection or locked toolchain | @owner | INFRA | open |  |
 | OBS-P2-001 | P2 | Run-freshness signal is documentation-only (no scheduled check or alert) | @owner | OBS | open |  |
 | REL-P2-001 | P2 | Full-domain runs generate no release notes or changelog draft | @owner | REL | open |  |
 | SC-P2-001 | P2 | Infrastructure toolchain is pinned only to lower bounds | @owner | SC | open |  |
-| SEC-P2-001 | P2 | Workflows interpolate SSH secrets directly into run scripts | @owner | SEC | open |  |
-| SEC-P2-002 | P2 | Lab API /sync ignores the supplied token when the workspace already exists | @owner | SEC | open |  |
-| SECRET-P2-001 | P2 | WireGuard/lab secret ignore patterns in .gitignore are corrupted | @owner | SECRET | open |  |
-| TEST-P2-001 | P2 | The publish release-gate logic is untested and never returns NO-GO | @owner | TEST | open |  |
+| SEC-P2-001 | P2 | Workflows interpolate SSH secrets directly into run scripts | @owner | SEC | verified-fixed | merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (SSH key passed via env: and referenced as "$LAB_ENDPOINT_SSH_KEY" in lab workflows) |
+| SEC-P2-002 | P2 | Lab API /sync ignores the supplied token when the workspace already exists | @owner | SEC | verified-fixed | merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (lab /sync applies the auth header to the existing-workspace fetch; unresolvable ref returns 404; redeployed + verified) |
+| SECRET-P2-001 | P2 | WireGuard/lab secret ignore patterns in .gitignore are corrupted | @owner | SECRET | verified-fixed | merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (.gitignore restores *.swp, lab-audit-*.conf, *.wgkey, deterministic-out/ and tfstate ignores) |
+| TEST-P2-001 | P2 | The publish release-gate logic is untested and never returns NO-GO | @owner | TEST | verified-fixed | merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (PublishGateTest/ComputeGateTest assert a P0 yields NO-GO; gate now returns NO-GO) |
 | ACM-P3-001 | P3 | No consolidated access-control matrix artifact is produced | @owner | ACM | open |  |
 | AI-P3-001 | P3 | run --agent-cmd executes a shell template with unvalidated substitutions | @owner | AI | open |  |
 | API-P3-001 | P3 | Lab API contract is documented in prose only (no schema) | @owner | API | open |  |

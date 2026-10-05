@@ -1,7 +1,7 @@
 {
   "run": "repo-deep-dive-20261005-full-main-48e6c44",
-  "generated": "2026-10-05T03:53:17Z",
-  "sourceReports": 42,
+  "generated": "2026-10-05T05:58:19Z",
+  "sourceReports": 43,
   "counts": {
     "bySeverity": {
       "P1": 1,
@@ -48,12 +48,10 @@
       "title": "publish_audit release gate can never return NO-GO for a P0",
       "report": "23_executive_summary_release_gate.md",
       "line": 15,
-      "area": "EXEC",
       "owner": "@owner",
       "target": "EXEC",
       "status": "verified-fixed",
-      "note": "verified-fixed: publish_audit.py now calls the shared lib_findings.compute_gate (P0 -> NO-GO); unit test PublishGateTest asserts a P0 yields NO-GO.",
-      "recommendation": "Share one gate function; add a P0 test asserting NO-GO; regenerate affected archived focused runs."
+      "note": "merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (single shared lib_findings.compute_gate; a P0 yields NO-GO)"
     },
     {
       "id": "AI-P2-001",
@@ -61,12 +59,10 @@
       "title": "emit accepts findings with no evidence or citation requirement",
       "report": "20_ai_automation_agent_readiness.md",
       "line": 15,
-      "area": "AI",
       "owner": "@owner",
       "target": "AI",
       "status": "open",
-      "note": "",
-      "recommendation": "Require a non-empty evidence list (or an explicit Unknown marker) in emit for P0/P1 at minimum."
+      "note": ""
     },
     {
       "id": "API-P2-001",
@@ -74,12 +70,10 @@
       "title": "Lab API has no rate limiting or request-body error signalling",
       "report": "08_api_contracts_realtime_integrations.md",
       "line": 15,
-      "area": "API",
       "owner": "@owner",
       "target": "API",
       "status": "open",
-      "note": "",
-      "recommendation": "Return 400 on invalid JSON and add a simple concurrency/rate guard."
+      "note": ""
     },
     {
       "id": "BP-P2-001",
@@ -87,12 +81,10 @@
       "title": "Required checks and PR/review rules do not match the documented gates",
       "report": "34_branch_protection_required_checks.md",
       "line": 15,
-      "area": "BP",
       "owner": "@owner",
       "target": "BP",
       "status": "open",
-      "note": "",
-      "recommendation": "Add the pack CI contexts to the ruleset required checks and a pull_request rule with >=1 review."
+      "note": ""
     },
     {
       "id": "BP-P2-002",
@@ -100,12 +92,10 @@
       "title": "Required check 'Lab preflight / lab' is unobtainable for fork PRs",
       "report": "34_branch_protection_required_checks.md",
       "line": 16,
-      "area": "BP",
       "owner": "@owner",
       "target": "BP",
       "status": "open",
-      "note": "",
-      "recommendation": "Make the required context a fork-safe pack check and run the lab check only on same-repo PRs/dispatch."
+      "note": ""
     },
     {
       "id": "CHAIN-P2-001",
@@ -113,12 +103,10 @@
       "title": "Broken secret ignores + argv lab token + root lab API compose into an escalation path",
       "report": "45_exploit_chain_attack_path_audit.md",
       "line": 15,
-      "area": "CHAIN",
       "owner": "@owner",
       "target": "CHAIN",
       "status": "open",
-      "note": "",
-      "recommendation": "Fix the ignore patterns, keep the token out of argv, bind to the overlay only, and run the API as an unprivileged user with a per-job allowlist."
+      "note": ""
     },
     {
       "id": "CI-P2-001",
@@ -126,12 +114,10 @@
       "title": "Required lab-preflight check cannot pass on fork pull requests",
       "report": "10_github_actions_cicd_governance.md",
       "line": 15,
-      "area": "CI",
       "owner": "@owner",
       "target": "CI",
       "status": "open",
-      "note": "",
-      "recommendation": "Skip the lab job (with a neutral/annotation) on `github.event.pull_request.head.repo.fork`, or split the required check from the lab-dependent one."
+      "note": ""
     },
     {
       "id": "CI-P2-002",
@@ -139,12 +125,10 @@
       "title": "CI does not run shellcheck/actionlint on the pack's own shell/yaml despite shipping the scanners",
       "report": "10_github_actions_cicd_governance.md",
       "line": 16,
-      "area": "CI",
       "owner": "@owner",
       "target": "CI",
       "status": "open",
-      "note": "",
-      "recommendation": "Add a pack CI job that runs shellcheck on tools/**/*.sh and actionlint on .github/workflows/*.yml."
+      "note": ""
     },
     {
       "id": "DET-P2-002",
@@ -152,12 +136,10 @@
       "title": "[PORT] 2 tracked shell script(s) without the exec bit",
       "report": "lens_deterministic.md",
       "line": 19,
-      "area": "DET",
       "owner": "@owner",
       "target": "DET",
       "status": "open",
-      "note": "",
-      "detail": "`./script.sh` fails on Linux; set `git update-index --chmod=+x`. Transfers from Windows drop the bit."
+      "note": ""
     },
     {
       "id": "DOC-P2-001",
@@ -165,12 +147,10 @@
       "title": "README is stale: run count and tool/doc inventories omit current files",
       "report": "16_documentation_devex_operator_readiness.md",
       "line": 15,
-      "area": "DOC",
       "owner": "@owner",
       "target": "DOC",
       "status": "open",
-      "note": "",
-      "recommendation": "Regenerate the layout/counts (or generate the table) as part of the changelog checklist."
+      "note": ""
     },
     {
       "id": "FEAT-P2-001",
@@ -178,12 +158,10 @@
       "title": "Full-domain runs omit the master runner's required companion artifacts",
       "report": "03_feature_implementation_map.md",
       "line": 15,
-      "area": "FEAT",
       "owner": "@owner",
       "target": "FEAT",
       "status": "open",
-      "note": "",
-      "recommendation": "Have aggregate render each companion (even as an explicit N/A stub) or add them to the run schema and `check_run.sh`."
+      "note": ""
     },
     {
       "id": "FEAT-P2-002",
@@ -191,12 +169,10 @@
       "title": "publish_audit relabels any run as a focused security/supply-chain/CI pass",
       "report": "03_feature_implementation_map.md",
       "line": 16,
-      "area": "FEAT",
       "owner": "@owner",
       "target": "FEAT",
       "status": "open",
-      "note": "",
-      "recommendation": "Derive profile/prompts/report name from the run's `audit_manifest.json` mode instead of hardcoding the focused set."
+      "note": ""
     },
     {
       "id": "FINAL-P2-001",
@@ -204,12 +180,10 @@
       "title": "Release gate ignores coverage and completeness",
       "report": "22_final_risk_register_roadmap.md",
       "line": 15,
-      "area": "FINAL",
       "owner": "@owner",
       "target": "FINAL",
       "status": "open",
-      "note": "",
-      "recommendation": "Fail or downgrade the gate when any selected domain has not emitted, and record coverage in the gate basis."
+      "note": ""
     },
     {
       "id": "FINAL-P2-002",
@@ -217,12 +191,10 @@
       "title": "Registers are generated from report tables, so ID drift is possible across reruns",
       "report": "22_final_risk_register_roadmap.md",
       "line": 16,
-      "area": "FINAL",
       "owner": "@owner",
       "target": "FINAL",
       "status": "open",
-      "note": "",
-      "recommendation": "Write findings.json and the registers from the same in-memory list, and use findings.json as the source of truth."
+      "note": ""
     },
     {
       "id": "HYGIENE-P2-001",
@@ -230,12 +202,10 @@
       "title": ".gitignore is corrupted with intra-word spaces and an invalid inline comment",
       "report": "21_repo_hygiene_maintainability.md",
       "line": 15,
-      "area": "HYGIENE",
       "owner": "@owner",
       "target": "HYGIENE",
       "status": "verified-fixed",
-      "note": "verified-fixed: .gitignore corrupted patterns restored; tools/lint_pack.sh asserts git check-ignore matches sample secret/scratch files.",
-      "recommendation": "Restore the intended patterns and add a `git check-ignore` assertion to CI."
+      "note": "merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (.gitignore patterns restored; lint_pack asserts git check-ignore matches sample secrets)"
     },
     {
       "id": "INFRA-P2-001",
@@ -243,12 +213,10 @@
       "title": "Lab IAC has no drift detection or locked toolchain",
       "report": "12_infra_deployment_environment_drift.md",
       "line": 15,
-      "area": "INFRA",
       "owner": "@owner",
       "target": "INFRA",
       "status": "open",
-      "note": "",
-      "recommendation": "Commit the lock file and add a scheduled read-only plan/check job against the lab."
+      "note": ""
     },
     {
       "id": "OBS-P2-001",
@@ -256,12 +224,10 @@
       "title": "Run-freshness signal is documentation-only (no scheduled check or alert)",
       "report": "14_observability_monitoring_incident_readiness.md",
       "line": 15,
-      "area": "OBS",
       "owner": "@owner",
       "target": "OBS",
       "status": "open",
-      "note": "",
-      "recommendation": "Add a scheduled job that runs the freshness check and alerts (reuse the lab ntfy workflow pattern)."
+      "note": ""
     },
     {
       "id": "REL-P2-001",
@@ -269,12 +235,10 @@
       "title": "Full-domain runs generate no release notes or changelog draft",
       "report": "40_release_notes_changelog_generator.md",
       "line": 15,
-      "area": "REL",
       "owner": "@owner",
       "target": "REL",
       "status": "open",
-      "note": "",
-      "recommendation": "Have aggregate emit both drafts and make the pack changelog entry part of the completion checklist."
+      "note": ""
     },
     {
       "id": "SC-P2-001",
@@ -282,12 +246,10 @@
       "title": "Infrastructure toolchain is pinned only to lower bounds",
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 15,
-      "area": "SC",
       "owner": "@owner",
       "target": "SC",
       "status": "open",
-      "note": "",
-      "recommendation": "Commit `.terraform.lock.hcl` and pin Ansible collections to exact versions committed alongside requirements."
+      "note": ""
     },
     {
       "id": "SEC-P2-001",
@@ -295,12 +257,10 @@
       "title": "Workflows interpolate SSH secrets directly into run scripts",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 15,
-      "area": "SEC",
       "owner": "@owner",
       "target": "SEC",
       "status": "verified-fixed",
-      "note": "verified-fixed: SSH key moved to env: and referenced as \"$LAB_ENDPOINT_SSH_KEY\" in lab-preflight, lab-agent-onboard, lab-agent-offboard, lab-overlay-health.",
-      "recommendation": "Pass the secret via `env:` (e.g. `SSH_KEY: ${{ secrets... }}`) and reference `\"$SSH_KEY\"` in the script."
+      "note": "merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (SSH key passed via env: and referenced as \"$LAB_ENDPOINT_SSH_KEY\" in lab workflows)"
     },
     {
       "id": "SEC-P2-002",
@@ -308,12 +268,10 @@
       "title": "Lab API /sync ignores the supplied token when the workspace already exists",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 16,
-      "area": "SEC",
       "owner": "@owner",
       "target": "SEC",
       "status": "verified-fixed",
-      "note": "verified-fixed: /sync fetch now carries the -c http.extraheader auth and an unresolvable ref returns HTTP 404; redeployed to ci-runner and verified (health + authenticated /run).",
-      "recommendation": "Apply the same `-c http.extraheader=...` (or `GIT_CONFIG_*`) to the fetch, and fail when the requested ref does not resolve."
+      "note": "merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (lab /sync applies the auth header to the existing-workspace fetch; unresolvable ref returns 404; redeployed + verified)"
     },
     {
       "id": "SECRET-P2-001",
@@ -321,12 +279,10 @@
       "title": "WireGuard/lab secret ignore patterns in .gitignore are corrupted",
       "report": "38_env_secret_rotation.md",
       "line": 15,
-      "area": "SECRET",
       "owner": "@owner",
       "target": "SECRET",
       "status": "verified-fixed",
-      "note": "verified-fixed: .gitignore restores *.swp, lab-audit-*.conf, *.wgkey, deterministic-out/ and tfstate ignores; pack-lint git check-ignore assertion added.",
-      "recommendation": "Restore the intended patterns ('*.swp', 'lab-audit-*.conf', '*.wgkey', 'deterministic-out/') and add a CI check that `git check-ignore` matches a sample secret file."
+      "note": "merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (.gitignore restores *.swp, lab-audit-*.conf, *.wgkey, deterministic-out/ and tfstate ignores)"
     },
     {
       "id": "TEST-P2-001",
@@ -334,12 +290,10 @@
       "title": "The publish release-gate logic is untested and never returns NO-GO",
       "report": "09_testing_quality_release_confidence.md",
       "line": 15,
-      "area": "TEST",
       "owner": "@owner",
       "target": "TEST",
-      "status": "open",
-      "note": "",
-      "recommendation": "Make publish_audit reuse the shared gate function and add a P0 test asserting NO-GO."
+      "status": "verified-fixed",
+      "note": "merged repo-deep-dive PR #58 commit 1e2a0869c95d23ac79c7a0f6b54053223e22e7d5 (PublishGateTest/ComputeGateTest assert a P0 yields NO-GO; gate now returns NO-GO)"
     },
     {
       "id": "ACM-P3-001",
@@ -347,12 +301,10 @@
       "title": "No consolidated access-control matrix artifact is produced",
       "report": "24_access_control_matrix_audit.md",
       "line": 15,
-      "area": "ACM",
       "owner": "@owner",
       "target": "ACM",
       "status": "open",
-      "note": "",
-      "recommendation": "Generate access_control_matrix.md from the ruleset/CODEOWNERS/workflow permissions during aggregate."
+      "note": ""
     },
     {
       "id": "AI-P3-001",
@@ -360,12 +312,10 @@
       "title": "run --agent-cmd executes a shell template with unvalidated substitutions",
       "report": "20_ai_automation_agent_readiness.md",
       "line": 16,
-      "area": "AI",
       "owner": "@owner",
       "target": "AI",
       "status": "open",
-      "note": "",
-      "recommendation": "Pass arguments as an argv list instead of a formatted shell string."
+      "note": ""
     },
     {
       "id": "API-P3-001",
@@ -373,12 +323,10 @@
       "title": "Lab API contract is documented in prose only (no schema)",
       "report": "08_api_contracts_realtime_integrations.md",
       "line": 16,
-      "area": "API",
       "owner": "@owner",
       "target": "API",
       "status": "open",
-      "note": "",
-      "recommendation": "Add a small JSON schema or shared constants module used by both server and client."
+      "note": ""
     },
     {
       "id": "ARCH-P3-001",
@@ -386,12 +334,10 @@
       "title": "Lab job API server and lab-vpn scripts have no automated test in CI",
       "report": "02_architecture_runtime_topology.md",
       "line": 15,
-      "area": "ARCH",
       "owner": "@owner",
       "target": "ARCH",
       "status": "open",
-      "note": "",
-      "recommendation": "Add a unit test around Handler dispatch with a temp ROOT, or a lab smoke test in the preflight."
+      "note": ""
     },
     {
       "id": "BP-P3-001",
@@ -399,12 +345,10 @@
       "title": "Ruleset bypass actors permanently include the repository role and a deploy key",
       "report": "34_branch_protection_required_checks.md",
       "line": 17,
-      "area": "BP",
       "owner": "@owner",
       "target": "BP",
       "status": "open",
-      "note": "",
-      "recommendation": "Scope bypass to the digest deploy key only, and record owner-authorized exceptions."
+      "note": ""
     },
     {
       "id": "DET-P3-001",
@@ -412,12 +356,10 @@
       "title": "[DEP] trivy not installed (dependency vuln scan skipped)",
       "report": "lens_deterministic.md",
       "line": 14,
-      "area": "DET",
       "owner": "@owner",
       "target": "DET",
       "status": "open",
-      "note": "",
-      "detail": "Install trivy to enable the --deep dependency vulnerability scan."
+      "note": ""
     },
     {
       "id": "DOC-P3-001",
@@ -425,12 +367,10 @@
       "title": "PR #49 (full-domain driver) has no CHANGELOG entry",
       "report": "16_documentation_devex_operator_readiness.md",
       "line": 16,
-      "area": "DOC",
       "owner": "@owner",
       "target": "DOC",
       "status": "open",
-      "note": "",
-      "recommendation": "Add the full-domain driver entry and a version note."
+      "note": ""
     },
     {
       "id": "DR-P3-001",
@@ -438,12 +378,10 @@
       "title": "No backup/restore drill plan artifact or tested lab restore",
       "report": "32_backup_restore_drill.md",
       "line": 15,
-      "area": "DR",
       "owner": "@owner",
       "target": "DR",
       "status": "open",
-      "note": "",
-      "recommendation": "Add the drill plan (git-as-source-of-truth + lab rebuild) and an annual restore test."
+      "note": ""
     },
     {
       "id": "EVOL-P3-001",
@@ -451,12 +389,10 @@
       "title": "Roadmap robustness items 1-6 remain open",
       "report": "19_platform_evolution_extensibility.md",
       "line": 15,
-      "area": "EVOL",
       "owner": "@owner",
       "target": "EVOL",
       "status": "open",
-      "note": "",
-      "recommendation": "Close items 1-3 (deterministic LF digest, run schema, idempotent publish) first."
+      "note": ""
     },
     {
       "id": "EXEC-P3-001",
@@ -464,12 +400,10 @@
       "title": "Executive summary lists covered domains but not uncovered/N-A domains",
       "report": "23_executive_summary_release_gate.md",
       "line": 16,
-      "area": "EXEC",
       "owner": "@owner",
       "target": "EXEC",
       "status": "open",
-      "note": "",
-      "recommendation": "Add a coverage line (emitted/NA/pending) to the summary."
+      "note": ""
     },
     {
       "id": "HYGIENE-P3-001",
@@ -477,12 +411,10 @@
       "title": "Two tracked shell scripts lack the executable bit",
       "report": "21_repo_hygiene_maintainability.md",
       "line": 16,
-      "area": "HYGIENE",
       "owner": "@owner",
       "target": "HYGIENE",
       "status": "open",
-      "note": "",
-      "recommendation": "`git update-index --chmod=+x` both files and add a hygiene check."
+      "note": ""
     },
     {
       "id": "INFRA-P3-001",
@@ -490,12 +422,10 @@
       "title": "Example inventory is the only committed inventory",
       "report": "12_infra_deployment_environment_drift.md",
       "line": 16,
-      "area": "INFRA",
       "owner": "@owner",
       "target": "INFRA",
       "status": "open",
-      "note": "",
-      "recommendation": "Document the variable source (env/secret) and validate the example against the Terraform outputs."
+      "note": ""
     },
     {
       "id": "INV-P3-001",
@@ -503,12 +433,10 @@
       "title": "Inventory tool does not model this pack's own artifact families",
       "report": "01_repository_inventory.md",
       "line": 15,
-      "area": "INV",
       "owner": "@owner",
       "target": "INV",
       "status": "open",
-      "note": "",
-      "recommendation": "Add prompts/lenses/runs sections to `repo_inventory.py` output."
+      "note": ""
     },
     {
       "id": "IR-P3-001",
@@ -516,12 +444,10 @@
       "title": "No incident tabletop scenarios artifact",
       "report": "33_incident_tabletop_exercise.md",
       "line": 15,
-      "area": "IR",
       "owner": "@owner",
       "target": "IR",
       "status": "open",
-      "note": "",
-      "recommendation": "Author scenarios (leaked token, bad digest, runner down) with expected detections/actions."
+      "note": ""
     },
     {
       "id": "OBS-P3-001",
@@ -529,12 +455,10 @@
       "title": "Lab API emits request lines only; no health/metrics for job durations or failures",
       "report": "14_observability_monitoring_incident_readiness.md",
       "line": 16,
-      "area": "OBS",
       "owner": "@owner",
       "target": "OBS",
       "status": "open",
-      "note": "",
-      "recommendation": "Log auth/job results with duration and expose counters."
+      "note": ""
     },
     {
       "id": "ORCH-P3-001",
@@ -542,12 +466,10 @@
       "title": "Full-domain driver runs the orchestrator as a flat parallel domain",
       "report": "00_audit_orchestrator.md",
       "line": 15,
-      "area": "ORCH",
       "owner": "@owner",
       "target": "ORCH",
       "status": "open",
-      "note": "",
-      "recommendation": "Either implement wave ordering/verification gates in `full_domain.py` or document explicitly that 00 is advisory when the driver is used."
+      "note": ""
     },
     {
       "id": "PERF-P3-001",
@@ -555,12 +477,10 @@
       "title": "Full-domain passes are token-heavy with no inventory/deterministic caching",
       "report": "15_performance_scalability_cost.md",
       "line": 15,
-      "area": "PERF",
       "owner": "@owner",
       "target": "PERF",
       "status": "open",
-      "note": "",
-      "recommendation": "Cache per-repo inventory/deterministic output and feed it into the domain subagents."
+      "note": ""
     },
     {
       "id": "RES-P3-001",
@@ -568,12 +488,10 @@
       "title": "Lab job API is a single point of failure for lab-dependent work",
       "report": "13_resilience_recovery_failure_modes.md",
       "line": 15,
-      "area": "RES",
       "owner": "@owner",
       "target": "RES",
       "status": "open",
-      "note": "",
-      "recommendation": "Document a local MODE=local fallback per audit, or add a second runner/queue."
+      "note": ""
     },
     {
       "id": "SBOM-P3-001",
@@ -581,12 +499,10 @@
       "title": "No SBOM/provenance artifact or release manifest is published for the pack itself",
       "report": "35_sbom_license_policy.md",
       "line": 15,
-      "area": "SBOM",
       "owner": "@owner",
       "target": "SBOM",
       "status": "open",
-      "note": "",
-      "recommendation": "Emit a CycloneDX SBOM and a signed release manifest per tagged pack release."
+      "note": ""
     },
     {
       "id": "SC-P3-001",
@@ -594,12 +510,10 @@
       "title": "gitleaks allowlist can mask real 40-hex OSQUERY keys and a token-shaped string",
       "report": "11_supply_chain_dependency_secrets.md",
       "line": 16,
-      "area": "SC",
       "owner": "@owner",
       "target": "SC",
       "status": "open",
-      "note": "",
-      "recommendation": "Scope allowlists to the exact file/line of the archived evidence rather than a global regex/literal."
+      "note": ""
     },
     {
       "id": "SEC-P3-001",
@@ -607,12 +521,10 @@
       "title": "Lab API token passed via process argv and server bound to all interfaces as root",
       "report": "06_security_authz_tenancy_audit.md",
       "line": 17,
-      "area": "SEC",
       "owner": "@owner",
       "target": "SEC",
       "status": "open",
-      "note": "",
-      "recommendation": "Pass credentials through the environment or a temporary askpass, bind to the overlay interface, and run as a dedicated non-root user."
+      "note": ""
     },
     {
       "id": "TEST-P3-001",
@@ -620,12 +532,10 @@
       "title": "run_toolchain writes CSV to a fixed shared temp path",
       "report": "09_testing_quality_release_confidence.md",
       "line": 16,
-      "area": "TEST",
       "owner": "@owner",
       "target": "TEST",
       "status": "open",
-      "note": "",
-      "recommendation": "Use tempfile.mkdtemp()/NamedTemporaryFile for the CSV."
+      "note": ""
     },
     {
       "id": "TEST-P3-002",
@@ -633,12 +543,10 @@
       "title": "The documented exec-bit invariant is not tested",
       "report": "09_testing_quality_release_confidence.md",
       "line": 17,
-      "area": "TEST",
       "owner": "@owner",
       "target": "TEST",
       "status": "open",
-      "note": "",
-      "recommendation": "Add a lint/test check over `git ls-files -s '*.sh'`."
+      "note": ""
     },
     {
       "id": "USE-P3-001",
@@ -646,12 +554,10 @@
       "title": "The end-to-end pass remains ~8 manual phases",
       "report": "04_usability_workflow_audit.md",
       "line": 15,
-      "area": "USE",
       "owner": "@owner",
       "target": "USE",
       "status": "open",
-      "note": "",
-      "recommendation": "Implement the documented `tools/post_audit.py run` orchestrator."
+      "note": ""
     }
   ]
 }
