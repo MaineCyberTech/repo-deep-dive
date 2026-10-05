@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1949
+# files: 1956
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -515,6 +515,7 @@ b4517e2c8827d3a097d4dc7ec6fc0deedd213d411aa21a2cf3f1146b3b3677e0  ./runs/buddy-2
 b5a28c8a0a253ad9dbc2230c497a4ea03ab6c14421ec3edbc4323440da169e04  ./runs/buddy-20261005-full-master-adcf767/45_exploit_chain_attack_path_audit.md
 de77523da95f4b36abab54224f42bf4644ab0483871d07148bf5c5f4869ead4f  ./runs/buddy-20261005-full-master-adcf767/EXECUTIVE_SUMMARY.md
 5f0da844ba3b37a58cc78747f85de07a02d2412d2bfc83564f5a45f05b1340b6  ./runs/buddy-20261005-full-master-adcf767/INDEX.md
+cde5078e6079097725a846d9fd2bc48007dba1c17f5f4da056bdc3d5a3cb00a1  ./runs/buddy-20261005-full-master-adcf767/OWNER_GATED_PROPOSALS.md
 bd97c77e5024eb8c0e4e69e9e27541ca833226d9d1ce018cb1161bd14b595575  ./runs/buddy-20261005-full-master-adcf767/RELEASE_GATE.md
 67df64c9d256d9baacc50a6501e4469e2d88af71139bf16324966884f89f3724  ./runs/buddy-20261005-full-master-adcf767/access_control_matrix.md
 59625fe8fcf185c9a395411bdd497951a81fd3dcc06aaa8a78ada18e05660746  ./runs/buddy-20261005-full-master-adcf767/audit_manifest.json
@@ -523,16 +524,22 @@ bd97c77e5024eb8c0e4e69e9e27541ca833226d9d1ce018cb1161bd14b595575  ./runs/buddy-2
 b5e26450bd0471805eb64d4978eb956de7324552bf5b5b94125fdf10ef3a8b27  ./runs/buddy-20261005-full-master-adcf767/changelog_draft.md
 f2fc7946903cd15c9a47e73821cacea881698d0d879fee4adbc7b02c6cdb6576  ./runs/buddy-20261005-full-master-adcf767/coverage.md
 bf5b959d0bf99875c486b25be96284c37c63d303d89b5c3d3015dfcab7edb52f  ./runs/buddy-20261005-full-master-adcf767/deterministic-findings.json
-1c7f8c5885bff32559d215632969eae0c9e8bc1deb5f4d9523b7048c40ed4cf9  ./runs/buddy-20261005-full-master-adcf767/findings.json
-a4123008fad1f3e3ce18f897a6502b9f3050ada8f484962b37af559fb69023a4  ./runs/buddy-20261005-full-master-adcf767/follow_up_register.md
+58fb24f168f415b234abb7538184eeb02e66836ae3668af6f2d5a9bc23356920  ./runs/buddy-20261005-full-master-adcf767/findings.json
+d08e901f9c2b804033016611676d78e1236018d2826eca42863c4ef04254fb9b  ./runs/buddy-20261005-full-master-adcf767/follow_up_register.md
 b8e7bf99cd957b3836bfd6da21142bc71881f0037414cea6c50cb4d21b1665f3  ./runs/buddy-20261005-full-master-adcf767/incident_tabletop_scenarios.md
 d56a181d0d8e28d64141a7b11243971075ee19e0d2e6e38dcac3b2c36fbecc60  ./runs/buddy-20261005-full-master-adcf767/lens_deterministic.md
 426101176909c43460c978771a5a25f2d6a8634ec7fde6cc08c5c5f67766c6e6  ./runs/buddy-20261005-full-master-adcf767/patch_plan.md
 31053ad67e7dce69cf1cf6c7a4e99b9de7cf65fb3980c24cf688dad56e0c29fa  ./runs/buddy-20261005-full-master-adcf767/release_notes_draft.md
-a4123008fad1f3e3ce18f897a6502b9f3050ada8f484962b37af559fb69023a4  ./runs/buddy-20261005-full-master-adcf767/risk_register.md
+1719981042bd68f09f2f63426fa98cbe10055901fbf5c7971f7c7c217d1bb346  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/diff.patch
+2ec73fc8de480a6548bd51eed8724d4fdcf9ae333658543c91e2afac880e284d  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/manifest.json
+04d6c22722d89c67c2545922fc97e8a910f8eace7adba70d8fe8c6086b2fe414  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/verify.log
+9a3f990c098bb68641bce5b72cd66d011578274e8cfcc1f2f845e1c2d948ffa0  ./runs/buddy-20261005-full-master-adcf767/remediation_plan.json
+d08e901f9c2b804033016611676d78e1236018d2826eca42863c4ef04254fb9b  ./runs/buddy-20261005-full-master-adcf767/risk_register.md
+4e15406d58715c984a9ab2cb7f28fdf0bd290b86d8cf38e9b9ed86f074370170  ./runs/buddy-20261005-full-master-adcf767/risk_score.json
 445a9b645dfa0831ee21133d8fdcd4e7f7560209091ac55755a1f1096e38e92a  ./runs/buddy-20261005-full-master-adcf767/roadmap.md
 79cfb3f7f67d1e8a5eb9dc8b0f5b04175bbc61e0f12ae8a1d92d4b8016dcb0de  ./runs/buddy-20261005-full-master-adcf767/sbom_license_policy_recommendation.md
 a14bf259ecc4bb2b811d3b50f2a1f719403a07876fbccc678aede6aafb2195de  ./runs/buddy-20261005-full-master-adcf767/secret_rotation_runbook.md
+6edd86d3f880a3b563c793e4a3c4d1bb17cfe43bd254f099fcedd22625ad7900  ./runs/buddy-20261005-full-master-adcf767/verification_log.md
 65313ee42ff6d8ebdde97e30ea17fe4cd33152a90a129393de60e3d1afc0692b  ./runs/chat-20261003-0018-develop-a72b8cc/01_repository_inventory.md
 4f66d7614535a3222185c5dcec3b66177acd8c24f32b2214626eada45aa1a3f7  ./runs/chat-20261003-0018-develop-a72b8cc/02_architecture_runtime_topology.md
 d1845255528339710c67980d0189ecb1ad74ca8ddef4180d51fc7091eb0ea18a  ./runs/chat-20261003-0018-develop-a72b8cc/03_feature_implementation_map.md
