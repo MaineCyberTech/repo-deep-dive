@@ -46,8 +46,8 @@
       "area": "ARCH",
       "owner": "@owner",
       "target": "ARCH",
-      "status": "open",
-      "note": "",
+      "status": "owner-accepted",
+      "note": "owner-accepted: deferred while guest-only; dated acceptance in docs/README.md. Residual: no server trust boundary until an account/cloud mode adds one.",
       "recommendation": "Keep deferred while guest-only. Before any cloud/account mode, add a server-side validation boundary and re-audit. Re-confirm the dated acceptance in docs/README.md."
     },
     {
@@ -60,7 +60,7 @@
       "owner": "@owner",
       "target": "BP",
       "status": "open",
-      "note": "",
+      "note": "owner-gated: enable a master ruleset (required PR + CI status check + CODEOWNERS review; block force-push/deletion). Proposal in docs/release-process.md. No infra changed. Residual: master remains directly pushable/unprotected.",
       "recommendation": "Enable a master ruleset: require a PR, require the CI status check, require CODEOWNERS review, block force-push and deletion. Verify by attempting a direct push."
     },
     {
@@ -73,7 +73,7 @@
       "owner": "@owner",
       "target": "BP",
       "status": "open",
-      "note": "",
+      "note": "owner-gated: create the `release` environment with required reviewers restricted to v* tags. Proposal in docs/release-process.md. No infra changed. Residual: release.yml has no approval gate.",
       "recommendation": "Create the `release` environment with required reviewers and restrict it to v* tags, then verify a non-maintainer tag push waits for approval."
     },
     {
@@ -85,8 +85,8 @@
       "area": "CI",
       "owner": "@owner",
       "target": "CI",
-      "status": "open",
-      "note": "",
+      "status": "partially-fixed",
+      "note": "Draft PR MaineCyberTech/buddy#35 (remediation/buddy-CI-P1-001) adds a root npm overrides.postcss ^8.5.28 so the copy under next is patched; CI security gate green. Verified-fixed only on merge.",
       "recommendation": "Upgrade to a Next.js line that bundles postcss >= 8.5.19 (or a validated override), or mark the audit step as an explicit, non-blocking risk-acceptance with a linked register entry so the workflow result is meaningful."
     },
     {
@@ -189,8 +189,8 @@
       "area": "SC",
       "owner": "@owner",
       "target": "SC",
-      "status": "open",
-      "note": "",
+      "status": "partially-fixed",
+      "note": "Same root cause as CI-P1-001; overrides.postcss ^8.5.28 validated in buddy#35 and RA-001 closed. Verified-fixed only on merge.",
       "recommendation": "Upgrade Next.js to a line bundling postcss >= 8.5.19, or validate a root override; otherwise keep RA-001 current and re-check monthly and at expiry."
     },
     {

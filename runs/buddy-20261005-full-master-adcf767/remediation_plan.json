@@ -1,0 +1,61 @@
+{
+  "run": "buddy-20261005-full-master-adcf767",
+  "repo": "buddy",
+  "generated": "2026-10-05T05:45:00Z",
+  "note": "Explicit plan for the P1 findings. tools/remediation_plan.py requires PS-style headings in patch_plan.md (this run uses per-finding headings), so the remediable finding (CI-P1-001) and the owner-gated/owner-accepted findings are mapped directly, mirroring runs/snowride-20261005-full-main-38b34a9/remediation_plan.json.",
+  "patchSets": [
+    {
+      "id": "PS-01",
+      "title": "Pin the Next.js-vendored postcss to the patched 8.5.x line via a root override",
+      "severity": "P1",
+      "findings": ["CI-P1-001", "SC-P2-001"],
+      "files": [
+        "package.json",
+        "package-lock.json",
+        ".github/workflows/ci.yml",
+        "docs/README.md",
+        "docs/RISK_ACCEPTANCE.md"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [
+        "npm ci",
+        "npm run typecheck",
+        "npm test",
+        "npm run test:coverage",
+        "npm run lint",
+        "npm run build",
+        "npm audit --audit-level=high --omit=dev",
+        "gitleaks detect --redact --no-banner"
+      ],
+      "branch": "remediation/buddy-CI-P1-001"
+    },
+    {
+      "id": "PS-02",
+      "title": "OWNER-GATED: master branch protection and the release environment",
+      "severity": "P1",
+      "findings": ["BP-P1-001", "BP-P1-002"],
+      "files": [],
+      "dependsOn": ["PS-01"],
+      "effort": "S",
+      "verification": [
+        "gh api repos/MaineCyberTech/buddy/branches/master/protection",
+        "gh api repos/MaineCyberTech/buddy/rulesets",
+        "gh api repos/MaineCyberTech/buddy/environments"
+      ],
+      "branch": ""
+    },
+    {
+      "id": "PS-03",
+      "title": "OWNER-ACCEPTED: no server trust boundary while guest-only",
+      "severity": "P1",
+      "findings": ["ARCH-P1-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [],
+      "branch": ""
+    }
+  ],
+  "unassignedFindings": []
+}

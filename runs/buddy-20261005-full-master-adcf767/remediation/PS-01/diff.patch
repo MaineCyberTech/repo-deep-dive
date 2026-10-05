@@ -1,0 +1,165 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 34e5508..7e77c01 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -69,8 +69,9 @@ jobs:
+         run: npm ci
+ 
+       # Fail on high/critical advisories in the production dependency set.
+-      # Known current failure: the nested next/node_modules/postcss copy tracked as
+-      # buddy-DEP-002 will keep this red until that copy is upgraded.
++      # The Next.js-vendored postcss copy is pinned to the patched 8.5.x line via
++      # the root `overrides.postcss` entry (buddy-DEP-002 / CI-P1-001), so this
++      # gate is expected to stay green.
+       - name: Audit production dependencies
+         run: npm audit --audit-level=high --omit=dev
+ 
+diff --git a/docs/README.md b/docs/README.md
+index f480a8f..435f364 100644
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -86,8 +86,9 @@ risk is closed. A finding moves to `verified-fixed` only with an artifact
+ captured at the current commit.
+ 
+ Supply-chain exceptions that carry an explicit expiry and CVE list are recorded
+-separately in [`RISK_ACCEPTANCE.md`](RISK_ACCEPTANCE.md) (currently `RA-001`,
+-the Next.js-vendored `postcss@8.4.31`).
++separately in [`RISK_ACCEPTANCE.md`](RISK_ACCEPTANCE.md). `RA-001` (the
++Next.js-vendored `postcss@8.4.31`) is now **closed** via a validated npm
++`overrides.postcss` pin to the patched 8.5.x line.
+ 
+ ## Licensing
+ 
+diff --git a/docs/RISK_ACCEPTANCE.md b/docs/RISK_ACCEPTANCE.md
+index 12fb6a8..7587f1f 100644
+--- a/docs/RISK_ACCEPTANCE.md
++++ b/docs/RISK_ACCEPTANCE.md
+@@ -5,36 +5,52 @@ Reviewed per release and at each stated expiry. An accepted finding is a
+ deliberate, documented decision - not a closed finding. See also the
+ accepted/deferred table in [`README.md`](README.md#accepted-and-deferred-risks-final-p2-002).
+ 
+-## RA-001 - nested `postcss@8.4.31` bundled by Next.js (`buddy-DEP-002`)
++## RA-001 - nested `postcss@8.4.31` bundled by Next.js (`buddy-DEP-002`) - **CLOSED**
+ 
+ | Field | Value |
+ |---|---|
+-| Finding | `buddy-DEP-002` / deterministic `DET-P1-001`, `DET-P2-002` |
++| Finding | `buddy-DEP-002` / deterministic `DET-P1-001`, `DET-P2-002`; audit `CI-P1-001`, `SC-P2-001` |
+ | Package | `postcss@8.4.31` at `node_modules/next/node_modules/postcss` (production) |
+ | Source | `next@15.5.27` pins `"postcss": "8.4.31"` exactly |
+ | CVEs | CVE-2026-45623 (fixed 8.5.12; arbitrary file read via `sourceMappingURL`), CVE-2026-41305 (fixed 8.5.10), CVE-2026-73646 (fixed 8.5.18), CVE-2026-69153 (fixed 8.5.19) |
+-| Decision | Accepted (temporary) |
++| Decision | **Fixed (validated npm override)** on 2026-10-05 |
+ | Owner | dependency owner / maintainer |
+ | Recorded | 2026-10-04 |
+-| Expires | 2027-01-04 - re-check monthly and on every Next.js release, whichever is sooner |
++| Closed | 2026-10-05 |
+ | Re-check commands | `npm ls postcss`, `npm audit`, `npx trivy fs --scanners vuln .` |
+ 
+-### Why it is not fixed in this change
+-
+-- The direct `postcss` dev dependency is already `^8.5.28` (>= 8.5.19) and
+-  `nanoid` is pinned to `^3.3.19` (>= 3.3.18), so every non-nested copy is
+-  patched and cannot regress.
+-- The remaining vulnerable copy is **vendored inside Next.js**: `next@15.5.27`
+-  pins `postcss@8.4.31` exactly. A root npm `override` can force `8.5.x`, but
+-  npm then deduplicates postcss into a `dev`-flagged node and diverges from the
+-  framework's tested production dependency, risking `npm ci --omit=dev`
+-  dropping a package Next.js expects. A supported fix needs a Next.js major that
+-  bundles a patched postcss; that upgrade is tracked separately.
+-- Reachability today is low: the app does not process untrusted CSS and sets
+-  `images.unoptimized = true`. The exposure is build-time.
+-
+-### Closure criteria
+-
+-Close this risk when the repository resolves `postcss` >= 8.5.19 for the copy
+-under `next` (a Next.js bump, or a validated override), or at the expiry date,
+-whichever comes first.
++### Resolution
++
++The root `package.json` now carries an npm `overrides` entry forcing `postcss`
++to `^8.5.28`, so the copy resolved under `next` is the patched 8.5.28 rather than
++the vendored 8.4.31:
++
++```json
++"overrides": {
++  "nanoid": "^3.3.19",
++  "postcss": "^8.5.28"
++}
++```
++
++Validated locally at `4b56fe1` before opening the fix PR:
++
++- `npm ls postcss` -> every copy resolves to `8.5.28`
++  (`next -> postcss@8.5.28 deduped`); no
++  `node_modules/next/node_modules/postcss` entry remains.
++- `npm audit --audit-level=high --omit=dev` -> `found 0 vulnerabilities`
++  (the CI `security` job gate is now green).
++- `npm audit` -> the `postcss` advisory is gone from the full tree.
++- `npm ci --omit=dev` -> postcss 8.5.28 is still installed and resolvable, so
++  Next.js's production dependency is preserved.
++- Full local gate: `npm ci` (exit 0), `tsc --noEmit` (exit 0), `vitest run`
++  (185 passed), `next lint` (no warnings/errors), `next build` (success).
++
++`postcss` 8.5.x is the same major already used by the root project, so the
++override keeps Next.js on a supported, patched line while the tracked Next.js
++major upgrade (to a line that vendors a patched postcss) proceeds separately.
++
++### Closure criteria (met)
++
++The repository now resolves `postcss` >= 8.5.19 for the copy under `next` via the
++validated override above. Re-open if a future Next.js upgrade reintroduces an
++unpatched vendored copy; re-check on every Next.js release.
+diff --git a/package-lock.json b/package-lock.json
+index de07239..69291a5 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -6623,34 +6623,6 @@
+         }
+       }
+     },
+-    "node_modules/next/node_modules/postcss": {
+-      "version": "8.4.31",
+-      "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.4.31.tgz",
+-      "integrity": "sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==",
+-      "funding": [
+-        {
+-          "type": "opencollective",
+-          "url": "https://opencollective.com/postcss/"
+-        },
+-        {
+-          "type": "tidelift",
+-          "url": "https://tidelift.com/funding/github/npm/postcss"
+-        },
+-        {
+-          "type": "github",
+-          "url": "https://github.com/sponsors/ai"
+-        }
+-      ],
+-      "license": "MIT",
+-      "dependencies": {
+-        "nanoid": "^3.3.6",
+-        "picocolors": "^1.0.0",
+-        "source-map-js": "^1.0.2"
+-      },
+-      "engines": {
+-        "node": "^10 || ^12 || >=14"
+-      }
+-    },
+     "node_modules/node-exports-info": {
+       "version": "1.6.2",
+       "resolved": "https://registry.npmjs.org/node-exports-info/-/node-exports-info-1.6.2.tgz",
+diff --git a/package.json b/package.json
+index d1b4de3..5ec43cb 100644
+--- a/package.json
++++ b/package.json
+@@ -48,6 +48,7 @@
+     "fake-indexeddb": "^6.2.5"
+   },
+   "overrides": {
+-    "nanoid": "^3.3.19"
++    "nanoid": "^3.3.19",
++    "postcss": "^8.5.28"
+   }
+ }
+\ No newline at end of file

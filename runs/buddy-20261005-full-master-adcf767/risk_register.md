@@ -6,10 +6,10 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 
 | Finding | Severity | Title | Owner | Target | Status | Note |
 |---|---|---|---|---|---|---|
-| ARCH-P1-001 | P1 | Client is fully authoritative: no server trust boundary exists | @owner | ARCH | open |  |
-| BP-P1-001 | P1 | master is unprotected: no required PR, review, or status checks | @owner | BP | open |  |
-| BP-P1-002 | P1 | The `release` environment required by release.yml does not exist | @owner | BP | open |  |
-| CI-P1-001 | P1 | CI is failing on master at the audited commit | @owner | CI | open |  |
+| ARCH-P1-001 | P1 | Client is fully authoritative: no server trust boundary exists | @owner | ARCH | owner-accepted | owner-accepted: deferred while guest-only; dated acceptance in docs/README.md. Residual: no server trust boundary until an account/cloud mode adds one. |
+| BP-P1-001 | P1 | master is unprotected: no required PR, review, or status checks | @owner | BP | open | owner-gated: enable a master ruleset (required PR + CI status check + CODEOWNERS review; block force-push/deletion). Proposal in docs/release-process.md. No infra changed. Residual: master remains directly pushable/unprotected. |
+| BP-P1-002 | P1 | The `release` environment required by release.yml does not exist | @owner | BP | open | owner-gated: create the `release` environment with required reviewers restricted to v* tags. Proposal in docs/release-process.md. No infra changed. Residual: release.yml has no approval gate. |
+| CI-P1-001 | P1 | CI is failing on master at the audited commit | @owner | CI | partially-fixed | Draft PR MaineCyberTech/buddy#35 (remediation/buddy-CI-P1-001) adds a root npm overrides.postcss ^8.5.28 so the copy under next is patched; CI security gate green. Verified-fixed only on merge. |
 | ARCH-P2-001 | P2 | Inventory item actions mutate the store but are never persisted | @owner | DATA | open |  |
 | CI-P2-001 | P2 | dependency-review job is skipped because the dependency graph / Dependabot is disabled | @owner | CI | open |  |
 | DATA-P2-001 | P2 | Inventory item actions are not written to the save | @owner | DATA | open |  |
@@ -17,7 +17,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | DOC-P2-002 | P2 | README 'Known gaps' and testing sections contradict the current code/tests | @owner | DOC | open |  |
 | DR-P2-001 | P2 | No backup/restore drill and no committed evidence of one | @owner | DR | open |  |
 | FILE-P2-001 | P2 | Save export uses btoa and can throw on non-Latin-1 content | @owner | FILE | open |  |
-| SC-P2-001 | P2 | High-severity postcss advisory remains in the production dependency tree (accepted) | @owner | SC | open |  |
+| SC-P2-001 | P2 | High-severity postcss advisory remains in the production dependency tree (accepted) | @owner | SC | partially-fixed | Same root cause as CI-P1-001; overrides.postcss ^8.5.28 validated in buddy#35 and RA-001 closed. Verified-fixed only on merge. |
 | SC-P2-002 | P2 | Repository secret-scanning and Dependabot security updates are disabled | @owner | SC | open |  |
 | SC-P2-003 | P2 | Vendored prompt pack authorship and licensing are unconfirmed | @owner | SC | open |  |
 | SEC-P2-001 | P2 | CSP allows 'unsafe-inline' scripts and styles | @owner | SEC | open |  |
