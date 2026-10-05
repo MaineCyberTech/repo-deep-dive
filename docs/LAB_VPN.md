@@ -1,26 +1,33 @@
 # Lab audit VPN (WireGuard)
 
-A dedicated WireGuard overlay that lets agents and developers reach the **Proxmox lab**
-(`172.23.128.0/20`) from anywhere, through a public endpoint on the DigitalOcean droplet
-`mct-portal-dev` (`138.197.105.82`). It is **separate** from the falcon telemetry VPN
-(`wg0`, `10.99.0.0/24`, UDP 5182) and never edits it.
+A dedicated WireGuard overlay that lets agents and developers reach **two Proxmox labs**
+(lab #1 `172.23.128.0/20`, lab #2 `192.168.222.0/24`) from anywhere, through a public
+endpoint on the DigitalOcean droplet `mct-portal-dev` (`138.197.105.82`). It is
+**separate** from the falcon telemetry VPN (`wg0`, `10.99.0.0/24`, UDP 5182) and never edits it.
 
 ```
-agent/dev ──(wg)──► mct-portal-dev  wgaudit0 10.250.0.1:51900 ──(wg)──► Proxmox lab peer 10.250.0.9
-                                                                           └─ routes 172.23.128.0/20
-                                                                              proxmox.lab .50 · ci-runner.lab .51 · edge-builder.lab .52
+agent/dev ──(wg)──► mct-portal-dev  wgaudit0 10.250.0.1:51900
+                                   ├──(wg)──► lab #1 peer 10.250.0.9 ── routes 172.23.128.0/20
+                                   │            proxmox.lab .50 · ci-runner.lab .51 · edge-builder.lab .52
+                                   └──(wg)──► lab #2 peer 10.250.0.8 ── routes 192.168.222.0/24  (host testnuc)
+                                                testnuc.lab .222 · ci-runner2.lab .201
+                                                edge-builder2.lab .202 · runner2.lab .203
 ```
+
+Both lab subnets are advertised to clients. A client config whose `AllowedIPs` omits
+`192.168.222.0/24` will handshake but be unable to route to lab #2.
 
 | Item | Value |
 |---|---|
 | Endpoint | `138.197.105.82:51900/udp` (`mct-portal-dev`) |
-| Interface | `wgaudit0` (endpoint **and** lab host) |
-| Overlay subnet | `10.250.0.0/24` (endpoint `.1`, lab `.9`, agents `.10+`) |
-| Lab subnet routed | `172.23.128.0/20` |
-| Friendly names | `lab-endpoint` `.1`, `proxmox.lab` `.50`, `ci-runner.lab` `.51`, `edge-builder.lab` `.52` |
+| Interface | `wgaudit0` (endpoint **and** each lab host) |
+| Overlay subnet | `10.250.0.0/24` (endpoint `.1`, lab #2 `testnuc` `.8`, lab #1 `.9`, agents `.10+`) |
+| Lab subnets routed | lab #1 `172.23.128.0/20`, lab #2 `192.168.222.0/24` |
+| Friendly names | `lab-endpoint` `.1`; lab #1: `proxmox.lab` `.50`, `ci-runner.lab` `.51`, `edge-builder.lab` `.52`; lab #2: `testnuc.lab` `.222`, `ci-runner2.lab` `.201`, `edge-builder2.lab` `.202`, `runner2.lab` `.203` |
 | Peer registry | `/etc/wireguard/wgaudit0/peers.tsv` (name, ip, pubkey, added) |
 | Key dir (endpoint) | `/etc/wireguard/wgaudit0/` + `/etc/wireguard/wgaudit0/clients/<name>.conf` |
-| Key dir (lab) | `/etc/wireguard/wgaudit0/` |
+| Key dir (lab) | `/etc/wireguard/wgaudit0/` (on each lab host, e.g. `proxmox` and `testnuc`) |
+| Client AllowedIPs | `10.250.0.0/24, 172.23.128.0/20, 192.168.222.0/24` (both lab subnets) |
 | Scoped admin identity | SSH user `labvpn` (forced command; non-root) |
 | Falcon VPN (do NOT touch) | `wg0` `10.99.0.0/24`, UDP 5182, hub `142.105.190.25` |
 
@@ -29,12 +36,12 @@ agent/dev ──(wg)──► mct-portal-dev  wgaudit0 10.250.0.1:51900 ──(w
 | Script | Where | Purpose |
 |---|---|---|
 | `lab-audit-endpoint.sh` | public droplet | `inventory` / `ensure [labPub]` / `status` |
-| `lab-audit-lab.sh` | Proxmox lab host | `inventory` / `ensure <serverPub> [endpointHost]` / `status` |
+| `lab-audit-lab.sh` | each Proxmox lab host (lab #1, lab #2) | `inventory` / `ensure <serverPub> [endpointHost]` / `status` |
 | `lab-audit-add-agent.sh` | endpoint (root) | add/refresh a peer: `<name> [public-key] [ip]`; maintains the registry; emits a client config |
 | `lab-audit-list-agents.sh` | endpoint (root) | list peers + handshake age |
 | `lab-audit-revoke-agent.sh` | endpoint (root) | remove a peer, its registry row and client key material |
 | `lab-audit-verify.sh` | endpoint / lab / client | health check (handshake age + lab pings + lab API) → `RESULT: PASS|FAIL` |
-| `lab-audit-scoped-deploy.sh` | endpoint (root) | install/refresh the scoped `labvpn` identity (user, forced command, sudoers, restart drop-in) |
+| `lab-audit-scoped-deploy.sh` | endpoint (root) | install/refresh the scoped `labvpn` identity (user, forced command, sudoers) |
 | `labvpn-run.sh` | endpoint | the forced-command wrapper (installed to `/usr/local/bin/labvpn-run`) |
 | `lab-audit-connect.sh` | agent/dev workstation | install a client config, add friendly names, verify the lab |
 | `lab-audit-bootstrap.sh` | agent / server / workstation | one-command **connection setup**: generate a keypair, register the public key via the scoped identity, bring the tunnel up, verify |
@@ -78,7 +85,7 @@ ssh root@138.197.105.82 'bash /root/lab-audit-endpoint.sh ensure <LAB_PUB>'
 # 4) open the DigitalOcean cloud firewall for the overlay UDP port (mainecybertech
 #    workflow wireguard-endpoint.yml action=firewall-allow udp_port=51900, or manually)
 
-# 5) install/refresh the scoped non-root identity + self-heal drop-in
+# 5) install/refresh the scoped non-root identity
 scp lab-audit-scoped-deploy.sh labvpn-run.sh lab-audit-add-agent.sh lab-audit-list-agents.sh \
     lab-audit-revoke-agent.sh lab-audit-verify.sh root@138.197.105.82:/root/
 ssh root@138.197.105.82 'bash /root/lab-audit-scoped-deploy.sh'
@@ -87,6 +94,42 @@ ssh root@138.197.105.82 'bash /root/lab-audit-scoped-deploy.sh'
 
 Deployment is verified: `wg show wgaudit0` handshake both ways, `ping 172.23.128.51`, and
 `curl http://172.23.128.51:8722/health`.
+
+## Adding a lab host / second lab (multi-lab overlay)
+
+The endpoint can serve more than one lab peer at a time; each lab peer advertises its own subnet.
+Lab #2 (`testnuc`, host `192.168.222.222`) is joined with a second `[Peer]` on the endpoint.
+**Never re-run `lab-audit-endpoint.sh ensure` to add it** — that subcommand rebuilds
+`wgaudit0.conf` and would drop the existing lab #1 peer (and agent peers). Append instead:
+
+```bash
+# 1) new lab host (testnuc) - install wireguard-tools, copy the script, join the overlay.
+#    Use a DIFFERENT overlay address from lab #1 (lab #1 = .9, lab #2 = .8).
+scp lab-audit-lab.sh root@192.168.222.222:/root/
+ssh root@192.168.222.222 'LAB_IP=10.250.0.8 LAB_SUBNET=192.168.222.0/24 LAB_BRIDGE=vmbr0 \
+    bash /root/lab-audit-lab.sh ensure <SERVER_PUB> 138.197.105.82'
+# -> prints LAB_PUB
+
+# 2) endpoint - back up, append the peer, then sync WITHOUT a full restart.
+ssh root@138.197.105.82 'CONF=/etc/wireguard/wgaudit0.conf; \
+    cp -a "$CONF" "$CONF.bak-$(date -u +%Y%m%dT%H%M%SZ)"; \
+    printf "\n[Peer]\n# lab: testnuc (advertises 192.168.222.0/24)\nPublicKey = <LAB_PUB>\nAllowedIPs = 10.250.0.8/32, 192.168.222.0/24\n" >> "$CONF"; \
+    wg syncconf wgaudit0 <(wg-quick strip wgaudit0); \
+    ip route replace 192.168.222.0/24 dev wgaudit0'   # see note below
+
+# 3) verify from the endpoint
+ssh root@138.197.105.82 'wg show wgaudit0; ping -c2 192.168.222.201; ping -c2 192.168.222.222'
+```
+
+**`wg syncconf` does not install routes.** It applies keys and `AllowedIPs` to the running
+interface but leaves the routing table alone, so add `192.168.222.0/24 dev wgaudit0` by hand after
+syncing (`ip route replace ...`, idempotent). On the next `wg-quick up` wg-quick derives the same
+route from `AllowedIPs` automatically, so the conf remains the source of truth across reboots.
+
+Each lab host NATs the overlay source (`10.250.0.0/24`) onto its own bridge (`-s 10.250.0.0/24 -o
+<bridge> -j MASQUERADE`) so guests reply; both labs use the same overlay subnet but advertise
+disjoint lab subnets (`172.23.128.0/20` vs `192.168.222.0/24`), which is why the endpoint routes
+them as separate peers.
 
 ## Onboarding a new agent / developer
 
@@ -106,7 +149,9 @@ artifact**. Then:
 
 ```bash
 bash tools/lab-vpn/lab-audit-connect.sh lab-audit-<you>.conf
-#  checks: ping lab-endpoint/proxmox.lab/ci-runner.lab/edge-builder.lab, curl http://ci-runner.lab:8722/health
+#  checks: ping lab-endpoint/proxmox.lab/ci-runner.lab/edge-builder.lab plus lab #2
+#          (testnuc.lab/ci-runner2.lab/edge-builder2.lab/runner2.lab),
+#          curl http://ci-runner.lab:8722/health
 ```
 
 Windows: import `<name>.conf` in the WireGuard app, then use the friendly names (add them to
@@ -192,8 +237,11 @@ lab access indefinitely.
   non-zero on failure.
 - **Lab overlay health** workflow — runs `health` on the endpoint every 15 minutes and pushes an
   **ntfy** alert on failure (and GitHub shows the failed run).
-- `wg-quick@wgaudit0` is `enabled` on both ends and has a systemd `Restart=always` drop-in, so the
-  interface is recreated on boot and restarted if the process dies.
+- `wg-quick@wgaudit0` is `enabled` on the endpoint and each lab host, so the interface is
+  recreated on boot. `wg-quick@.service` is `Type=oneshot`, and systemd rejects `Restart=` for
+  oneshot units — an earlier `Restart=always` drop-in made the unit a *bad-setting* that refused to
+  start. That drop-in has been removed; the interface is kernel state kept alive by
+  `RemainAfterExit=yes`, and the 15-minute overlay-health workflow is the watchdog.
 
 Note: GitHub disables scheduled workflows after 60 days of repo inactivity; re-enable or run it
 manually if that happens.

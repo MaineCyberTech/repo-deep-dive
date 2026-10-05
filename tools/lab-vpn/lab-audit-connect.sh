@@ -40,15 +40,21 @@ if [ "${NO_HOSTS:-0}" != "1" ]; then
 172.23.128.50 proxmox.lab
 172.23.128.51 ci-runner.lab
 172.23.128.52 edge-builder.lab
+192.168.222.222 testnuc.lab
+192.168.222.201 ci-runner2.lab
+192.168.222.202 edge-builder2.lab
+192.168.222.203 runner2.lab
 EOF
 fi
 
+# Two labs share the overlay: lab #1 (172.23.128.0/20) and lab #2 (192.168.222.0/24).
+# The client config AllowedIPs must cover BOTH subnets, or the second lab is unroutable.
 echo "== wg show =="; $SUDO wg show "$IFACE"
 echo "== checks =="
-for ip in 10.250.0.1 172.23.128.50 172.23.128.51 172.23.128.52; do
+for ip in 10.250.0.1 172.23.128.50 172.23.128.51 172.23.128.52 192.168.222.222 192.168.222.201 192.168.222.202 192.168.222.203; do
   if ping -c2 -W2 "$ip" >/dev/null 2>&1; then echo "PASS ping $ip"; else echo "FAIL ping $ip"; fi
 done
-for name in lab-endpoint proxmox.lab ci-runner.lab edge-builder.lab; do
+for name in lab-endpoint proxmox.lab ci-runner.lab edge-builder.lab testnuc.lab ci-runner2.lab edge-builder2.lab runner2.lab; do
   getent hosts "$name" >/dev/null 2>&1 && echo "OK   name $name -> $(getent hosts "$name" | awk '{print $1}')"
 done
 if curl -s -m6 http://172.23.128.51:8722/health >/dev/null 2>&1; then echo "PASS lab API (ci-runner:8722)"; else echo "WARN lab API not reachable (may need the lab up)"; fi
@@ -59,4 +65,8 @@ if [ "${NO_HOSTS:-0}" = "1" ]; then
   echo "  172.23.128.50 proxmox.lab"
   echo "  172.23.128.51 ci-runner.lab"
   echo "  172.23.128.52 edge-builder.lab"
+  echo "  192.168.222.222 testnuc.lab"
+  echo "  192.168.222.201 ci-runner2.lab"
+  echo "  192.168.222.202 edge-builder2.lab"
+  echo "  192.168.222.203 runner2.lab"
 fi

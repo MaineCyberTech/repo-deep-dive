@@ -139,14 +139,16 @@ printf 'command="%s",no-port-forwarding,no-agent-forwarding,no-X11-forwarding,no
 chown "$LUSER:$LGROUP" "$LHOME/.ssh/authorized_keys"
 chmod 0600 "$LHOME/.ssh/authorized_keys"
 
-# ---- systemd restart drop-in ------------------------------------------------
-install -d -m 0755 "$DROPIN_DIR"
-cat > "$DROPIN" <<'EOS'
-[Service]
-Restart=always
-RestartSec=5
-EOS
-log "installed systemd drop-in $DROPIN"
+# ---- systemd: drop stale invalid drop-in ------------------------------------
+# wg-quick@.service is Type=oneshot, for which systemd rejects Restart=; the old
+# Restart=always drop-in made the unit "bad-setting" and it would not start.
+# Remove it if present. Do NOT recreate it.
+if [ -e "$DROPIN" ]; then
+  rm -f "$DROPIN"
+  log "removed stale/invalid systemd drop-in $DROPIN (Restart= is invalid for Type=oneshot)"
+else
+  log "no systemd drop-in needed (wg-quick@.service is Type=oneshot)"
+fi
 
 # ---- backward-compat copies to /root ---------------------------------------
 install -m 0755 "$LIB/add-agent.sh"    /root/add-agent.sh
@@ -170,7 +172,7 @@ echo "forced-command    : $WRAPPER"
 echo "sudoers           : $SUDOERS (0440, visudo validated)"
 echo "authorized_keys   : $LHOME/.ssh/authorized_keys (0600, forced command)"
 echo "registry          : $PEERS (0600)"
-echo "systemd drop-in   : $DROPIN (Restart=always, RestartSec=5)"
+echo "systemd drop-in   : none (Type=oneshot; RemainAfterExit=yes)"
 echo "enforced checks   : visudo -c:"
 visudo -c 2>&1 | sed 's/^/                    /' || true
 echo "LABVPN_PRIVATE_KEY_FILE=$KEY"

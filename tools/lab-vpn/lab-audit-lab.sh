@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Lab audit VPN peer (runs on the Proxmox LAB host). Joins the audit overlay and
-# advertises the lab subnet 172.23.128.0/20 to the public endpoint. Idempotent,
-# backs up before writing, pre-checks collisions, never touches falcon interfaces.
+# Lab audit VPN peer (runs on a Proxmox LAB host). Joins the audit overlay and
+# advertises its lab subnet (default 172.23.128.0/20; override LAB_SUBNET for a
+# second lab, e.g. 192.168.222.0/24 with a distinct LAB_IP) to the public endpoint.
+# Idempotent, backs up before writing, pre-checks collisions, never touches falcon
+# interfaces.
 #
 #   lab-audit-lab.sh inventory
 #   lab-audit-lab.sh ensure <endpoint-server-pubkey> [endpoint-host]
@@ -60,9 +62,12 @@ EOF
   grep -q '^net.ipv4.ip_forward=1' /etc/sysctl.conf || echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
   sysctl -w net.ipv4.ip_forward=1 >/dev/null
   systemctl enable "wg-quick@${IFACE}" >/dev/null 2>&1 || true
-  # Self-heal: recreate the interface if the process ever dies.
-  mkdir -p "/etc/systemd/system/wg-quick@${IFACE}.service.d"
-  printf '[Service]\nRestart=always\nRestartSec=5\n' > "/etc/systemd/system/wg-quick@${IFACE}.service.d/restart.conf"
+  # wg-quick@.service is Type=oneshot; systemd rejects Restart= for oneshot units,
+  # so the old "Restart=always" drop-in made the unit a bad-setting that refused to
+  # start. The interface is kernel state kept alive by RemainAfterExit=yes, so there
+  # is no per-process restart to self-heal; drop any stale/invalid drop-in and rely
+  # on enable-on-boot plus the periodic overlay-health check.
+  rm -f "/etc/systemd/system/wg-quick@${IFACE}.service.d/restart.conf"
   systemctl daemon-reload
   systemctl restart "wg-quick@${IFACE}"
   sleep 2
