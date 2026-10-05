@@ -1,0 +1,27 @@
+{
+  "domain": "05_ui_ux_accessibility_audit",
+  "file": "05_ui_ux_accessibility_audit.md",
+  "area": "UX",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:15Z",
+  "findings": [
+    {
+      "id": "UX-P3-001",
+      "severity": "P3",
+      "title": "Not applicable: the edge program has no browser UI to assess",
+      "area": "UX",
+      "evidence": [
+        "no frontend/HTML/assets in the repo (inventory: .html x2 are generated metrics pages, not an app)",
+        "operator surface is the CLI + mTLS API"
+      ],
+      "impact": "None; WCAG/design-system review does not apply. The central monitoring stack owns browser UI.",
+      "recommendation": "Re-open if an operator web UI is added.",
+      "status": "open",
+      "confidence": "High",
+      "note": "not applicable",
+      "owner": "@owner",
+      "target": "UX"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain (No browser UI exists in the repository; operator surface is a CLI and mTLS API.); the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

@@ -1,0 +1,28 @@
+{
+  "domain": "13_resilience_recovery_failure_modes",
+  "file": "13_resilience_recovery_failure_modes.md",
+  "area": "RES",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:12Z",
+  "findings": [
+    {
+      "id": "RES-P2-001",
+      "severity": "P2",
+      "title": "Single-host control plane has no warm standby or tested failover",
+      "area": "RES",
+      "evidence": [
+        "deploy/edge-control-plane.service runs on the shared falcon host",
+        "docs/runbooks/backup-restore.md covers restore but assumes the same/again host",
+        "no second control-plane instance or quorum in deploy/"
+      ],
+      "impact": "Host loss = control-plane outage until restore; recovery depends on the backup key escrow and is manual.",
+      "recommendation": "Add a warm standby or document an RTO/RPO and rehearse a host-loss restore (see DR drilling).",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "related ARCH-P2-002; re-audit 2026-10-04: still-open",
+      "owner": "@owner",
+      "target": "RES"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

@@ -1,0 +1,44 @@
+{
+  "domain": "23_executive_summary_release_gate",
+  "file": "23_executive_summary_release_gate.md",
+  "area": "EXEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:19Z",
+  "findings": [
+    {
+      "id": "EXEC-P1-001",
+      "severity": "P1",
+      "title": "Release-gate condition (terminal revocation) is closed",
+      "area": "EXEC",
+      "evidence": [
+        "PS-001/#17 merged; re-audit 2026-10-04: closed"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "EXEC"
+    },
+    {
+      "id": "EXEC-P2-001",
+      "severity": "P2",
+      "title": "Production readiness remains insufficient-evidence",
+      "area": "EXEC",
+      "evidence": [
+        "README.md: 'Production readiness | Not claimed; requires owner adoption and a production plan'",
+        "remaining P2/P3 residuals: ARCH-P2-001/002, AUTH-P2-001, OBS-P2-001/002, FILE-P2-001, SUPPLY-P2-001",
+        "all testing is LAB class; no production run"
+      ],
+      "impact": "The lab programme is feature-complete and independently reviewed for the lab scope, but there is no production plan, no production evidence, and several security residuals remain.",
+      "recommendation": "Do not grant production readiness; close the P2 chain items and produce a production plan before any GO.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: still-open",
+      "owner": "@owner",
+      "target": "EXEC"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

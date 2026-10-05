@@ -1,0 +1,63 @@
+{
+  "domain": "01_repository_inventory",
+  "file": "01_repository_inventory.md",
+  "area": "INV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:01Z",
+  "findings": [
+    {
+      "id": "INV-P2-001",
+      "severity": "P2",
+      "title": "Committed raw evidence is large and only now budget-guarded",
+      "area": "INV",
+      "evidence": [
+        "inventory: evidence/ = 958 files of 1,410 tracked files (68%)",
+        "ci/check_evidence_size.py fails past 2,500 files / 50 MiB",
+        "automation/evidence/growth.sh reports the breakdown",
+        "README.md Quick start documents the budget and archive policy"
+      ],
+      "impact": "Unbounded evidence growth bloats clone/CI; the budget now bounds it but a plan has not yet been exercised against the 2,500-file ceiling.",
+      "recommendation": "Keep the size gate in ci/validate.sh; rehearse the archive-and-sidecar flow before the cap trips.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed (budget guard present)",
+      "owner": "@owner",
+      "target": "INV"
+    },
+    {
+      "id": "INV-P2-002",
+      "severity": "P2",
+      "title": "Pack inventory tooling now emits routes/schema/entrypoints",
+      "area": "INV",
+      "evidence": [
+        "tools/repo_inventory.py output includes routes[], schema_tables[], entry_points[], workflows[]",
+        "inventory.json: 3 routes, 17 schema tables, 36 entry points, 5 workflows"
+      ],
+      "impact": "Previously the Wave-0 inventory was blind to the route table, schema and entry points; that gap is closed.",
+      "recommendation": "None; keep the extractors covered by the pack self-test.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "INV"
+    },
+    {
+      "id": "INV-P3-001",
+      "severity": "P3",
+      "title": "Generated models/schemas/dashboard JSON committed and can drift",
+      "area": "INV",
+      "evidence": [
+        "api/generate_models.py --check and api/generate_schemas.py --check run in ci/validate.sh",
+        "closeout/check_derived.py guards derived artifacts"
+      ],
+      "impact": "A stale generated artifact could ship if CI is bypassed (branch protection is plan-gated).",
+      "recommendation": "Keep the generated-artifact checks in the advisory validate workflow and re-run before release.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "INV"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

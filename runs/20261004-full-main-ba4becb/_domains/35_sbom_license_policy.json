@@ -1,0 +1,28 @@
+{
+  "domain": "35_sbom_license_policy",
+  "file": "35_sbom_license_policy.md",
+  "area": "SBOM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:10Z",
+  "findings": [
+    {
+      "id": "SBOM-P3-001",
+      "severity": "P3",
+      "title": "No repository LICENSE file; SBOM is build-time/artefact-time, not CI-gated",
+      "area": "SBOM",
+      "evidence": [
+        "deterministic lens (lab + local): LICENSE/LICENCE/COPYING/UNLICENSE absent",
+        "automation/validation/build_sbom.py builds a CycloneDX SBOM from device packages at image time",
+        "ci/license_check.py gates installed Python distributions, not the repository"
+      ],
+      "impact": "Default 'all rights reserved' makes reuse/redistribution ambiguous; SBOM quality depends on the image build running with SSH/file packages available and is not asserted by CI.",
+      "recommendation": "Add an explicit LICENSE (and reference it from README.md); add a CI check that a release has an attached SBOM of non-zero component count.",
+      "status": "open",
+      "confidence": "High",
+      "note": "LICENSE still absent at ba4becb",
+      "owner": "@owner",
+      "target": "SBOM"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

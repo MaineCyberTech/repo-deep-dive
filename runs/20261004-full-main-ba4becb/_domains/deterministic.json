@@ -1,0 +1,38 @@
+{
+  "domain": "deterministic",
+  "file": "lens_deterministic.md",
+  "area": "DET",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:37Z",
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "GIT",
+      "title": "[GIT] No LICENSE file",
+      "report": "lens_deterministic.md",
+      "line": 14,
+      "detail": "Add a license.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "subcode": "SEC",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 18,
+      "detail": "Install gitleaks in CI to enable the secret scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ],
+  "report": "# Deterministic checks - falcon-edge\n\nMachine checks (no LLM). Findings use the repo-deep-dive `DET` area.\n\n## Findings\n\n| ID | Title | Severity |\n|---|---|---|\n| DET-P3-001 | [GIT] No LICENSE file | P3 |\n| DET-P3-002 | [SEC] gitleaks not installed (secret scan skipped) | P3 |\n\n## Detail\n\n### Finding ID: DET-P3-001 - [GIT] No LICENSE file\n\nAdd a license.\n\n### Finding ID: DET-P3-002 - [SEC] gitleaks not installed (secret scan skipped)\n\nInstall gitleaks in CI to enable the secret scan.\n\n"
+}
