@@ -1,0 +1,46 @@
+{
+  "domain": "28_file_upload_download_security_audit",
+  "file": "28_file_upload_download_security_audit.md",
+  "area": "FILE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:07Z",
+  "findings": [
+    {
+      "id": "FILE-P2-001",
+      "severity": "P2",
+      "title": "Update artifact host allowlist exists but is not configured in the shipped image",
+      "area": "FILE",
+      "evidence": [
+        "src/falcon_agent/runner.py:49-69 validate_update_url no-ops unless allowed_hosts is set",
+        "src/falcon_agent/runner.py:664 passes self.config.get('update_allowed_hosts')",
+        "image/overlay/etc/falcon-agent/agent.json has no update_allowed_hosts key"
+      ],
+      "impact": "The agent will download a signed manifest's artifact from any HTTPS host when no allowlist is configured; a compromised control plane / signing seed can steer the fleet at an arbitrary host (exfiltration or hostile payload).",
+      "recommendation": "Set update_allowed_hosts in the shipped agent.json (control-plane host / object store) so the URL is scheme- and host-restricted by default.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "mechanism added (CHAIN/API/SEC fix); default config leaves it disabled",
+      "owner": "@owner",
+      "target": "FILE"
+    },
+    {
+      "id": "FILE-P3-001",
+      "severity": "P3",
+      "title": "Root-side update verifier rejects symlink/traversal/setuid archive members",
+      "area": "FILE",
+      "evidence": [
+        "image/overlay/usr/local/sbin/falcon-update-verify.py:321-332 rejects '..', symlink members, setuid/setgid/sticky",
+        "runner.py:110-121,184,210-211,257,264 symlink/path guards",
+        "digest verified against the signed manifest (runner.py:553-554)"
+      ],
+      "impact": "Archive handling is hardened; residual is the unconfigured host allowlist above.",
+      "recommendation": "None beyond FILE-P2-001.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "hardened; re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "FILE"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

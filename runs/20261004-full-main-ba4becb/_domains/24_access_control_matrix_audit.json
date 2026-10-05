@@ -1,0 +1,28 @@
+{
+  "domain": "24_access_control_matrix_audit",
+  "file": "24_access_control_matrix_audit.md",
+  "area": "ACM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:03Z",
+  "findings": [
+    {
+      "id": "ACM-P3-001",
+      "severity": "P3",
+      "title": "Operator identity map and revocation are implemented; single-operator fallback still allowed",
+      "area": "ACM",
+      "evidence": [
+        "src/falcon_control/service.py:235-239 resolves operator_identities + operator_revoked at startup",
+        "src/falcon_control/service.py:337-345 operator role granted only on cert-fingerprint match",
+        "deploy/edge-control-plane.example.json operator_fingerprint fallback documented (ACM-P1-001)"
+      ],
+      "impact": "Authorization is fingerprint-bound and multi-operator capable; the single-operator fallback (`operator` id) remains for labs, so the matrix's weakest path is that shared default identity.",
+      "recommendation": "For production, require operator_identities (non-empty) and refuse the default fallback; document the matrix in the audit.",
+      "status": "partially-fixed",
+      "confidence": "High",
+      "note": "multi-operator implemented; fallback retained for lab",
+      "owner": "@owner",
+      "target": "ACM"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

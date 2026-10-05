@@ -1,0 +1,61 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:09Z",
+  "findings": [
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "bake-image no longer interpolates secrets into script text",
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/bake-image.yml passes secrets via env: and references them as \"$VAR\"",
+        "merged falcon-edge#33 @ 0ee35df; re-audit 2026-10-04: closed"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "merged #33 @0ee35df; re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "CI"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "CI toolchain is downloaded and hash-verified (pinning enforced)",
+      "area": "CI",
+      "evidence": [
+        ".github/workflows/validate.yml:105-136 each archive is pinned by URL + embedded SHA-256 and verified with sha256sum -c",
+        "requirements-dev.txt exact versions + --hash, installed with --require-hashes --only-binary=:all:"
+      ],
+      "impact": "Closed; no bare downloads or unpinned installs remain in validate.yml.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "CI"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "Branch-protection documentation matches implemented Dependabot-merge behavior",
+      "area": "CI",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:561-568 documents 'all checks green' + --match-head-commit",
+        "merged #36 @ a169b7d; re-audit 2026-10-04: closed"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "merged #36 @a169b7d; re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "CI"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

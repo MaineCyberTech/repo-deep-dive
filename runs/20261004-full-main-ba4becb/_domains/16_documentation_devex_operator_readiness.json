@@ -1,0 +1,27 @@
+{
+  "domain": "16_documentation_devex_operator_readiness",
+  "file": "16_documentation_devex_operator_readiness.md",
+  "area": "DOC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:17Z",
+  "findings": [
+    {
+      "id": "DOC-P3-001",
+      "severity": "P3",
+      "title": "Repository name vs lab working-directory drift is documented but still confusing",
+      "area": "DOC",
+      "evidence": [
+        "README.md: 'the central repo sometimes refers to falcon-edge-build; that is this same program' (DOC-P1-001)",
+        "deploy/*.service hardcode /home/user/falcon-edge-build"
+      ],
+      "impact": "The historical directory name is a recurring source of confusion; it is documented but the service paths keep it alive.",
+      "recommendation": "Rename the deployment directory to falcon-edge at the next host rebuild, or add a symlink + note in ENVIRONMENTS.md.",
+      "status": "partially-fixed",
+      "confidence": "High",
+      "note": "documented; paths unchanged",
+      "owner": "@owner",
+      "target": "DOC"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

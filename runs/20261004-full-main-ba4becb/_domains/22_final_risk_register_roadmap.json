@@ -1,0 +1,44 @@
+{
+  "domain": "22_final_risk_register_roadmap",
+  "file": "22_final_risk_register_roadmap.md",
+  "area": "FINAL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:19Z",
+  "findings": [
+    {
+      "id": "FINAL-P1-001",
+      "severity": "P1",
+      "title": "Release blocker (non-terminal revocation) is closed",
+      "area": "FINAL",
+      "evidence": [
+        "PS-001/#17 merged; re-audit 2026-10-04: closed"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "FINAL"
+    },
+    {
+      "id": "FINAL-P2-001",
+      "severity": "P2",
+      "title": "Cross-cutting theme: automation artifacts are not continuously bound to their sources",
+      "area": "FINAL",
+      "evidence": [
+        "generated artifacts are checked in CI but the branch is only advisory-gated (BP-P2-001)",
+        "trust-root rotation runbook exists but rotation of the live root is unexercised",
+        "no end-to-end attestation binding a deployed artefact to a commit"
+      ],
+      "impact": "Claims and generated artifacts can drift from the code that produced them between CI runs; the binding is procedural, not cryptographic.",
+      "recommendation": "Add a signed deployment attestation (commit + artefact digest) and verify it at deploy time.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: still-open",
+      "owner": "@owner",
+      "target": "FINAL"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}
