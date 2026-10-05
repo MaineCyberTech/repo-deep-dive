@@ -1,0 +1,28 @@
+{
+  "domain": "37_supabase_rls_policy_deep_dive",
+  "file": "37_supabase_rls_policy_deep_dive.md",
+  "area": "RLS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:05Z",
+  "findings": [
+    {
+      "id": "RLS-P3-001",
+      "severity": "P3",
+      "title": "Not applicable: no Supabase/Postgres or row-level-security layer",
+      "area": "RLS",
+      "evidence": [
+        "inventory: no *.sql migrations, no supabase/ directory, no Postgres client",
+        "persistence is SQLite (src/falcon_control/store.py, src/falcon_agent/queue.py)",
+        "20261002-0630 audit: 'RLS policies N/A - no Postgres/RLS'"
+      ],
+      "impact": "None; the domain is genuinely not applicable.",
+      "recommendation": "Re-open only if a hosted Postgres/Supabase backend is introduced.",
+      "status": "open",
+      "confidence": "High",
+      "note": "not applicable",
+      "owner": "@owner",
+      "target": "RLS"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain (No Supabase/Postgres/RLS; persistence is SQLite.); the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

@@ -1,0 +1,25 @@
+{
+  "domain": "33_incident_tabletop_exercise",
+  "file": "33_incident_tabletop_exercise.md",
+  "area": "IR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:23Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No evidence of a conducted incident tabletop exercise",
+      "status": "open",
+      "owner": "@ops",
+      "target": "IR",
+      "note": "Runbook present; no scenario/date/participants record.",
+      "evidence": [
+        "docs/runbooks/incident-response.md",
+        "no tabletop artifact"
+      ],
+      "impact": "Incident roles/escalation unexercised.",
+      "recommendation": "Run a tabletop and commit the scenario + actions.",
+      "area": "IR"
+    }
+  ],
+  "report": "Incident-response runbook exists; no tabletop\nexercise artifact at this commit."
+}

@@ -1,0 +1,28 @@
+{
+  "domain": "36_container_runtime_security",
+  "file": "36_container_runtime_security.md",
+  "area": "CTR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:07Z",
+  "findings": [
+    {
+      "id": "CTR-P3-001",
+      "severity": "P3",
+      "title": "App images use local mutable tags with no in-repo digest binding",
+      "owner": "@owner",
+      "target": "CTR",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "infra/compose/docker-compose.yml:12,78 snowride-*:certified",
+        "docker-compose.yml:7-11,74-77 document LAUNCH_ATTESTED_IMAGES out-of-band",
+        "apps/*/Dockerfile:9,26,43 all FROM node:24.20.0-bookworm-slim@sha256:ba849c... "
+      ],
+      "impact": "The runtime image identity is only as strong as the out-of-band digest record; a rebuilt tag is indistinguishable in-repo.",
+      "recommendation": "Have the release job write the built image digests into the attestation evidence and verify them at deploy.",
+      "note": "",
+      "area": "CTR"
+    }
+  ],
+  "report": "Container runtime: both apps build from digest-pinned node bases, run as uid 1001, exec-form HEALTHCHECK, and the compose overlay adds read_only root, tmpfs /tmp, cap_drop ALL, no-new-privileges, and resource limits. The deterministic scanner's two 'unpinned image' hits are the locally built certified tags (documented as build outputs)."
+}

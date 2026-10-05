@@ -1,0 +1,107 @@
+# PS-01 verify.log (CI-P1-001 / SC-P2-001) - captured on the remediation branch
+# branch: remediation/buddy-CI-P1-001  base: master @ 4b56fe1a37fbd19adf1906347ff0ea662a4cc35f  commit: 343f56977d9f1db3eb9374a112ae8f57a02cfe7b
+# host: Windows, node v24.19.0
+
+=== npm ci ===
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+exit: 0
+
+=== npm ls postcss --all ===
+buddy@0.1.0 C:\temp\rem-buddy
++-- autoprefixer@10.6.1
+| `-- postcss@8.5.28 deduped
++-- next@15.5.27
+| `-- postcss@8.5.28 deduped
++-- postcss@8.5.28
++-- tailwindcss@3.4.19
+| +-- postcss-import@15.1.0
+| | `-- postcss@8.5.28 deduped
+| +-- postcss-js@4.1.0
+| | `-- postcss@8.5.28 deduped
+| +-- postcss-load-config@6.0.1
+| | `-- postcss@8.5.28 deduped
+| +-- postcss-nested@6.2.0
+| | `-- postcss@8.5.28 deduped
+| `-- postcss@8.5.28 deduped
+`-- vitest@1.6.1
+  `-- vite@5.4.21
+    `-- postcss@8.5.28 deduped
+
+exit: 0
+
+=== npm run typecheck ===
+
+> buddy@0.1.0 typecheck
+> tsc --noEmit
+
+exit: 0
+
+=== npm test (vitest run) ===
+ [32mΓ£ô[39m app/error.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[90m 95[2mms[22m[39m
+ [32mΓ£ô[39m components/ui/StatBars.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[90m 249[2mms[22m[39m
+ [32mΓ£ô[39m app/page.test.tsx [2m ([22m[2m1 test[22m[2m)[22m[90m 92[2mms[22m[39m
+ [32mΓ£ô[39m components/device/MainDevice.test.tsx [2m ([22m[2m5 tests[22m[2m)[22m[33m 424[2mms[22m[39m
+ [32mΓ£ô[39m components/device/AdventureScreen.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 1790[2mms[22m[39m
+ [32mΓ£ô[39m components/hatch/HatchFlow.test.tsx [2m ([22m[2m3 tests[22m[2m)[22m[33m 6486[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m19 passed[39m[22m[90m (19)[39m
+[2m      Tests [22m [1m[32m185 passed[39m[22m[90m (185)[39m
+[2m   Start at [22m 01:48:13
+[2m   Duration [22m 35.49s[2m (transform 1.62s, setup 4ms, collect 31.33s, tests 9.57s, environment 90.72s, prepare 13.18s)[22m
+
+exit: 0
+
+=== npm run test:coverage ===
+ lib/locations     |   97.31 |    55.88 |     100 |   97.31 |                                             
+  adventure.ts     |   97.31 |    55.88 |     100 |   97.31 | 108,145-147,157                             
+ lib/offline       |       0 |        0 |       0 |       0 |                                             
+  sw.ts            |       0 |        0 |       0 |       0 | 1-38                                        
+ lib/personality   |    90.9 |      100 |      50 |    90.9 |                                             
+  engine.ts        |    90.9 |      100 |      50 |    90.9 | 21-22                                       
+ lib/progression   |     100 |    86.66 |     100 |     100 |                                             
+  lifecycle.ts     |     100 |    86.66 |     100 |     100 | 56,76-78                                    
+ lib/stats         |      75 |      100 |   71.42 |      75 |                                             
+  engine.ts        |      75 |      100 |   71.42 |      75 | 59-68,71-80                                 
+ lib/storage       |   94.06 |    86.36 |     100 |   94.06 |                                             
+  indexeddb.ts     |    87.5 |    78.12 |     100 |    87.5 | 21-22,37-39,58-60,69-70,78-79,92-93,126-127 
+  schema.ts        |   98.08 |    94.11 |     100 |   98.08 | 194-195,199-200                             
+-------------------|---------|----------|---------|---------|---------------------------------------------
+exit: 0
+
+=== npm run lint ===
+
+> buddy@0.1.0 lint
+> next lint
+
+Γ£ö No ESLint warnings or errors
+exit: 0
+
+=== npm run build ===
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+Γöî Γùï /                                    26.5 kB         143 kB
+Γöö Γùï /_not-found                            993 B         104 kB
++ First Load JS shared by all             103 kB
+  Γö£ chunks/255-ce8c7c75002f810b.js       46.5 kB
+  Γö£ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  Γöö other shared chunks (total)          1.97 kB
+
+
+Γùï  (Static)  prerendered as static content
+
+exit: 0
+
+=== npm audit --audit-level=high --omit=dev ===
+found 0 vulnerabilities
+exit: 0
+
+=== gitleaks detect (branch diff) ===
+exit: 0
+

@@ -1,0 +1,55 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Workflows interpolate SSH secrets directly into run scripts",
+      "evidence": [
+        ".github/workflows/lab-preflight.yml:59,61 uses `${{ secrets.LAB_ENDPOINT_SSH_KEY }}` inline in `run:`",
+        ".github/workflows/lab-overlay-health.yml:37,39; lab-agent-offboard.yml:44,50; lab-agent-onboard.yml:58,71 do the same",
+        "docs/AUTOMATION_GUIDE.md:54 states secrets must flow through `env:` blocks"
+      ],
+      "impact": "Direct expression substitution places the private key on the shell command line (visible to process inspection and subject to shell interpretation if it contains quotes/metacharacters).",
+      "recommendation": "Pass the secret via `env:` (e.g. `SSH_KEY: ${{ secrets... }}`) and reference `\"$SSH_KEY\"` in the script.",
+      "area": "SEC",
+      "status": "open",
+      "owner": "@owner",
+      "target": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Lab API /sync ignores the supplied token when the workspace already exists",
+      "evidence": [
+        "tools/lab_api_server.py:150-151 `git fetch` runs without the http.extraheader token",
+        "tools/lab_api_server.py:136-144 the token is only applied on the initial clone",
+        "Observed: POST /sync with a valid token left the workspace at an older head (2dc93dc) until a manual fetch"
+      ],
+      "impact": "Re-sync silently returns a stale commit for private repos, so a scan can be run against the wrong SHA while reporting success.",
+      "recommendation": "Apply the same `-c http.extraheader=...` (or `GIT_CONFIG_*`) to the fetch, and fail when the requested ref does not resolve.",
+      "area": "SEC",
+      "status": "open",
+      "owner": "@owner",
+      "target": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Lab API token passed via process argv and server bound to all interfaces as root",
+      "evidence": [
+        "tools/lab_api_server.py:143 `-c http.extraheader=AUTHORIZATION: Basic <base64 token>` is an argv argument",
+        "tools/lab_api_server.py:37 BIND default 0.0.0.0; :179 runs `bash -o pipefail -c <command>`",
+        "tools/lab-vpn/lab-api-install.sh:14 LAB_API_BIND=0.0.0.0; :31 User=root"
+      ],
+      "impact": "On a shared lab guest any local user can read the token from /proc; the token authorizes arbitrary command execution as root.",
+      "recommendation": "Pass credentials through the environment or a temporary askpass, bind to the overlay interface, and run as a dedicated non-root user.",
+      "area": "SEC",
+      "status": "open",
+      "owner": "@owner",
+      "target": "SEC"
+    }
+  ],
+  "report": "Read-only security review of the lab job API (`tools/lab_api_server.py`), the lab-vpn toolkit, and `.github/workflows/*.yml`. No secret values printed. `grep -rn 'secrets\\.' .github/workflows/` and manual line reads were used."
+}

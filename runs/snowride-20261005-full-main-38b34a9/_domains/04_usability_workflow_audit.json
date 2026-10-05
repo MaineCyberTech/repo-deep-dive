@@ -1,0 +1,9 @@
+{
+  "domain": "04_usability_workflow_audit",
+  "file": "04_usability_workflow_audit.md",
+  "area": "USE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:08Z",
+  "findings": [],
+  "report": "Usability: the workflow (lobby -> run -> result -> shop / social / progression) is exercised by Playwright journeys and component tests (910 tests). No session-replay or usability telemetry is collected, consistent with the privacy notice. No new workflow defect found in this read-only pass."
+}

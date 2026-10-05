@@ -1,0 +1,28 @@
+{
+  "domain": "35_sbom_license_policy",
+  "file": "35_sbom_license_policy.md",
+  "area": "SBOM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:06Z",
+  "findings": [
+    {
+      "id": "SBOM-P3-001",
+      "severity": "P3",
+      "title": "SBOM is a 90-day CI artifact, not bound to the release attestation",
+      "owner": "@owner",
+      "target": "SBOM",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        ".github/workflows/ci-foundation.yml:88-96 uploads sbom-<sha>, retention 90 days",
+        "ci-foundation.yml:47-51 generates sbom.json via cyclonedx-npm",
+        "infra/compose/docker-compose.yml:145-146 LAUNCH_ATTESTED_IMAGES supplied out-of-band"
+      ],
+      "impact": "After 90 days there is no retrievable, signed inventory for a released artifact, weakening vulnerability response.",
+      "recommendation": "Publish the SBOM (and its hash) to a durable release location and reference it from the launch attestation identity.",
+      "note": "",
+      "area": "SBOM"
+    }
+  ],
+  "report": "SBOM and licence posture: CycloneDX SBOM generated per CI run with the lockfile-pinned tool and uploaded as a commit-bound 90-day artifact; an offline production licence allow-list is merge-gating (license-assurance.mjs). Residual: the SBOM lives only as a CI artifact and is not bound to the signed release identity/images."
+}

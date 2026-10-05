@@ -1,0 +1,9 @@
+{
+  "domain": "24_access_control_matrix_audit",
+  "file": "24_access_control_matrix_audit.md",
+  "area": "ACM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:05Z",
+  "findings": [],
+  "report": "Access-control model: anonymous guest, authenticated user, moderator/admin (JWT role claim), and service-role. Player data is owner-scoped by RLS; admin routes require the admin role; service-role writes are the only trusted writers (supabase/migrations/0002_rls_and_grants.sql). The matrix is consistent with docs/API.md; no privilege-escalation path found in this pass."
+}

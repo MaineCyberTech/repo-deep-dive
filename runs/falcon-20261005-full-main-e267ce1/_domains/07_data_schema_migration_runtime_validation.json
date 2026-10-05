@@ -1,0 +1,26 @@
+{
+  "domain": "07_data_schema_migration_runtime_validation",
+  "file": "07_data_schema_migration_runtime_validation.md",
+  "area": "DATA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:56Z",
+  "findings": [
+    {
+      "area": "DATA",
+      "severity": "P1",
+      "title": "Wazuh and IRIS data have no retention (unbounded index growth)",
+      "evidence": [
+        "docs/runbooks/RETENTION_MATRIX.md; docs/runbooks/SCHEMA_AND_RETENTION.md",
+        "config/opensearch/falcon-eve-ism-policy.json (falcon-eve only)",
+        "REAUDIT_REPORT_202604: DATA-P1-001 still-open on an owner decision"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Owner decision + apply ISM/ILM retention for Wazuh and IRIS indices, then record the policy id.",
+      "detail": "Owner decision + apply ISM/ILM retention for Wazuh and IRIS indices, then record the policy id.",
+      "owner": "@owner",
+      "target": "DATA"
+    }
+  ],
+  "report": ""
+}

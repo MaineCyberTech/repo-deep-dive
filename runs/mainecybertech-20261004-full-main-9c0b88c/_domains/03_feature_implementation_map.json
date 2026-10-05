@@ -1,0 +1,49 @@
+{
+  "domain": "03_feature_implementation_map",
+  "file": "03_feature_implementation_map.md",
+  "findings": [
+    {
+      "id": "FEAT-P2-001",
+      "severity": "P2",
+      "title": "API keys cannot authenticate; the feature is dead",
+      "area": "FEAT",
+      "owner": "@owner",
+      "target": "FEAT",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "middleware/api-key.ts resolves mct_ keys (hash + timing-safe compare) and is wired into middleware/auth.ts; api_keys table exists (5302042). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "FEAT-P2-002",
+      "severity": "P2",
+      "title": "Demo/test data can be seeded into a fresh production database",
+      "area": "FEAT",
+      "owner": "@owner",
+      "target": "FEAT",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "demo-seeding migrations gated on app.seed_demo (default off). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "FEAT-P3-001",
+      "severity": "P3",
+      "title": "OpenAPI/Swagger surface is public and its UI is blocked by the API CSP",
+      "area": "FEAT",
+      "owner": "@owner",
+      "target": "FEAT",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "same docs gating; OpenAPI coverage gate restored (openapi-audit 0 missing; 418 paths). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    }
+  ],
+  "report": "Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

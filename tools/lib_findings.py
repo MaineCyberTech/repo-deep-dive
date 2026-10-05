@@ -136,3 +136,30 @@ def counts(findings):
         "byArea": dict(sorted(by_area.items())),
         "total": len(findings),
     }
+
+
+GATES = ("GO", "GO WITH CONDITIONS", "NO-GO")
+
+# A finding with one of these statuses no longer blocks a release/changed-run gate.
+# `false-positive` is accepted here even though it is not a run-register status, so
+# a future vocabulary change does not silently weaken the gate.
+RESOLVED_STATUSES = frozenset({"verified-fixed", "owner-accepted", "false-positive"})
+
+
+def compute_gate(counts, override=None):
+    """Single release-gate decision, shared by full_domain.py and publish_audit.py.
+
+    A P0 can never be released: P0 -> NO-GO, P1 -> GO WITH CONDITIONS, else GO.
+    An explicit `override` (one of GATES) wins; an unknown value raises ValueError
+    so callers fail closed instead of silently publishing a wrong verdict.
+    """
+    if override:
+        if override not in GATES:
+            raise ValueError("gate must be one of: %s" % ", ".join(GATES))
+        return override
+    sev = counts.get("bySeverity", {}) if isinstance(counts, dict) else {}
+    if sev.get("P0", 0) > 0:
+        return "NO-GO"
+    if sev.get("P1", 0) > 0:
+        return "GO WITH CONDITIONS"
+    return "GO"

@@ -1,0 +1,27 @@
+{
+  "domain": "39_analytics_tracking_privacy",
+  "file": "39_analytics_tracking_privacy.md",
+  "area": "AN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:16Z",
+  "findings": [
+    {
+      "id": "AN-P3-001",
+      "severity": "P3",
+      "title": "Not applicable: no third-party analytics or tracking SDKs",
+      "area": "AN",
+      "evidence": [
+        "grep analytics/tracking/segment/posthog/gtag over src: none",
+        "telemetry is first-party (agent metrics, Vector NDJSON) and stays on the owner's stack"
+      ],
+      "impact": "None; no PII leaves to a third-party analytics processor.",
+      "recommendation": "Re-open if any third-party analytics is embedded.",
+      "status": "open",
+      "confidence": "High",
+      "note": "not applicable",
+      "owner": "@owner",
+      "target": "AN"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain (No third-party analytics or tracking SDKs exist; telemetry is first-party and owner-hosted.); the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

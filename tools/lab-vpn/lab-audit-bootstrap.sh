@@ -65,7 +65,7 @@ Address = ${ip}/24
 [Peer]
 PublicKey = ${srv}
 Endpoint = ${ep}
-AllowedIPs = 10.250.0.0/24, 172.23.128.0/20
+AllowedIPs = 10.250.0.0/24, 172.23.128.0/20, 192.168.222.0/24
 PersistentKeepalive = 25
 EOF
 

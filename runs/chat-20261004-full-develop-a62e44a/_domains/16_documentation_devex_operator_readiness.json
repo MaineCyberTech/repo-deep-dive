@@ -1,0 +1,40 @@
+{
+  "domain": "16_documentation_devex_operator_readiness",
+  "file": "16_documentation_devex_operator_readiness.md",
+  "area": "DOC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:17Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Deployment policy contradicts the development deploy workflow (DB changes)",
+      "status": "open",
+      "owner": "@release",
+      "target": "DOC",
+      "note": "Reaffirms pilot CONF-P3-001.",
+      "evidence": [
+        "docs/operations/deployment-policy.md:35-37",
+        ".github/workflows/deploy-development.yml"
+      ],
+      "impact": "Operators receive conflicting instructions.",
+      "recommendation": "Reconcile the policy with the actual workflow.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "Stale one-off reconciliation docs remain in the tree",
+      "status": "open",
+      "owner": "@maintainer",
+      "target": "DOC",
+      "note": "Same artifacts as INV-P2-001.",
+      "evidence": [
+        "FINAL_RECONCILED_REPO_AUDIT.md",
+        "FINAL_RECONCILIATION_*.md"
+      ],
+      "impact": "Doc trust erosion.",
+      "recommendation": "Remove or archive.",
+      "area": "DOC"
+    }
+  ],
+  "report": "Docs coverage is broad (runbooks,\narchitecture, compliance). Residual: a deployment-policy statement still\ncontradicts the development deploy workflow."
+}

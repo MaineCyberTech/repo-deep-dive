@@ -1,0 +1,24 @@
+{
+  "domain": "16_documentation_devex_operator_readiness",
+  "file": "16_documentation_devex_operator_readiness.md",
+  "findings": [
+    {
+      "id": "DOC-P3-001",
+      "severity": "P3",
+      "title": "Dated point-in-time audit reports are mixed with current runbooks with no archive/staleness marker",
+      "area": "DOC",
+      "owner": "@docs",
+      "target": "DOC",
+      "status": "open",
+      "confidence": "medium",
+      "evidence": [
+        "docs/FULL_SYSTEM_AUDIT_2026-06-09.md, docs/MEGA_AUDIT_2026-06-18.md, docs/CODE_REVIEW_2026-06-16.md are committed alongside live docs such as docs/INCIDENT_RESPONSE.md",
+        "docs/INDEX.md does not distinguish historical snapshots from current operational guidance"
+      ],
+      "impact": "Operators and agents can follow stale findings/claims as if current, and doc search returns superseded guidance.",
+      "recommendation": "Move historical audits under docs/audits/ or docs/archive/ with a banner, and have docs/INDEX.md separate 'current' from 'historical'.",
+      "note": "Verified at main 9c0b88c."
+    }
+  ],
+  "report": "Read-only analysis at main `9c0b88c` (2026-10-04). No findings identified for this domain in the 9c0b88c reconciliation pass. Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

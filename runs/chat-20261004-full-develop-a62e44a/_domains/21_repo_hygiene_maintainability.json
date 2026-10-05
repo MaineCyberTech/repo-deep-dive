@@ -1,0 +1,53 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "area": "HYGIENE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:19Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Tracked shell scripts lacked the exec bit (fixed)",
+      "status": "verified-fixed",
+      "owner": "@maintainer",
+      "target": "HYGIENE",
+      "note": "PR #96; no 100644 *.sh remain.",
+      "evidence": [
+        "git ls-files -s '*.sh' | awk '$1==100644' => empty"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Duplicated logic/schema and one-off scripts remain",
+      "status": "open",
+      "owner": "@maintainer",
+      "target": "HYGIENE",
+      "note": "Reaffirms HYG-P2-002 partial; duplicate requireAdmin fixed, migrations/logic duplicates remain.",
+      "evidence": [
+        "duplicate add_user_groups migrations",
+        "scripts/ one-off generators"
+      ],
+      "impact": "Maintenance drift.",
+      "recommendation": "Consolidate duplicates and move one-off generators under scripts/audits with an owner.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Unresolved operational-metrics TODO (fixed)",
+      "status": "verified-fixed",
+      "owner": "@ops",
+      "target": "HYGIENE",
+      "note": "PR #95 removed the TODO.",
+      "evidence": [
+        "grep TODO operational metrics => none"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "HYGIENE"
+    }
+  ],
+  "report": "Hygiene pass on one-off scripts, duplicates and\nencoding. Exec bits are fixed (#96); duplicates and stale artifacts remain."
+}

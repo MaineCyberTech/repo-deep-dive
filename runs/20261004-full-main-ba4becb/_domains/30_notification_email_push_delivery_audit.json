@@ -1,0 +1,27 @@
+{
+  "domain": "30_notification_email_push_delivery_audit",
+  "file": "30_notification_email_push_delivery_audit.md",
+  "area": "NOTIF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:08Z",
+  "findings": [
+    {
+      "id": "NOTIF-P2-001",
+      "severity": "P2",
+      "title": "No alert/notification delivery path from the edge program (email/push/pager)",
+      "area": "NOTIF",
+      "evidence": [
+        "no SMTP/email/FCM/APNS code in src, api, automation",
+        "alerts are config files (config/prometheus, config/grafana); delivery is cross-referenced OBS-P2-001"
+      ],
+      "impact": "Operators are not paged by the edge program itself; on-call relies on the central stack's alerting, which this audit re-raised as OBS-P2-001.",
+      "recommendation": "Wire the edge alert rules to an Alertmanager/receiver (or document the central-stack receiver as the authoritative path).",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "delivery gap; tracked as OBS-P2-001",
+      "owner": "@owner",
+      "target": "NOTIF"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

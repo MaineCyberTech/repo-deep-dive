@@ -8,7 +8,7 @@ Modes (one per invocation):
 
 Usage:
   # run a command in an already-synced repo workspace
-  tools/lab_runner.py --url http://172.23.128.51:8722 --token <t> --repo chat \
+  tools/lab_runner.py --url http://192.168.222.201:8722 --token <t> --repo chat \
       --command "corepack pnpm test"
   # sync (clone/fetch) a repo, then run against it
   tools/lab_runner.py --url ... --token <t> --sync --repo snowride \

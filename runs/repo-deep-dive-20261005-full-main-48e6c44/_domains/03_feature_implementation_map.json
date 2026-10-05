@@ -1,0 +1,39 @@
+{
+  "domain": "03_feature_implementation_map",
+  "file": "03_feature_implementation_map.md",
+  "area": "FEAT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Full-domain runs omit the master runner's required companion artifacts",
+      "evidence": [
+        "prompts/MASTER_RUNNER_FULL_HARDENING.md:90-105 requires access_control_matrix.md, backup_restore_drill_plan.md, incident_tabletop_scenarios.md, branch_protection_recommendation.md, sbom_license_policy_recommendation.md, secret_rotation_runbook.md, release_notes_draft.md, changelog_draft.md",
+        "tools/full_domain.py:486-572 writes only INDEX/reports/findings/registers/EXECUTIVE_SUMMARY/RELEASE_GATE/roadmap/patch_plan/coverage/manifest",
+        "runs/falcon-20261004-fast-main-f9cb67d and runs/chat-20261004-full-develop-0695894 contain none of those companions"
+      ],
+      "impact": "A run can pass `check_run.sh` while missing eight deliverables the master runner declares required, weakening the audit contract.",
+      "recommendation": "Have aggregate render each companion (even as an explicit N/A stub) or add them to the run schema and `check_run.sh`.",
+      "area": "FEAT",
+      "status": "open",
+      "owner": "@owner",
+      "target": "FEAT"
+    },
+    {
+      "severity": "P2",
+      "title": "publish_audit relabels any run as a focused security/supply-chain/CI pass",
+      "evidence": [
+        "tools/publish_audit.py:213-220 hardcodes profile 'focused-security-supply-chain-ci' and prompts [06,10,11,36]",
+        "tools/publish_audit.py:324 always names the report lens_focused_security_supply_chain_ci.md"
+      ],
+      "impact": "Publishing a full-domain run through the standard tool misstates its scope in the canonical `audit_manifest.json` and report name.",
+      "recommendation": "Derive profile/prompts/report name from the run's `audit_manifest.json` mode instead of hardcoding the focused set.",
+      "area": "FEAT",
+      "status": "open",
+      "owner": "@owner",
+      "target": "FEAT"
+    }
+  ],
+  "report": "Mapped the full_domain driver features to the master runner's required outputs. `init/emit/aggregate/status/run` are implemented; verification mode and the master runner's companion artifacts are not."
+}

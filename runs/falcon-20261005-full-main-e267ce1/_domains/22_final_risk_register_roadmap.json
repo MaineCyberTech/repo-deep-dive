@@ -1,0 +1,26 @@
+{
+  "domain": "22_final_risk_register_roadmap",
+  "file": "22_final_risk_register_roadmap.md",
+  "area": "FINAL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:57Z",
+  "findings": [
+    {
+      "area": "FINAL",
+      "severity": "P1",
+      "title": "Operational resilience remains incomplete across the backup lifecycle",
+      "evidence": [
+        "docs/CURRENT_STATE.md:56-60 (C5 done; DO-side dead-man residual)",
+        "bootstrap/80-offsite-backup.sh; bootstrap/92-cold-copy.sh",
+        "REAUDIT_REPORT_202604: FINAL-P1-001 still-open"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Close the offsite/dead-man residuals and add an end-to-end restore assertion to the gate.",
+      "detail": "Close the offsite/dead-man residuals and add an end-to-end restore assertion to the gate.",
+      "owner": "@owner",
+      "target": "FINAL"
+    }
+  ],
+  "report": ""
+}

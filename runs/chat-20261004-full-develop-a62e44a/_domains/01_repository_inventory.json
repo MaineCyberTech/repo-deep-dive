@@ -1,0 +1,54 @@
+{
+  "domain": "01_repository_inventory",
+  "file": "01_repository_inventory.md",
+  "area": "INV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:10Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Stale generated reconciliation artifacts remain tracked at the repository root",
+      "status": "open",
+      "owner": "@maintainer",
+      "target": "INV",
+      "note": "Reaffirms pilot INV-P2-001 at a62e44a.",
+      "evidence": [
+        "git ls-files: COMMIT_MSG.txt, temp_layout.txt, tmp_migrations_list.txt",
+        "git ls-files: FINAL_RECONCILED_REPO_AUDIT.md, FINAL_RECONCILIATION_EXECUTION_SUMMARY.md, FINAL_RECONCILIATION_REPO_AUDIT_PROMPT.md"
+      ],
+      "impact": "Repository noise; source of truth ambiguity for operators.",
+      "recommendation": "Delete the one-off reconciliation artifacts from the tree (keep audit history in docs/audits).",
+      "area": "INV"
+    },
+    {
+      "severity": "P3",
+      "title": "Committed audit/hardening bundles inflate the repository tree",
+      "status": "open",
+      "owner": "@maintainer",
+      "target": "INV",
+      "note": "docs/audits + hardening_super_bundle carry many generated mirrors.",
+      "evidence": [
+        "git ls-files | wc -l == 1049",
+        "docs/audits/**, docs/hardening_super_bundle/** present"
+      ],
+      "impact": "Review noise and clone size.",
+      "recommendation": "Move generated mirrors to releases/artifacts; keep the canonical run only.",
+      "area": "INV"
+    },
+    {
+      "severity": "P3",
+      "title": "Character-encoding (mojibake) artifacts remain in workflow/log text",
+      "status": "open",
+      "owner": "@maintainer",
+      "target": "INV",
+      "note": "Pilot INV-P3-001; not re-verified line-by-line at a62e44a (partial).",
+      "evidence": [
+        "deploy-production.yml:1 name contains '???' for an em dash"
+      ],
+      "impact": "Cosmetic/portability; can confuse tooling.",
+      "recommendation": "Normalise to ASCII/UTF-8 with an editor pass.",
+      "area": "INV"
+    }
+  ],
+  "report": "Inventory via `git ls-files` (1049 files), workflow\ncount (22), migrations (78). Confirmed the historical stale-artifact set is\nstill tracked and the two credential artefacts (`test-signin.json`,\n`hardening/exceptions`) are resolved to examples only."
+}

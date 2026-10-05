@@ -1,0 +1,26 @@
+{
+  "domain": "31_search_indexing_privacy_audit",
+  "file": "31_search_indexing_privacy_audit.md",
+  "area": "SEARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:59Z",
+  "findings": [
+    {
+      "area": "SEARCH",
+      "severity": "P2",
+      "title": "Search/index retention is enforced only for falcon-eve; Wazuh/IRIS indices grow unbounded",
+      "evidence": [
+        "config/opensearch/falcon-eve-ism-policy.json present",
+        "docs/runbooks/RETENTION_MATRIX.md (Wazuh/IRIS pending)",
+        "DATA-P1-001 same root cause"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Apply retention policies to Wazuh/IRIS indices and add a metrics check for unmanaged indices.",
+      "detail": "Apply retention policies to Wazuh/IRIS indices and add a metrics check for unmanaged indices.",
+      "owner": "@owner",
+      "target": "SEARCH"
+    }
+  ],
+  "report": ""
+}

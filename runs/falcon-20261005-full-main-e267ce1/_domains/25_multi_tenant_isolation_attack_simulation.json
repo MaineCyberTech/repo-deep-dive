@@ -1,0 +1,9 @@
+{
+  "domain": "25_multi_tenant_isolation_attack_simulation",
+  "file": "25_multi_tenant_isolation_attack_simulation.md",
+  "area": "MT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:07Z",
+  "findings": [],
+  "report": "## Verification Performed\n\nNot applicable: single-tenant lab by design (no tenant boundary). No finding.\n"
+}

@@ -1,0 +1,28 @@
+{
+  "domain": "26_admin_console_abuse_case_audit",
+  "file": "26_admin_console_abuse_case_audit.md",
+  "area": "ADMIN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:05Z",
+  "findings": [
+    {
+      "id": "ADMIN-P3-001",
+      "severity": "P3",
+      "title": "Admin surface is the operator CLI + mTLS operator APIs; no web console",
+      "area": "ADMIN",
+      "evidence": [
+        "src/falcon_cli/__main__.py is the operator entry point (create-token, quarantine, recover, rollback, list, inspect)",
+        "service.py route table marks operator-only mutations (quarantine/release/revoke/update-manifest at :274-278)",
+        "No HTML/admin frontend in the repo"
+      ],
+      "impact": "No browser admin console exists, so console-abuse cases (CSRF, XSS-driven admin actions, admin session fixation) do not apply; the residual is operator-key custody on the workstation.",
+      "recommendation": "Keep operator client key 0600 and revoke operator identities on offboarding (root-key-compromise runbook covers CA rotation).",
+      "status": "open",
+      "confidence": "High",
+      "note": "no web admin console; CLI/API surface reviewed",
+      "owner": "@owner",
+      "target": "ADMIN"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

@@ -1,0 +1,26 @@
+{
+  "domain": "26_admin_console_abuse_case_audit",
+  "file": "26_admin_console_abuse_case_audit.md",
+  "area": "ADMIN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:58Z",
+  "findings": [
+    {
+      "area": "ADMIN",
+      "severity": "P2",
+      "title": "Admin/observability consoles are exposed through public routers without origin authentication",
+      "evidence": [
+        "config/traefik/dynamic.yml public routers (Grafana/OpenSearch/ntfy)",
+        "docs/security/BRANCH_PROTECTION.md compensating controls",
+        "SEC-P2-001 same root cause"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Put admin consoles behind Cloudflare Access or an auth middleware and remove anonymous routes.",
+      "detail": "Put admin consoles behind Cloudflare Access or an auth middleware and remove anonymous routes.",
+      "owner": "@owner",
+      "target": "ADMIN"
+    }
+  ],
+  "report": ""
+}

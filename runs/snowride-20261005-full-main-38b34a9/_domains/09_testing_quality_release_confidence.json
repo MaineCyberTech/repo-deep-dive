@@ -1,0 +1,28 @@
+{
+  "domain": "09_testing_quality_release_confidence",
+  "file": "09_testing_quality_release_confidence.md",
+  "area": "TEST",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:07Z",
+  "findings": [
+    {
+      "id": "TEST-P3-001",
+      "severity": "P3",
+      "title": "Local verify-all gate is weaker than the CI pipeline",
+      "owner": "@owner",
+      "target": "TEST",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "scripts/verify-all.sh: preflight, build, typecheck, lint, format, test, integration, secret-scan",
+        ".github/workflows/ci-foundation.yml adds coverage thresholds, multi-engine e2e, migration dry-run, SQL negatives",
+        "Lab run: 910 tests passed; coverage/e2e/migrations not run locally"
+      ],
+      "impact": "A locally green verify-all can still fail CI, wasting review cycles and masking coverage/e2e regressions.",
+      "recommendation": "Add a `verify-all --ci-parity` mode or document the exact gap in AGENTS.md so the local claim is bounded.",
+      "note": "",
+      "area": "TEST"
+    }
+  ],
+  "report": "Reproduced on the lab at 38b34a9: npm ci -> build:packages -> typecheck green; lint 0 errors/1 warning; 910 tests passed in 142 files; gitleaks no leaks; migration-head check OK; branch-policy self-test PASS. CI adds coverage thresholds, multi-engine e2e, migration dry-run and SQL negatives. Residual: the local verify-all chain is still weaker than CI."
+}

@@ -1,0 +1,40 @@
+{
+  "domain": "18_privacy_compliance_data_governance",
+  "file": "18_privacy_compliance_data_governance.md",
+  "area": "PRIV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:18Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "GDPR erasure path is a hard multi-table delete with partial coverage",
+      "status": "open",
+      "owner": "@privacy",
+      "target": "PRIV",
+      "note": "Cross-ref DATA finding; the same defect is the privacy owner's concern.",
+      "evidence": [
+        "git grep gdpr_delete_user supabase/migrations",
+        "docs/legal/consent_tracking.md"
+      ],
+      "impact": "Incomplete erasure / residual PII.",
+      "recommendation": "Complete the table coverage and add a retention matrix.",
+      "area": "PRIV"
+    },
+    {
+      "severity": "P3",
+      "title": "No automated data-retention enforcement",
+      "status": "open",
+      "owner": "@privacy",
+      "target": "PRIV",
+      "note": "Consent docs exist; no scheduled retention/purge job.",
+      "evidence": [
+        "docs/legal/consent_tracking.md",
+        "no retention job in apps/worker/src/scheduler.ts"
+      ],
+      "impact": "Data kept beyond stated purpose.",
+      "recommendation": "Implement a retention scheduler and record the policy.",
+      "area": "PRIV"
+    }
+  ],
+  "report": "Consent, legal (DPA, cookie banner) and GDPR\nexport/delete paths reviewed. Erasure completeness is the main residual."
+}

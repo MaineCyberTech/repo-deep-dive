@@ -1,0 +1,79 @@
+{
+  "run": "20261004-full-main-ba4becb",
+  "repo": "falcon-edge",
+  "generated": "2026-10-05T05:40:00Z",
+  "note": "No open P0/P1 code-fixable finding remains. The three P1s (EXEC-P1-001, FINAL-P1-001, SEC-P1-001) are verified-fixed history; AUTH-P2-001 was fixed post-run by falcon-edge#46 @ a549337. The remaining owner decisions are captured in OWNER_GATED_PROPOSALS.md (no infra change).",
+  "patchSets": [
+    {
+      "id": "PS-AUTH-001",
+      "title": "AUTH-P2-001 already fixed by merged PR #46 (device key 0600; Vector via systemd LoadCredential)",
+      "severity": "P2",
+      "findings": ["AUTH-P2-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [
+        "gh pr view 46 --repo MaineCyberTech/falcon-edge --json mergeCommit (a54933725b753e8058188b938ddd804e3abd3562)",
+        "falcon-edge ci/validate.sh (validation: ALL PASS at a549337)",
+        "python3 -m unittest discover -s tests -p 'test_*.py' (347 tests)"
+      ],
+      "branch": ""
+    },
+    {
+      "id": "PS-OWNER-01",
+      "title": "OWNER-GATED: pinned deployment bundle (ARCH-P2-001)",
+      "severity": "P2",
+      "findings": ["ARCH-P2-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-OWNER-02",
+      "title": "OWNER-GATED: control-plane isolation / RTO-RPO acceptance (ARCH-P2-002, RES-P2-001)",
+      "severity": "P2",
+      "findings": ["ARCH-P2-002", "RES-P2-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "L",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-OWNER-03",
+      "title": "OWNER-GATED: branch protection plan upgrade (BP-P2-001)",
+      "severity": "P2",
+      "findings": ["BP-P2-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-OWNER-04",
+      "title": "OWNER-GATED: release artifact access control / per-release credential rotation (SC-P2-004)",
+      "severity": "P2",
+      "findings": ["SC-P2-004"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-OWNER-05",
+      "title": "OWNER-GATED: alert delivery path (OBS-P2-001, NOTIF-P2-001)",
+      "severity": "P2",
+      "findings": ["OBS-P2-001", "NOTIF-P2-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    }
+  ],
+  "unassignedFindings": []
+}

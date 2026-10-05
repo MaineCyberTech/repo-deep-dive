@@ -1,0 +1,28 @@
+{
+  "domain": "20_ai_automation_agent_readiness",
+  "file": "20_ai_automation_agent_readiness.md",
+  "area": "AI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:09Z",
+  "findings": [
+    {
+      "id": "AI-P3-001",
+      "severity": "P3",
+      "title": "AGENTS.md does not reference the audit-pack / full-domain workflow",
+      "owner": "@owner",
+      "target": "AI",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "AGENTS.md has no repo-deep-dive / tools/full_domain.py reference",
+        "Audits land under docs/audits/repo-deep-dive/ but are not linked from AGENTS.md",
+        "docs/RELEASE_GATE.md is the only entry point to prior audit runs"
+      ],
+      "impact": "An automating agent may re-derive or duplicate audit work instead of consuming the published runs.",
+      "recommendation": "Add a short 'audits' pointer in AGENTS.md to docs/audits and the evidence doctrine.",
+      "note": "",
+      "area": "AI"
+    }
+  ],
+  "report": "Agent readiness: AGENTS.md binding rules, deterministic command order, and scripts/generate-review-prompt.py exist. Residual: AGENTS.md does not mention the external audit pack / full-domain runner, so a fresh agent has no pointer to the audit-evidence workflow."
+}

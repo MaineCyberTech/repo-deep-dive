@@ -1,0 +1,9 @@
+{
+  "domain": "17_mobile_pwa_responsive_access",
+  "file": "17_mobile_pwa_responsive_access.md",
+  "area": "MOB",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:05Z",
+  "findings": [],
+  "report": "## Verification Performed\n\nNot applicable: no mobile/PWA client; operator access is CLI + browser dashboards. No finding.\n"
+}

@@ -1,0 +1,29 @@
+{
+  "domain": "12_infra_deployment_environment_drift",
+  "file": "12_infra_deployment_environment_drift.md",
+  "area": "INFRA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:11Z",
+  "findings": [
+    {
+      "id": "INFRA-P2-001",
+      "severity": "P2",
+      "title": "Lab config and shipped image config deliberately diverge (bind/TLS/auto-apply)",
+      "area": "INFRA",
+      "evidence": [
+        "deploy/edge-control-plane.lab.json bind 0.0.0.0 + server_hostnames incl. 10.99.0.1",
+        "deploy/falcon-agent.lab.json allow_insecure_enrollment true; image agent.json false",
+        "image agent.json control_plane_url https://10.99.0.1:9443 vs lab json 127.0.0.1",
+        "src/falcon_control/__main__.py:64-67 warns when bind is 0.0.0.0/:: (CONF-001 guard)"
+      ],
+      "impact": "The divergence is intentional and guarded (LAB ONLY comments + startup warning), but teams can copy the lab config and open the control plane broadly or permit insecure TOFU enrolment.",
+      "recommendation": "Keep the startup guard; add a fail-closed requirement that allow_insecure_enrollment only runs with an explicit lab flag, and assert image configs in CI.",
+      "status": "partially-fixed",
+      "confidence": "High",
+      "note": "guards + LAB ONLY comments added; divergence remains by design",
+      "owner": "@owner",
+      "target": "INFRA"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

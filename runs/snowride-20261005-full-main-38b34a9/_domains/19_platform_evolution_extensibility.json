@@ -1,0 +1,28 @@
+{
+  "domain": "19_platform_evolution_extensibility",
+  "file": "19_platform_evolution_extensibility.md",
+  "area": "EVOL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:09Z",
+  "findings": [
+    {
+      "id": "EVOL-P3-001",
+      "severity": "P3",
+      "title": "No ADR records the supply-chain/attestation hardening decision",
+      "owner": "@owner",
+      "target": "EVOL",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "docs/product/ADR_INDEX.md lists ADR-0001..0037",
+        "SEC-P1-001/SUPPLY-* fixes landed via PRs without an ADR",
+        "docs/product/adr/ has no supply-chain/attestation ADR"
+      ],
+      "impact": "Architecturally significant trust decisions are only in code/PRs, not in the design record, weakening future review.",
+      "recommendation": "Add an ADR for the detached-attestation and SBOM/supply-chain policy so the rationale is durable.",
+      "note": "",
+      "area": "EVOL"
+    }
+  ],
+  "report": "Extensibility: versioned compatibility axes (score, ghost, tricks, rating, economy, progression, event/course, replay, social) with explicit bump rules; 37 ADRs index extensibility decisions. Residual: the recent supply-chain/attestation hardening has no ADR recording the decision."
+}

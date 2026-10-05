@@ -1,0 +1,25 @@
+{
+  "domain": "32_backup_restore_drill",
+  "file": "32_backup_restore_drill.md",
+  "area": "DR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:00Z",
+  "findings": [
+    {
+      "area": "DR",
+      "severity": "P3",
+      "title": "Offsite/dead-man residuals remain owner-side; no scheduled restore assertion in CI",
+      "evidence": [
+        "docs/CURRENT_STATE.md:56 (DO-side dead-man improvements remain owner/ops)",
+        "automation/validation/restore_rehearsal.sh (manual)"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Schedule an end-to-end restore assertion and close the DO-side dead-man residual.",
+      "detail": "Schedule an end-to-end restore assertion and close the DO-side dead-man residual.",
+      "owner": "@owner",
+      "target": "DR"
+    }
+  ],
+  "report": ""
+}

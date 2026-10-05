@@ -1,0 +1,38 @@
+{
+  "domain": "08_api_contracts_realtime_integrations",
+  "file": "08_api_contracts_realtime_integrations.md",
+  "area": "API",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:06Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Lab API has no rate limiting or request-body error signalling",
+      "evidence": [
+        "tools/lab_api_server.py:88-98 `_read_json` returns {} for oversize/invalid JSON, so malformed requests fall through to 400/404 without diagnosis",
+        "tools/lab_api_server.py:119-190 no rate limit or concurrency cap on POST /run"
+      ],
+      "impact": "A misbehaving client can queue unbounded shell jobs; invalid payloads produce misleading errors.",
+      "recommendation": "Return 400 on invalid JSON and add a simple concurrency/rate guard.",
+      "area": "API",
+      "status": "open",
+      "owner": "@owner",
+      "target": "API"
+    },
+    {
+      "severity": "P3",
+      "title": "Lab API contract is documented in prose only (no schema)",
+      "evidence": [
+        "runbooks/LAB_API.md and tools/lab_api_server.py docstring describe the endpoints",
+        "no schemas/lab_api.schema.json or OpenAPI contract"
+      ],
+      "impact": "Client/server drift (e.g. the /sync token bug) is not caught by a contract test.",
+      "recommendation": "Add a small JSON schema or shared constants module used by both server and client.",
+      "area": "API",
+      "status": "open",
+      "owner": "@owner",
+      "target": "API"
+    }
+  ],
+  "report": "The only HTTP API is the lab job API (`tools/lab_api_server.py`) with its client (`tools/lab_runner.py`). Endpoints: GET /health, GET /repos, POST /sync, POST /run."
+}

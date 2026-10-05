@@ -1,0 +1,9 @@
+{
+  "domain": "37_supabase_rls_policy_deep_dive",
+  "file": "37_supabase_rls_policy_deep_dive.md",
+  "area": "RLS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:05Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. No Supabase/Postgres or row-level-security surface exists. Evidence: no supabase/ directory or SQL policies; no DB client dependency (stdlib-only Python tools)."
+}

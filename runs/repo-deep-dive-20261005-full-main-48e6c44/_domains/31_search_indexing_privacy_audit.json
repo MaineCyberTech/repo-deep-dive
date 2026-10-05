@@ -1,0 +1,9 @@
+{
+  "domain": "31_search_indexing_privacy_audit",
+  "file": "31_search_indexing_privacy_audit.md",
+  "area": "SEARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:05Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. There is no search index or indexing pipeline. Evidence: no search engine client or index config; run discovery is file-system based (runs/INDEX.md)."
+}

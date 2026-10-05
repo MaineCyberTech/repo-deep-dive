@@ -1,0 +1,45 @@
+{
+  "domain": "08_api_contracts_realtime_integrations",
+  "file": "08_api_contracts_realtime_integrations.md",
+  "area": "API",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:05Z",
+  "findings": [
+    {
+      "id": "API-P3-001",
+      "severity": "P3",
+      "title": "Public operational endpoints are unauthenticated and unversioned",
+      "owner": "@owner",
+      "target": "API",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "server.ts:950 /config; :966 /equipment; :981 /content/discover",
+        "server.ts:1000 /launch-readiness; :1050 /perf-budget; :1086 /beta",
+        "docs/API.md documents these as public read-only surfaces"
+      ],
+      "impact": "Internal mode/limit metadata is world-readable and the paths carry no version prefix, so contract changes are breaking.",
+      "recommendation": "Serve only the minimum public subset and add an explicit contract version or deprecation window.",
+      "note": "",
+      "area": "API"
+    },
+    {
+      "id": "API-P3-002",
+      "severity": "P3",
+      "title": "/config exposes rollout-mode values to unauthenticated clients",
+      "owner": "@owner",
+      "target": "API",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "server.ts:950-965 /config handler",
+        "config.ts rollout switches (SCORE_RECOMPUTATION_MODE, *_MODE, ...)"
+      ],
+      "impact": "Mode disclosure helps an attacker time exploits around shadow vs enforce windows.",
+      "recommendation": "Restrict /config to the fields the client actually needs, or gate it behind the metrics/ops token.",
+      "note": "",
+      "area": "API"
+    }
+  ],
+  "report": "HTTP/socket contract reviewed against docs/API.md: run submission, creator courses, and admin routes are authenticated; health/readiness are intentionally public. Residual: several read-only operational endpoints are public and unversioned, and /config exposes rollout-mode booleans to unauthenticated callers."
+}

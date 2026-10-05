@@ -1,0 +1,28 @@
+{
+  "domain": "18_privacy_compliance_data_governance",
+  "file": "18_privacy_compliance_data_governance.md",
+  "area": "PRIV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:08Z",
+  "findings": [
+    {
+      "id": "PRIV-P3-001",
+      "severity": "P3",
+      "title": "Account-erasure cascade not covered by a SQL negative test",
+      "owner": "@owner",
+      "target": "PRIV",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "supabase/tests/0011_creator_cascade_delete.sql covers creator courses",
+        "0001_initial_schema.sql references auth.users ON DELETE CASCADE for profiles",
+        "No account-deletion test in supabase/tests/*"
+      ],
+      "impact": "A future migration could break dependent-record deletion without any CI failure, leaving personal data behind.",
+      "recommendation": "Add an account-deletion cascade negative test to supabase/tests and run it in the migrations job.",
+      "note": "",
+      "area": "PRIV"
+    }
+  ],
+  "report": "Privacy: a user-facing notice (privacy/page.tsx) mirrors the recorded PIA/subprocessor register; account self-service export/delete exists (PrivacyPanel, tests); VERSION_ANALYTICS_POLICY scopes PII to UUID+opaque tokens. Residual: account-deletion cascade is implemented in SQL but has no dedicated CI negative test (creator cascade does)."
+}

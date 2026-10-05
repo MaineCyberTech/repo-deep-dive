@@ -1,0 +1,28 @@
+{
+  "domain": "18_privacy_compliance_data_governance",
+  "file": "18_privacy_compliance_data_governance.md",
+  "area": "PRIV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:16Z",
+  "findings": [
+    {
+      "id": "PRIV-P3-001",
+      "severity": "P3",
+      "title": "Host inventory (MAC/IP/hostnames) is minimised and retained under a documented policy",
+      "area": "PRIV",
+      "evidence": [
+        "ci/check_decisions.py:33 requires an inventory_privacy owner decision",
+        "docs/runbooks/data-retention.md defines retention",
+        "inventory_metrics/inventory DB store MAC/IP/hostnames; SEC-P2-003 closed the world-readable exposure"
+      ],
+      "impact": "The data is first-party, owner-owned site data; exposure is now access-controlled, but retention is policy-only with no automated enforcement.",
+      "recommendation": "Keep the owner decision current; add a retention enforcement check if the inventory grows beyond the lab.",
+      "status": "partially-fixed",
+      "confidence": "High",
+      "note": "access fixed; retention policy-only",
+      "owner": "@owner",
+      "target": "PRIV"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

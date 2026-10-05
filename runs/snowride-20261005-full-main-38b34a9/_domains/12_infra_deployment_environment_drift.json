@@ -1,0 +1,46 @@
+{
+  "domain": "12_infra_deployment_environment_drift",
+  "file": "12_infra_deployment_environment_drift.md",
+  "area": "INFRA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:07Z",
+  "findings": [
+    {
+      "id": "INFRA-P3-001",
+      "severity": "P3",
+      "title": "Committed host crontab references out-of-repo paths/binaries",
+      "owner": "@owner",
+      "target": "INFRA",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "infra/ops/crontab: PATH=/home/user/.node/bin; /home/user/alerts/watchdog.py",
+        "infra/ops/crontab: /home/user/backups/backup_snowride.sh; acme.sh under /home/user",
+        "Only assurance.sh / db backup scripts live in-tree"
+      ],
+      "impact": "A rebuilt host must recreate untracked scripts; the repo cannot fully restore the schedule it documents.",
+      "recommendation": "Bring the referenced host scripts (watchdog, backup, tunnel) under infra/ops/ or record their hashes as prerequisites.",
+      "note": "",
+      "area": "INFRA"
+    },
+    {
+      "id": "INFRA-P3-002",
+      "severity": "P3",
+      "title": "Committed launch attestation commit is stale versus repository HEAD",
+      "owner": "@owner",
+      "target": "INFRA",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "infra/compose/docker-compose.yml:145 LAUNCH_ATTESTED_COMMIT 9125913e5e...",
+        "Repository HEAD is 38b34a9 (this run)",
+        "config.ts:448-449 expectedCommit = GIT_COMMIT || LAUNCH_EXPECTED_COMMIT || attestedCommit"
+      ],
+      "impact": "Deploying HEAD sets GIT_COMMIT=38b34a9, so the attestation check reports commit_mismatch and the runtime gate stays closed (fail-closed, but no current attested release).",
+      "recommendation": "Re-run the owner attestation at the released HEAD (see FINAL-P1-001).",
+      "note": "",
+      "area": "INFRA"
+    }
+  ],
+  "report": "Infra reviewed: compose, nginx templates, otel config and the committed crontab. The crontab is now version-controlled (OBS-P1-001 fix). Residual: the crontab references host paths and node under /home/user that are not in the repository, and the committed LAUNCH_ATTESTED_COMMIT is a stale revision, so a deploy of HEAD fails the launch gate (intended fail-closed, but the environment identity is not current)."
+}

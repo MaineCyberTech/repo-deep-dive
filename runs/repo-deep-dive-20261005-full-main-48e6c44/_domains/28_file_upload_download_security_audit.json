@@ -1,0 +1,9 @@
+{
+  "domain": "28_file_upload_download_security_audit",
+  "file": "28_file_upload_download_security_audit.md",
+  "area": "FILE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:05Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. There is no user-facing file upload/download path. Evidence: no HTTP multipart handling; the only downloads are CI tool tarballs, sha256-verified in deep-dive-deterministic.yml:80-99."
+}

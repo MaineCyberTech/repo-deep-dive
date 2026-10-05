@@ -1,0 +1,9 @@
+{
+  "domain": "26_admin_console_abuse_case_audit",
+  "file": "26_admin_console_abuse_case_audit.md",
+  "area": "ADMIN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. There is no admin console or privileged UI. Evidence: no frontend/HTML app in tree; the only privileged surface is the CLI and the token-gated lab API."
+}

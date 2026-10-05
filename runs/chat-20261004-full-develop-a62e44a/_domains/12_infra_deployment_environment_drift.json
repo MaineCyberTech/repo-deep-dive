@@ -1,0 +1,41 @@
+{
+  "domain": "12_infra_deployment_environment_drift",
+  "file": "12_infra_deployment_environment_drift.md",
+  "area": "INFRA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:15Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Single-droplet infrastructure has no environment isolation",
+      "status": "open",
+      "owner": "@infra",
+      "target": "INFRA",
+      "note": "One droplet serves dev and (through the same module) prod flows.",
+      "evidence": [
+        "infra/terraform/main.tf one droplet",
+        "infra/docker/docker-compose.dev.yml vs .prod.yml"
+      ],
+      "impact": "Dev changes can affect prod; no blast-radius separation.",
+      "recommendation": "Separate state/workspaces and hosts per environment.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "Terraform state/backend and provider versions exist but drift checks are absent",
+      "status": "open",
+      "owner": "@infra",
+      "target": "INFRA",
+      "note": "No plan-on-PR drift check.",
+      "evidence": [
+        "infra/terraform/versions.tf",
+        ".terraform.lock.hcl",
+        "no terraform plan job on PR"
+      ],
+      "impact": "Out-of-band drift undetected.",
+      "recommendation": "Add `terraform plan` on PR and a scheduled drift detection.",
+      "area": "INFRA"
+    }
+  ],
+  "report": "Terraform + compose review; the single\ndroplet is the only compute. dev/prod compose and env examples differ, and the\ndev infra workflow can destroy resources."
+}

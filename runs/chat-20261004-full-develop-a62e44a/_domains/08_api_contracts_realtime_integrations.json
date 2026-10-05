@@ -1,0 +1,67 @@
+{
+  "domain": "08_api_contracts_realtime_integrations",
+  "file": "08_api_contracts_realtime_integrations.md",
+  "area": "API",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:13Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "`/metrics` readable by any authenticated user (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "API",
+      "note": "Now guarded by requireMetricsAccess + METRICS_TOKEN.",
+      "evidence": [
+        "apps/api/src/app.ts:103 requireMetricsAccess"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "API"
+    },
+    {
+      "severity": "P2",
+      "title": "User input interpolated into PostgREST `.or(...)` filters (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "API",
+      "note": "lib/postgrest-filter.ts escapes values.",
+      "evidence": [
+        "apps/api/src/lib/postgrest-filter.ts"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "API"
+    },
+    {
+      "severity": "P2",
+      "title": "`PATCH /v1/auth/status` accepted unvalidated customStatus (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "API",
+      "note": "validators/auth.ts validates the field.",
+      "evidence": [
+        "apps/api/src/validators/auth.ts:12-25"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "API"
+    },
+    {
+      "severity": "P2",
+      "title": "Inconsistent error response shapes (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "API",
+      "note": "Error-envelope contract test passes.",
+      "evidence": [
+        "apps/api/src/middleware/error-handler.ts",
+        "error-envelope test"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "API"
+    }
+  ],
+  "report": "OpenAPI coverage, error envelopes,\nPostgREST filter escaping and validator coverage re-checked; all historical\nAPI findings are fixed at a62e44a."
+}

@@ -1,0 +1,28 @@
+{
+  "domain": "02_architecture_runtime_topology",
+  "file": "02_architecture_runtime_topology.md",
+  "area": "ARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:04Z",
+  "findings": [
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "title": "Authoritative room/lobby state is process-local and lost on restart",
+      "owner": "@owner",
+      "target": "ARCH",
+      "status": "partially-fixed",
+      "confidence": "Medium",
+      "evidence": [
+        "server.ts:751-765 restoreLiveOpsOverrides() re-applies only the durable publish override",
+        "replayStore/room sims are in-process; no external session store",
+        "compose: web depends_on realtime service_healthy"
+      ],
+      "impact": "A restart drops active rooms and in-flight sessions; the operator publish freeze survives restart (mitigated), but gameplay disruption is expected during a redeploy.",
+      "recommendation": "Document the maintenance-window expectation in the deploy runbook, and drain rooms before recreate (stop_grace_period is 30s).",
+      "note": "Prior ARCH-P2-003; the publish-override half is now durable.",
+      "area": "ARCH"
+    }
+  ],
+  "report": "Topology: Next.js web (3000) + authoritative realtime (3001) + OTel collector + nginx, single certified host, internal bridge network. Compose now sets cpus/mem_limit/pids_limit on every app-facing service, read_only roots, no-new-privileges, cap_drop ALL, and json-file log rotation (ARCH-P2-001 fixed). Readiness is dependency-aware and cached (ARCH-P2-002 fixed, server.ts:719-743). Residual: authoritative lobby/LiveOps state is process-local; the durable LiveOps publish override is re-applied at boot (server.ts:751-765), which mitigates the operator freeze case but rooms/replay caches are still lost on restart."
+}

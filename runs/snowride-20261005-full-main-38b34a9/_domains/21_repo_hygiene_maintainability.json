@@ -1,0 +1,46 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "area": "HYGIENE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:09Z",
+  "findings": [
+    {
+      "id": "HYGIENE-P2-001",
+      "severity": "P2",
+      "title": "Only apps/web is linted; four workspaces have no lint script",
+      "owner": "@owner",
+      "target": "HYGIENE",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "apps/web/package.json has lint; apps/realtime, packages/contracts, packages/game-core, packages/config do not",
+        "root package.json lint: npm run lint --workspaces --if-present",
+        "915 tests pass but realtime/game-core have no lint gate"
+      ],
+      "impact": "Lint regressions in the authoritative server and game core are not caught; the root `lint` claim is weaker than it appears.",
+      "recommendation": "Add eslint config + lint scripts to the remaining workspaces and make `npm run lint` cover all of them.",
+      "note": "",
+      "area": "HYGIENE"
+    },
+    {
+      "id": "HYGIENE-P2-002",
+      "severity": "P2",
+      "title": "Large generated evidence artifacts inflate the repository",
+      "owner": "@owner",
+      "target": "HYGIENE",
+      "status": "owner-accepted",
+      "confidence": "Medium",
+      "evidence": [
+        "evidence/production-acceptance/repomix-r71-repair/repomix-output.*.xml (2-4 MB each)",
+        "evidence/phase2/.../osv-realtime-image*.json (~2 MB each)",
+        "48.5 MB tracked; 816 evidence files"
+      ],
+      "impact": "Clone cost and diff noise grow with every audit/evidence cycle.",
+      "recommendation": "Archive large generated exports outside git (LFS/object store) and keep only manifests/hashes in-tree.",
+      "note": "Evidence is append-only by doctrine; recorded as owner-accepted.",
+      "area": "HYGIENE"
+    }
+  ],
+  "report": "Hygiene: monorepo with workspaces, prettier, eslint, .gitattributes LF policy, .gitleaks.toml, LICENSE and CONTRIBUTING. Residual: only apps/web has a lint script; the other four workspaces are unlinted. Multi-MB generated evidence exports remain tracked (see INV-P2-001)."
+}

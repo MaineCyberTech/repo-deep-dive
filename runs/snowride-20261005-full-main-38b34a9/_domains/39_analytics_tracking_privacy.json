@@ -1,0 +1,28 @@
+{
+  "domain": "39_analytics_tracking_privacy",
+  "file": "39_analytics_tracking_privacy.md",
+  "area": "AN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:08Z",
+  "findings": [
+    {
+      "id": "AN-P3-001",
+      "severity": "P3",
+      "title": "Anonymous performance sampling has no runtime consent/retention gate",
+      "owner": "@owner",
+      "target": "AN",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "apps/web/app/privacy/page.tsx:52-57 anonymous perf samples described",
+        "NEXT_PUBLIC_PERF_SAMPLE_RATE is a build arg (apps/web/Dockerfile:32-34)",
+        "docs/product/VERSION_ANALYTICS_POLICY.md declares PII scope/retention"
+      ],
+      "impact": "Sampling is disclosed but not enforced per-region or per-consent, and retention is policy-only.",
+      "recommendation": "Enforce sampling/retention in code (or document the legal basis) and surface the current rate in the privacy notice.",
+      "note": "",
+      "area": "AN"
+    }
+  ],
+  "report": "Analytics privacy: the policy declares an event taxonomy and PII scope; runtime telemetry is OTel traces plus anonymous performance samples with a disclosed sampling rate. No third-party tracker (GA/PostHog) is present. Residual: the anonymous perf-sample consent/retention basis is documented in policy but not enforced by a runtime gate."
+}

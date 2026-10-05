@@ -1,0 +1,38 @@
+{
+  "domain": "22_final_risk_register_roadmap",
+  "file": "22_final_risk_register_roadmap.md",
+  "area": "FINAL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:20Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Release gate must remain conditional pending P2 remediation",
+      "status": "open",
+      "owner": "@eng-lead",
+      "target": "FINAL",
+      "note": "Derivative gate statement; see RELEASE_GATE.md.",
+      "evidence": [
+        "computed gate from this run's severity counts"
+      ],
+      "impact": "Unconditional GO is unjustified.",
+      "recommendation": "Close the webhook-encryption/SSRF and RLS-in-CI items before an unconditional GO.",
+      "area": "FINAL"
+    },
+    {
+      "severity": "P2",
+      "title": "Dependency risk-acceptances expire 2027-01-04",
+      "status": "open",
+      "owner": "@security",
+      "target": "FINAL",
+      "note": "Derivative of SC finding.",
+      "evidence": [
+        ".trivyignore:14"
+      ],
+      "impact": "CI hard-fail after expiry.",
+      "recommendation": "Track the expiry and remediate.",
+      "area": "FINAL"
+    }
+  ],
+  "report": "Synthesised the run. No P0/P1 remains open at\na62e44a; the residual set is P2/P3 structural/operational. The release gate is\nconditional on the P2 webhook-encryption/SSRF and RLS-test-in-CI items."
+}

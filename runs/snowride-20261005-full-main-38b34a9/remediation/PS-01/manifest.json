@@ -1,0 +1,20 @@
+﻿{
+    "run":  "snowride-20261005-full-main-38b34a9",
+    "patchSet":  "PS-01",
+    "finding":  "FINAL-P1-001",
+    "repo":  "snowride",
+    "base":  "75aba97d2fc6b3ffcddd143c14d7d6fb83d5716e",
+    "branch":  "remediation/ps-01-snowride-20261005-full-main-38b34a9",
+    "commit":  "ef15f414f1d4213d236369e4a247bf67430fc58d",
+    "pr":  "(draft PR, see verification_log.md)",
+    "artifacts":  [
+                      {
+                          "path":  "diff.patch",
+                          "sha256":  "AD524FFE4A0A0C2B7FC07F933CDE653754B2C6D5ABEC708EFF1B985EA38F4CFD"
+                      },
+                      {
+                          "path":  "verify.log",
+                          "sha256":  "3FC5A5BFBBABF24CE5ECFB329BE3255B0BD7DF81E3959CD9E33E436BD6711CA4"
+                      }
+                  ]
+}

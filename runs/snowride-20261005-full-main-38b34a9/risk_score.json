@@ -1,0 +1,53 @@
+{
+  "run": "snowride-20261005-full-main-38b34a9",
+  "generated": "2026-10-05T05:37:29.223377+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 42,
+    "bySeverity": {
+      "P0": 0,
+      "P1": 1,
+      "P2": 7,
+      "P3": 34
+    },
+    "byArea": {
+      "ADMIN": 1,
+      "AI": 1,
+      "AN": 1,
+      "API": 2,
+      "ARCH": 1,
+      "BP": 2,
+      "CHAIN": 1,
+      "CI": 1,
+      "CTR": 1,
+      "DATA": 1,
+      "DET": 2,
+      "DOC": 1,
+      "DR": 1,
+      "EVOL": 1,
+      "FILE": 1,
+      "FINAL": 2,
+      "HYGIENE": 2,
+      "INFRA": 2,
+      "INV": 1,
+      "IR": 1,
+      "MOB": 1,
+      "NOTIF": 1,
+      "OBS": 1,
+      "PERF": 1,
+      "PRIV": 1,
+      "REL": 1,
+      "RES": 1,
+      "RLS": 1,
+      "SBOM": 1,
+      "SC": 2,
+      "SEC": 1,
+      "SECRET": 2,
+      "TEST": 1,
+      "UX": 1
+    }
+  },
+  "score": 69,
+  "advisoryDecision": "GO WITH CONDITIONS",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}

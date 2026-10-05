@@ -1,0 +1,25 @@
+{
+  "domain": "35_sbom_license_policy",
+  "file": "35_sbom_license_policy.md",
+  "area": "SBOM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:00Z",
+  "findings": [
+    {
+      "area": "SBOM",
+      "severity": "P2",
+      "title": "Release/SBOM artifacts are integrity-checked but unsigned; image/SBOM license gate not enforced",
+      "evidence": [
+        "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md (SHA-256 only, SLSA ~0-1)",
+        "docs/security/LICENSE_GATE.md (image/SBOM allow-deny follow-up)"
+      ],
+      "status": "open",
+      "confidence": "high",
+      "recommendation": "Sign sbom/SBOM_MANIFEST.sha256 (ed25519/GPG or GitHub attestations) and enforce a license allow/deny gate.",
+      "detail": "Sign sbom/SBOM_MANIFEST.sha256 (ed25519/GPG or GitHub attestations) and enforce a license allow/deny gate.",
+      "owner": "@owner",
+      "target": "SBOM"
+    }
+  ],
+  "report": ""
+}

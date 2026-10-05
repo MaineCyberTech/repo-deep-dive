@@ -1,0 +1,40 @@
+{
+  "domain": "30_notification_email_push_delivery_audit",
+  "file": "30_notification_email_push_delivery_audit.md",
+  "area": "NOTIF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:22Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Notifications are delivered only via Web Push; no durable multi-channel delivery/retry",
+      "status": "open",
+      "owner": "@api",
+      "target": "NOTIF",
+      "note": "No email/SMS provider integration; push failures are not retried durably.",
+      "evidence": [
+        "apps/api/src/modules/notifications/service.ts",
+        "apps/api/src/modules/notifications/push-subscription-service.ts",
+        "apps/web/lib/pwa/push-client.ts"
+      ],
+      "impact": "Missed notifications when a push subscription is stale; no audit of delivery.",
+      "recommendation": "Add a delivery log and retry/fallback channel; prune expired subscriptions.",
+      "area": "NOTIF"
+    },
+    {
+      "severity": "P3",
+      "title": "Push subscription lifecycle (revocation/expiry) is not monitored",
+      "status": "open",
+      "owner": "@api",
+      "target": "NOTIF",
+      "note": "No metric for stale/410 push endpoints.",
+      "evidence": [
+        "push-subscription-service.ts"
+      ],
+      "impact": "Silent delivery loss.",
+      "recommendation": "Track push delivery outcomes and prune 404/410 endpoints.",
+      "area": "NOTIF"
+    }
+  ],
+  "report": "Reviewed `notifications` service,\npush-subscription service and web push client. Listing is user-scoped; push\nsubscriptions are stored per user. No transactional email provider is wired."
+}

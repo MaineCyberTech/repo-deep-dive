@@ -1,0 +1,24 @@
+{
+  "domain": "01_repository_inventory",
+  "file": "01_repository_inventory.md",
+  "area": "INV",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Inventory tool does not model this pack's own artifact families",
+      "evidence": [
+        "tools/repo_inventory.py reports stacks/routes/migrations/workflows/containers",
+        "runs/, prompts/, lenses/, profiles/, schemas/ are not first-class inventory sections"
+      ],
+      "impact": "An inventory of an audit pack omits its primary content (domains, runs, lenses), so cross-run coverage tracking must be done by hand.",
+      "recommendation": "Add prompts/lenses/runs sections to `repo_inventory.py` output.",
+      "area": "INV",
+      "status": "open",
+      "owner": "@owner",
+      "target": "INV"
+    }
+  ],
+  "report": "Read-only inventory of the pack at `48e6c44`: 1,265 tracked files, 46 counted prompts (base 42 + falcon 4), 20 archived runs, no application stack (no package.json / Dockerfile / migrations). `tools/repo_inventory.py .` was exercised by `tools/self_test.sh` (self-scan OK)."
+}

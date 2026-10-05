@@ -1,0 +1,115 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:12Z",
+  "findings": [
+    {
+      "severity": "P0",
+      "title": "Production deploy created `users_select USING (true)` exposing all users (fixed)",
+      "status": "verified-fixed",
+      "owner": "@security",
+      "target": "SEC",
+      "note": "SEC-P0-001 closed; current policy is workspace-co-member scoped.",
+      "evidence": [
+        "supabase/policies/01_users.sql: users_select = own OR shared-workspace",
+        "supabase/migrations/20260724000006_fix_database_p1_findings.sql re-creates the scoped policy"
+      ],
+      "impact": "Previously all users' PII readable.",
+      "recommendation": "n/a",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Seed workflow could re-open global user RLS / seed shared-password accounts (fixed)",
+      "status": "verified-fixed",
+      "owner": "@security",
+      "target": "SEC",
+      "note": "PR #88 plus the seed workflow now states production seeding is intentionally disabled.",
+      "evidence": [
+        ".github/workflows/seed-database.yml: target environment description",
+        "seed uses %@seed.test identities only"
+      ],
+      "impact": "Previously production RLS/data could be mutated out-of-band.",
+      "recommendation": "n/a",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Tracked credential file `test-signin.json` (fixed)",
+      "status": "verified-fixed",
+      "owner": "@security",
+      "target": "SEC",
+      "note": "Only test-signin.example.json is tracked at a62e44a.",
+      "evidence": [
+        "git ls-files | grep test-signin => test-signin.example.json only"
+      ],
+      "impact": "Secret leak.",
+      "recommendation": "n/a",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Admin user directory / audit logs / compliance exports were not tenant-scoped (fixed)",
+      "status": "verified-fixed",
+      "owner": "@security",
+      "target": "SEC",
+      "note": "SEC-P1-003..006 closed; handlers now derive `getAdminWorkspaceIds(req)`.",
+      "evidence": [
+        "apps/api/src/modules/admin/routes.ts: getAdminWorkspaceIds scoping",
+        "apps/api/src/modules/auth/service.ts: RLS-aware directory client"
+      ],
+      "impact": "Previously cross-tenant PII exposure.",
+      "recommendation": "n/a",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "SSH was open to the internet by default (fixed)",
+      "status": "verified-fixed",
+      "owner": "@infra",
+      "target": "SEC",
+      "note": "`ssh_allowed_ips` is now required and 0.0.0.0/0 is rejected by validation.",
+      "evidence": [
+        "infra/terraform/variables.tf:63-72 validation",
+        "infra/terraform/main.tf:39-40 firewall source_addresses"
+      ],
+      "impact": "Previously public SSH/admin surface.",
+      "recommendation": "n/a",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "`WEBHOOK_ENCRYPTION_KEY` is not delivered by the production compose stack",
+      "status": "open",
+      "owner": "@security",
+      "target": "SEC",
+      "note": "Reaffirms pilot SEC-P2-003 at a62e44a; key is optional in env.ts.",
+      "evidence": [
+        "grep WEBHOOK_ENCRYPTION_KEY infra/docker/*.yml => no match",
+        "apps/api/src/config/env.ts:25 optional with min(32)",
+        "apps/api/src/modules/webhooks/service.ts:20-26 throws if unset"
+      ],
+      "impact": "With the key unset, webhook-secret encryption fails at runtime; with it set only in one service, API/worker diverge.",
+      "recommendation": "Add WEBHOOK_ENCRYPTION_KEY to infra/docker/.env.prod.example and the prod compose for api and worker.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook SSRF validation does not constrain redirects or DNS rebinding",
+      "status": "open",
+      "owner": "@security",
+      "target": "SEC",
+      "note": "Reaffirms pilot SEC-P2-002; validateWebhookUrl resolves DNS then delivery fetches later.",
+      "evidence": [
+        "packages/config/webhook-utils.ts: validateWebhookUrl (resolve4 + private-IP check only)",
+        "no redirect:'manual'/max-redirect or re-resolution guard on the delivery fetch"
+      ],
+      "impact": "A public host can 3xx-redirect (or rebind) to an internal address after validation.",
+      "recommendation": "Set redirect:'manual' (or re-validate every hop) and re-resolve/pin the IP used for the request.",
+      "area": "SEC"
+    }
+  ],
+  "report": "Security/authz/tenancy pass. Verified the\ndeploy/seed RLS weakening is gone, the seed workflow's production target is\ndisabled, admin user directory and audit-log/compliance endpoints are\nworkspace-scoped, SSH is restricted by CIDR, and webhook secrets are\nencrypted at rest. New residual: `WEBHOOK_ENCRYPTION_KEY` is not delivered by\nthe production compose stack, and webhook SSRF still ignores redirects."
+}

@@ -29,9 +29,13 @@ import os
 import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from collections import Counter
 from datetime import datetime, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lib_findings  # noqa: E402
 
 ALLOWED_STATUS = {"", "open", "partially-fixed", "verified-fixed", "still-open", "regressed", "owner-accepted"}
 
@@ -195,7 +199,7 @@ def build_files(repo, branch, sha, run, items, source_dir, report_name, report_t
         repo, branch, short,
         ", ".join("%s x%s" % (s, sev.get(s, 0)) for s in ("P0", "P1", "P2", "P3")))
 
-    gate = "GO" if sev.get("P0", 0) == 0 and sev.get("P1", 0) == 0 else "GO WITH CONDITIONS"
+    gate = lib_findings.compute_gate({"bySeverity": dict(sev)})
     release_gate = ("# Release gate - %s\n\nVerdict: **%s**\n\n"
                     "P0 x%d, P1 x%d. See the %s report and registers.\n" % (
                         repo, gate, sev.get("P0", 0), sev.get("P1", 0), report_name))
@@ -364,11 +368,12 @@ def main():
             if os.path.isfile(idx) and ("%s-%s" % (a.repo, run)) in open(idx, encoding="utf-8").read():
                 print("[publish] runs/INDEX.md already lists %s-%s (skipping)" % (a.repo, run))
             elif os.path.isfile(idx):
+                idx_findings = json.loads(files["findings.json"])["findings"]
+                idx_sev = dict(Counter(f["severity"] for f in idx_findings))
                 row = "| [%s-%s](%s-%s/) | %s | %s @ `%s` | focused (security/supply-chain/CI) | %s | %s | published by tools/publish_audit.py |\n" % (
                     a.repo, run, a.repo, run, now()[:10], a.repo, short,
-                    " · ".join("%s ×%s" % (s, Counter(f["severity"] for f in json.loads(files["findings.json"])["findings"]).get(s, 0))
-                               for s in ("P0", "P1", "P2", "P3")),
-                    "GO" if "P0" not in files["findings.json"] else "REVIEW")
+                    " · ".join("%s ×%s" % (s, idx_sev.get(s, 0)) for s in ("P0", "P1", "P2", "P3")),
+                    lib_findings.compute_gate({"bySeverity": idx_sev}))
                 with open(idx, "a", encoding="utf-8", newline="\n") as fh:
                     fh.write(row)
                 print("[publish] appended runs/INDEX.md row")

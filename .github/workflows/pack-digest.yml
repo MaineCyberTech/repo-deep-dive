@@ -46,7 +46,9 @@ jobs:
 
       - name: Commit and push if the digest changed
         env:
-          # Fine-grained PAT fallback; unset -> github.token (contents: write).
+          # Prefer the repo-scoped write deploy key (registered as a branch-ruleset
+          # bypass actor); fall back to a fine-grained PAT, then github.token.
+          DEPLOY_KEY: ${{ secrets.PACK_DIGEST_KEY }}
           GH_TOKEN: ${{ secrets.PACK_DIGEST_TOKEN || github.token }}
         run: |
           set -euo pipefail
@@ -61,9 +63,19 @@ jobs:
           git add PACK_DIGEST.txt
           git commit -m "chore: regenerate PACK_DIGEST"
 
-          # Authenticate the push via a header, not the remote URL, so the token
-          # cannot leak through git diagnostics or shell error output.
-          AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
-          git -c credential.helper= \
-              -c http.extraheader="AUTHORIZATION: ${AUTH}" \
-              push origin "HEAD:refs/heads/main"
+          if [ -n "${DEPLOY_KEY:-}" ]; then
+            # Repo-scoped write deploy key; a ruleset bypass actor, so no user PAT.
+            install -m700 -d ~/.ssh
+            printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_pack_digest
+            chmod 600 ~/.ssh/id_pack_digest
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null || true
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/id_pack_digest -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+              git push "git@github.com:${{ github.repository }}.git" "HEAD:refs/heads/main"
+          else
+            # Fallback: authenticate the push via a header, not the remote URL, so
+            # the token cannot leak through git diagnostics or shell error output.
+            AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+            git -c credential.helper= \
+                -c http.extraheader="AUTHORIZATION: ${AUTH}" \
+                push origin "HEAD:refs/heads/main"
+          fi

@@ -1,0 +1,26 @@
+{
+  "domain": "14_observability_monitoring_incident_readiness",
+  "file": "14_observability_monitoring_incident_readiness.md",
+  "area": "OBS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:57Z",
+  "findings": [
+    {
+      "area": "OBS",
+      "severity": "P0",
+      "title": "Prometheus scrapes only 3 targets; nearly all `falcon_*` signals hinge on the node-exporter textfile collector",
+      "evidence": [
+        "config/prometheus/prometheus.yml (3 scrape targets)",
+        "automation/validation/export_monitor_metrics.sh textfile collector",
+        "REAUDIT_REPORT_202604: OBS-P0-001 still-open"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Scrape OpenSearch/ntfy/relay directly and/or alert on the collector freshness so signal loss is visible.",
+      "detail": "Scrape OpenSearch/ntfy/relay directly and/or alert on the collector freshness so signal loss is visible.",
+      "owner": "@owner",
+      "target": "OBS"
+    }
+  ],
+  "report": ""
+}

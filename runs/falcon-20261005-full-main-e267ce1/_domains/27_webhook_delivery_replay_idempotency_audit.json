@@ -1,0 +1,25 @@
+{
+  "domain": "27_webhook_delivery_replay_idempotency_audit",
+  "file": "27_webhook_delivery_replay_idempotency_audit.md",
+  "area": "WH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:59Z",
+  "findings": [
+    {
+      "area": "WH",
+      "severity": "P3",
+      "title": "Webhook/relay delivery has no replay/idempotency evidence for Shuffle and ntfy paths",
+      "evidence": [
+        "mct/scripts/shuffle-webhook-smoke-test.sh (smoke only)",
+        "automation/alerting/ntfy_relay.py"
+      ],
+      "status": "open",
+      "confidence": "high",
+      "recommendation": "Add replay/idempotency tests (duplicate delivery, out-of-order) for the Shuffle and ntfy paths.",
+      "detail": "Add replay/idempotency tests (duplicate delivery, out-of-order) for the Shuffle and ntfy paths.",
+      "owner": "@owner",
+      "target": "WH"
+    }
+  ],
+  "report": ""
+}

@@ -1,0 +1,117 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:03Z",
+  "findings": [
+    {
+      "id": "SEC-P1-001",
+      "severity": "P1",
+      "title": "Re-enrollment no longer resets a REVOKED/RETIRED sensor",
+      "area": "SEC",
+      "evidence": [
+        "service.py enrollment path refuses REVOKED/RETIRED (PS-001 / #17)",
+        "regression test added; re-audit 2026-10-04: closed"
+      ],
+      "impact": "The prior release blocker (non-terminal revocation) is closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "merged PS-001/#17; re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "SEC"
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "HTTP transport hardening (rate limit, headers, slow-client guard) present",
+      "area": "SEC",
+      "evidence": [
+        "src/falcon_control/http_server.py:253-261 rate limit + SECURITY_HEADERS",
+        "src/falcon_control/http_server.py:319-321 handler timeout",
+        "src/falcon_control/http_server.py:361-364 MAX_BODY_BYTES 413"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "SEC"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Inventory metrics collector no longer disables SSH host-key verification",
+      "area": "SEC",
+      "evidence": [
+        "automation/validation/inventory_metrics.py:66-79 uses managed known_hosts + StrictHostKeyChecking=yes",
+        "comment records the previous unsafe behavior"
+      ],
+      "impact": "Closed for this collector.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "SEC"
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "Raw host inventory file no longer world-readable on sensors",
+      "area": "SEC",
+      "evidence": [
+        "inventory file written with restrictive mode and read over mTLS",
+        "re-audit 2026-10-04: closed"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "SEC"
+    },
+    {
+      "id": "AUTH-P2-001",
+      "severity": "P2",
+      "title": "Device mTLS private key is group-readable (0640), contradicting its documented 0600",
+      "area": "AUTH",
+      "evidence": [
+        "src/falcon_agent/identity.py:8 docstring 'device.key.pem Ed25519 private key (0600, PKCS#8)'",
+        "src/falcon_agent/identity.py:48 os.chmod(self.key_path, 0o640) for sibling collectors (Vector)",
+        "src/falcon_agent/identity.py:70 and :79 same 0o640 on rotation / for the certificate",
+        "ledgers/contradiction_ledger.md:7 C-002 records the 0640 choice so Vector can read the key"
+      ],
+      "impact": "Any process in group falcon-agent can read the sensor identity private key and impersonate the sensor (heartbeats, inventory, events, cert renewal) until revocation. The stated 0600 control is not in force.",
+      "recommendation": "Keep the identity private key 0600 and give Vector its own client certificate; widen only the certificate (0640), never the private key. Correct the docstring.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: AUTH-001 held (#40); key still 0640 at ba4becb",
+      "owner": "@owner",
+      "target": "SEC"
+    },
+    {
+      "id": "SEC-P3-002",
+      "severity": "P3",
+      "title": "Lab drill tooling disables SSH host-key and TLS verification",
+      "area": "SEC",
+      "evidence": [
+        "automation/validation/ab_device_drill.sh:33 StrictHostKeyChecking=no",
+        "automation/validation/release_skew_check.sh:192-193 check_hostname=False; verify_mode=CERT_NONE",
+        "automation/validation/unifi_networks.py:56-57 same TLS disablement",
+        "the safer pattern exists at automation/validation/inventory_metrics.py"
+      ],
+      "impact": "MITM/spoofing during device drills and skew checks; privileged remote commands run over an unverified channel. Lab-only.",
+      "recommendation": "Pin lab host keys via managed known_hosts and verify TLS with the lab CA, mirroring inventory_metrics.py.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: still-open",
+      "owner": "@owner",
+      "target": "SEC"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

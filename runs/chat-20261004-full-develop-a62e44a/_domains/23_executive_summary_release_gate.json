@@ -1,0 +1,39 @@
+{
+  "domain": "23_executive_summary_release_gate",
+  "file": "23_executive_summary_release_gate.md",
+  "area": "EXEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:20Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Release gate must remain conditional pending P1/P2 remediation",
+      "status": "open",
+      "owner": "@eng-lead",
+      "target": "EXEC",
+      "note": "See RELEASE_GATE.md and FINAL findings.",
+      "evidence": [
+        "runs/chat-20261004-full-develop-a62e44a/audit_manifest.json releaseGate"
+      ],
+      "impact": "n/a",
+      "recommendation": "Re-run owning domains after remediation.",
+      "area": "EXEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Prior pilot register self-consistency (stale-base false positive) corrected",
+      "status": "verified-fixed",
+      "owner": "@audit-owner",
+      "target": "EXEC",
+      "note": "The pilot's verified-fixed SHAs are ancestors of develop; false positive corrected.",
+      "evidence": [
+        "REAUDIT_REPORT_20261004.md:56-58",
+        "develop advanced to a62e44a"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "EXEC"
+    }
+  ],
+  "report": "Produced the executive summary and gate for\nthis run, reconciling with the pilot and the post-merge re-audit."
+}

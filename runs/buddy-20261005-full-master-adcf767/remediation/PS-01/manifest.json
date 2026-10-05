@@ -1,0 +1,20 @@
+{
+    "run":  "buddy-20261005-full-master-adcf767",
+    "patchSet":  "PS-01",
+    "finding":  "CI-P1-001",
+    "repo":  "buddy",
+    "base":  "4b56fe1a37fbd19adf1906347ff0ea662a4cc35f",
+    "branch":  "remediation/buddy-CI-P1-001",
+    "commit":  "343f56977d9f1db3eb9374a112ae8f57a02cfe7b",
+    "pr":  "https://github.com/MaineCyberTech/buddy/pull/35",
+    "artifacts":  [
+                      {
+                          "path":  "diff.patch",
+                          "sha256":  "1719981042BD68F09F2F63426FA98CBE10055901FBF5C7971F7C7C217D1BB346"
+                      },
+                      {
+                          "path":  "verify.log",
+                          "sha256":  "04D6C22722D89C67C2545922FC97E8A910F8EACE7ADBA70D8FE8C6086B2FE414"
+                      }
+                  ]
+}

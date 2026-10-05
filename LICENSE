@@ -1,18 +1,16 @@
-LICENSE - PENDING
+Copyright (c) 2026 Maine Cyber Technologies, LLC. All rights reserved.
 
-Copyright (c) 2026 Maine CyberTech. All rights reserved.
+PROPRIETARY AND CONFIDENTIAL.
 
-This repository does not yet carry a chosen license. Absent an explicit
-license grant, all rights are reserved by default: no permission is granted to
-use, copy, modify, or distribute this software or its contents.
+This source code and all associated documentation, files, and materials
+(collectively, the "Software") are the proprietary and confidential property
+of Maine Cyber Technologies, LLC.
 
-This file records the current, unlicensed status so that the pack is not
-mistaken for one that grants reuse rights. It is intentionally not a final
-license. The copyright holder must select and publish the project license
-(for example MIT or Apache-2.0 for an open-source release, or a proprietary /
-internal-only license) and replace this file.
+No part of the Software may be copied, reproduced, modified, translated,
+distributed, sublicensed, published, transmitted, or used, in whole or in part,
+in any form or by any means, without the express prior written permission of
+Maine Cyber Technologies, LLC.
 
-The license choice is a product/legal decision and is tracked as an open
-question under finding SUPPLY-P3-004 in audit run
-20261003-0018-main-7bac320. See docs/SUPPLY_CHAIN.md for the license and SBOM
-policy that applies in the meantime.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.

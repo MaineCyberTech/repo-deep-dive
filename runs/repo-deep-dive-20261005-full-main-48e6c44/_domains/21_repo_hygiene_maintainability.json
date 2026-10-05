@@ -1,0 +1,41 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "area": "HYGIENE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:09Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": ".gitignore is corrupted with intra-word spaces and an invalid inline comment",
+      "evidence": [
+        ".gitignore:5 '*.s wp' (intended *.swp)",
+        ".gitignore:9,10,14,17 'e nvironment', 'intention ally', 'too ls', 'Self-t est', 'out put', 'defau lt'",
+        ".gitignore:18 'deterministic-out/ # Lab audit ...' is parsed as a literal pattern, so deterministic-out/ is not ignored",
+        ".gitignore:20 'lab-audit- *.conf' does not match lab-audit-<name>.conf"
+      ],
+      "impact": "Editor scratch files, scan output and WireGuard client configs are not ignored as intended; also lowers trust in the tree.",
+      "recommendation": "Restore the intended patterns and add a `git check-ignore` assertion to CI.",
+      "area": "HYGIENE",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Two tracked shell scripts lack the executable bit",
+      "evidence": [
+        "AGENTS.md:42 documents 100755 for *.sh",
+        "git ls-files -s '*.sh' shows 100644 for tools/lab-vpn/deploy-lab-api.sh and tools/lab-vpn/lab-api-install.sh",
+        "det DET-P2-002 in this run"
+      ],
+      "impact": "`./script.sh` fails on Linux; Windows transfers silently drop the bit.",
+      "recommendation": "`git update-index --chmod=+x` both files and add a hygiene check.",
+      "area": "HYGIENE",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    }
+  ],
+  "report": "Reviewed .gitignore, .gitattributes, exec bits, and file hygiene. .gitattributes LF policy is correct; no CRLF in the index."
+}

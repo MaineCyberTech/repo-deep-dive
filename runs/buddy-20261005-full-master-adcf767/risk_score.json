@@ -1,0 +1,43 @@
+{
+  "run": "buddy-20261005-full-master-adcf767",
+  "generated": "2026-10-05T05:51:45.613946+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 41,
+    "bySeverity": {
+      "P0": 0,
+      "P1": 4,
+      "P2": 13,
+      "P3": 24
+    },
+    "byArea": {
+      "ARCH": 3,
+      "BP": 2,
+      "CHAIN": 1,
+      "CI": 3,
+      "DATA": 2,
+      "DET": 1,
+      "DOC": 3,
+      "DR": 1,
+      "EVOL": 1,
+      "FILE": 1,
+      "HYGIENE": 2,
+      "INFRA": 1,
+      "IR": 1,
+      "MOB": 2,
+      "OBS": 1,
+      "PERF": 1,
+      "PRIV": 1,
+      "RES": 2,
+      "SBOM": 1,
+      "SC": 4,
+      "SEC": 2,
+      "TEST": 1,
+      "USE": 2,
+      "UX": 2
+    }
+  },
+  "score": 21,
+  "advisoryDecision": "GO WITH CONDITIONS",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}

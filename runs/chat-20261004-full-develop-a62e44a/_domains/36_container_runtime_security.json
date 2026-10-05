@@ -1,0 +1,38 @@
+{
+  "domain": "36_container_runtime_security",
+  "file": "36_container_runtime_security.md",
+  "area": "CTR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:24Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Containers lack runtime hardening beyond non-root and digest pinning",
+      "status": "open",
+      "owner": "@supply",
+      "target": "CTR",
+      "note": "Third-party images are digest-pinned now; hardening flags still absent.",
+      "evidence": [
+        "infra/docker/docker-compose.prod.yml: no security_opt/cap_drop/read_only/no-new-privileges"
+      ],
+      "impact": "Larger container-escape blast radius.",
+      "recommendation": "Add cap_drop:[ALL], no-new-privileges, read_only + tmpfs, and a seccomp profile.",
+      "area": "CTR"
+    },
+    {
+      "severity": "P3",
+      "title": "First-party images are referenced by mutable tag (`:latest`/`:dev`)",
+      "status": "open",
+      "owner": "@supply",
+      "target": "CTR",
+      "note": "Expected for locally-built images, but deploys are not digest-pinned to the built artifact.",
+      "evidence": [
+        "infra/docker/docker-compose.prod.yml:29,49,116 ${*_IMAGE:-...:latest}"
+      ],
+      "impact": "Rollback/roll-forward ambiguity.",
+      "recommendation": "Deploy by image digest emitted from build-push.",
+      "area": "CTR"
+    }
+  ],
+  "report": "Dockerfile/compose runtime review. Images run\nnon-root; third-party images are digest-pinned. Residual: no seccomp/cap-drop/\nread-only/no-new-privileges runtime profile."
+}

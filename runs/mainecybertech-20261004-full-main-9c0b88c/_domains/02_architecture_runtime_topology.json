@@ -1,0 +1,63 @@
+{
+  "domain": "02_architecture_runtime_topology",
+  "file": "02_architecture_runtime_topology.md",
+  "findings": [
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Single-droplet, single-instance runtime is a hard SPOF",
+      "area": "ARCH",
+      "owner": "@owner",
+      "target": "ARCH",
+      "status": "partially-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "Platform failure/recovery runbooks added; single-droplet topology unchanged (owner/budget decision). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "ARCH-P2-002",
+      "severity": "P2",
+      "title": "API defaults to the service-role DB client (RLS bypass)",
+      "area": "ARCH",
+      "owner": "@owner",
+      "target": "ARCH",
+      "status": "partially-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "Production refuses to boot with an empty RLS read allow-list (rls-startup-check.ts; dev boots with the full list); per-module rollout remains operational. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "ARCH-P2-003",
+      "severity": "P2",
+      "title": "Prometheus loads rules but has no alert routing",
+      "area": "ARCH",
+      "owner": "@owner",
+      "target": "ARCH",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "already fixed at base (Prometheus alerting block + Alertmanager service). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "title": "Web middleware gates routes on an unverified JWT `exp`",
+      "area": "ARCH",
+      "owner": "@owner",
+      "target": "ARCH",
+      "status": "partially-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "Web middleware documented as a non-authoritative UX gate; behavior intentionally unchanged (API verifies tokens). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    }
+  ],
+  "report": "Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

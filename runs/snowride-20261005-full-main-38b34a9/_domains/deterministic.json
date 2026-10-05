@@ -1,0 +1,43 @@
+{
+  "domain": "deterministic",
+  "file": "lens_deterministic.md",
+  "area": "DET",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:04Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "[PORT] 20 evidence/ files committed with mixed line endings",
+      "evidence": [
+        "python3 tools/deterministic_checks.py /var/lib/lab-repos/snowride",
+        ".gitattributes: `evidence/** -text` (byte-exact, hash-pinned)",
+        "git ls-files --eol | grep '^i/crlf' -> 1 file; i/mixed -> 20"
+      ],
+      "impact": "Mixed EOL in byte-exact, append-only evidence files. Nothing in CI consumes these as text, so the practical impact is low.",
+      "recommendation": "Leave evidence bytes untouched (MANIFEST.sha256 pins them); adjust the deterministic check to skip `-text` paths instead of flagging them.",
+      "status": "owner-accepted",
+      "note": "False-positive-by-design: evidence is append-only and hash-pinned.",
+      "confidence": "Medium",
+      "owner": "@owner",
+      "target": null,
+      "area": "DET"
+    },
+    {
+      "severity": "P3",
+      "title": "[SUPPLY] 2 container images without a digest pin",
+      "evidence": [
+        "infra/compose/docker-compose.yml:12 image: snowride-web:certified",
+        "infra/compose/docker-compose.yml:78 image: snowride-realtime:certified"
+      ],
+      "impact": "The two images are built in place from a digest-pinned node base; the local `certified` tag has no upstream digest to pin.",
+      "recommendation": "Keep the documented out-of-band released-digest record (LAUNCH_ATTESTED_IMAGES) and the docs/runbooks/DEPLOY.md refresh step.",
+      "status": "owner-accepted",
+      "note": "False-positive: locally built images, not registry pulls.",
+      "confidence": "Medium",
+      "owner": "@owner",
+      "target": null,
+      "area": "DET"
+    }
+  ],
+  "report": "Ran tools/deterministic_checks.py on the lab checkout at 38b34a9 (gitleaks 8.30.1 installed): 2 machine findings (P2 x1, P3 x1). The repository's own scripts/repo-secret-scan.sh also reported 'no leaks found' (46.02 MB scanned at 38b34a9). The PORT P2 is a false-positive-by-design: the 20 files are append-only evidence artifacts marked `-text` in .gitattributes to stay byte-exact against evidence/MANIFEST.sha256 (only one file has a true index CRLF). The SUPPLY P3 flags the locally built `snowride-web:certified` / `snowride-realtime:certified` tags, which are build outputs, not pulled images."
+}

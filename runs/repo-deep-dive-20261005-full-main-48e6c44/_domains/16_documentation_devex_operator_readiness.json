@@ -1,0 +1,40 @@
+{
+  "domain": "16_documentation_devex_operator_readiness",
+  "file": "16_documentation_devex_operator_readiness.md",
+  "area": "DOC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "README is stale: run count and tool/doc inventories omit current files",
+      "evidence": [
+        "README.md:41 and README.md:135 say 'Archived runs (9)'; runs/ holds 20",
+        "README.md:43 tool list omits full_domain.py, pass.py, owner_decisions.py, review_index.py, repo_approvals.py",
+        "README.md:32 docs row lists only AUTOMATION_GUIDE.md and REMEDIATION_GUIDE.md; docs/ has 11 files"
+      ],
+      "impact": "Operators relying on the README get an incomplete map of the pack.",
+      "recommendation": "Regenerate the layout/counts (or generate the table) as part of the changelog checklist.",
+      "area": "DOC",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "PR #49 (full-domain driver) has no CHANGELOG entry",
+      "evidence": [
+        "CHANGELOG.md has no 'full_domain'/'full-domain' entry (grep returns none)",
+        "CONTRIBUTING.md:9 requires one change, one changelog entry",
+        "commit 48e6c44 'feat(audit): full-domain driver (roadmap 13/20)' introduced the feature"
+      ],
+      "impact": "The changelog no longer reflects the feature set of v1.5.0+.",
+      "recommendation": "Add the full-domain driver entry and a version note.",
+      "area": "DOC",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DOC"
+    }
+  ],
+  "report": "Compared README.md to the tree at 48e6c44 (20 archived runs, 11 docs files)."
+}

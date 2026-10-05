@@ -1,0 +1,59 @@
+{
+  "domain": "08_api_contracts_realtime_integrations",
+  "file": "08_api_contracts_realtime_integrations.md",
+  "area": "API",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:06Z",
+  "findings": [
+    {
+      "id": "API-P2-001",
+      "severity": "P2",
+      "title": "Cursor pagination contract now honoured (keyset pagination)",
+      "area": "API",
+      "evidence": [
+        "re-audit 2026-10-04 verified at merged origin/main 71cffcd",
+        ">500-sensor fixture returns nextCursor"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "merged 71cffcd; re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "API"
+    },
+    {
+      "id": "API-P2-002",
+      "severity": "P2",
+      "title": "SensorSummary.queueDepth now returned",
+      "area": "API",
+      "evidence": [
+        "re-audit 2026-10-04 verified at merged origin/main a4b388b"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "merged a4b388b; re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "API"
+    },
+    {
+      "id": "API-P3-001",
+      "severity": "P3",
+      "title": "Problem `instance` now reflects the request path",
+      "area": "API",
+      "evidence": [
+        "re-audit 2026-10-04: closed"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "API"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

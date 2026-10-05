@@ -1,0 +1,9 @@
+{
+  "domain": "39_analytics_tracking_privacy",
+  "file": "39_analytics_tracking_privacy.md",
+  "area": "AN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:25Z",
+  "findings": [],
+  "report": "Not applicable / future readiness: no\nthird-party analytics or tracking SDK (Segment/PostHog/GA) is present. Only\nfirst-party metrics (Prometheus) and Sentry error reporting are wired."
+}

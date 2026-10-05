@@ -1,0 +1,47 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:26:17Z",
+  "findings": [
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "Public-facing routers rely only on Cloudflare Access; `ntfy-auth` is dead config",
+      "area": "SEC",
+      "owner": "@security",
+      "target": "SEC",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        "config/traefik/dynamic.yml:26 defines middleware `ntfy-auth`; no router references it",
+        "config/traefik/dynamic.yml \u2014 only `falcon-ntop` uses `falcon-basic-auth`; other public routers have no origin auth",
+        "docs/security/SECURITY_DOCTRINE.md / Access export \u2014 Cloudflare Access is the only gate for the public dashboards"
+      ],
+      "impact": "If Cloudflare Access is misconfigured or bypassed, the origin Traefik routers serve dashboards without an independent auth check; the unused middleware misleads reviewers into believing ntfy is protected.",
+      "recommendation": "Add origin authentication to public routers (or record a testable owner acceptance); delete or wire `ntfy-auth`.",
+      "note": "Carried from focused run SEC-P2-001; not yet fixed at f9cb67d."
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "All 20 inherited credentials remain PENDING rotation; 28 vendored scripts source credential files wholesale",
+      "area": "SEC",
+      "owner": "@security",
+      "target": "SEC",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        "docs/security/INHERITED_CREDENTIAL_ROTATION.md:7 \"20/20 PENDING as of 2026-10-01\"",
+        "docs/security/INHERITED_CREDENTIAL_ROTATION.md:91 rotation_status.py on the real tracker: 20 items, 0 rotated, 20 pending",
+        "docs/security/INHERITED_CREDENTIAL_ROTATION.md:69-75 28 scripts under mct/scripts/ and mct/deploy-scripts/ still `set -a; source ops/creds.env`",
+        "mct/runbooks/credential-rotation-checklist.md rows 1-20 all PENDING"
+      ],
+      "impact": "No completed rotation evidence exists for the inherited estate, so any pre-existing disclosure of these secrets is still live; whole-file sourcing exposes every key to each script's process environment.",
+      "recommendation": "Execute the documented rotation order with name-only evidence and negative tests; migrate the 28 scripts to single-key reads.",
+      "note": "Tooling (rotation_status.py) added earlier; rotation execution itself remains outstanding."
+    }
+  ],
+  "report": "Read-only review of the security/authn surface at `f9cb67d`: Traefik dynamic routing (`config/traefik/dynamic.yml`), the inherited-credential rotation tracker, and the secret-scanning configuration. Reconciled against the focused lens run `falcon-20261004-0700-main-ff868e5` and the 2026-10-03 full-domain run.\n\n- `git grep ntfy-auth` shows `config/traefik/dynamic.yml:26` defines `ntfy-auth` but no router uses it; only `falcon-ntop` carries `falcon-basic-auth`.\n- `docs/security/INHERITED_CREDENTIAL_ROTATION.md:7,91` still records `20/20 PENDING`; `automation/validation/rotation_status.py` prints `20 items, 0 rotated, 20 pending` against the real tracker.\n- `.gitleaks.toml` now anchors the curl-auth-user allowlist to runtime-variable/placeholder values (SEC-001 fix retained).\n\nNo secrets were printed; only names/hashes were read."
+}

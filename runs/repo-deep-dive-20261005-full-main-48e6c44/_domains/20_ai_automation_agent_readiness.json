@@ -1,0 +1,38 @@
+{
+  "domain": "20_ai_automation_agent_readiness",
+  "file": "20_ai_automation_agent_readiness.md",
+  "area": "AI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "emit accepts findings with no evidence or citation requirement",
+      "evidence": [
+        "tools/full_domain.py:303-338 validates only severity/title/status, never evidence",
+        "AGENTS.md:9 requires evidence or Unknown; prompts/00_SHARED_AUDIT_RULES.md mandates citations",
+        "aggregate renders the domain report from the payload verbatim (tools/full_domain.py:376-395)"
+      ],
+      "impact": "A subagent (or a bug) can inject unsubstantiated findings into a run that passes check_run.sh.",
+      "recommendation": "Require a non-empty evidence list (or an explicit Unknown marker) in emit for P0/P1 at minimum.",
+      "area": "AI",
+      "status": "open",
+      "owner": "@owner",
+      "target": "AI"
+    },
+    {
+      "severity": "P3",
+      "title": "run --agent-cmd executes a shell template with unvalidated substitutions",
+      "evidence": [
+        "tools/full_domain.py:670-675 builds a shell command from repo/run/branch/sha via .format and subprocess.run(shell=True)"
+      ],
+      "impact": "A crafted repo/run name could inject shell commands into the driver host.",
+      "recommendation": "Pass arguments as an argv list instead of a formatted shell string.",
+      "area": "AI",
+      "status": "open",
+      "owner": "@owner",
+      "target": "AI"
+    }
+  ],
+  "report": "Reviewed the full_domain driver's subagent contract and the agent-facing rules."
+}

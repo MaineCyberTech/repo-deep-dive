@@ -1,0 +1,39 @@
+{
+  "domain": "26_admin_console_abuse_case_audit",
+  "file": "26_admin_console_abuse_case_audit.md",
+  "area": "ADMIN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:21Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Bulk import / compliance export operated globally (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "ADMIN",
+      "note": "SEC-P1-004..006 closed; now scoped to admin workspaces.",
+      "evidence": [
+        "apps/api/src/modules/import/routes.ts",
+        "apps/api/src/modules/export/routes.ts"
+      ],
+      "impact": "Cross-tenant bulk mutation/export.",
+      "recommendation": "n/a",
+      "area": "ADMIN"
+    },
+    {
+      "severity": "P3",
+      "title": "Admin error buffer is in-memory only (lost on restart)",
+      "status": "open",
+      "owner": "@api",
+      "target": "ADMIN",
+      "note": "Pilot OBS-P2-003 residual (admin/error-buffer.ts).",
+      "evidence": [
+        "apps/api/src/modules/admin/error-buffer.ts"
+      ],
+      "impact": "Admin diagnostics lost across deploys.",
+      "recommendation": "Ship admin errors to the structured logger/Sentry sink.",
+      "area": "ADMIN"
+    }
+  ],
+  "report": "Walked the admin routers for destructive\nor bulk operations, tenant scoping and audit logging. Bulk import and\ncompliance exports are scoped; admin error handling is buffered in memory."
+}

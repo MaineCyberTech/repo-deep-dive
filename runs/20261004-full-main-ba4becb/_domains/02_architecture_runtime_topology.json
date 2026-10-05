@@ -1,0 +1,64 @@
+{
+  "domain": "02_architecture_runtime_topology",
+  "file": "02_architecture_runtime_topology.md",
+  "area": "ARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:02Z",
+  "findings": [
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Control plane still executes a mutable working tree (dirty-guarded, not pinned)",
+      "area": "ARCH",
+      "evidence": [
+        "deploy/edge-control-plane.service:18 WorkingDirectory=/home/user/falcon-edge-build",
+        "deploy/edge-control-plane.service:24 ExecStartPre refuses start when git status --porcelain is non-empty",
+        "deploy/edge-control-plane.service:25 ExecStart runs src/ from that tree"
+      ],
+      "impact": "A dirty tree is refused, but the service still runs whatever commit is checked out rather than a pinned, verified release artifact; an uncommitted-but-clean wrong branch can still run.",
+      "recommendation": "Deploy a pinned bundle (release artifact with SHA-256) and run from it; keep the dirty check as defense in depth.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: still-open; dirty guard added as mitigation",
+      "owner": "@owner",
+      "target": "ARCH"
+    },
+    {
+      "id": "ARCH-P2-002",
+      "severity": "P2",
+      "title": "Edge control plane is a co-tenant single point of failure on the shared lab host",
+      "area": "ARCH",
+      "evidence": [
+        "deploy/edge-control-plane.service:16-18 runs as user `user` on the shared falcon host",
+        "README.md: environment class LAB, single Ubuntu 24.04 KVM host",
+        "No warm standby / no separate host in deploy/"
+      ],
+      "impact": "Loss or compromise of the shared host takes down the edge control plane and any co-tenant monitoring services together; no standby exists.",
+      "recommendation": "Isolate the control plane on its own host/VM or add a warm standby with a documented failover; record as a production-readiness precondition.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: still-open",
+      "owner": "@owner",
+      "target": "ARCH"
+    },
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "title": "Bare stdlib HTTP transport now has connection cap, timeout and rate limiting",
+      "area": "ARCH",
+      "evidence": [
+        "src/falcon_control/http_server.py:246 DEFAULT_MAX_CONNECTIONS=64",
+        "src/falcon_control/http_server.py:249 REQUEST_TIMEOUT_SECONDS=30",
+        "src/falcon_control/http_server.py:278 PeerRateLimiter + 503 on exhaustion"
+      ],
+      "impact": "The earlier unbounded-thread transport risk is closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "ARCH"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

@@ -1,0 +1,78 @@
+# Roadmap
+
+- EXEC-P1-001 (P1) — Release-gate condition (terminal revocation) is closed
+- FINAL-P1-001 (P1) — Release blocker (non-terminal revocation) is closed
+- SEC-P1-001 (P1) — Re-enrollment no longer resets a REVOKED/RETIRED sensor
+- API-P2-001 (P2) — Cursor pagination contract now honoured (keyset pagination)
+- API-P2-002 (P2) — SensorSummary.queueDepth now returned
+- ARCH-P2-001 (P2) — Control plane still executes a mutable working tree (dirty-guarded, not pinned)
+- ARCH-P2-002 (P2) — Edge control plane is a co-tenant single point of failure on the shared lab host
+- AUTH-P2-001 (P2) — Device mTLS private key is group-readable (0640), contradicting its documented 0600
+- BP-P2-001 (P2) — Branch protection / required checks cannot be enforced on the current GitHub plan
+- CHAIN-P2-001 (P2) — Chain: co-tenant read of the agent key -> control-plane signing seed compromise -> unattended fleet code swap
+- CI-P2-001 (P2) — CI toolchain is downloaded and hash-verified (pinning enforced)
+- CI-P2-002 (P2) — bake-image no longer interpolates secrets into script text
+- DATA-P2-001 (P2) — Idempotency table is now bounded and stores a digest, not full bodies
+- DATA-P2-002 (P2) — Foreign keys and retention indexes added for events/state/heartbeat history
+- DATA-P2-003 (P2) — Schema migration mechanism now exists (not only CREATE TABLE IF NOT EXISTS)
+- EXEC-P2-001 (P2) — Production readiness remains insufficient-evidence
+- FEAT-P2-001 (P2) — SensorSummary.queueDepth is now populated (was documented-only)
+- FILE-P2-001 (P2) — Update artifact host allowlist exists but is not configured in the shipped image
+- FINAL-P2-001 (P2) — Cross-cutting theme: automation artifacts are not continuously bound to their sources
+- HYG-P2-001 (P2) — Summary documentation no longer hardcodes drifted test counts / Dependabot cadence
+- HYG-P2-002 (P2) — Committed derived artifacts are guarded against staleness
+- INFRA-P2-001 (P2) — Lab config and shipped image config deliberately diverge (bind/TLS/auto-apply)
+- INV-P2-001 (P2) — Committed raw evidence is large and only now budget-guarded
+- INV-P2-002 (P2) — Pack inventory tooling now emits routes/schema/entrypoints
+- NOTIF-P2-001 (P2) — No alert/notification delivery path from the edge program (email/push/pager)
+- OBS-P2-001 (P2) — No alert delivery path (no Alertmanager/pager); rules are visible only in Prometheus/Grafana
+- OBS-P2-002 (P2) — Inventory alert metrics depend on host-side SSH to each sensor (single point of failure)
+- RES-P2-001 (P2) — Single-host control plane has no warm standby or tested failover
+- SC-P2-001 (P2) — CI installs Python dependencies with exact versions and hashes
+- SC-P2-002 (P2) — Secret scanning covers git history, not only the working tree
+- SC-P2-003 (P2) — CI downloads lint/scan binaries with embedded SHA-256 verification
+- SC-P2-004 (P2) — Credential-bearing image artifacts/releases rely solely on private-repo access
+- SEC-P2-001 (P2) — HTTP transport hardening (rate limit, headers, slow-client guard) present
+- SEC-P2-002 (P2) — Inventory metrics collector no longer disables SSH host-key verification
+- SEC-P2-003 (P2) — Raw host inventory file no longer world-readable on sensors
+- SUPPLY-P2-001 (P2) — Shipped sensor image auto-applies signed updates with no per-update human gate
+- TEST-P2-001 (P2) — Test-count claims no longer hardcoded in docs
+- TEST-P2-002 (P2) — Regression test for re-enrolment of a REVOKED/RETIRED sensor added
+- ACM-P3-001 (P3) — Operator identity map and revocation are implemented; single-operator fallback still allowed
+- ADMIN-P3-001 (P3) — Admin surface is the operator CLI + mTLS operator APIs; no web console
+- AI-P3-001 (P3) — Repository text is treated as untrusted instruction input by the agent rules
+- AN-P3-001 (P3) — Not applicable: no third-party analytics or tracking SDKs
+- API-P3-001 (P3) — Problem `instance` now reflects the request path
+- ARCH-P3-001 (P3) — Bare stdlib HTTP transport now has connection cap, timeout and rate limiting
+- BILL-P3-001 (P3) — Not applicable: no billing, payment, or reconciliation code
+- CI-P3-001 (P3) — Branch-protection documentation matches implemented Dependabot-merge behavior
+- CTR-P3-001 (P3) — Not applicable: no container runtime in the repository
+- DATA-P3-001 (P3) — Queue age-expiry / purge_expired wiring
+- DET-P3-001 (P3) — [GIT] No LICENSE file
+- DET-P3-002 (P3) — [SEC] gitleaks not installed (secret scan skipped)
+- DOC-P3-001 (P3) — Repository name vs lab working-directory drift is documented but still confusing
+- DR-P3-001 (P3) — Backup/verify/restore runbook and tooling are strong; drills are manual/undated
+- EVOL-P3-001 (P3) — Extensibility is documented (EXTENDING.md) with a plugin/adapter boundary
+- FEAT-P3-001 (P3) — destroyKeys is audit-only server-side (no key destruction endpoint)
+- FEAT-P3-002 (P3) — create-token no longer prints the plaintext token unless --stdout
+- FILE-P3-001 (P3) — Root-side update verifier rejects symlink/traversal/setuid archive members
+- HYG-P3-001 (P3) — Hardcoded sensor endpoint list removed from the metrics collector
+- INV-P3-001 (P3) — Generated models/schemas/dashboard JSON committed and can drift
+- IR-P3-001 (P3) — Incident/tabletop scenarios exist but no dated exercise record in-repo
+- MOB-P3-001 (P3) — Not applicable: no mobile app or PWA
+- MT-P3-001 (P3) — No tenant model: isolation boundary is the device identity + site_id only
+- OBS-P3-001 (P3) — Stale pending_directives metric fixed
+- PERF-P3-001 (P3) — No performance/scale evidence for a large fleet in-repo
+- PRIV-P3-001 (P3) — Host inventory (MAC/IP/hostnames) is minimised and retained under a documented policy
+- REL-P3-001 (P3) — Releases are documented per-image but there is no CHANGELOG or generated release notes in-repo
+- RLS-P3-001 (P3) — Not applicable: no Supabase/Postgres or row-level-security layer
+- SBOM-P3-001 (P3) — No repository LICENSE file; SBOM is build-time/artefact-time, not CI-gated
+- SC-P3-001 (P3) — Dependabot now watches the pip toolchain as well as GitHub Actions
+- SEARCH-P3-001 (P3) — Not applicable: no search index or indexing pipeline in-repo
+- SEC-P3-002 (P3) — Lab drill tooling disables SSH host-key and TLS verification
+- SECRET-P3-001 (P3) — Trust-root and per-sensor rotation runbooks now exist
+- TEST-P3-001 (P3) — Coverage is now gated (fail under 85%)
+- TEST-P3-002 (P3) — Known-flaky time-relative test fixture addressed
+- USE-P3-001 (P3) — CLI-first workflow is documented; no measured operator task times
+- UX-P3-001 (P3) — Not applicable: the edge program has no browser UI to assess
+- WH-P3-001 (P3) — Vector ingest is at-least-once with no idempotency key or dedupe

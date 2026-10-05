@@ -1,0 +1,26 @@
+{
+  "domain": "24_access_control_matrix_audit",
+  "file": "24_access_control_matrix_audit.md",
+  "area": "ACM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:58Z",
+  "findings": [
+    {
+      "area": "ACM",
+      "severity": "P3",
+      "title": "No consolidated access-control matrix; authorization is per-service basic-auth / console accounts",
+      "evidence": [
+        "config/traefik/dynamic.yml (per-router basic-auth)",
+        "docs/runbooks/ACCESS_AND_ACCOUNTS.md",
+        "mct/runbooks/break-glass.md"
+      ],
+      "status": "open",
+      "confidence": "high",
+      "recommendation": "Publish an access-control matrix mapping services\u2192roles\u2192auth mechanism and review it each patch window.",
+      "detail": "Publish an access-control matrix mapping services\u2192roles\u2192auth mechanism and review it each patch window.",
+      "owner": "@owner",
+      "target": "ACM"
+    }
+  ],
+  "report": ""
+}

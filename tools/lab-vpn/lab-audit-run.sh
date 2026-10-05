@@ -28,7 +28,15 @@ done
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 KEY="${LABVPN_KEY:-$HOME/.ssh/labvpn}"
-URL="${LAB_API_URL:-http://172.23.128.51:8722}"
+# Lab API base: explicit LAB_API_URL wins, then lab #1, then lab #2 (testnuc,
+# the current host since the 2026-10 lab move).
+URL="${LAB_API_URL:-}"
+if [ -z "$URL" ]; then
+  for candidate in http://172.23.128.51:8722 http://192.168.222.201:8722; do
+    if curl -fsS -m5 "$candidate/health" >/dev/null 2>&1; then URL="$candidate"; break; fi
+  done
+  URL="${URL:-http://172.23.128.51:8722}"
+fi
 TOKEN="${LAB_API_TOKEN:-}"
 
 lab_ok() { bash "$HERE/lab-audit-preflight.sh" --mode local --no-pack >/tmp/lr-pre.log 2>&1; }

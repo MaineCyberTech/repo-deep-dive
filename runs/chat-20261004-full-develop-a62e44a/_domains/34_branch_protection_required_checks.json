@@ -1,0 +1,39 @@
+{
+  "domain": "34_branch_protection_required_checks",
+  "file": "34_branch_protection_required_checks.md",
+  "area": "BP",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:24Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "In-repo branch-protection gate covers only `main`, not `develop`",
+      "status": "open",
+      "owner": "@ci",
+      "target": "BP",
+      "note": "Same root cause as CI finding; server-side ruleset state = Unknown.",
+      "evidence": [
+        ".github/workflows/validate.yml:273-292",
+        "no main branch exists; default is develop"
+      ],
+      "impact": "The branch that auto-deploys is not gate-checked in-repo.",
+      "recommendation": "Record the live ruleset for develop and extend the in-repo gate.",
+      "area": "BP"
+    },
+    {
+      "severity": "P3",
+      "title": "Server-side environment/ruleset configuration is not verifiable from source",
+      "status": "open",
+      "owner": "@release",
+      "target": "BP",
+      "note": "Marked Unknown per audit doctrine; not faked.",
+      "evidence": [
+        "GitHub Environments/rulesets are read-only from the API and not in the tree"
+      ],
+      "impact": "Unverified control.",
+      "recommendation": "Capture the live settings into docs/operations as an evidence snapshot.",
+      "area": "BP"
+    }
+  ],
+  "report": "Branch-protection requirements are\nserver-side and cannot be proven from a clone. In-repo gate reviewed; it only\ntargets `main`."
+}

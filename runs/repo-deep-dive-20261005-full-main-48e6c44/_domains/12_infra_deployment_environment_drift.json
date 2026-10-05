@@ -1,0 +1,39 @@
+{
+  "domain": "12_infra_deployment_environment_drift",
+  "file": "12_infra_deployment_environment_drift.md",
+  "area": "INFRA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:07Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Lab IAC has no drift detection or locked toolchain",
+      "evidence": [
+        "infra/lab/terraform/versions.tf and infra/lab/ansible/requirements.yml use open ranges",
+        "no workflow runs `terraform plan`/`ansible --check`; `.terraform.lock.hcl` is not tracked",
+        "docs/LAB_IAC.md documents manual apply"
+      ],
+      "impact": "The declared lab (VMs, overlay, runner) and the running lab can drift with no automated detection.",
+      "recommendation": "Commit the lock file and add a scheduled read-only plan/check job against the lab.",
+      "area": "INFRA",
+      "status": "open",
+      "owner": "@owner",
+      "target": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "Example inventory is the only committed inventory",
+      "evidence": [
+        "infra/lab/ansible/inventory.example.ini is checked in",
+        "no environment-specific inventory or documented variable source for host addresses"
+      ],
+      "impact": "Rebuilding the lab depends on uncommitted local values; drift is likely between rebuilds.",
+      "recommendation": "Document the variable source (env/secret) and validate the example against the Terraform outputs.",
+      "area": "INFRA",
+      "status": "open",
+      "owner": "@owner",
+      "target": "INFRA"
+    }
+  ],
+  "report": "Reviewed infra/lab (Terraform + Ansible + runner bootstrap) and docs/LAB_IAC.md. No live apply was performed; state is not in the repo."
+}

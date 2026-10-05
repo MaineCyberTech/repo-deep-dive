@@ -1,0 +1,28 @@
+{
+  "domain": "33_incident_tabletop_exercise",
+  "file": "33_incident_tabletop_exercise.md",
+  "area": "IR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:13Z",
+  "findings": [
+    {
+      "id": "IR-P3-001",
+      "severity": "P3",
+      "title": "Incident/tabletop scenarios exist but no dated exercise record in-repo",
+      "area": "IR",
+      "evidence": [
+        "docs/runbooks/ has incident playbooks (lost-stolen-sensor, sensor-silence, root-key-compromise, recovery-boot)",
+        "20261002-0630 run's 33_incident_tabletop_exercise.md documents scenarios",
+        "no tabletop exercise evidence capture found"
+      ],
+      "impact": "Playbooks are written but not exercised; response muscle memory and RTO claims are unproven.",
+      "recommendation": "Run a tabletop against root-key-compromise + lost-sensor and capture the result under evidence/.",
+      "status": "open",
+      "confidence": "High",
+      "note": "no exercise evidence",
+      "owner": "@owner",
+      "target": "IR"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

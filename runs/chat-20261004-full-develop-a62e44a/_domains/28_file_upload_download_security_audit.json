@@ -1,0 +1,40 @@
+{
+  "domain": "28_file_upload_download_security_audit",
+  "file": "28_file_upload_download_security_audit.md",
+  "area": "FILE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:22Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Uploads return a public URL from `chat-uploads` and trust client-declared content type",
+      "status": "open",
+      "owner": "@api",
+      "target": "FILE",
+      "note": "New at a62e44a; no server-side magic-byte sniff and bucket visibility is unverified server-side.",
+      "evidence": [
+        "apps/api/src/modules/messages/routes.ts:475-500 createSignedUploadUrl + getPublicUrl",
+        "apps/api/src/validators/upload.ts: client contentType allowlist + extension blocklist",
+        "getPublicUrl implies public access if the bucket is public"
+      ],
+      "impact": "Malware/HTML/SVG polyglot upload or unauthenticated read of attachments if the bucket is public.",
+      "recommendation": "Sniff magic bytes server-side, block SVG/HTML, and use private buckets with short-lived signed download URLs.",
+      "area": "FILE"
+    },
+    {
+      "severity": "P3",
+      "title": "No per-tenant/user quota or total-storage cap on uploads",
+      "status": "open",
+      "owner": "@api",
+      "target": "FILE",
+      "note": "Only a 10MB per-file cap is enforced.",
+      "evidence": [
+        "apps/api/src/validators/upload.ts MAX_FILE_SIZE=10MB"
+      ],
+      "impact": "Storage exhaustion / cost.",
+      "recommendation": "Add per-user quota and a cleanup/retention job (worker cleanup exists for other data).",
+      "area": "FILE"
+    }
+  ],
+  "report": "Reviewed `validators/upload.ts`, the\n`/messages/upload` handler and storage bucket usage. Validation is a\nclient-declared content-type + extension blocklist; uploads return a public\nURL from the `chat-uploads` bucket."
+}

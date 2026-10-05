@@ -1,0 +1,56 @@
+{
+  "domain": "14_observability_monitoring_incident_readiness",
+  "file": "14_observability_monitoring_incident_readiness.md",
+  "area": "OBS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:16Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "No alerting wired despite metrics and a tracked TODO (fixed)",
+      "status": "verified-fixed",
+      "owner": "@ops",
+      "target": "OBS",
+      "note": "PR #95; rules + ntfy receiver rendered by compose.",
+      "evidence": [
+        "infra/prometheus/rules/chat.rules.yml",
+        "infra/prometheus/alertmanager.yml receiver chat-ntfy"
+      ],
+      "impact": "n/a",
+      "recommendation": "n/a",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "No distributed tracing / correlation to a collector",
+      "status": "open",
+      "owner": "@ops",
+      "target": "OBS",
+      "note": "OBS-P2-004 residual; request-id/trace-context exist but no OTLP exporter.",
+      "evidence": [
+        "apps/api/src/lib/trace-context.ts",
+        "apps/api/src/middleware/request-id.ts",
+        "no @opentelemetry exporter dependency"
+      ],
+      "impact": "Cross-service debugging relies on logs only.",
+      "recommendation": "Add OTLP export + a collector, or document the decision.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "Error tracking (Sentry) is optional and admin error buffer is in-memory",
+      "status": "open",
+      "owner": "@ops",
+      "target": "OBS",
+      "note": "Sentry wired only when DSN set; admin buffer lost on restart.",
+      "evidence": [
+        "apps/api/src/lib/sentry.ts",
+        "apps/api/src/modules/admin/error-buffer.ts"
+      ],
+      "impact": "Errors can go unrecorded in some environments.",
+      "recommendation": "Require a DSN in production and persist admin errors.",
+      "area": "OBS"
+    }
+  ],
+  "report": "Alerting is now wired\n(Prometheus + Alertmanager + ntfy, PR #95). Distributed tracing and error\ntracking remain optional/incomplete."
+}

@@ -1,0 +1,25 @@
+{
+  "domain": "36_container_runtime_security",
+  "file": "36_container_runtime_security.md",
+  "area": "CTR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:01Z",
+  "findings": [
+    {
+      "area": "CTR",
+      "severity": "P3",
+      "title": "Vendored MCT compose mounts docker.sock and uses floating tags under a blanket waiver",
+      "evidence": [
+        "mct/compose/docker-compose.shuffle.yml (docker.sock mount)",
+        "pins/supply-chain-waivers.json:5-7 blanket mct/compose waiver review_by 2026-12-31"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Remove/justify docker.sock mounts, pin by digest, and scope the waiver per ref.",
+      "detail": "Remove/justify docker.sock mounts, pin by digest, and scope the waiver per ref.",
+      "owner": "@owner",
+      "target": "CTR"
+    }
+  ],
+  "report": ""
+}

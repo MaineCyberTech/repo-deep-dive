@@ -1,0 +1,128 @@
+{
+  "run": "mainecybertech-20261004-full-main-9c0b88c",
+  "repo": "mainecybertech",
+  "generated": "2026-10-05T06:20:00Z",
+  "note": "Explicit plan for the open full-domain findings. 48 of 59 P1 rows were re-verified as verified-fixed in code at main 9c0b88c (see P1_RECONCILIATION.md); the entries below are the remediable code gap and the owner/operator-gated decisions and residuals (OWNER_GATED_PROPOSALS.md).",
+  "patchSets": [
+    {
+      "id": "PS-01",
+      "title": "Port the deploy SSH host-key verification fix to main (CI-P3-003)",
+      "severity": "P3",
+      "findings": ["CI-P3-003"],
+      "files": [
+        ".github/workflows/deploy-do.yml",
+        "CHANGELOG.md"
+      ],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [
+        "git diff origin/develop -- .github/workflows/deploy-do.yml  # empty: byte-identical to develop",
+        "python -c \"import yaml; yaml.safe_load(open('.github/workflows/deploy-do.yml', encoding='utf-8'))\"",
+        "node scripts/check-required-checks.mjs"
+      ],
+      "branch": "fix/ci-p3-003-hostkey-main",
+      "pr": "https://github.com/MaineCyberTech/mainecybertech/pull/98",
+      "status": "draft-pr-open"
+    },
+    {
+      "id": "PS-02",
+      "title": "OWNER-GATED: provision prod-approval environment secrets + required reviewers (CI-P1-001, CI-P1-003)",
+      "severity": "P1",
+      "findings": ["CI-P1-001", "CI-P1-003"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-03",
+      "title": "OWNER-GATED: soft-delete tombstones vs documented hard delete (DATA-P1-003)",
+      "severity": "P1",
+      "findings": ["DATA-P1-003"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-04",
+      "title": "OWNER-GATED: runtime RLS-regression detection/alerting (IR-P1-006)",
+      "severity": "P1",
+      "findings": ["IR-P1-006"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-05",
+      "title": "OWNER-GATED residual: provision BACKUP_ENCRYPTION_KEY + offsite bucket (DR-P1-003)",
+      "severity": "P1",
+      "findings": ["DR-P1-003"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-06",
+      "title": "OWNER-GATED residual: bad-migration reverse/drill (DR-P1-005, IR-P1-002)",
+      "severity": "P1",
+      "findings": ["DR-P1-005", "IR-P1-002"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-07",
+      "title": "OWNER-GATED residual: record RPO/RTO drill measurements (DR-P1-006)",
+      "severity": "P1",
+      "findings": ["DR-P1-006"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-08",
+      "title": "OWNER-GATED residual: annotated release tags + SBOM release asset (REL-P1-001)",
+      "severity": "P1",
+      "findings": ["REL-P1-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-09",
+      "title": "OWNER-GATED residual: refresh or explicitly pin the vendored prompt pack (AI-P1-001)",
+      "severity": "P1",
+      "findings": ["AI-P1-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "M",
+      "verification": [],
+      "branch": ""
+    },
+    {
+      "id": "PS-10",
+      "title": "OWNER-GATED residual: remove dead M365_WEBHOOK_SECRET / wire rotation (SECRET-P1-001)",
+      "severity": "P1",
+      "findings": ["SECRET-P1-001"],
+      "files": [],
+      "dependsOn": [],
+      "effort": "S",
+      "verification": [],
+      "branch": ""
+    }
+  ],
+  "unassignedFindings": []
+}

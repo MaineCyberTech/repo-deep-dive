@@ -1,0 +1,71 @@
+{
+  "domain": "02_architecture_runtime_topology",
+  "file": "02_architecture_runtime_topology.md",
+  "area": "ARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:55Z",
+  "findings": [
+    {
+      "area": "ARCH",
+      "severity": "P1",
+      "title": "Single-host concentration: host loss is total pipeline loss",
+      "evidence": [
+        "README.md:57-62 single Ubuntu 24.04 host (falcon, KVM)",
+        "compose/central/docker-compose.yml single central stack; no warm standby",
+        "REAUDIT_REPORT_202604: ARCH-P1-001 still-open, genuine large effort"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Add a warm standby or a documented, tested RTO/RPO acceptance with owner sign-off.",
+      "detail": "Add a warm standby or a documented, tested RTO/RPO acceptance with owner sign-off.",
+      "owner": "@owner",
+      "target": "ARCH"
+    },
+    {
+      "area": "ARCH",
+      "severity": "P2",
+      "title": "Declared container hardening lags the running containers",
+      "evidence": [
+        "compose/central/docker-compose.yml; config/docker/daemon.json",
+        "runbooks DOCKER_VOLUME_MIGRATION.md (recent migration)"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Bring declared security_opt/read_only/cap_drop in compose to parity with live and gate it.",
+      "detail": "Bring declared security_opt/read_only/cap_drop in compose to parity with live and gate it.",
+      "owner": "@owner",
+      "target": "ARCH"
+    },
+    {
+      "area": "ARCH",
+      "severity": "P2",
+      "title": "Wazuh and vendored MCT stacks run tag-only images outside pin/SBOM scope",
+      "evidence": [
+        "mct/compose/docker-compose.*.yml (floating tags)",
+        "pins/supply-chain-waivers.json:5-7 blanket mct/compose waiver"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Extend pins/images.lock + SBOM coverage to Wazuh/MCT or scope the waiver per ref.",
+      "detail": "Extend pins/images.lock + SBOM coverage to Wazuh/MCT or scope the waiver per ref.",
+      "owner": "@owner",
+      "target": "ARCH"
+    },
+    {
+      "area": "ARCH",
+      "severity": "P2",
+      "title": "Live ingest authentication is a shared secret header, not mTLS",
+      "evidence": [
+        "config/vector/aggregator.yaml (shared-secret header)",
+        "docs/architecture/TRUST_BOUNDARIES.md"
+      ],
+      "status": "partially-fixed",
+      "confidence": "high",
+      "recommendation": "Move edge\u2192aggregator ingest to certificate/mTLS identity or add request signing + idempotency.",
+      "detail": "Move edge\u2192aggregator ingest to certificate/mTLS identity or add request signing + idempotency.",
+      "owner": "@owner",
+      "target": "ARCH"
+    }
+  ],
+  "report": ""
+}

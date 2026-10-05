@@ -1,0 +1,44 @@
+# Roadmap
+
+- FINAL-P1-001 (P1) — Release identity is stale: attestation commit 9125913 != HEAD 38b34a9
+- CHAIN-P2-001 (P2) — Low-severity credential-to-admin chain (no rotation + no admin rate limit + mode disclosure)
+- DET-P2-001 (P2) — [PORT] 20 evidence/ files committed with mixed line endings
+- HYGIENE-P2-001 (P2) — Only apps/web is linted; four workspaces have no lint script
+- HYGIENE-P2-002 (P2) — Large generated evidence artifacts inflate the repository
+- INV-P2-001 (P2) — Evidence tree dominates the repository by file count and size
+- SC-P2-001 (P2) — docs/SUPPLY_CHAIN.md is stale against the shipped supply-chain gates
+- SECRET-P2-001 (P2) — Empty service-role key silently disables trusted persistence
+- ADMIN-P3-001 (P3) — Admin mutations have no rate limit or step-up authentication
+- AI-P3-001 (P3) — AGENTS.md does not reference the audit-pack / full-domain workflow
+- AN-P3-001 (P3) — Anonymous performance sampling has no runtime consent/retention gate
+- API-P3-001 (P3) — Public operational endpoints are unauthenticated and unversioned
+- API-P3-002 (P3) — /config exposes rollout-mode values to unauthenticated clients
+- ARCH-P3-001 (P3) — Authoritative room/lobby state is process-local and lost on restart
+- BP-P3-001 (P3) — BRANCH_PROTECTION.md runbook lists a stale required-check set
+- BP-P3-002 (P3) — Live branch protection not verified in this read-only pass
+- CI-P3-001 (P3) — CODEOWNERS is a personal account; required review is a single point
+- CTR-P3-001 (P3) — App images use local mutable tags with no in-repo digest binding
+- DATA-P3-001 (P3) — Live production schema state unverified in this audit
+- DET-P3-001 (P3) — [SUPPLY] 2 container images without a digest pin
+- DOC-P3-001 (P3) — AGENTS.md migration range is stale (0056 vs head 0057)
+- DR-P3-001 (P3) — Latest backup/restore drill evidence is not committed
+- EVOL-P3-001 (P3) — No ADR records the supply-chain/attestation hardening decision
+- FILE-P3-001 (P3) — No application-layer maximum replay size bound
+- FINAL-P3-001 (P3) — Operational reliability drills are not exercised per release
+- INFRA-P3-001 (P3) — Committed host crontab references out-of-repo paths/binaries
+- INFRA-P3-002 (P3) — Committed launch attestation commit is stale versus repository HEAD
+- IR-P3-001 (P3) — No committed incident tabletop exercise for the current revision
+- MOB-P3-001 (P3) — PWA manifest provides only an SVG icon (no raster/maskable PNG)
+- NOTIF-P3-001 (P3) — User notification preferences are recorded but never delivered
+- OBS-P3-001 (P3) — Metrics are process-local; durable history depends on the snapshot timer
+- PERF-P3-001 (P3) — No performance regression gate on pull requests
+- PRIV-P3-001 (P3) — Account-erasure cascade not covered by a SQL negative test
+- REL-P3-001 (P3) — Release notes/changelog are maintained manually
+- RES-P3-001 (P3) — Rollout-switch rollback requires a process restart
+- RLS-P3-001 (P3) — Claim-less SQL callers are treated as trusted by social_guard_*
+- SBOM-P3-001 (P3) — SBOM is a 90-day CI artifact, not bound to the release attestation
+- SC-P3-001 (P3) — Registry signature verification is continue-on-error (provenance not blocking)
+- SEC-P3-001 (P3) — Ops/METRICS_TOKEN compared non-constant-time and has no rotation path
+- SECRET-P3-001 (P3) — METRICS_TOKEN has no rotation path
+- TEST-P3-001 (P3) — Local verify-all gate is weaker than the CI pipeline
+- UX-P3-001 (P3) — ESLint react-hooks/exhaustive-deps warning in the main game shell

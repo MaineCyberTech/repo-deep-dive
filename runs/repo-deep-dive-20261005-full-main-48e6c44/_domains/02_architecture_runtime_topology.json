@@ -1,0 +1,25 @@
+{
+  "domain": "02_architecture_runtime_topology",
+  "file": "02_architecture_runtime_topology.md",
+  "area": "ARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Lab job API server and lab-vpn scripts have no automated test in CI",
+      "evidence": [
+        "tests/ covers deterministic_checks, full_domain, lib_findings, publish_audit, repo_inventory only",
+        "tools/lab_api_server.py:42-190 (auth, /sync, /run) is untested",
+        ".github/workflows/pack-tests.yml:35 runs `unittest discover -s tests` (no lab server test)"
+      ],
+      "impact": "Regressions in the auth/sync/run HTTP surface would not be caught before a lab is re-provisioned.",
+      "recommendation": "Add a unit test around Handler dispatch with a temp ROOT, or a lab smoke test in the preflight.",
+      "area": "ARCH",
+      "status": "open",
+      "owner": "@owner",
+      "target": "ARCH"
+    }
+  ],
+  "report": "Reviewed `docs/ARCHITECTURE.md`, `docs/LAB_ARCHITECTURE.md`, the tools/ tree and `.github/workflows/`. Confirmed the driver -> `_domains` payload -> aggregate -> check_run pipeline and the lab job API topology."
+}

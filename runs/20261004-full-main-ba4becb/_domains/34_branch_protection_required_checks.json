@@ -1,0 +1,28 @@
+{
+  "domain": "34_branch_protection_required_checks",
+  "file": "34_branch_protection_required_checks.md",
+  "area": "BP",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:09Z",
+  "findings": [
+    {
+      "id": "BP-P2-001",
+      "severity": "P2",
+      "title": "Branch protection / required checks cannot be enforced on the current GitHub plan",
+      "area": "BP",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:523-530 protection/ruleset API returns 403 (Upgrade to GitHub Pro)",
+        "docs/security/BRANCH_PROTECTION.md:592-608 owner decision (2026-09-30) to stay on Free and accept compensating controls",
+        ".github/CODEOWNERS + PR template added as compensating controls"
+      ],
+      "impact": "A bad or compromised maintainer push can reach main without green CI; enforce_admins is false and there is no required-review gate. The repository carries credential-bearing release assets, so it cannot be made public.",
+      "recommendation": "Upgrade to GitHub Pro/Team and apply the ready payload (BRANCH_PROTECTION.md:576-587); until then keep compensating controls and re-review at each plan/cost review.",
+      "status": "owner-accepted",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: owner-accepted (plan-gated)",
+      "owner": "@owner",
+      "target": "BP"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

@@ -1,0 +1,25 @@
+{
+  "domain": "35_sbom_license_policy",
+  "file": "35_sbom_license_policy.md",
+  "area": "SBOM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:07Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No SBOM/provenance artifact or release manifest is published for the pack itself",
+      "evidence": [
+        "no sbom/ directory or CycloneDX file in tree",
+        "VERSION=1.5.0 and CHANGELOG.md exist but no per-release SBOM/provenance",
+        "prompts/35_sbom_license_policy.md and runs/*/sbom_license_policy_recommendation.md cover other repos"
+      ],
+      "impact": "Consumers vendoring the pack cannot verify its contents via a published manifest beyond PACK_DIGEST.txt.",
+      "recommendation": "Emit a CycloneDX SBOM and a signed release manifest per tagged pack release.",
+      "area": "SBOM",
+      "status": "open",
+      "owner": "@owner",
+      "target": "SBOM"
+    }
+  ],
+  "report": "The pack ships no runtime dependencies (stdlib-only Python), but it also publishes no SBOM or provenance for its own releases; it audits others' SBOMs."
+}

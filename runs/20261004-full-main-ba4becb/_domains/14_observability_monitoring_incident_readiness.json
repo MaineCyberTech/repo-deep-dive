@@ -1,0 +1,60 @@
+{
+  "domain": "14_observability_monitoring_incident_readiness",
+  "file": "14_observability_monitoring_incident_readiness.md",
+  "area": "OBS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:14Z",
+  "findings": [
+    {
+      "id": "OBS-P2-001",
+      "severity": "P2",
+      "title": "No alert delivery path (no Alertmanager/pager); rules are visible only in Prometheus/Grafana",
+      "area": "OBS",
+      "evidence": [
+        "config/prometheus + config/grafana rules exist; no Alertmanager receiver/smtp/pager config in-repo",
+        "cross-ref NOTIF-P2-001"
+      ],
+      "impact": "Alerts can fire without reaching a human; incident detection depends on someone watching dashboards.",
+      "recommendation": "Wire rules to an Alertmanager/receiver or document the central stack's delivery as authoritative.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: still-open",
+      "owner": "@owner",
+      "target": "OBS"
+    },
+    {
+      "id": "OBS-P2-002",
+      "severity": "P2",
+      "title": "Inventory alert metrics depend on host-side SSH to each sensor (single point of failure)",
+      "area": "OBS",
+      "evidence": [
+        "automation/validation/inventory_metrics.py collects metrics over SSH to each sensor",
+        "if SSH or a sensor is down, the metric silently disappears"
+      ],
+      "impact": "A sensor that stops answering SSH also stops contributing its inventory metric, so health alerting can miss exactly the failure it should catch.",
+      "recommendation": "Prefer push/gateway metrics (the agent already reports over mTLS) over host-side SSH scraping.",
+      "status": "still-open",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: still-open",
+      "owner": "@owner",
+      "target": "OBS"
+    },
+    {
+      "id": "OBS-P3-001",
+      "severity": "P3",
+      "title": "Stale pending_directives metric fixed",
+      "area": "OBS",
+      "evidence": [
+        "re-audit 2026-10-04: closed"
+      ],
+      "impact": "Closed.",
+      "recommendation": "None.",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "note": "re-audit 2026-10-04: closed",
+      "owner": "@owner",
+      "target": "OBS"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain; the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

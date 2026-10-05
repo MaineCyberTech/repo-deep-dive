@@ -1,0 +1,63 @@
+{
+  "domain": "01_repository_inventory",
+  "file": "01_repository_inventory.md",
+  "findings": [
+    {
+      "id": "INV-P2-001",
+      "severity": "P2",
+      "title": "Committed generated artifacts drift without a gate",
+      "area": "INV",
+      "owner": "@owner",
+      "target": "INV",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "generated license/SBOM artifacts stay untracked; CI guard added (dependency-audit composite). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "INV-P2-002",
+      "severity": "P2",
+      "title": "Duplicate schema bootstrap SQL can be mistaken for the source of truth",
+      "area": "INV",
+      "owner": "@owner",
+      "target": "INV",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "bootstrap SQL header marks it historical / do-not-edit. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "INV-P3-001",
+      "severity": "P3",
+      "title": "Large committed prompt/audit corpus inflates the application repository",
+      "area": "INV",
+      "owner": "@owner",
+      "target": "INV",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "157 prior-run prompt snapshots removed; manifest regenerated (630 pinned); deploy validate prompt-provenance green. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "INV-P3-002",
+      "severity": "P3",
+      "title": "Stale, machine-specific repo path in the agent reference",
+      "area": "INV",
+      "owner": "@owner",
+      "target": "INV",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "AGENTS.md and generated review.md carry the canonical repo slug. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    }
+  ],
+  "report": "Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

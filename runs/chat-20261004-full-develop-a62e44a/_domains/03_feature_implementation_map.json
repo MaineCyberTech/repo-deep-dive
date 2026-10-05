@@ -1,0 +1,68 @@
+{
+  "domain": "03_feature_implementation_map",
+  "file": "03_feature_implementation_map.md",
+  "area": "FEAT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:11Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "`/v1/auth/magic-link` did not send a magic link (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "FEAT",
+      "note": "Re-verified: apps/api/src/modules/auth/service.ts calls signInWithOtp.",
+      "evidence": [
+        "apps/api/src/modules/auth/service.ts:67-90 signInWithOtp"
+      ],
+      "impact": "Auth feature was a no-op.",
+      "recommendation": "n/a",
+      "area": "FEAT"
+    },
+    {
+      "severity": "P1",
+      "title": "Webhook retries were in-process setTimeout, not durable (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "FEAT",
+      "note": "Durable queue verified in apps/api/src/lib/webhook-queue.ts and the worker processor.",
+      "evidence": [
+        "apps/api/src/lib/webhook-queue.ts",
+        "apps/worker/src/processors/webhook-delivery.ts"
+      ],
+      "impact": "Retries lost on restart.",
+      "recommendation": "n/a",
+      "area": "FEAT"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook idempotency key was regenerated per attempt (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "FEAT",
+      "note": "Key generated once (service.ts:216) and reused by the retry job.",
+      "evidence": [
+        "apps/api/src/modules/webhooks/service.ts:216",
+        "apps/worker/src/processors/webhook-delivery.ts:183"
+      ],
+      "impact": "Duplicate deliveries.",
+      "recommendation": "n/a",
+      "area": "FEAT"
+    },
+    {
+      "severity": "P2",
+      "title": "Naive input sanitizer blocked legitimate content (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "FEAT",
+      "note": "Re-audit closed; sanitizer no longer strips legitimate markdown.",
+      "evidence": [
+        "apps/api/src/lib/sanitize.ts"
+      ],
+      "impact": "False rejections.",
+      "recommendation": "n/a",
+      "area": "FEAT"
+    }
+  ],
+  "report": "Feature-by-feature walk of the auth, webhooks,\nsocket and sanitizer paths. All four historical feature findings verified fixed\nat a62e44a."
+}

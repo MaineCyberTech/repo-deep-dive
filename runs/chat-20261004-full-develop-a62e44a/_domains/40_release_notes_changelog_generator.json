@@ -1,0 +1,25 @@
+{
+  "domain": "40_release_notes_changelog_generator",
+  "file": "40_release_notes_changelog_generator.md",
+  "area": "REL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:26Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "CHANGELOG has no generator/CI gate",
+      "status": "open",
+      "owner": "@release",
+      "target": "REL",
+      "note": "CHANGELOG.md exists and is hand-written; no conventional-commit enforcement.",
+      "evidence": [
+        "CHANGELOG.md",
+        "no commitlint/changesets config in CI"
+      ],
+      "impact": "Release notes drift.",
+      "recommendation": "Adopt changesets or commitlint with a release-notes job.",
+      "area": "REL"
+    }
+  ],
+  "report": "CHANGELOG.md is maintained manually; no\ngenerator/CI enforcement ties releases to changelog entries."
+}

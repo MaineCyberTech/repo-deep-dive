@@ -1,0 +1,28 @@
+{
+  "domain": "25_multi_tenant_isolation_attack_simulation",
+  "file": "25_multi_tenant_isolation_attack_simulation.md",
+  "area": "MT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:51:04Z",
+  "findings": [
+    {
+      "id": "MT-P3-001",
+      "severity": "P3",
+      "title": "No tenant model: isolation boundary is the device identity + site_id only",
+      "area": "MT",
+      "evidence": [
+        "inventory: no tenant/org/RLS construct in src or api",
+        "site_id is a single attribute on sensors; no row-level tenant scoping",
+        "20261002-0630 audit: 'no tenant concept (only site_id column)'"
+      ],
+      "impact": "Multi-tenancy is not a design goal for this lab appliance; if the control plane is ever shared across owners, there is no isolation primitive to extend.",
+      "recommendation": "Record as not-applicable/future-readiness; if tenants are introduced, require a tenant_id on every table and a per-tenant authz check.",
+      "status": "open",
+      "confidence": "High",
+      "note": "not applicable to the current single-owner lab; future-readiness recorded",
+      "owner": "@owner",
+      "target": "MT"
+    }
+  ],
+  "report": "- Read-only analysis of `MaineCyberTech/falcon-edge` at `ba4becb` (git `ba4becb6ecd8fdc0c4e0363a67d7a62f60985788`, branch `main`).\n- Deterministic lens (LLM-free) run on the lab (`ci-runner`, HTTP job API) and locally: LICENSE absent; no non-executable tracked `*.sh`; no CRLF tracked text; no tracked secret-like filenames; `.gitattributes` present.\n- Wave-0 inventory via `tools/repo_inventory.py` (1,410 files; 5 workflows; 3 routes; 17 schema tables; 56 test files).\n- Target repository is not applicable to this domain (No tenant/org model exists (only `site_id`); recorded as future-readiness.); the finding records the evidence and the future-readiness trigger.\n- No secrets printed; all evidence is file:line references.\n"
+}

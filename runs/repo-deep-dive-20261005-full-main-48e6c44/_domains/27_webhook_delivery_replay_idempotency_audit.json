@@ -1,0 +1,9 @@
+{
+  "domain": "27_webhook_delivery_replay_idempotency_audit",
+  "file": "27_webhook_delivery_replay_idempotency_audit.md",
+  "area": "WH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:05Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. There is no inbound webhook receiver or outbound webhook delivery. Evidence: no HTTP server except the token-gated lab job API; no event queue or retry worker in tree."
+}

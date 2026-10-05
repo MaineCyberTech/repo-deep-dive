@@ -47,6 +47,7 @@ jobs:
       AGENT_PUBKEY: ${{ inputs.agent_public_key }}
       HOST: ${{ inputs.endpoint_host != '' && inputs.endpoint_host || vars.LAB_ENDPOINT_HOST }}
       USER: ${{ inputs.endpoint_user != '' && inputs.endpoint_user || vars.LAB_ENDPOINT_USER }}
+      LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}
     steps:
       - name: Validate inputs / configuration
         run: |
@@ -55,7 +56,7 @@ jobs:
           printf '%s' "$NAME" | grep -Eq '^[A-Za-z0-9_.-]{1,32}$' || { echo "::error::agent_name must match [A-Za-z0-9_.-]{1,32}"; exit 1; }
           [ -n "$HOST" ] || { echo "::error::endpoint_host input or LAB_ENDPOINT_HOST variable is required"; exit 1; }
           [ -n "$USER" ] || { echo "::error::endpoint_user input or LAB_ENDPOINT_USER variable is required"; exit 1; }
-          [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
+          [ -n "$LAB_ENDPOINT_SSH_KEY" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
           echo "Onboarding '$NAME' via $USER@$HOST"
 
       - name: Install tooling
@@ -68,7 +69,7 @@ jobs:
         run: |
           set -e
           install -m700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
+          printf '%s\n' "$LAB_ENDPOINT_SSH_KEY" > ~/.ssh/lab_endpoint
           chmod 600 ~/.ssh/lab_endpoint
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
@@ -104,7 +105,7 @@ jobs:
           [Peer]
           PublicKey = ${{ steps.add.outputs.SERVER_PUB }}
           Endpoint = ${{ steps.add.outputs.ENDPOINT }}
-          AllowedIPs = 10.250.0.0/24, 172.23.128.0/20
+          AllowedIPs = 10.250.0.0/24, 172.23.128.0/20, 192.168.222.0/24
           PersistentKeepalive = 25
           EOF
           fi
@@ -134,7 +135,7 @@ jobs:
             echo "1. Download the \`lab-audit-$NAME\` artifact."
             echo "2. Import the \`.conf\` into the WireGuard app, or run:"
             echo '   `bash tools/lab-vpn/lab-audit-connect.sh lab-audit-'"$NAME"'.conf`'
-            echo "3. Verify: ping lab-endpoint (10.250.0.1), ci-runner.lab (172.23.128.51), edge-builder.lab (172.23.128.52)."
+            echo "3. Verify: ping lab-endpoint (10.250.0.1); lab #2 (current host): testnuc.lab (192.168.222.222), ci-runner2.lab (192.168.222.201); lab #1 (legacy): ci-runner.lab (172.23.128.51)."
             echo ""
             echo "Offboard later: run the **Lab agent offboarding** workflow with this name."
           } >> "$GITHUB_STEP_SUMMARY"

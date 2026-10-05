@@ -1,0 +1,25 @@
+{
+  "domain": "32_backup_restore_drill",
+  "file": "32_backup_restore_drill.md",
+  "area": "DR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No backup/restore drill plan artifact or tested lab restore",
+      "evidence": [
+        "prompts/MASTER_RUNNER_FULL_HARDENING.md:99 requires backup_restore_drill_plan.md",
+        "no such file is produced by tools/full_domain.py",
+        "infra/lab README documents rebuild, not restore-from-backup"
+      ],
+      "impact": "Recovery time/point objectives for the lab and run archive are unstated and untested.",
+      "recommendation": "Add the drill plan (git-as-source-of-truth + lab rebuild) and an annual restore test.",
+      "area": "DR",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DR"
+    }
+  ],
+  "report": "Reviewed recovery posture. Runs and tools are in git, so pack recovery is clone-based. The lab is disposable; no restore drill is documented."
+}

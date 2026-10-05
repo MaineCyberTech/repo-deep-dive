@@ -1,0 +1,52 @@
+{
+  "domain": "25_multi_tenant_isolation_attack_simulation",
+  "file": "25_multi_tenant_isolation_attack_simulation.md",
+  "area": "MT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:21Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "IDOR: admin dead-letter retry was not tenant-scoped (fixed)",
+      "status": "verified-fixed",
+      "owner": "@api",
+      "target": "MT",
+      "note": "PR #90; re-verified tenant scoping in the admin webhooks routes.",
+      "evidence": [
+        "apps/api/src/modules/admin/routes.ts: retry path uses getAdminWorkspaceIds"
+      ],
+      "impact": "Cross-tenant mutation.",
+      "recommendation": "n/a",
+      "area": "MT"
+    },
+    {
+      "severity": "P2",
+      "title": "Cross-tenant user directory via auth service (fixed)",
+      "status": "verified-fixed",
+      "owner": "@security",
+      "target": "MT",
+      "note": "PR #91; directory now uses an RLS-aware caller client.",
+      "evidence": [
+        "apps/api/src/modules/auth/service.ts:44-90"
+      ],
+      "impact": "Cross-tenant PII enumeration.",
+      "recommendation": "n/a",
+      "area": "MT"
+    },
+    {
+      "severity": "P3",
+      "title": "Admin `/stats` returns global cross-tenant counts (residual)",
+      "status": "open",
+      "owner": "@api",
+      "target": "MT",
+      "note": "Same as ACM finding; confirmed open.",
+      "evidence": [
+        "apps/api/src/modules/admin/routes.ts:59-69"
+      ],
+      "impact": "Aggregate tenant-size disclosure.",
+      "recommendation": "Scope the users/messages counts.",
+      "area": "MT"
+    }
+  ],
+  "report": "Simulated cross-tenant reads\nagainst the admin surface and the auth directory. The historical IDOR and\nuser-directory findings are fixed; the global `/stats` counters remain."
+}

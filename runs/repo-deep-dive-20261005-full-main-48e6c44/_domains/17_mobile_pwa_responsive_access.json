@@ -1,0 +1,9 @@
+{
+  "domain": "17_mobile_pwa_responsive_access",
+  "file": "17_mobile_pwa_responsive_access.md",
+  "area": "MOB",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:06Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. There is no mobile app or PWA. Evidence: no manifest.json/service worker for an app; no client framework dependency."
+}

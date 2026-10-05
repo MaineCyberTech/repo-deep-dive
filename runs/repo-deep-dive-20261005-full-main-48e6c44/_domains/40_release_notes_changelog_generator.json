@@ -1,0 +1,25 @@
+{
+  "domain": "40_release_notes_changelog_generator",
+  "file": "40_release_notes_changelog_generator.md",
+  "area": "REL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:09Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Full-domain runs generate no release notes or changelog draft",
+      "evidence": [
+        "prompts/MASTER_RUNNER_FULL_HARDENING.md:104-105 requires release_notes_draft.md and changelog_draft.md",
+        "tools/full_domain.py writes neither",
+        "CHANGELOG.md has no full-domain entry (see DOC finding)"
+      ],
+      "impact": "Ship-ready notes are not part of a run, and pack changes are not guaranteed a changelog entry.",
+      "recommendation": "Have aggregate emit both drafts and make the pack changelog entry part of the completion checklist.",
+      "area": "REL",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    }
+  ],
+  "report": "Reviewed release/changelog artifacts for the self-audit."
+}

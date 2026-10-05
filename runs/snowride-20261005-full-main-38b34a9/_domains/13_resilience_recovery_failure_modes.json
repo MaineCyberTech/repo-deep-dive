@@ -1,0 +1,28 @@
+{
+  "domain": "13_resilience_recovery_failure_modes",
+  "file": "13_resilience_recovery_failure_modes.md",
+  "area": "RES",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T04:08:07Z",
+  "findings": [
+    {
+      "id": "RES-P3-001",
+      "severity": "P3",
+      "title": "Rollout-switch rollback requires a process restart",
+      "owner": "@owner",
+      "target": "RES",
+      "status": "open",
+      "confidence": "Medium",
+      "evidence": [
+        "AGENTS.md:88 switches 'all read at boot; a restart applies a change'",
+        "config.ts EnvSchema evaluated in loadConfig at startup",
+        "compose has no hot-reload path for these env values"
+      ],
+      "impact": "Emergency mode changes (e.g. disable trick scoring) cannot be applied live; a recreate risks dropping in-flight rooms.",
+      "recommendation": "Document the restart-based rollback SLO and consider a durable, hot-applied override for the highest-risk switch.",
+      "note": "",
+      "area": "RES"
+    }
+  ],
+  "report": "Resilience: fail-closed mode defaults, readiness gating, 30s stop_grace_period, backpressure limits, kill switches and rollback/backup runbooks. Residual: rollout switches are read at boot only, so a mode rollback needs a restart/recreate rather than a live flip."
+}

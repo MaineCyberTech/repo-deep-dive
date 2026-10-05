@@ -1,0 +1,38 @@
+{
+  "run": "20261004-full-main-ba4becb",
+  "generated": "2026-10-05T03:51:40Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 2
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "GIT",
+      "title": "[GIT] No LICENSE file",
+      "report": "lens_deterministic.md",
+      "line": 14,
+      "detail": "Add a license.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "subcode": "SEC",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 18,
+      "detail": "Install gitleaks in CI to enable the secret scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ]
+}

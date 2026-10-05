@@ -1,0 +1,26 @@
+{
+  "domain": "19_platform_evolution_extensibility",
+  "file": "19_platform_evolution_extensibility.md",
+  "area": "EVOL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:18Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No extension/plugin contract or versioned public API surface",
+      "status": "open",
+      "owner": "@eng",
+      "target": "EVOL",
+      "note": "packages/sdk exists but no plugin/extension API or deprecation policy.",
+      "evidence": [
+        "packages/sdk",
+        "apps/api/src/route-registry.ts",
+        "no plugin loader"
+      ],
+      "impact": "Third-party integrations lack a stable contract.",
+      "recommendation": "Document a versioning/deprecation policy and an extension contract.",
+      "area": "EVOL"
+    }
+  ],
+  "report": "Reviewed the route registry, SDK package and\nfeature-flag module for extension points. No public plugin/webhook-inbound API\nbeyond outbound webhooks."
+}

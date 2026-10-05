@@ -1,0 +1,305 @@
+﻿diff --git a/.env.example b/.env.example
+index 8271c1f..5026293 100644
+--- a/.env.example
++++ b/.env.example
+@@ -86,7 +86,9 @@ METRICS_TOKEN=
+ # OTEL_LOG_LEVEL=info
+ 
+ # --- Owner launch attestation (P25-G04; required for a launch-gate PASS) ---
+-# GIT_COMMIT is set from `git rev-parse HEAD` at deploy time.
++# GIT_COMMIT is set from `git rev-parse HEAD` at deploy time. It is the RUNNING
++# commit the gate compares against LAUNCH_ATTESTED_COMMIT; if it is empty the
++# gate fails closed (attestation_commit_unverified).
+ GIT_COMMIT=
+ LAUNCH_RC_VERSION=
+ LAUNCH_RC_FREEZE=
+diff --git a/apps/realtime/src/__tests__/launchGateAttestation.test.ts b/apps/realtime/src/__tests__/launchGateAttestation.test.ts
+index 1089018..7652f29 100644
+--- a/apps/realtime/src/__tests__/launchGateAttestation.test.ts
++++ b/apps/realtime/src/__tests__/launchGateAttestation.test.ts
+@@ -51,6 +51,26 @@ describe("SEC-P1-001 launch-gate owner attestation", () => {
+     expect(cfg.launchGate?.ownerSignature).not.toBe("");
+   });
+ 
++  it("FINAL-P1-001: expectedCommit is the running commit, never the attested commit", () => {
++    const signed = {
++      ...ENV_IDENTITY,
++      LAUNCH_OWNER_PUBLIC_KEY: PUBLIC_PEM,
++      LAUNCH_OWNER_SIGNATURE: signIdentity(IDENTITY),
++    };
++    // No running commit supplied -> unbound (the gate fails closed
++    // attestation_commit_unverified rather than self-attesting the old commit).
++    expect(loadConfig(signed).launchGate?.expectedCommit).toBe("");
++    const withGit = loadConfig({
++      ...signed,
++      GIT_COMMIT: "38b34a9cd0ee6485b20599ce08141cd46d18e4a4",
++    });
++    expect(withGit.launchGate?.expectedCommit).toBe(
++      "38b34a9cd0ee6485b20599ce08141cd46d18e4a4",
++    );
++    // The attestation's own commit is unchanged and independent.
++    expect(withGit.launchGate?.attestedCommit).toBe(IDENTITY.attestedCommit);
++  });
++
+   it("fails closed when the signed identity is tampered (stale/mismatched)", () => {
+     const signature = signIdentity(IDENTITY);
+     const cfg = loadConfig({
+diff --git a/apps/realtime/src/config.ts b/apps/realtime/src/config.ts
+index 8ce4b3d..ddca515 100644
+--- a/apps/realtime/src/config.ts
++++ b/apps/realtime/src/config.ts
+@@ -205,9 +205,11 @@ const EnvSchema = z.object({
+   LAUNCH_EXPECTED_COMMIT: z.string().optional().default(""),
+   /**
+    * Build identity of the RUNNING artifact (set by the deploy: the commit the
+-   * images were built from). When present it is the expected commit for the
+-   * launch attestation, so deploying new code without re-attesting closes the
+-   * gate (commit_mismatch) instead of silently staying open.
++   * images were built from). It is the expected commit for the launch
++   * attestation, so deploying new code without re-attesting closes the gate
++   * (commit_mismatch). FINAL-P1-001: when it is absent the gate fails closed
++   * (attestation_commit_unverified) instead of falling back to the attestation's
++   * own `commit` and silently staying open with a stale identity.
+    */
+   GIT_COMMIT: z.string().optional().default(""),
+   LAUNCH_MIGRATIONS_APPLIED: envBool(false),
+@@ -445,8 +447,12 @@ export function loadConfig(
+       attestedAt: e.LAUNCH_ATTESTED_AT,
+       attestationExpires: e.LAUNCH_ATTESTATION_EXPIRES,
+       expectedVersion: e.LAUNCH_EXPECTED_VERSION || e.LAUNCH_RC_VERSION,
+-      expectedCommit:
+-        e.GIT_COMMIT || e.LAUNCH_EXPECTED_COMMIT || e.LAUNCH_ATTESTED_COMMIT,
++      // FINAL-P1-001: the expected commit is the RUNNING artifact's commit from
++      // the deploy, never the attestation's own `commit`. If neither GIT_COMMIT
++      // nor LAUNCH_EXPECTED_COMMIT is supplied this stays "" and the gate fails
++      // closed (attestation_commit_unverified) -- a stale committed attestation
++      // can no longer validate itself at an arbitrary HEAD.
++      expectedCommit: e.GIT_COMMIT || e.LAUNCH_EXPECTED_COMMIT,
+       migrationsApplied: e.LAUNCH_MIGRATIONS_APPLIED,
+       dashboardsReady: e.LAUNCH_DASHBOARDS_READY,
+       supportModStaged: e.LAUNCH_SUPPORT_MOD_STAGED,
+diff --git a/docs/RELEASE_GATE.md b/docs/RELEASE_GATE.md
+index 539cc98..0a23c00 100644
+--- a/docs/RELEASE_GATE.md
++++ b/docs/RELEASE_GATE.md
+@@ -12,6 +12,13 @@ and surfaced at `/beta` and `/launch-readiness`. This page records the
+ *conditions* an attested release must satisfy; it does not replace the runtime
+ gate or the append-only evidence trail ([`EVIDENCE.md`](EVIDENCE.md)).
+ 
++FINAL-P1-001: the gate also binds the attestation to the **running** commit ΓÇö
++the deploy's `GIT_COMMIT` (else `LAUNCH_EXPECTED_COMMIT`) is cross-checked
++against the attested `commit`. The committed `LAUNCH_ATTESTED_COMMIT` is a
++historical identity only; if the running commit is not supplied the gate fails
++closed (`attestation_commit_unverified`), so a stale committed attestation can
++never be presented as the current release.
++
+ ## Rubric
+ 
+ - **Any open P0 blocks release.**
+diff --git a/docs/runbooks/DEPLOY.md b/docs/runbooks/DEPLOY.md
+index b8dc7cb..67740d3 100644
+--- a/docs/runbooks/DEPLOY.md
++++ b/docs/runbooks/DEPLOY.md
+@@ -9,9 +9,10 @@ Single-host stack: `web` (Next.js), `realtime` (authoritative server), `nginx`
+   `LETSENCRYPT_EMAIL`, Supabase URL/keys and `RM_SUPABASE_SERVICE_ROLE_KEY`.
+ - Migrations applied (`docs/runbooks/MIGRATIONS.md`).
+ - `GIT_COMMIT` exported ΓÇö the launch attestation binds the deploy to the
+-  exact commit. A set-but-stale value fails the attestation closed; if unset,
+-  the server falls back to `LAUNCH_ATTESTED_COMMIT`/`LAUNCH_EXPECTED_COMMIT`
+-  (so a missing export silently attests the OLD commit ΓÇö always export it).
++  exact commit. A set-but-stale value fails the attestation closed
++  (`commit_mismatch`); if unset, the gate also fails closed
++  (`attestation_commit_unverified`) ΓÇö it never falls back to the attestation's
++  own (possibly stale) `LAUNCH_ATTESTED_COMMIT`. Always export it.
+ 
+ ## Routine deploy
+ 
+@@ -101,7 +102,13 @@ expires=<attestationExpires>
+ ```
+ 
+ If the signature is missing, malformed, or does not verify over the exact
+-identity, the gate stays closed. Example signing commands:
++identity, the gate stays closed. FINAL-P1-001: the gate additionally requires
++the **running** commit (`GIT_COMMIT`, else `LAUNCH_EXPECTED_COMMIT`) and
++cross-checks it against the attested `commit`; the committed
++`LAUNCH_ATTESTED_COMMIT` is a historical identity, never the running-commit
++default. A deploy that omits the running commit fails closed
++(`attestation_commit_unverified`), so a stale committed attestation cannot be
++presented as the current release. Example signing commands:
+ 
+ ```bash
+ # canonical.txt holds the payload above with the real values.
+diff --git a/infra/compose/docker-compose.yml b/infra/compose/docker-compose.yml
+index 76f6cd0..06dcada 100644
+--- a/infra/compose/docker-compose.yml
++++ b/infra/compose/docker-compose.yml
+@@ -133,12 +133,18 @@ services:
+       # r71 F71-09 binding: exact identities the attestation covers. Deploys
+       # must export GIT_COMMIT=$(git rev-parse HEAD); a redeploy with new code
+       # and a stale attestation fails closed (commit_mismatch).
++      # FINAL-P1-001: the gate uses GIT_COMMIT/LAUNCH_EXPECTED_COMMIT as the
++      # RUNNING commit and never falls back to LAUNCH_ATTESTED_COMMIT, so an
++      # omitted export fails closed (attestation_commit_unverified) rather than
++      # silently attesting a stale commit.
+       GIT_COMMIT: "${GIT_COMMIT:-}"
+       # Superseded ac5cbc6 attestation preserved in
+       # evidence/recovery/launch_attestation_history.json (r71 F71R-01).
+       # SEC-P1-001/FINAL-P1-001: re-attested to the released HEAD 9125913 and
+-      # migration head 0057. Deployed image digests are supplied out-of-band by
+-      # the owner/release job (never a stale committed digest).
++      # migration head 0057. This is the HISTORICAL attested identity (must match
++      # the running GIT_COMMIT to promote), not a running-commit default. The
++      # deployed image digests are supplied out-of-band by the owner/release job
++      # (never a stale committed digest).
+       # DATA-P1-001: the head drifted more than once because nothing compared it
+       # to the migrations directory; scripts/attested-migration-head-check.mjs
+       # now fails CI unless this equals the newest supabase/migrations/*.sql.
+diff --git a/packages/game-core/src/__tests__/betaRelease.test.ts b/packages/game-core/src/__tests__/betaRelease.test.ts
+index 00b984c..4dd6093 100644
+--- a/packages/game-core/src/__tests__/betaRelease.test.ts
++++ b/packages/game-core/src/__tests__/betaRelease.test.ts
+@@ -42,8 +42,26 @@ describe("Phase 24 controlled beta & RC", () => {
+     owner: "owner-r71",
+     attestedAt: "2026-09-23T05:00:00Z",
+     expiresAt: "2026-12-31T00:00:00Z",
++    // FINAL-P1-001: the running artifact's build commit, independent of the
++    // attested commit; required for promotion.
++    expectedCommit: "362dae21b1241455f0b8fd6c46fe94503e6d07ec",
+   };
+ 
++  it("FINAL-P1-001: an attestation with no running commit fails closed", () => {
++    // Regression: a stale committed attestation must not validate itself by
++    // defaulting expectedCommit to its own `commit`.
++    for (const missing of [undefined, "", "   "] as const) {
++      const rc = { ...boundRC, expectedCommit: missing } as RCArtifact;
++      expect(canPromoteRC(rc).reason).toBe("attestation_commit_unverified");
++    }
++    // A present-but-different running commit is a mismatch, not "unverified".
++    expect(
++      canPromoteRC({ ...boundRC, expectedCommit: "deadbeefdeadbeef" }).reason,
++    ).toBe("commit_mismatch");
++    // The independent, matching running commit promotes.
++    expect(canPromoteRC(boundRC).allowed).toBe(true);
++  });
++
+   it("G02/G04: RC promotion requires freeze + migration + backup + signature", () => {
+     expect(canPromoteRC(boundRC).allowed).toBe(true);
+ 
+diff --git a/packages/game-core/src/__tests__/launchReadiness.test.ts b/packages/game-core/src/__tests__/launchReadiness.test.ts
+index fad02a9..62e482f 100644
+--- a/packages/game-core/src/__tests__/launchReadiness.test.ts
++++ b/packages/game-core/src/__tests__/launchReadiness.test.ts
+@@ -62,6 +62,7 @@ describe("Phase 25 production launch & live-service", () => {
+       rollbackRehearsed: true,
+       knownLimitationsPublished: true,
+       ownerSignature: "sig-owner",
++      expectedCommit: "362dae21b1241455f0b8fd6c46fe94503e6d07ec",
+     });
+     expect(ready.ready).toBe(true);
+     expect(ready.missing).toEqual([]);
+@@ -77,6 +78,20 @@ describe("Phase 25 production launch & live-service", () => {
+     expect(bad.ready).toBe(false);
+     expect(bad.missing).toContain("migrations");
+     expect(bad.missing).not.toContain("known_limitations");
++    // FINAL-P1-001: a signature without the running commit is not ready.
++    expect(bad.missing).toContain("attestation_commit_unverified");
++    const noCommit = evaluateLaunchGate({
++      rcVersion: "25.0.0",
++      migrationsApplied: true,
++      dashboardsReady: true,
++      supportModStaged: true,
++      rollbackRehearsed: true,
++      knownLimitationsPublished: true,
++      ownerSignature: "sig",
++      expectedCommit: "   ",
++    });
++    expect(noCommit.ready).toBe(false);
++    expect(noCommit.missing).toContain("attestation_commit_unverified");
+   });
+ 
+   it("G07: reopen guard fires on any critical signal", () => {
+diff --git a/packages/game-core/src/betaRelease.ts b/packages/game-core/src/betaRelease.ts
+index 514c0d5..95d0e3f 100644
+--- a/packages/game-core/src/betaRelease.ts
++++ b/packages/game-core/src/betaRelease.ts
+@@ -53,8 +53,16 @@ export interface RCArtifact {
+   attestedAt?: string;
+   /** ISO-8601 UTC expiry/supersession time. */
+   expiresAt?: string;
+-  /** Optional cross-checks: the running RC/commit must match, else fail. */
++  /** Optional cross-check: the running RC must match, else fail. */
+   expectedVersion?: string;
++  /**
++   * FINAL-P1-001: the commit the RUNNING artifact was built from (the deploy's
++   * `GIT_COMMIT` / `LAUNCH_EXPECTED_COMMIT`). REQUIRED and independent of
++   * `commit`: when it is absent the attestation cannot be tied to a running
++   * revision, so the gate fails closed (`attestation_commit_unverified`).
++   * Never default this to `commit`, or a stale committed attestation would
++   * validate itself at an arbitrary HEAD.
++   */
+   expectedCommit?: string;
+ }
+ 
+@@ -74,6 +82,11 @@ const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+  * digest(s), migration head, backup object, owner, timestamp, expiry) with
+  * fail-closed cross-checks against the running RC. Whitespace-only signatures
+  * do not count; stale or mismatched attestations do not promote.
++ *
++ * FINAL-P1-001: the committed attestation at commit X must never validate a
++ * runtime built from commit Y. Promotion therefore requires an independent
++ * `expectedCommit` (the running artifact's build commit); when it is missing the
++ * decision is `attestation_commit_unverified`, not a self-comparison.
+  */
+ export function canPromoteRC(
+   rc: RCArtifact,
+@@ -107,13 +120,17 @@ export function canPromoteRC(
+   ) {
+     return { allowed: false, reason: "attestation_malformed" };
+   }
++  // FINAL-P1-001: the attested commit must be cross-checked against the commit
++  // the RUNNING artifact was built from. If no running commit is supplied the
++  // binding is unverifiable and must fail closed rather than self-validate
++  // against the (possibly stale) committed attestation.
++  if (!rc.expectedCommit || rc.expectedCommit.trim().length === 0) {
++    return { allowed: false, reason: "attestation_commit_unverified" };
++  }
+   if (rc.expectedVersion !== undefined && rc.version !== rc.expectedVersion) {
+     return { allowed: false, reason: "rc_version_mismatch" };
+   }
+-  if (
+-    rc.expectedCommit !== undefined &&
+-    rc.commit.toLowerCase() !== rc.expectedCommit.toLowerCase()
+-  ) {
++  if (rc.commit.toLowerCase() !== rc.expectedCommit.toLowerCase()) {
+     return { allowed: false, reason: "commit_mismatch" };
+   }
+   const expires = Date.parse(rc.expiresAt);
+diff --git a/packages/game-core/src/launchReadiness.ts b/packages/game-core/src/launchReadiness.ts
+index a15fd91..e9b0b2d 100644
+--- a/packages/game-core/src/launchReadiness.ts
++++ b/packages/game-core/src/launchReadiness.ts
+@@ -64,6 +64,12 @@ export interface LaunchGateInput {
+   rollbackRehearsed: boolean;
+   knownLimitationsPublished: boolean;
+   ownerSignature: string;
++  /**
++   * FINAL-P1-001: the commit the running artifact was built from (deploy's
++   * `GIT_COMMIT`). The attestation is only bound when this is present; its
++   * absence fails the gate closed. Never default it to the attested commit.
++   */
++  expectedCommit?: string;
+ }
+ 
+ export interface LaunchGateResult {
+@@ -80,6 +86,11 @@ export function evaluateLaunchGate(g: LaunchGateInput): LaunchGateResult {
+   if (!g.rollbackRehearsed) missing.push("rollback_rehearsal");
+   if (!g.knownLimitationsPublished) missing.push("known_limitations");
+   if (!g.ownerSignature) missing.push("owner_signature");
++  // FINAL-P1-001: an owner signature alone is not enough; the attestation must
++  // be bound to the running commit. Missing/unset => fail closed.
++  if (!g.expectedCommit || g.expectedCommit.trim().length === 0) {
++    missing.push("attestation_commit_unverified");
++  }
+   return { ready: missing.length === 0, missing };
+ }
+ 

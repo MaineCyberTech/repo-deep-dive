@@ -134,5 +134,23 @@ class CountsTest(unittest.TestCase):
         self.assertEqual(c["byArea"], {"DATA": 1, "TEST": 2})
 
 
+class ComputeGateTest(unittest.TestCase):
+    def test_p0_is_never_go(self):
+        # EXEC-P1-001: a P0 must yield NO-GO (the shared gate, not just a label).
+        self.assertEqual(lib_findings.compute_gate({"bySeverity": {"P0": 1}}), "NO-GO")
+        self.assertEqual(lib_findings.compute_gate({"bySeverity": {"P0": 1, "P2": 3}}), "NO-GO")
+
+    def test_p1_is_go_with_conditions_and_clean_is_go(self):
+        self.assertEqual(lib_findings.compute_gate({"bySeverity": {"P1": 1}}),
+                         "GO WITH CONDITIONS")
+        self.assertEqual(lib_findings.compute_gate({"bySeverity": {"P2": 4, "P3": 1}}), "GO")
+        self.assertEqual(lib_findings.compute_gate({}), "GO")
+
+    def test_override_wins_but_unknown_fails_closed(self):
+        self.assertEqual(lib_findings.compute_gate({"bySeverity": {"P0": 1}}, "GO"), "GO")
+        with self.assertRaises(ValueError):
+            lib_findings.compute_gate({"bySeverity": {}}, "MAYBE")
+
+
 if __name__ == "__main__":
     unittest.main()

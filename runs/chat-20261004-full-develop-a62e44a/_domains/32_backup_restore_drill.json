@@ -1,0 +1,26 @@
+{
+  "domain": "32_backup_restore_drill",
+  "file": "32_backup_restore_drill.md",
+  "area": "DR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:54:23Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No evidence of an executed restore drill / RPO-RTO validation",
+      "status": "open",
+      "owner": "@ops",
+      "target": "DR",
+      "note": "Docs exist; no dated drill result in the repo.",
+      "evidence": [
+        "docs/runbooks/backup-strategy.md",
+        "docs/runbooks/database-restore.md",
+        "no drill artifact"
+      ],
+      "impact": "Recovery assumptions unproven.",
+      "recommendation": "Run a restore drill and commit the result under docs/operations.",
+      "area": "DR"
+    }
+  ],
+  "report": "Backup/restore runbooks exist (`backup-strategy.md`,\n`database-restore.md`) but no executed-drill artifact at this commit."
+}

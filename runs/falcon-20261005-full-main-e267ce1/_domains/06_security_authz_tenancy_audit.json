@@ -1,0 +1,26 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:52:55Z",
+  "findings": [
+    {
+      "area": "SEC",
+      "severity": "P2",
+      "title": "Public-facing routers have no origin authentication; `ntfy-auth` is dead config",
+      "evidence": [
+        "config/traefik/dynamic.yml public routers",
+        "config/ntfy/server.yml (ntfy-auth not wired)",
+        "docs/security/BRANCH_PROTECTION.md compensating controls"
+      ],
+      "status": "still-open",
+      "confidence": "high",
+      "recommendation": "Wire the ntfy/Traefik auth middleware or document the origin-trust decision explicitly.",
+      "detail": "Wire the ntfy/Traefik auth middleware or document the origin-trust decision explicitly.",
+      "owner": "@owner",
+      "target": "SEC"
+    }
+  ],
+  "report": ""
+}

@@ -1,0 +1,25 @@
+{
+  "domain": "39_analytics_tracking_privacy",
+  "file": "39_analytics_tracking_privacy.md",
+  "findings": [
+    {
+      "id": "AN-P3-001",
+      "severity": "P3",
+      "title": "Analytics has no consent-mode signalling and no documented event/retention governance",
+      "area": "AN",
+      "owner": "@web",
+      "target": "AN",
+      "status": "open",
+      "confidence": "medium",
+      "evidence": [
+        "apps/web/app/(public)/layout.tsx:65-67 gtag('config', GA_ID) with default storage (no consent state passed)",
+        "apps/web/app/(public)/privacy/page.tsx:29-31 states IP address and pages visited are collected automatically",
+        "git ls-files for analytics governance docs found only product/prompt catalogs, not a live event schema or retention basis"
+      ],
+      "impact": "There is no consent-state wiring and no documented retention or purpose limitation for analytics data, so analytics collection cannot be shown to be lawful or minimal.",
+      "recommendation": "Adopt a consent-state contract, document each event's purpose and retention, and add the event schema to the data-governance docs.",
+      "note": "Verified at main 9c0b88c."
+    }
+  ],
+  "report": "Read-only analysis at main `9c0b88c` (2026-10-04). No findings identified for this domain in the 9c0b88c reconciliation pass. Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}
