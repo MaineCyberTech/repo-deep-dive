@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1239
+# files: 1243
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -38,7 +38,7 @@ acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
 c8b9df7a9ea79cebfe073cb2a72b1167d9a6add1ca883ea665b6383eb2216d84  ./docs/ARCHITECTURE.md
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 9085dd6643e604a6fe81e2e9aae46fb3171d3ec50f11d9baa8aa6f272db2ee33  ./docs/DEEP_DIVE_ROADMAP.md
-38299405f259a096c604da4dda64c0275e67c1aec2e361da7bee4d843c3c267b  ./docs/LAB_ARCHITECTURE.md
+e302cfb9ff12dd822a89d6a51cc101c736832324ba2cc2547ac84cf61d3e7fc4  ./docs/LAB_ARCHITECTURE.md
 9046212d5338395ded191ca9ae9c68ebc93f5363afb4418476ed49c3ab3561f8  ./docs/LAB_IAC.md
 7c4b571112aa4bc0423a2668455ea934fc27152e9778bb8242ced7351dc3f65f  ./docs/LAB_VPN.md
 8e8d4464abe5d3accb3cda5b9bba9c9e00fc8d64a90ebe2bdadf49a8e2e54c7a  ./docs/OBSERVABILITY.md
@@ -149,6 +149,7 @@ f5cdff431dfc09048110d0227265e10380632dda7880fb14519b497276dd7e7a  ./prompts/MAST
 49c036f570d66818898e13e21f923aafa017d1ce07ca67257c00d84c95753a71  ./prompts/REMEDIATION_RUNNER.md
 cc773cf23872e97ff71cda564b368ca97829ced82df54099eab6b5afb544c8f8  ./runbooks/AGENT_SETUP.md
 6384997df98e28e4beb09879e0457f860249fb0dad3fc27c898a2869f22eb687  ./runbooks/CI_ON_LAB.md
+7ccfab822b9c34153ff7dfb2922ef4a87091bb77c250061d05ceb00c6febc00c  ./runbooks/LAB_API.md
 ff265fba18171efd42131b23f39da4725c8a0ee836c0710ef260640f5b6f0044  ./runbooks/OPERATOR_QUICKSTART.md
 61ec923b3be44f6c2983dabb9381c2888ece9e30392250c14887a6516a74b867  ./runbooks/OPERATOR_QUICKSTART_FALCON_LAB.md
 215938035f309e17f0b3616828f0ee39b2531b6727ace0613e9f80d02c78c0fe  ./runbooks/OPERATOR_TROUBLESHOOTING.md
@@ -1203,6 +1204,8 @@ da6a9b7eaa62a42e1cb8e2b76b692d513ad478b13ae5e3d1d0eff70ca335501d  ./tools/collec
 6305974602de8120d5d10f63d28ccc8c5138a8952b60df75d244139199caba88  ./tools/deterministic_checks.py
 a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
+e2b1a7d0fd9629448b182e5fd26ebb38d96a4682e7a6e806de25d8531640709f  ./tools/lab-vpn/deploy-lab-api.sh
+c9d0754bb2efab55123acb973dfbc303fe753befdc22f91e4716561d0dad591f  ./tools/lab-vpn/lab-api-install.sh
 910619b05ae719c5b39ebf6d8151188a32a98d84e3b328f16aa6e6920aca69e9  ./tools/lab-vpn/lab-audit-add-agent.sh
 b90a7df24c2ae3d497e4c8fda1f90aecf0b5d6c0bde6f8216474f8ec187871e7  ./tools/lab-vpn/lab-audit-bootstrap.sh
 ede459b8ace83f4ba810ff40f92e9632bb4f55d9428937dd484a78bb2e464d14  ./tools/lab-vpn/lab-audit-connect.sh
@@ -1210,13 +1213,14 @@ ca6f32bf9215539056067afa79650b59cbe8faab19f733bb486c4234bad03c5e  ./tools/lab-vp
 47c34b4876867e1e702359dd47c26c03b47577c0fa85d8046d4f99b409233e29  ./tools/lab-vpn/lab-audit-gh.sh
 2dee1b94ff88d474e3f3e095935143072dfdf3f7ff303af2c89aa4e43578911f  ./tools/lab-vpn/lab-audit-lab.sh
 4a38aefa3abb20b7fbed6f669b010a8f62727f62ea8fd33ecb74b446c3c0de02  ./tools/lab-vpn/lab-audit-list-agents.sh
-65c013ce061ce7334f45fb3a8d0faec1e7b14f123a47c527403cfd30c6a7debb  ./tools/lab-vpn/lab-audit-preflight.sh
+70607d0f84cbd5122bd85bd39660f2471823eef2a2526dd009b6963de31aa746  ./tools/lab-vpn/lab-audit-preflight.sh
 591133e4abe26c377e577abbb4420a046cf4ed0761612728ac73ca5734b65f28  ./tools/lab-vpn/lab-audit-revoke-agent.sh
 e86aefb2461eb8a3df701b6d697b3c31ef6d56bde31ea084e487beb49498dddb  ./tools/lab-vpn/lab-audit-run.sh
 bad1ba77f6445fcc22ec416907fbc8280273a3f0444fb36fb060f96a4113e51c  ./tools/lab-vpn/lab-audit-scoped-deploy.sh
-161ef570780ce72fdd014d0d8d74953ce0a37d2df63fc71ff6f3e32a7cc79d30  ./tools/lab-vpn/lab-audit-verify.sh
+9e0878a07c0d382fa647386feaa3f2f49ab719f1685beebb2a168ae0916203ca  ./tools/lab-vpn/lab-audit-verify.sh
 73e8168690e71e9ec4ed8efd50f839269f70bfef870ccc16d73c5bc477b05c44  ./tools/lab-vpn/labvpn-run.sh
-8d60b1882dec78922e369db10e5a71d1df64025e38e12ee943b9e6956f0a7be2  ./tools/lab_runner.py
+02e70664721cbe3576b2229e2a94ff5367229477c7d2a361f010b4ca53c4fbf5  ./tools/lab_api_server.py
+e8c72613b33aa177e5686780d5d57366fe932b8f936df1a90da12418018388ee  ./tools/lab_runner.py
 add6b33b8f426202f213c464cb028abaafc10be4d9574432b63b414d9d54dab9  ./tools/lib_findings.py
 94565415f253ccb7a49a2bc274c5be8e4d59d9a96312ef2fea262afd676fb9d8  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
