@@ -1,0 +1,25 @@
+{
+  "domain": "19_platform_evolution_extensibility",
+  "file": "19_platform_evolution_extensibility.md",
+  "area": "EVOL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Roadmap robustness items 1-6 remain open",
+      "evidence": [
+        "docs/DEEP_DIVE_ROADMAP.md:9-28 (CRLF/digest fragility, run schema, publish idempotency, self-hosted runner health, merge conflicts, direct-push gate bypass)",
+        "no schemas/run.schema.json in tree",
+        "tools/publish_audit.py:270-273 force-resets the PR branch to main"
+      ],
+      "impact": "Known fragility (digest conflicts, duplicate PRs, branch clobbering) continues to affect every pass.",
+      "recommendation": "Close items 1-3 (deterministic LF digest, run schema, idempotent publish) first.",
+      "area": "EVOL",
+      "status": "open",
+      "owner": "@owner",
+      "target": "EVOL"
+    }
+  ],
+  "report": "Reviewed the roadmap's robustness items against the current tree."
+}

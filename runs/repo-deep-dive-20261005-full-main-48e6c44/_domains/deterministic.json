@@ -1,0 +1,37 @@
+{
+  "domain": "deterministic",
+  "file": "lens_deterministic.md",
+  "area": "DET",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:03Z",
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "DEP",
+      "title": "[DEP] trivy not installed (dependency vuln scan skipped)",
+      "detail": "Install trivy to enable the --deep dependency vulnerability scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P2-002",
+      "severity": "P2",
+      "subcode": "PORT",
+      "title": "[PORT] 2 tracked shell script(s) without the exec bit",
+      "detail": "`./script.sh` fails on Linux; set `git update-index --chmod=+x`. Transfers from Windows drop the bit.",
+      "evidence": [
+        "tools/lab-vpn/deploy-lab-api.sh",
+        "tools/lab-vpn/lab-api-install.sh"
+      ],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ],
+  "report": "Executed on the lab workspace (ci-runner) against `repo-deep-dive @ 48e6c44`:\n\n- `git fetch --prune origin && git reset --hard origin/main` -> `48e6c44`.\n- `python3 tools/deterministic_checks.py . --deep -o /tmp/det-rdd2 --run repo-deep-dive` -> 2 findings (P2 x1, P3 x1); areas DET.\n\nThe lab has gitleaks 8.x installed (no hit under the reviewed `.gitleaks.toml`); actionlint, hadolint, shellcheck, trivy and zizmor are not installed on the lab, so those machine checks were skipped and are recorded as findings rather than assumed pass."
+}

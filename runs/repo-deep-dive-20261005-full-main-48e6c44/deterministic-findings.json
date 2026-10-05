@@ -1,0 +1,37 @@
+{
+  "run": "repo-deep-dive-20261005-full-main-48e6c44",
+  "generated": "2026-10-05T03:53:17Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 2
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "DEP",
+      "title": "[DEP] trivy not installed (dependency vuln scan skipped)",
+      "detail": "Install trivy to enable the --deep dependency vulnerability scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P2-002",
+      "severity": "P2",
+      "subcode": "PORT",
+      "title": "[PORT] 2 tracked shell script(s) without the exec bit",
+      "detail": "`./script.sh` fails on Linux; set `git update-index --chmod=+x`. Transfers from Windows drop the bit.",
+      "evidence": [
+        "tools/lab-vpn/deploy-lab-api.sh",
+        "tools/lab-vpn/lab-api-install.sh"
+      ],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ]
+}

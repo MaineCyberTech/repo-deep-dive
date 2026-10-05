@@ -1,0 +1,25 @@
+{
+  "domain": "13_resilience_recovery_failure_modes",
+  "file": "13_resilience_recovery_failure_modes.md",
+  "area": "RES",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:07Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Lab job API is a single point of failure for lab-dependent work",
+      "evidence": [
+        "tools/lab-vpn/lab-api-install.sh:26-31 one systemd unit, Restart=on-failure",
+        "runbooks/LAB_API.md and AGENTS.md:21-23 make lab preflight required for lab work",
+        "no secondary endpoint or queue in lab_runner.py"
+      ],
+      "impact": "If ci-runner is down, every lab-dependent audit/remediation step blocks with no failover.",
+      "recommendation": "Document a local MODE=local fallback per audit, or add a second runner/queue.",
+      "area": "RES",
+      "status": "open",
+      "owner": "@owner",
+      "target": "RES"
+    }
+  ],
+  "report": "Assessed failure modes of the lab job API and the run pipeline. The API is a single systemd service; git remains the durable store for runs."
+}

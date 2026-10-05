@@ -1,0 +1,54 @@
+{
+  "domain": "34_branch_protection_required_checks",
+  "file": "34_branch_protection_required_checks.md",
+  "area": "BP",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:06Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Required checks and PR/review rules do not match the documented gates",
+      "evidence": [
+        "ruleset 24481135 required_status_checks = ['Lab preflight / lab'] only; no `pull_request` rule",
+        "CONTRIBUTING.md:57-71 says main should require a pull request, one review, 'pack lint + self-test' and 'changed-run gate'",
+        "CODEOWNERS routes reviews but does not enforce them (.github/CODEOWNERS:1-7)"
+      ],
+      "impact": "The pack's own P0/P1 run gate and lint/self-test are not enforced server-side; a direct push can land audit runs without them.",
+      "recommendation": "Add the pack CI contexts to the ruleset required checks and a pull_request rule with >=1 review.",
+      "area": "BP",
+      "status": "open",
+      "owner": "@owner",
+      "target": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "Required check 'Lab preflight / lab' is unobtainable for fork PRs",
+      "evidence": [
+        "ruleset required context 'Lab preflight / lab'",
+        "lab-preflight.yml:24-37 runs on pull_request paths including runs/**",
+        "lab-preflight.yml:59 needs a repository secret unavailable to forks"
+      ],
+      "impact": "The single required check blocks all external contributions and is not the intended pack gate.",
+      "recommendation": "Make the required context a fork-safe pack check and run the lab check only on same-repo PRs/dispatch.",
+      "area": "BP",
+      "status": "open",
+      "owner": "@owner",
+      "target": "BP"
+    },
+    {
+      "severity": "P3",
+      "title": "Ruleset bypass actors permanently include the repository role and a deploy key",
+      "evidence": [
+        "ruleset 24481135 bypass_actors = DeployKey(always), RepositoryRole id 5(always)",
+        "docs/security-style guidance elsewhere in the pack favors auditable exceptions (CONTRIBUTING.md:73-77)"
+      ],
+      "impact": "Bypass actors remove the practical guarantee of the required checks for those actors.",
+      "recommendation": "Scope bypass to the digest deploy key only, and record owner-authorized exceptions.",
+      "area": "BP",
+      "status": "open",
+      "owner": "@owner",
+      "target": "BP"
+    }
+  ],
+  "report": "Live state read via `gh api repos/MaineCyberTech/repo-deep-dive/rulesets/24481135` and `/branches/main/protection`. `main` is governed by an active ruleset `main-protection` (deletion + non-fast-forward + required status checks); the legacy branch-protection API returns 404 'Branch not protected'."
+}

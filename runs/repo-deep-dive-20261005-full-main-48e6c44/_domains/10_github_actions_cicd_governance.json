@@ -1,0 +1,41 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:06Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Required lab-preflight check cannot pass on fork pull requests",
+      "evidence": [
+        ".github/workflows/lab-preflight.yml:24 triggers on `pull_request` with a paths filter",
+        ".github/workflows/lab-preflight.yml:59 fails closed when secrets.LAB_ENDPOINT_SSH_KEY is empty",
+        "Repository is public (`gh api repos/...` visibility=public); fork PRs do not receive repo secrets",
+        "The ruleset requires context 'Lab preflight / lab' (ruleset id 24481135)"
+      ],
+      "impact": "External contributors' PRs always show a failing required check and can never satisfy branch protection.",
+      "recommendation": "Skip the lab job (with a neutral/annotation) on `github.event.pull_request.head.repo.fork`, or split the required check from the lab-dependent one.",
+      "area": "CI",
+      "status": "open",
+      "owner": "@owner",
+      "target": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "CI does not run shellcheck/actionlint on the pack's own shell/yaml despite shipping the scanners",
+      "evidence": [
+        ".github/workflows/pack-tests.yml:35 runs unittest only",
+        ".github/workflows/audit.yml:38-42 runs lint_pack + self_test",
+        "deep-dive-deterministic.yml:76 installs shellcheck and :102 runs actionlint only in the org-scan workflow"
+      ],
+      "impact": "Shell defects (e.g. the broken .gitignore patterns, non-exec scripts) are not gated at PR time.",
+      "recommendation": "Add a pack CI job that runs shellcheck on tools/**/*.sh and actionlint on .github/workflows/*.yml.",
+      "area": "CI",
+      "status": "open",
+      "owner": "@owner",
+      "target": "CI"
+    }
+  ],
+  "report": "Reviewed all 12 workflows under `.github/workflows/`. Actions are SHA-pinned and jobs declare `permissions:`; the reusable lab-preflight gate and the required-check drift are covered under branch protection."
+}

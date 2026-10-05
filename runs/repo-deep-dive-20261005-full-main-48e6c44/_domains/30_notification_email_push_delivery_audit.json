@@ -1,0 +1,9 @@
+{
+  "domain": "30_notification_email_push_delivery_audit",
+  "file": "30_notification_email_push_delivery_audit.md",
+  "area": "NOTIF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:05Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. There is no in-product email/push notification delivery. Evidence: no mailer/push SDK; alerting is an external ntfy topic consumed by lab workflows, not a product feature."
+}

@@ -1,0 +1,54 @@
+{
+  "domain": "09_testing_quality_release_confidence",
+  "file": "09_testing_quality_release_confidence.md",
+  "area": "TEST",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:07Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "The publish release-gate logic is untested and never returns NO-GO",
+      "evidence": [
+        "tools/publish_audit.py:198 gate = GO if no P0/P1 else 'GO WITH CONDITIONS' (a P0 cannot produce NO-GO)",
+        "tests/test_publish_audit.py:16-93 covers only the secret scan and pack install, not the gate",
+        "tools/full_domain.py:432-442 correctly maps P0 -> NO-GO, so the two paths disagree"
+      ],
+      "impact": "A focused published run with a P0 blocker reports a less severe verdict than the full-domain path, misleading the release decision.",
+      "recommendation": "Make publish_audit reuse the shared gate function and add a P0 test asserting NO-GO.",
+      "area": "TEST",
+      "status": "open",
+      "owner": "@owner",
+      "target": "TEST"
+    },
+    {
+      "severity": "P3",
+      "title": "run_toolchain writes CSV to a fixed shared temp path",
+      "evidence": [
+        "tools/run_toolchain.py:87 tmp_csv = os.path.join(tempfile.gettempdir(), 'toolchain_findings.csv')",
+        "Observed: lab self_test.sh -> findings_to_csv.py PermissionError on /tmp/toolchain_findings.csv (RESULT: FAIL)"
+      ],
+      "impact": "Concurrent runs collide and a pre-created file makes the toolchain fail; the predictable path is also a symlink risk.",
+      "recommendation": "Use tempfile.mkdtemp()/NamedTemporaryFile for the CSV.",
+      "area": "TEST",
+      "status": "open",
+      "owner": "@owner",
+      "target": "TEST"
+    },
+    {
+      "severity": "P3",
+      "title": "The documented exec-bit invariant is not tested",
+      "evidence": [
+        "AGENTS.md:42 says *.sh are executable (100755)",
+        "two tracked scripts are 100644 (tools/lab-vpn/deploy-lab-api.sh, tools/lab-vpn/lab-api-install.sh)",
+        "no test asserts the mode of tracked shell scripts"
+      ],
+      "impact": "The invariant can regress silently on Windows-authored commits.",
+      "recommendation": "Add a lint/test check over `git ls-files -s '*.sh'`.",
+      "area": "TEST",
+      "status": "open",
+      "owner": "@owner",
+      "target": "TEST"
+    }
+  ],
+  "report": "Ran `tools/self_test.sh` and `python3 -m unittest discover -s tests` on the lab workspace. Unit tests pass; the self-test toolchain step failed in the lab on a fixed temp path (environmental collision)."
+}

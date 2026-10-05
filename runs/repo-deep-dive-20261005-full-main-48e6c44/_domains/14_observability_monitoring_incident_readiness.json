@@ -1,0 +1,39 @@
+{
+  "domain": "14_observability_monitoring_incident_readiness",
+  "file": "14_observability_monitoring_incident_readiness.md",
+  "area": "OBS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Run-freshness signal is documentation-only (no scheduled check or alert)",
+      "evidence": [
+        "docs/OBSERVABILITY.md:35-54 defines an age_days check and says it should raise an external alert",
+        "grep shows the only occurrence of age_days/freshness is in docs/OBSERVABILITY.md",
+        "no workflow runs the freshness snippet or posts to ntfy for stale runs"
+      ],
+      "impact": "If audit runs stop completing, nothing fails; the documented signal has no execution path.",
+      "recommendation": "Add a scheduled job that runs the freshness check and alerts (reuse the lab ntfy workflow pattern).",
+      "area": "OBS",
+      "status": "open",
+      "owner": "@owner",
+      "target": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "Lab API emits request lines only; no health/metrics for job durations or failures",
+      "evidence": [
+        "tools/lab_api_server.py:77-78 logs the request line only",
+        "no /metrics endpoint or structured access log"
+      ],
+      "impact": "Failed/slow shell jobs are hard to observe beyond the client's exit code.",
+      "recommendation": "Log auth/job results with duration and expose counters.",
+      "area": "OBS",
+      "status": "open",
+      "owner": "@owner",
+      "target": "OBS"
+    }
+  ],
+  "report": "Reviewed docs/OBSERVABILITY.md, workflow alerting, and the lab API logging. Grepped workflows/tools for the documented freshness recipe."
+}

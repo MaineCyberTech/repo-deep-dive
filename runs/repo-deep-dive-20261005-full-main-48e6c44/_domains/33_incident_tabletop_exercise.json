@@ -1,0 +1,25 @@
+{
+  "domain": "33_incident_tabletop_exercise",
+  "file": "33_incident_tabletop_exercise.md",
+  "area": "IR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:08Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "No incident tabletop scenarios artifact",
+      "evidence": [
+        "prompts/MASTER_RUNNER_FULL_HARDENING.md:100 requires incident_tabletop_scenarios.md",
+        "no drills/ directory or tabletop file in tree",
+        "lab workflows alert via ntfy but no scenario runbook exists"
+      ],
+      "impact": "Response to a leaked lab token or corrupted digest is not rehearsed or timed.",
+      "recommendation": "Author scenarios (leaked token, bad digest, runner down) with expected detections/actions.",
+      "area": "IR",
+      "status": "open",
+      "owner": "@owner",
+      "target": "IR"
+    }
+  ],
+  "report": "Reviewed incident-response artifacts. The pack has alerting workflows but no tabletop scenario artifact."
+}

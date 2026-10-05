@@ -1,0 +1,39 @@
+{
+  "domain": "22_final_risk_register_roadmap",
+  "file": "22_final_risk_register_roadmap.md",
+  "area": "FINAL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:09Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Release gate ignores coverage and completeness",
+      "evidence": [
+        "tools/full_domain.py:432-442 compute_gate uses only bySeverity counts",
+        "coverage.md can list pending domains while the gate is still computed",
+        "no check prevents aggregate without all domains emitted"
+      ],
+      "impact": "A partial run (missing domains) can be labelled GO/GO WITH CONDITIONS and be mistaken for a complete audit.",
+      "recommendation": "Fail or downgrade the gate when any selected domain has not emitted, and record coverage in the gate basis.",
+      "area": "FINAL",
+      "status": "open",
+      "owner": "@owner",
+      "target": "FINAL"
+    },
+    {
+      "severity": "P2",
+      "title": "Registers are generated from report tables, so ID drift is possible across reruns",
+      "evidence": [
+        "tools/full_domain.py:518 lib_findings.collect_with_dupes re-scans the reports it just wrote",
+        "tools/full_domain.py:540 findings.sort(key=(severity,id)) then counts"
+      ],
+      "impact": "Because IDs are assigned during aggregate and read back from Markdown, a manual report edit can silently change the register.",
+      "recommendation": "Write findings.json and the registers from the same in-memory list, and use findings.json as the source of truth.",
+      "area": "FINAL",
+      "status": "open",
+      "owner": "@owner",
+      "target": "FINAL"
+    }
+  ],
+  "report": "Synthesis domain. The aggregate step derives the final register from the domain reports; this report verifies the derivation logic."
+}

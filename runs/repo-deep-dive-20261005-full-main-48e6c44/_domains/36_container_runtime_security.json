@@ -1,0 +1,9 @@
+{
+  "domain": "36_container_runtime_security",
+  "file": "36_container_runtime_security.md",
+  "area": "CTR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:07Z",
+  "findings": [],
+  "report": "Not applicable / future readiness: there are no Dockerfiles or compose files in the pack; the lab is Proxmox VMs provisioned with Terraform/Ansible. Evidence: `Get-ChildItem -Recurse -Include Dockerfile,docker-compose*.yml` returns nothing; the org scan downloads container-image scanners but the pack ships no images."
+}

@@ -1,0 +1,38 @@
+{
+  "domain": "23_executive_summary_release_gate",
+  "file": "23_executive_summary_release_gate.md",
+  "area": "EXEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:09Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "publish_audit release gate can never return NO-GO for a P0",
+      "evidence": [
+        "tools/publish_audit.py:198 'GO' if no P0/P1 else 'GO WITH CONDITIONS'",
+        "tools/full_domain.py:438-439 maps any P0 to NO-GO",
+        "tests/test_publish_audit.py has no gate test"
+      ],
+      "impact": "A focused published run containing a P0 blocker reports a conditional-go verdict, directly contradicting the repository's severity semantics.",
+      "recommendation": "Share one gate function; add a P0 test asserting NO-GO; regenerate affected archived focused runs.",
+      "area": "EXEC",
+      "status": "open",
+      "owner": "@owner",
+      "target": "EXEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Executive summary lists covered domains but not uncovered/N-A domains",
+      "evidence": [
+        "tools/full_domain.py:445-462 write_exec_summary lists m['scope']['domains'] and high findings only"
+      ],
+      "impact": "Readers cannot tell which domains were skipped versus produced no findings.",
+      "recommendation": "Add a coverage line (emitted/NA/pending) to the summary.",
+      "area": "EXEC",
+      "status": "open",
+      "owner": "@owner",
+      "target": "EXEC"
+    }
+  ],
+  "report": "Synthesis domain. Verified the gate logic in both aggregate and publish paths."
+}

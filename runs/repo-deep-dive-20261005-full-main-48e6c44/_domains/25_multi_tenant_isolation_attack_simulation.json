@@ -1,0 +1,9 @@
+{
+  "domain": "25_multi_tenant_isolation_attack_simulation",
+  "file": "25_multi_tenant_isolation_attack_simulation.md",
+  "area": "MT",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:53:04Z",
+  "findings": [],
+  "report": "Not applicable / future readiness. repo-deep-dive is a single-tenant audit toolchain with no tenant data plane. Evidence: no package.json/src/; content is prompts/, tools/, runs/; no request handler with tenant scoping except the single-token lab API."
+}
