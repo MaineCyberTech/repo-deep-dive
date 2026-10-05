@@ -88,7 +88,8 @@ check_local() {
   if ping -c2 -W2 192.168.222.222 >/dev/null 2>&1 \
     && ping -c2 -W2 192.168.222.201 >/dev/null 2>&1 \
     && ping -c2 -W2 192.168.222.202 >/dev/null 2>&1 \
-    && ping -c2 -W2 192.168.222.203 >/dev/null 2>&1; then
+    && ping -c2 -W2 192.168.222.203 >/dev/null 2>&1 \
+    && curl -fsS -m8 http://192.168.222.201:8722/health >/dev/null 2>&1; then
     lab_ok=1
   fi
   [ "$lab_ok" -eq 1 ] || ok=0
