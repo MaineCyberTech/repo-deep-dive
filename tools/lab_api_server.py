@@ -147,11 +147,26 @@ class Handler(BaseHTTPRequestHandler):
                     self._send(502, {"error": "clone failed", "exit": rc})
                     return
             else:
-                subprocess.run(["git", "fetch", "-q", "--all", "--tags"], cwd=dest,
-                               capture_output=True, text=True, timeout=600)
+                # Apply the same auth header to the fetch as the clone: the
+                # workspace already exists, so an unauthenticated fetch would
+                # silently fall back to public-only access and ignore the token.
+                fetch = ["git", "-c", "credential.helper="]
+                if auth:
+                    fetch += ["-c", "http.extraheader=" + auth]
+                fetch += ["fetch", "-q", "--all", "--tags"]
+                rc = subprocess.run(fetch, cwd=dest, capture_output=True,
+                                    text=True, timeout=600).returncode
+                if rc != 0:
+                    self._send(502, {"error": "fetch failed", "exit": rc})
+                    return
             if ref:
-                subprocess.run(["git", "checkout", "-q", ref], cwd=dest,
-                               capture_output=True, text=True, timeout=120)
+                # Fail closed: an unresolvable ref must not report success with a
+                # stale/previous checkout still in place.
+                rc = subprocess.run(["git", "checkout", "-q", ref], cwd=dest,
+                                    capture_output=True, text=True, timeout=120).returncode
+                if rc != 0:
+                    self._send(404, {"error": "ref not found", "ref": ref})
+                    return
             info = _repo_info(dest)
             info["cwd"] = dest
             info["exit"] = 0

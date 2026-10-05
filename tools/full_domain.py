@@ -66,7 +66,7 @@ FAST_FILES = (
 DETERMINISTIC = "deterministic"
 ALLOWED_STATUS = {"", "open", "partially-fixed", "verified-fixed",
                   "still-open", "regressed", "owner-accepted"}
-GATES = ("GO", "GO WITH CONDITIONS", "NO-GO")
+GATES = lib_findings.GATES
 
 
 def now():
@@ -434,16 +434,11 @@ def register_md(run, m, findings):
 
 
 def compute_gate(counts, override):
-    if override:
-        if override not in GATES:
-            die("--gate must be one of: %s" % ", ".join(GATES))
-        return override
-    sev = counts.get("bySeverity", {})
-    if sev.get("P0", 0) > 0:
-        return "NO-GO"
-    if sev.get("P1", 0) > 0:
-        return "GO WITH CONDITIONS"
-    return "GO"
+    # Single shared decision (tools/lib_findings.py) so publish_audit.py and this
+    # driver can never disagree; a P0 always yields NO-GO.
+    if override and override not in GATES:
+        die("--gate must be one of: %s" % ", ".join(GATES))
+    return lib_findings.compute_gate(counts, override)
 
 
 def write_exec_summary(m, counts, findings):
