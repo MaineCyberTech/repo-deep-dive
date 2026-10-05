@@ -1,4 +1,4 @@
-﻿# .github/workflows/gitleaks.yml
+# .github/workflows/gitleaks.yml
 name: Gitleaks Scan
 
 on:

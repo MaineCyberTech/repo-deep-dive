@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1239
+# files: 1265
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -9,6 +9,7 @@ b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/depe
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
 0a562aa324969c7af04571396f054e220e28fc2659abfb326cdcc2476f1a4eaf  ./.github/workflows/audit.yml
 006110372ed17c35c29430bec367c5e5698d439187dbfbd5746a1087cdb292e5  ./.github/workflows/deep-dive-deterministic.yml
+0ccd622b0ab1796fd64576de9d1eb6d4d2b840241569bd38fc2b587ea3ff4fef  ./.github/workflows/gitleaks.yml
 63d7e4212d4e4c4c3d14fbefd174d7d9b1ab64302358a79dbc0974ba9913c222  ./.github/workflows/lab-agent-offboard.yml
 d7f4464ee24fc9d9774131f64ef77c861117e098dbc21bd5125e3d2af4d8d103  ./.github/workflows/lab-agent-onboard.yml
 cfda3569b297c0378cff522904897efb6e7839aa3e4fc827aa598458b89cc3f7  ./.github/workflows/lab-overlay-health.yml
@@ -35,6 +36,8 @@ c3715a4e8c0dc0596cdbc0df05dc1d979a87b2f208d6d8d32f6caad7037a87d5  ./REVIEW_INDEX
 acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
 393b39c49a37c50d0e5a0890b7d89763f64121191e2023623732ee614549e167  ./approvals.yml
 9f1bfa4a995774b619503143d713314e814fc6edf1e12b73526b8901a087f949  ./ci/audit.yml
+bc653f2815968175a3fb628510c4b236dab681469a3ba4e6f309e6f277c9342d  ./deterministic-out/deterministic-findings.json
+309aeab4b3cba56654c982923fbabbbac05340426aa6246d28879df795dcd9ce  ./deterministic-out/lens_deterministic.md
 c8b9df7a9ea79cebfe073cb2a72b1167d9a6add1ca883ea665b6383eb2216d84  ./docs/ARCHITECTURE.md
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
 9085dd6643e604a6fe81e2e9aae46fb3171d3ec50f11d9baa8aa6f272db2ee33  ./docs/DEEP_DIVE_ROADMAP.md
@@ -46,6 +49,17 @@ c8b9df7a9ea79cebfe073cb2a72b1167d9a6add1ca883ea665b6383eb2216d84  ./docs/ARCHITE
 a97cede99d8ff27d760746d9cac7bfabb069ef1a2dd29e165dc5742014e23ce2  ./docs/PASS_CONTROL_PLANE.md
 3be083b3730523b301a31b934786619ebf7e9a295f91290832a641b5ed796ff8  ./docs/REMEDIATION_GUIDE.md
 e87e63dab41a3fc6fb953e30a59a176618079bd68091997676d4357820742b4e  ./docs/SUPPLY_CHAIN.md
+d1a425570104df5152c6436ebefc0625729defbeef16aee3b115d887a07d61f2  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/EXECUTIVE_SUMMARY.md
+be8b1125797d129fffbf30d5871200d421b69d1c3edb161290aa136932374221  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/INDEX.md
+fda32634b5a2469437a7d94b413e8ade19c37444d41dbac75976ee31bbaca27a  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/RELEASE_GATE.md
+2b390fda55d231c698f1b0e430a3a01f98e761a5a7f9673edb0549f8d90607cc  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/audit_manifest.json
+b3b4ba975763d8a9258b810cb15babf7117e88a26df80b8ae7c7e2aa90772354  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/deterministic-findings.json
+f23df22e5ddd4ed91c93897f309731efabc00e630232afb91dcf4b6f534b994c  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/findings.json
+309aeab4b3cba56654c982923fbabbbac05340426aa6246d28879df795dcd9ce  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/lens_deterministic.md
+599007935962bd3a634e43e194a00cd51d470cadadeb3203e9c933be9f908ac8  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/patch_plan.md
+c76699387531a950963403daa6caf05d69ed0165099135a1a8b71519e584ba96  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/risk_register.md
+25bc85b17509f566e7f1afc37e9ace647e04d5eb77bd0673460b11e6839aacd5  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/risk_score.json
+10833ea990b5517a43195811b01056bfa424fd82770433cfdb41b7c2fbdd75df  ./docs/audits/Local Ollama Test/local-ollama-test-run-001/roadmap.md
 5df4e64a31c9ef36fa22d0f67ed4a2313e63e281fb4f5465a4311e2a496b6464  ./docs/audits/repo-deep-dive/20261004-0700-main-49f46a8/EXECUTIVE_SUMMARY.md
 fd36db9a3b561f60183257440c4ecfbb6746b1553b4978e768df3dae1d9a9811  ./docs/audits/repo-deep-dive/20261004-0700-main-49f46a8/INDEX.md
 de02c54793044a825cf79f3ddfbb294c13afd95a3e5b9b53d295a33be883c4a7  ./docs/audits/repo-deep-dive/20261004-0700-main-49f46a8/RELEASE_GATE.md
@@ -245,7 +259,7 @@ f944f051b99542867c767698a51d2d2feccdcda3357ec2c0e87e63189df5ab7a  ./runs/2026093
 61d639f25502957680401e4893ac559c6421d47bc3738616f02212ac622f2f91  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/sbom_license_policy_recommendation.md
 f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
 2eaaf62cc4e878b2607cd931102b5ce246226f50be6b1ffa99e7c53d0280dda4  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/verification_log.md
-5109f4d3a4ac988d3609fa1b33d7e6ab3f95c19d58d52805896922dd5d9d3fd8  ./runs/INDEX.md
+0dde56f59b4e488dc5f91519a8a89e211d8c9c4b41930dc986e8f6a6004ed41f  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
 e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
@@ -1031,6 +1045,18 @@ bf5d51d6860eb4ce1caefb1dc95d62e33aa4f43ec1fef51af8f03ae8ad51cff4  ./runs/repo-de
 52ea5719ec66647c2d194cf6bed7033e549f86c90d8ab32a0b5446baed90bd92  ./runs/repo-deep-dive-20261004-0700-main-49f46a8/patch_plan.md
 4f91e2ac88ea7320612b92e2a6893c1aa5aeb76cdddc6d4185d78156a78fa494  ./runs/repo-deep-dive-20261004-0700-main-49f46a8/risk_register.md
 313e6054e3e5f6bf75ec3f60049a5d6c647cbb5b371e70f5a720f7ef6aad878b  ./runs/repo-deep-dive-20261004-0700-main-49f46a8/roadmap.md
+c48b19248ad42ee2485e95ff02500db0e1a4f45a7cb12927c859917ef96ceaea  ./runs/repo-deep-dive-20261004-0700-main-HEAD/EXECUTIVE_SUMMARY.md
+92f223e90c148e8c9296c6e08fdbf3c083b32042f9e98a14ed97c0544dd53f26  ./runs/repo-deep-dive-20261004-0700-main-HEAD/INDEX.md
+23ebf3ab6ce988f3a681fea700ce26d8e21e1b03cfdd9b149a664e6b85e40369  ./runs/repo-deep-dive-20261004-0700-main-HEAD/RELEASE_GATE.md
+6bc31f2864d6ed968b5e05028a9f9ce25a72d7a0d8563eaa0f455f0ae532cb49  ./runs/repo-deep-dive-20261004-0700-main-HEAD/audit_manifest.json
+b3b4ba975763d8a9258b810cb15babf7117e88a26df80b8ae7c7e2aa90772354  ./runs/repo-deep-dive-20261004-0700-main-HEAD/deterministic-findings.json
+b913781af6c6749d497830acd58ae8299a4ebd614b7a1fc4f4813f7e6e744583  ./runs/repo-deep-dive-20261004-0700-main-HEAD/findings.json
+04d8af7a533088513b95a4f5d57706e8fa0b20c908b83e8f490dd3f38331d30d  ./runs/repo-deep-dive-20261004-0700-main-HEAD/follow_up_register.md
+309aeab4b3cba56654c982923fbabbbac05340426aa6246d28879df795dcd9ce  ./runs/repo-deep-dive-20261004-0700-main-HEAD/lens_deterministic.md
+5dbeaf705c0f1f0bb1e0504f0446c8ce04f2df24460008cd9299c7414fe46bb6  ./runs/repo-deep-dive-20261004-0700-main-HEAD/lens_focused_security_supply_chain_ci.md
+4014d5157b94fb24f53593862308cbf8998e9836684c5e0cc40e1021f5b052ad  ./runs/repo-deep-dive-20261004-0700-main-HEAD/patch_plan.md
+04d8af7a533088513b95a4f5d57706e8fa0b20c908b83e8f490dd3f38331d30d  ./runs/repo-deep-dive-20261004-0700-main-HEAD/risk_register.md
+b70def88a24ab35e4c48e948c50299171f8be2705ca8a7a815d66e8ff015b241  ./runs/repo-deep-dive-20261004-0700-main-HEAD/roadmap.md
 45ecde918fd81cc0ee7b200b0c4a65041580a8622056d8062a8fc797405e17a0  ./runs/snowride-20261003-0018-main-59e12b9/01_repository_inventory.md
 d2cceb8b1fb3a748d6fb0a95aac69a0fae361b0fbc1621413c459241f5a3fb14  ./runs/snowride-20261003-0018-main-59e12b9/02_architecture_runtime_topology.md
 901f6b0339fc7f304c9dcb1bf8451438ce1610480be420643b34af22bc474190  ./runs/snowride-20261003-0018-main-59e12b9/03_feature_implementation_map.md

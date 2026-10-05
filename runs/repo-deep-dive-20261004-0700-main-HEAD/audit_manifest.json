@@ -25,7 +25,7 @@
     ]
   },
   "findings": {
-    "total": 1
+    "total": 2
   },
   "secretScan": {
     "tool": "tools/publish_audit.py scan_secrets",
