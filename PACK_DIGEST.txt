@@ -1630,11 +1630,11 @@ bced4e1532fa4404cdb30a6533febe7b456cb9c29f814f130b229f397e7b4d4b  ./runs/repo-de
 32ed4ddcaab4f50bd69878c76cdccbdded7f63130e1f0b5e5bda795f97f1e67a  ./runs/repo-deep-dive-20261005-full-main-48e6c44/audit_manifest.json
 31e3c0c6e0fc44e1495688c0d558e93000660c20e1f3606ab11731060dd8073d  ./runs/repo-deep-dive-20261005-full-main-48e6c44/coverage.md
 a005faad966e78a39f46102e920b81d4eca65e7ec0334c27e55727a146f60802  ./runs/repo-deep-dive-20261005-full-main-48e6c44/deterministic-findings.json
-b44cc9a9adfdb9f6cba795f9c8594467b73d1cc6eafccb9073554bcde18b8655  ./runs/repo-deep-dive-20261005-full-main-48e6c44/findings.json
-9bd2a1046f693444e9217950ca9cec7fb056ca8b2fa794496370077250b49ce1  ./runs/repo-deep-dive-20261005-full-main-48e6c44/follow_up_register.md
+da087dd684fa3d3cf69d9b86c60d420208bb50ce247724dabbc557d077f26ae9  ./runs/repo-deep-dive-20261005-full-main-48e6c44/findings.json
+76e735c5a8a2df12de2dc7cfe062ddd8dc8820515e9725f472e5727a54ed0a71  ./runs/repo-deep-dive-20261005-full-main-48e6c44/follow_up_register.md
 96c8132d0193e8ae6a5576c02524b4aca6ca0daf45f5d503be2d7786354d0932  ./runs/repo-deep-dive-20261005-full-main-48e6c44/lens_deterministic.md
 fdcaf263582563241ac66e69f16163a6061b743f546db86769f979a646022c1e  ./runs/repo-deep-dive-20261005-full-main-48e6c44/patch_plan.md
-9bd2a1046f693444e9217950ca9cec7fb056ca8b2fa794496370077250b49ce1  ./runs/repo-deep-dive-20261005-full-main-48e6c44/risk_register.md
+76e735c5a8a2df12de2dc7cfe062ddd8dc8820515e9725f472e5727a54ed0a71  ./runs/repo-deep-dive-20261005-full-main-48e6c44/risk_register.md
 6e93db5d99534c1d8b70ee319cbcf3e406220836ede26ab0968c57a564a8e0b3  ./runs/repo-deep-dive-20261005-full-main-48e6c44/roadmap.md
 45ecde918fd81cc0ee7b200b0c4a65041580a8622056d8062a8fc797405e17a0  ./runs/snowride-20261003-0018-main-59e12b9/01_repository_inventory.md
 d2cceb8b1fb3a748d6fb0a95aac69a0fae361b0fbc1621413c459241f5a3fb14  ./runs/snowride-20261003-0018-main-59e12b9/02_architecture_runtime_topology.md
