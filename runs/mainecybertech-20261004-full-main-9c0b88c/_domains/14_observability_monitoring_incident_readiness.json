@@ -1,0 +1,63 @@
+{
+  "domain": "14_observability_monitoring_incident_readiness",
+  "file": "14_observability_monitoring_incident_readiness.md",
+  "findings": [
+    {
+      "id": "OBS-P2-001",
+      "severity": "P2",
+      "title": "Prometheus alert rules are not routed anywhere",
+      "area": "OBS",
+      "owner": "@owner",
+      "target": "OBS",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "already fixed at base (IR-P0-003); promtool/amtool checks green. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "OBS-P2-002",
+      "severity": "P2",
+      "title": "No committed dashboards or SLO/error-budget definitions",
+      "area": "OBS",
+      "owner": "@owner",
+      "target": "OBS",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "infra/digitalocean/dashboards/mct-overview.json + docs/SLO.md committed. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "OBS-P2-003",
+      "severity": "P2",
+      "title": "Backup/restore is scheduled but not verified on the deployed branch",
+      "area": "OBS",
+      "owner": "@owner",
+      "target": "OBS",
+      "status": "partially-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "Backup/restore still not verified end-to-end on the deployed branch (operator secrets/schedule). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "OBS-P3-001",
+      "severity": "P3",
+      "title": "Incident runbooks/tabletop evidence is partial",
+      "area": "OBS",
+      "owner": "@owner",
+      "target": "OBS",
+      "status": "partially-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "Platform failure runbooks added; tabletop evidence still partial. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    }
+  ],
+  "report": "Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

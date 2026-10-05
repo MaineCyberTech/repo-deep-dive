@@ -1,0 +1,83 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "findings": [
+    {
+      "id": "PORT-P2-001",
+      "severity": "P2",
+      "title": "17 tracked shell scripts lack the exec bit; documented ./scripts/... commands fail",
+      "area": "PORT",
+      "owner": "@owner",
+      "target": "PORT",
+      "status": "verified-fixed",
+      "confidence": "High",
+      "evidence": [
+        "README.md:95 ./scripts/start-local-stack.sh         # Linux/macOS",
+        "docs/ROLLBACK_PROCEDURES.md:141 SUPABASE_DB_URL=postgresql://... ./scripts/restore-database.sh --dry-run",
+        "docs/ROLLBACK_PROCEDURES.md:175 ./scripts/restore-storage.sh --dry-run",
+        "git ls-files -s: scripts/restore-database.sh, scripts/restore-storage.sh, scripts/start-local-stack.sh ... mode 100644",
+        "repository has 17 tracked *.sh at mode 100644; only scripts/scan-secrets.sh is 100755"
+      ],
+      "impact": "Operators following the incident/rollback docs get 'Permission denied' on Linux/macOS because the scripts are not executable. CI is unaffected (it calls bash scripts/...), so the failure surfaces only under human, often urgent, use.",
+      "recommendation": "git update-index --chmod=+x the 17 scripts and commit; add a CI check that no tracked *.sh is mode 100644.",
+      "note": "merged mainecybertech#74 @ 54c76a3 || Focused run 178b91c at main tip."
+    },
+    {
+      "id": "HYG-P2-001",
+      "severity": "P2",
+      "title": "Committed prompt/audit corpus bloats the repo and review surface",
+      "area": "HYG",
+      "owner": "@owner",
+      "target": "HYG",
+      "status": "partially-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "Prior-run snapshots removed (PS-U04); externalizing the remaining corpus is an owner decision. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "HYG-P2-002",
+      "severity": "P2",
+      "title": "Duplicate product catalogs have diverged",
+      "area": "HYG",
+      "owner": "@owner",
+      "target": "HYG",
+      "status": "partially-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "Duplicate product catalogs remain diverged (content-owner decision). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "HYG-P3-001",
+      "severity": "P3",
+      "title": "Stale and machine-specific generated documentation",
+      "area": "HYG",
+      "owner": "@owner",
+      "target": "HYG",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "stale generated-docs path corrected (PS-U03). || Verified ledger a97425d (ancestor of main) — status carries to main."
+    },
+    {
+      "id": "HYG-P3-002",
+      "severity": "P3",
+      "title": "Generated artifacts are inconsistently tracked",
+      "area": "HYG",
+      "owner": "@owner",
+      "target": "HYG",
+      "status": "verified-fixed",
+      "confidence": "",
+      "evidence": [],
+      "impact": "",
+      "recommendation": "",
+      "note": "same guard: licenses.json/sbom.* fail the build if tracked. || Verified ledger a97425d (ancestor of main) — status carries to main."
+    }
+  ],
+  "report": "Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

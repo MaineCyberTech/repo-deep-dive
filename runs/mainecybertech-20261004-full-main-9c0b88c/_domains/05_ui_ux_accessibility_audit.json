@@ -1,0 +1,25 @@
+{
+  "domain": "05_ui_ux_accessibility_audit",
+  "file": "05_ui_ux_accessibility_audit.md",
+  "findings": [
+    {
+      "id": "UX-P3-001",
+      "severity": "P3",
+      "title": "Full accessibility breadth scan (68 routes) is triage-only and not a required check",
+      "area": "UX",
+      "owner": "@web",
+      "target": "UX",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        ".github/workflows/a11y-breadth.yml:1-19 header states it is \"a triage report, not a gate\" and \"not referenced by any required check\"",
+        "apps/web/e2e/a11y.spec.ts:34-56 FULL_PAGES runs only when A11Y_FULL=1; the default gate uses BASE_PAGES (25 routes)",
+        ".github/workflows/a11y-breadth.yml:17-19 only runs workflow_dispatch + a weekly schedule"
+      ],
+      "impact": "Regressions on the ~68-route breadth set surface only in an advisory weekly job, so accessibility can regress on routes outside the 25-page default gate without blocking a merge.",
+      "recommendation": "Ratchet the breadth set into the default gate in batches (start with the currently-green pages), record a violation baseline, and make new violations fail the E2E gate.",
+      "note": "Verified at main 9c0b88c."
+    }
+  ],
+  "report": "Read-only analysis at main `9c0b88c` (2026-10-04). No findings identified for this domain in the 9c0b88c reconciliation pass. Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

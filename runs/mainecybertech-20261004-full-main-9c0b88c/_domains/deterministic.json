@@ -1,0 +1,22 @@
+{
+  "domain": "deterministic",
+  "file": "lens_deterministic.md",
+  "area": "DET",
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] 3 container image(s) without a digest pin",
+      "report": "lens_deterministic.md",
+      "line": 13,
+      "detail": "Pin images by digest (`image@sha256:...`) for reproducible, tamper-evident deploys.",
+      "evidence": [
+        "infra/digitalocean/docker-compose.yml:69 ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}",
+        "infra/digitalocean/docker-compose.yml:129 ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}",
+        "infra/digitalocean/docker-compose.yml:182 ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}"
+      ]
+    }
+  ],
+  "report": "Deterministic, LLM-free checks executed on the lab (ci-runner) against the mainecybertech workspace synced to 9c0b88c. Container-image digest pins are the only residual; gitleaks (installed on the lab) reported no committed secret."
+}

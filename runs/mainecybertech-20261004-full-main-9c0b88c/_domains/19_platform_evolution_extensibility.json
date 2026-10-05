@@ -1,0 +1,24 @@
+{
+  "domain": "19_platform_evolution_extensibility",
+  "file": "19_platform_evolution_extensibility.md",
+  "findings": [
+    {
+      "id": "EVOL-P3-001",
+      "severity": "P3",
+      "title": "Feature flags are a hardcoded static map with no managed service, change log, or targeting",
+      "area": "EVOL",
+      "owner": "@api",
+      "target": "EVOL",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        "apps/api/src/lib/feature-flags.ts:1-6 DEFAULT_FLAGS is a code literal",
+        "apps/api/src/lib/feature-flags.ts:8-15 resolves only FEATURE_<NAME> env overrides; flags are global (no per-tenant or per-user targeting)"
+      ],
+      "impact": "Flag changes require a deploy, there is no audit trail of who changed a flag or when, and no staged/percentage rollout — limiting safe evolution and incident rollback.",
+      "recommendation": "Move flags to a managed store or a versioned config with an audit log, and support tenant/percentage targeting with a kill switch.",
+      "note": "Verified at main 9c0b88c."
+    }
+  ],
+  "report": "Read-only analysis at main `9c0b88c` (2026-10-04). No findings identified for this domain in the 9c0b88c reconciliation pass. Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}

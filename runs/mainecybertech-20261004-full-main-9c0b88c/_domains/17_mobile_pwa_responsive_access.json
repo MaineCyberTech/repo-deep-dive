@@ -1,0 +1,25 @@
+{
+  "domain": "17_mobile_pwa_responsive_access",
+  "file": "17_mobile_pwa_responsive_access.md",
+  "findings": [
+    {
+      "id": "MOB-P3-001",
+      "severity": "P3",
+      "title": "PWA manifest ships only an SVG icon and is duplicated across three sources",
+      "area": "MOB",
+      "owner": "@web",
+      "target": "MOB",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        "apps/web/app/manifest.ts:11-18 declares a single icon (favicon.svg, sizes any)",
+        "apps/web/public/manifest.json and apps/web/public/manifest.webmanifest are byte-identical duplicates of the same manifest",
+        "no 192x192/512x512 PNG or maskable icon is declared"
+      ],
+      "impact": "Installability and home-screen appearance on Android/iOS are degraded, and three manifest sources can drift so the served manifest is ambiguous.",
+      "recommendation": "Keep one manifest source (the Next metadata route), add 192/512 PNG and maskable icons, and delete the duplicate public manifests.",
+      "note": "Verified at main 9c0b88c."
+    }
+  ],
+  "report": "Read-only analysis at main `9c0b88c` (2026-10-04). No findings identified for this domain in the 9c0b88c reconciliation pass. Reconciliation full-domain pass at main `9c0b88c` (2026-10-04). Baseline findings were carried from the repository's committed audit corpus and re-bound to this run: the `a97425d` verification ledger (ancestor of main, so its verified-fixed statuses hold here), the `178b91c` main-tip focused run, and the `20261002-0344` full run for domains the later ledgers did not cover. Each row cites its provenance. Machine deterministic checks are recorded in `lens_deterministic.md`.\n"
+}
