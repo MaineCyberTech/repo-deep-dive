@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1943
+# files: 1946
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -1381,8 +1381,10 @@ c52b4ad9cdf28f38df17ce32f274e20af328060cac17f928865ac1d16f34e95b  ./runs/mainecy
 b12d8138f6d1e0b573f72c979fa253790ba2bab4def4b83eb00d8d57af6918f5  ./runs/mainecybertech-20261004-full-main-9c0b88c/39_analytics_tracking_privacy.md
 8c0c69aba3223447dce090f43458fae608aa501ecdce4fa8fbca64569336cd51  ./runs/mainecybertech-20261004-full-main-9c0b88c/40_release_notes_changelog_generator.md
 a361ac413bfbe2dd87ebd01b965734fba0ef8476f7d87e857a8279a37fe70e49  ./runs/mainecybertech-20261004-full-main-9c0b88c/45_exploit_chain_attack_path_audit.md
-bca413f3fda87360295314a55d01d5147875eb43a6be94f58eb1441a6073e9af  ./runs/mainecybertech-20261004-full-main-9c0b88c/EXECUTIVE_SUMMARY.md
+abe51ff617fff941b8e00bad753fd49b7c28a3461a269b7a394121e0d62c6911  ./runs/mainecybertech-20261004-full-main-9c0b88c/EXECUTIVE_SUMMARY.md
 447b6aea9f5faeb3b695c9496982d4ba89aecd0db9d827d310cc6f7de0eb6ba6  ./runs/mainecybertech-20261004-full-main-9c0b88c/INDEX.md
+8f2f0bcb0a0e393148084ad4b6a0bc04d2bdb257fb541ced89c8e9bc10afffdb  ./runs/mainecybertech-20261004-full-main-9c0b88c/OWNER_GATED_PROPOSALS.md
+89fe3528a2c3e1e4255862b3ae5afc263336e9e395aa149adf08c92ccade51d7  ./runs/mainecybertech-20261004-full-main-9c0b88c/P1_RECONCILIATION.md
 78e065a80aa880387c141bb730aa6425135cf5cfafa4dad1f1d70a225dca9329  ./runs/mainecybertech-20261004-full-main-9c0b88c/RELEASE_GATE.md
 5d4fbb4fb97f537e871ddc253bf15682a1cb9d2b477a82a527c45aa57ef4eebc  ./runs/mainecybertech-20261004-full-main-9c0b88c/_domains/00_audit_orchestrator.json
 a414fa4c588212bcef2ebaafb0cefc7dce9e4854ea039f0d61c4af4d07ce864f  ./runs/mainecybertech-20261004-full-main-9c0b88c/_domains/01_repository_inventory.json
@@ -1430,11 +1432,12 @@ e1059b01d06619cdcf87b8403695c3aa898533616a2c04b934913fa54beeb344  ./runs/mainecy
 670b62c3611e5d5c46f6b60b3bba754bb80e58bee6656ccd471eca5219d9525b  ./runs/mainecybertech-20261004-full-main-9c0b88c/audit_manifest.json
 77e6da6c9a86fe87dbdec288f3f44ab8f6973b3cabb33fb44f1ed4d986a7e285  ./runs/mainecybertech-20261004-full-main-9c0b88c/coverage.md
 37a7e0d25c590284bb4f666c60d4e0aa9660be773422a27d158703188e04fce5  ./runs/mainecybertech-20261004-full-main-9c0b88c/deterministic-findings.json
-9bee12a74fab99bf9457c9f6cdea0f91c50de1aa981455a6fac83778f220785f  ./runs/mainecybertech-20261004-full-main-9c0b88c/findings.json
-f4ec8b582e16bd830e1951c23359205cba83c5d056e2687c98cf225f32fba101  ./runs/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md
+7c704ba8682cc79e0322edd8e94f5ef67f26015c8fe45b425ec6085d3f88b4a2  ./runs/mainecybertech-20261004-full-main-9c0b88c/findings.json
+4db87d2ee8c2407c156648d6d7cc48bb9e94cc817b4080fa0009d891cd28663c  ./runs/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md
 8b4a35620f3a8dfe080907f49380c24d8ce07c93c892b1eeeebbb7843f617d7e  ./runs/mainecybertech-20261004-full-main-9c0b88c/lens_deterministic.md
 ef3ca31f9a3e19ac839b77ee470f28a1b7de93f23d796302d0de427faaec5b2f  ./runs/mainecybertech-20261004-full-main-9c0b88c/patch_plan.md
-f4ec8b582e16bd830e1951c23359205cba83c5d056e2687c98cf225f32fba101  ./runs/mainecybertech-20261004-full-main-9c0b88c/risk_register.md
+e31af45c67fe467ea27881d18d2b067f2c6a8e5e0b243a36602cfc0ece94d9a6  ./runs/mainecybertech-20261004-full-main-9c0b88c/remediation_plan.json
+4db87d2ee8c2407c156648d6d7cc48bb9e94cc817b4080fa0009d891cd28663c  ./runs/mainecybertech-20261004-full-main-9c0b88c/risk_register.md
 b15890e7d60a3f6828ffb52bd25d5c0cf373613895a6bb34476cb1233e4d2409  ./runs/mainecybertech-20261004-full-main-9c0b88c/roadmap.md
 c3ff84ffe7bb9658da39da9728a1b339a48c6835f7ad7f1ae91eabc519c737a9  ./runs/mainecybertech-20261004-full-main-9c0b88c/verification_log.md
 53ea972dba482a93f9b1e56a258fb34c93f3fb74029bbae4e5cb1c40690bc6e8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/01_repository_inventory.md
