@@ -157,8 +157,8 @@
       "area": "AUTH",
       "owner": "@owner",
       "target": "SEC",
-      "status": "still-open",
-      "note": "re-audit 2026-10-04: AUTH-001 held (#40); key still 0640 at ba4becb",
+      "status": "verified-fixed",
+      "note": "reconciled 2026-10-05: fixed by falcon-edge#46 @ a549337 (key 0600; Vector credential via systemd LoadCredential). Residual: dedicated Vector client cert (owner).",
       "recommendation": "Keep the identity private key 0600 and give Vector its own client certificate; widen only the certificate (0640), never the private key. Correct the docstring."
     },
     {

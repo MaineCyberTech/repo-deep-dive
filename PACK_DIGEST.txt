@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1943
+# files: 1946
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -302,6 +302,7 @@ bd7750046cfd8fcdfc8f1827ae1b5a13e9a78e0d15f4fab3f535391dbe520005  ./runs/2026100
 55a3741f1f45fe8eb677732059f9c02adac660e306870bd00a2b0037a0be77aa  ./runs/20261004-full-main-ba4becb/45_exploit_chain_attack_path_audit.md
 fb8dd38a0f360241ffccb63d1096f1c2da5ccfad38ba9e2666582b6460efa663  ./runs/20261004-full-main-ba4becb/EXECUTIVE_SUMMARY.md
 4c0d5174f23a0a0f9e69a7d85ace8651f073e9b9f33969711cf91f24c139c932  ./runs/20261004-full-main-ba4becb/INDEX.md
+60e134014c38702d58aa3c58fae5b6e894aec5c0d20f251c330fa0c86024a9d4  ./runs/20261004-full-main-ba4becb/OWNER_GATED_PROPOSALS.md
 2e4aa5abc4d64f1a75f8855541664cd96f370aecf5c0196ba0c2b8a06b428211  ./runs/20261004-full-main-ba4becb/RELEASE_GATE.md
 7bfe734ba00f424495a1ed0031e1b73fb376aafdd31f7144e4e00c2131c4d484  ./runs/20261004-full-main-ba4becb/_domains/00_audit_orchestrator.json
 bd356719fea2fbf7f50571ba912a547f093d0cd3f5efb67f8656eae480e233d2  ./runs/20261004-full-main-ba4becb/_domains/01_repository_inventory.json
@@ -349,12 +350,14 @@ fea0e623e6a9085f4cd6484b80c608b71a3aacba4856b5389dadcfd9f2ca4af2  ./runs/2026100
 b361a07ace18e563f2733a779307ecd4420c1646e81577bba524669d248ad28a  ./runs/20261004-full-main-ba4becb/audit_manifest.json
 493bf43a4c7ae5130ab88a92f88fca16512cbfd80216ae5fe2b0bf7ea71bc781  ./runs/20261004-full-main-ba4becb/coverage.md
 d3533b1a49317e61694c1d8f92fb762db17c54d81aa78a0452015e67f11322c8  ./runs/20261004-full-main-ba4becb/deterministic-findings.json
-38683df555980a99d7b093d559abbf38d927d75796a814a62e5bbb34d5c0443f  ./runs/20261004-full-main-ba4becb/findings.json
-3d86dfe77a1cc3aff891c1c76f46b079e81f231b1fe09b040475b5c37cb6d723  ./runs/20261004-full-main-ba4becb/follow_up_register.md
+8363c0632bef0e4668af5b9bdfe63dbda5b07f751f8ec620ee38dd5b189dcdd8  ./runs/20261004-full-main-ba4becb/findings.json
+6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/follow_up_register.md
 b92493c206b03164bdadac74a71ebcec8cf20bbb3ad81ee486c0666dd9c66a14  ./runs/20261004-full-main-ba4becb/lens_deterministic.md
 fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/20261004-full-main-ba4becb/patch_plan.md
-3d86dfe77a1cc3aff891c1c76f46b079e81f231b1fe09b040475b5c37cb6d723  ./runs/20261004-full-main-ba4becb/risk_register.md
+12bf0f8237956ffb7eb5193b51ee6d5c499f58dae569b39db77de95377f47034  ./runs/20261004-full-main-ba4becb/remediation_plan.json
+6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
+a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
 faa1f33e38151dd4e0aac84e87e2aff3a606078c69f5e5c15938f03da2413404  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md

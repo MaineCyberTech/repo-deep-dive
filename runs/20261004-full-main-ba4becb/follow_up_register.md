@@ -13,7 +13,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | API-P2-002 | P2 | SensorSummary.queueDepth now returned | @owner | API | verified-fixed | merged a4b388b; re-audit 2026-10-04: closed |
 | ARCH-P2-001 | P2 | Control plane still executes a mutable working tree (dirty-guarded, not pinned) | @owner | ARCH | still-open | re-audit 2026-10-04: still-open; dirty guard added as mitigation |
 | ARCH-P2-002 | P2 | Edge control plane is a co-tenant single point of failure on the shared lab host | @owner | ARCH | still-open | re-audit 2026-10-04: still-open |
-| AUTH-P2-001 | P2 | Device mTLS private key is group-readable (0640), contradicting its documented 0600 | @owner | SEC | still-open | re-audit 2026-10-04: AUTH-001 held (#40); key still 0640 at ba4becb |
+| AUTH-P2-001 | P2 | Device mTLS private key is group-readable (0640), contradicting its documented 0600 | @owner | SEC | verified-fixed | reconciled 2026-10-05: fixed by falcon-edge#46 @ a549337 (key 0600; Vector credential via systemd LoadCredential). Residual: dedicated Vector client cert (owner). |
 | BP-P2-001 | P2 | Branch protection / required checks cannot be enforced on the current GitHub plan | @owner | BP | owner-accepted | re-audit 2026-10-04: owner-accepted (plan-gated) |
 | CHAIN-P2-001 | P2 | Chain: co-tenant read of the agent key -> control-plane signing seed compromise -> unattended fleet code swap | @owner | CHAIN | still-open | synthesised from AUTH/FILE/SUPPLY/ARCH findings at ba4becb |
 | CI-P2-001 | P2 | CI toolchain is downloaded and hash-verified (pinning enforced) | @owner | CI | verified-fixed | re-audit 2026-10-04: closed |
