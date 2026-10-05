@@ -531,8 +531,8 @@ d56a181d0d8e28d64141a7b11243971075ee19e0d2e6e38dcac3b2c36fbecc60  ./runs/buddy-2
 426101176909c43460c978771a5a25f2d6a8634ec7fde6cc08c5c5f67766c6e6  ./runs/buddy-20261005-full-master-adcf767/patch_plan.md
 31053ad67e7dce69cf1cf6c7a4e99b9de7cf65fb3980c24cf688dad56e0c29fa  ./runs/buddy-20261005-full-master-adcf767/release_notes_draft.md
 1719981042bd68f09f2f63426fa98cbe10055901fbf5c7971f7c7c217d1bb346  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/diff.patch
-2ec73fc8de480a6548bd51eed8724d4fdcf9ae333658543c91e2afac880e284d  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/manifest.json
-04d6c22722d89c67c2545922fc97e8a910f8eace7adba70d8fe8c6086b2fe414  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/verify.log
+c033dd4b6454cba531ca17886a6f92ce558c071857331d57f34763b1b1789dc1  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/manifest.json
+5cb23fee0bb49476ff705c8f6b967093bf5fe132d7a79d8961fd44a03b0e8d09  ./runs/buddy-20261005-full-master-adcf767/remediation/PS-01/verify.log
 9a3f990c098bb68641bce5b72cd66d011578274e8cfcc1f2f845e1c2d948ffa0  ./runs/buddy-20261005-full-master-adcf767/remediation_plan.json
 d08e901f9c2b804033016611676d78e1236018d2826eca42863c4ef04254fb9b  ./runs/buddy-20261005-full-master-adcf767/risk_register.md
 4e15406d58715c984a9ab2cb7f28fdf0bd290b86d8cf38e9b9ed86f074370170  ./runs/buddy-20261005-full-master-adcf767/risk_score.json
