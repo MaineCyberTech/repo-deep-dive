@@ -1,0 +1,46 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-05T03:26:17Z",
+  "findings": [
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "Branch protection and required checks are plan-gated, so `validate` is advisory",
+      "area": "CI",
+      "owner": "@owner",
+      "target": "CI",
+      "status": "owner-accepted",
+      "confidence": "high",
+      "evidence": [
+        "docs/security/BRANCH_PROTECTION.md:3-8 apply returned 403 Upgrade to GitHub Pro",
+        "docs/security/BRANCH_PROTECTION.md enforcement matrix: required status checks No, force-push/deletion No, bypass audit No",
+        ".github/CODEOWNERS and PR template are advisory only"
+      ],
+      "impact": "A failing or skipped validate does not block a push/merge to main; owner direct pushes land unchecked with no server-side audit trail.",
+      "recommendation": "Owner decision D: upgrade to GitHub Pro/Team and apply the recorded payload, or per-merge attest that validate was green and treat direct pushes as break-glass.",
+      "note": "Owner-accepted with compensating controls (CODEOWNERS, PR template, doctrine). Carried from focused run CI-P2-001 / 20261003 CI-P1-002."
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Auto-merge workflow holds broad write scope and merges without pinning the checked commit",
+      "area": "CI",
+      "owner": "@ci",
+      "target": "CI",
+      "status": "open",
+      "confidence": "high",
+      "evidence": [
+        ".github/workflows/dependabot-merge.yml:17-19 workflow-level permissions contents: write, pull-requests: write",
+        ".github/workflows/dependabot-merge.yml:46-48 gh pr checks then gh pr merge --squash --delete-branch (no --match-head-commit)",
+        ".github/workflows/dependabot-merge.yml:40-45 merges only app/dependabot PRs carrying the owner-applied dependabot-approved label"
+      ],
+      "impact": "Author+label gating is effective, but a PR head changed between the checks query and the merge is not pinned, and contents: write is broader than needed; there is no environment protection on the job.",
+      "recommendation": "Add `--match-head-commit` to `gh pr merge`, scope permissions to the minimum, and add an environment/required-review gate to the auto-merge job.",
+      "note": "Carried from focused run CI-P3-001 / 20261003 CI-P2-002; still present at f9cb67d."
+    }
+  ],
+  "report": "Read-only review of the CI/CD governance surface at `f9cb67d`: `.github/workflows/validate.yml`, `.github/workflows/dependabot-merge.yml`, `.github/CODEOWNERS`, and `docs/security/BRANCH_PROTECTION.md`.\n\n- `validate.yml` is a single `validate` job (actionlint, shellcheck, ruff, gitleaks, zizmor, `ci/validate.py`, SBOM/provenance) on every push/PR; the workflow pins tool downloads by sha256 and actions by commit SHA.\n- `BRANCH_PROTECTION.md:3-8` records that protection is plan-gated: apply returned `403 Upgrade to GitHub Pro`.\n- `dependabot-merge.yml:17-19` declares `contents: write` + `pull-requests: write` and `:46-48` merges after `gh pr checks` without `--match-head-commit`.\n\nNo secrets were printed."
+}

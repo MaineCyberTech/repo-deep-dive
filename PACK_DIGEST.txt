@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1243
+# files: 1264
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -37,7 +37,7 @@ acb57a7135b2d7d6e665f67f056e21353023b93835f54def1ae523bf76f1bfb3  ./VERSION
 9f1bfa4a995774b619503143d713314e814fc6edf1e12b73526b8901a087f949  ./ci/audit.yml
 c8b9df7a9ea79cebfe073cb2a72b1167d9a6add1ca883ea665b6383eb2216d84  ./docs/ARCHITECTURE.md
 236b9258a1817f8458385668a7504e08f7a64510016aeb9f98663695a802b1ff  ./docs/AUTOMATION_GUIDE.md
-9085dd6643e604a6fe81e2e9aae46fb3171d3ec50f11d9baa8aa6f272db2ee33  ./docs/DEEP_DIVE_ROADMAP.md
+9d433a9cf5a4b04358e94542a56810888a66f0e26bdfc64aa5233fcaadaf5cc2  ./docs/DEEP_DIVE_ROADMAP.md
 e302cfb9ff12dd822a89d6a51cc101c736832324ba2cc2547ac84cf61d3e7fc4  ./docs/LAB_ARCHITECTURE.md
 9046212d5338395ded191ca9ae9c68ebc93f5363afb4418476ed49c3ab3561f8  ./docs/LAB_IAC.md
 7c4b571112aa4bc0423a2668455ea934fc27152e9778bb8242ced7351dc3f65f  ./docs/LAB_VPN.md
@@ -246,7 +246,7 @@ f944f051b99542867c767698a51d2d2feccdcda3357ec2c0e87e63189df5ab7a  ./runs/2026093
 61d639f25502957680401e4893ac559c6421d47bc3738616f02212ac622f2f91  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/sbom_license_policy_recommendation.md
 f96c295a40bb26697896465e0e7d631a40fc61967f5e718ba5e498d60f8f24d2  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/secret_rotation_runbook.md
 2eaaf62cc4e878b2607cd931102b5ce246226f50be6b1ffa99e7c53d0280dda4  ./runs/20260930-0701-falcon-8282d3f_edge-45dfed0/verification_log.md
-5109f4d3a4ac988d3609fa1b33d7e6ab3f95c19d58d52805896922dd5d9d3fd8  ./runs/INDEX.md
+e00428252f47a4cdfb9649c8e09ca965b4ab53ca5c9ede2da47338a3478d48c6  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
 e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
@@ -699,6 +699,25 @@ ed11f5e99331d485fcec8c6880177737fec3089dd2c111feb8d5fd7d42a85c44  ./runs/falcon-
 158ad4f3c5f6f97ca5b491fc36fe274ad52a5f608f277f45f064e990939ed1df  ./runs/falcon-20261004-0700-main-ff868e5/patch_plan.md
 05d75e8aabe838f4f5a2d917a2e1248dc6e43e45e531138d58dd5704de33203d  ./runs/falcon-20261004-0700-main-ff868e5/risk_register.md
 44ada0c60372b78d57b4a0c2799e5684c7fe3a9fb6723aef2f40a1bb1f364986  ./runs/falcon-20261004-0700-main-ff868e5/roadmap.md
+895ce7149de2434550ecda20f9a79694bffe7972d5c9e92d007557a1864653af  ./runs/falcon-20261004-fast-main-f9cb67d/06_security_authz_tenancy_audit.md
+7eaa5ee07d96a08f3ff24e44ebb29e724175aaeabf5bf84841a4e136f21b9468  ./runs/falcon-20261004-fast-main-f9cb67d/10_github_actions_cicd_governance.md
+8fa02e1a6a92492d367a75428632fd1e6d8553545237a131c02b560c5d12cc8f  ./runs/falcon-20261004-fast-main-f9cb67d/11_supply_chain_dependency_secrets.md
+5150d4261a15a8f0b3b7b555785544b1349891fa7b7149cb08d469907aa4b82b  ./runs/falcon-20261004-fast-main-f9cb67d/EXECUTIVE_SUMMARY.md
+de5df1c17a6edb9069d43507e9e4c16c5f736d5535e0226fb983cf9ee2034264  ./runs/falcon-20261004-fast-main-f9cb67d/INDEX.md
+9ffa14aa4a4ff0fe7c60ab95af916775cf829a95744e33651da07b4e05f22871  ./runs/falcon-20261004-fast-main-f9cb67d/RELEASE_GATE.md
+4b3cc3ab134a3eae61a1fbfa39f46263a38d7331fd17c2f7f58e4a93e0b6fe25  ./runs/falcon-20261004-fast-main-f9cb67d/_domains/06_security_authz_tenancy_audit.json
+b63e437d8235c85486662a4271079c55cf4ab03a6f3b77e4ab041a747d74e30f  ./runs/falcon-20261004-fast-main-f9cb67d/_domains/10_github_actions_cicd_governance.json
+cca5c98439b7f8df1ad3a2f33a1d0d4997d3def2a0dfb8debb5577fa3fd53ff3  ./runs/falcon-20261004-fast-main-f9cb67d/_domains/11_supply_chain_dependency_secrets.json
+690b71e81daa96a6067e3276985aaacdc90ad9950e5d27ccdb6fc84d71398621  ./runs/falcon-20261004-fast-main-f9cb67d/_domains/deterministic.json
+222016c52353711a252082b5c8cc589d27fcc7ccb0d4df05775f84749d3e65e1  ./runs/falcon-20261004-fast-main-f9cb67d/audit_manifest.json
+eadc28953eae6ca8ccc084c964b885ff19e2aaf3a6d80488475e0c2de5fd312f  ./runs/falcon-20261004-fast-main-f9cb67d/coverage.md
+e389af2803b28ada5d7c9229536e8dcf8ca6927918a3f22464a9e9a593ffe8b8  ./runs/falcon-20261004-fast-main-f9cb67d/deterministic-findings.json
+92181bcc9fa160a69850d09fba98d94d011606c962a0a70b56651fc8c0568580  ./runs/falcon-20261004-fast-main-f9cb67d/findings.json
+df4ea04f989de96ec4a20364661412fcd59a02ca44a9fe2321ae9b0ddaeed013  ./runs/falcon-20261004-fast-main-f9cb67d/follow_up_register.md
+caf60997d84b921f38a1d067f5b5a2c36f06632259fc3175af38a2a2048ff4fb  ./runs/falcon-20261004-fast-main-f9cb67d/lens_deterministic.md
+cc6d97c36a0fc7384f4f6dc6e61415cae7f788d18f21d2719135a2ac9e4cb5b3  ./runs/falcon-20261004-fast-main-f9cb67d/patch_plan.md
+df4ea04f989de96ec4a20364661412fcd59a02ca44a9fe2321ae9b0ddaeed013  ./runs/falcon-20261004-fast-main-f9cb67d/risk_register.md
+46a8429271bc42b07f08bee4c8106734f67bc215e23acf262f9717fdf5128c90  ./runs/falcon-20261004-fast-main-f9cb67d/roadmap.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md
@@ -1194,6 +1213,7 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 6f31619783ac0c0cad5a590bcfdc1e667672e4aef987c27235b96a2715762c4e  ./tests/__init__.py
 0b6cf3bdd4bcc3a27de07372732889b1a763ebfef86c83d960e7a08e8bd8debc  ./tests/fixtures/gitleaks-negative.env.fixture
 81dff2f8c7fcba3d21a484f4abcaed3b4002cf0e3793979ca2693fc7a8d703e5  ./tests/test_deterministic_checks.py
+1fd1004dda7a113a008a56c8928729e1a552e4d2a09f6320dab136b32535ca8d  ./tests/test_full_domain.py
 75b7f9747ba21eabe1f23b7f708407cbf6103d359c7ba5a885b4a4c19d7b6d5c  ./tests/test_lib_findings.py
 44242c3eb29eb204184ffbe3331345df7c832d43878dc199438205688faafce5  ./tests/test_publish_audit.py
 87e8aea750804ce5991efb69f2c73fdf81a246f42f754d567aaea0b7ee1b8cdc  ./tests/test_repo_inventory.py
@@ -1204,6 +1224,7 @@ da6a9b7eaa62a42e1cb8e2b76b692d513ad478b13ae5e3d1d0eff70ca335501d  ./tools/collec
 6305974602de8120d5d10f63d28ccc8c5138a8952b60df75d244139199caba88  ./tools/deterministic_checks.py
 a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
+c84f5f87d7b9bf766bd06841c6d19e253bf4d01e9a11c327c7559c257dac15ec  ./tools/full_domain.py
 e2b1a7d0fd9629448b182e5fd26ebb38d96a4682e7a6e806de25d8531640709f  ./tools/lab-vpn/deploy-lab-api.sh
 c9d0754bb2efab55123acb973dfbc303fe753befdc22f91e4716561d0dad591f  ./tools/lab-vpn/lab-api-install.sh
 910619b05ae719c5b39ebf6d8151188a32a98d84e3b328f16aa6e6920aca69e9  ./tools/lab-vpn/lab-audit-add-agent.sh
