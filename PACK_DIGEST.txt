@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1938
+# files: 1941
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -1038,6 +1038,7 @@ b0c8db0b5fd9beb51dc5ecb4a8ad1b2e8328366ac29b91bc547b5a09db60419c  ./runs/falcon-
 98f75a124df06983515a2122b4fd10f265bb46185ed0061690cacfdf6019b617  ./runs/falcon-20261005-full-main-e267ce1/45_exploit_chain_attack_path_audit.md
 267c4774f5f5e57b5b9d35437cad601d3955a3fb2e30bd22b466be86c8a36263  ./runs/falcon-20261005-full-main-e267ce1/EXECUTIVE_SUMMARY.md
 e229136852c734667ab0c7b0989c3c1c86ae2b63f1e96d401de6132342206fc8  ./runs/falcon-20261005-full-main-e267ce1/INDEX.md
+e15eb561d8d30a6f8ec263bf58a28caf985b0f89a0f66de8f363eeeef7e462d4  ./runs/falcon-20261005-full-main-e267ce1/OWNER_GATED_PROPOSALS.md
 e658fd75be707681c18d473db52ab8cc1fb8421352eb8606ea8358d82afecc26  ./runs/falcon-20261005-full-main-e267ce1/RELEASE_GATE.md
 fc5058a7cf88b67d7e0f35efdbecaede2bc9219f384a65a7502582d1ff916ee1  ./runs/falcon-20261005-full-main-e267ce1/_domains/00_audit_orchestrator.json
 155acdfb6df56a87cd72ed7107e281e2da2491b4e0ce291fad9c976efca72eb1  ./runs/falcon-20261005-full-main-e267ce1/_domains/01_repository_inventory.json
@@ -1086,11 +1087,13 @@ b37bffe344d99d9c1e150cef12f3cf09e4588a1eeefbc77a759e357b9c26b880  ./runs/falcon-
 0a2fa1a755af9813e72453fdda5931638e6e287cb059f7d5a756dc4d497e62f1  ./runs/falcon-20261005-full-main-e267ce1/coverage.md
 d67bb6462410899d5efcfb6cd7eac41842be30aa7c1b2be346eaebfe37e4b0ac  ./runs/falcon-20261005-full-main-e267ce1/deterministic-findings.json
 837506e829de9d1e197dfa19a9f54744a0ebb61f32ade639ff39689752e4da97  ./runs/falcon-20261005-full-main-e267ce1/findings.json
-a24dc65be6d82cd257f74b4a7439cc91b8b1ed550113e713cca4b9847fa03b68  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
+7f3aeb8fd5f32d30ce2634b59e00732c27ebb26f21a00d56c83bfb36e7f2575d  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
 88eb640212cce439b86fda1396860ccb1c2b00fdefadf80eac3a6b1472bc99c7  ./runs/falcon-20261005-full-main-e267ce1/lens_deterministic.md
 21c6167629bf5aebc4ad4646e56df84a1d7927ed6ac951bd2e0ba21102e6678b  ./runs/falcon-20261005-full-main-e267ce1/patch_plan.md
+b6dc9fc89924073a661b8e6fa4465cb5021a164266f176dfe264bb8332788b52  ./runs/falcon-20261005-full-main-e267ce1/remediation_plan.json
 a24dc65be6d82cd257f74b4a7439cc91b8b1ed550113e713cca4b9847fa03b68  ./runs/falcon-20261005-full-main-e267ce1/risk_register.md
 b62548a4f5872ca71fb2a8415adbbb85b33e5e4805758d02933b6321c64c9783  ./runs/falcon-20261005-full-main-e267ce1/roadmap.md
+eb1771f0bda51ee28337edc18c847f2c754f877bc741698094d6eadbe4a44e71  ./runs/falcon-20261005-full-main-e267ce1/verification_log.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md

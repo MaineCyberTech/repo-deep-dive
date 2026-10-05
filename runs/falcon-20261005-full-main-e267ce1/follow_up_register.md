@@ -6,14 +6,14 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 
 | Finding | Severity | Title | Owner | Target | Status | Note |
 |---|---|---|---|---|---|---|
-| OBS-P0-001 | P0 | Prometheus scrapes only 3 targets; nearly all `falcon_*` signals hinge on the node-exporter textfile collector | @owner | OBS | still-open |  |
-| API-P1-001 | P1 | Cross-repo pairing contract cannot be verified in this environment | @owner | API | still-open |  |
-| ARCH-P1-001 | P1 | Single-host concentration: host loss is total pipeline loss | @owner | ARCH | still-open |  |
+| OBS-P0-001 | P0 | Prometheus scrapes only 3 targets; nearly all `falcon_*` signals hinge on the node-exporter textfile collector | @owner | OBS | partially-fixed |  |
+| API-P1-001 | P1 | Cross-repo pairing contract cannot be verified in this environment | @owner | API | partially-fixed |  |
+| ARCH-P1-001 | P1 | Single-host concentration: host loss is total pipeline loss | @owner | ARCH | still-open | owner-gated: propose a documented/tested RTO/RPO acceptance (RPO 24h nightly offsite; RTO 24h cold restore) tied to the PR #48 restore assertion instead of a warm standby. Residual: host loss = total pipeline loss until a cold restore; needs owner sign-off. See OWNER_GATED_PROPOSALS.md |
 | BP-P1-001 | P1 | Branch protection and required checks are plan-gated and unenforceable server-side | @owner | BP | owner-accepted |  |
 | CI-P1-001 | P1 | Branch protection and required checks are not enforced server-side | @owner | CI | owner-accepted |  |
-| DATA-P1-001 | P1 | Wazuh and IRIS data have no retention (unbounded index growth) | @owner | DATA | still-open |  |
-| FINAL-P1-001 | P1 | Operational resilience remains incomplete across the backup lifecycle | @owner | FINAL | still-open |  |
-| HYGIENE-P1-001 | P1 | Committed `review-package/` is a stale snapshot duplicate of the source tree | @owner | HYGIENE | still-open |  |
+| DATA-P1-001 | P1 | Wazuh and IRIS data have no retention (unbounded index growth) | @owner | DATA | still-open | owner-gated: propose ISM/ILM retention (Wazuh/IRIS hot 90d, delete 180d) with recorded policy ids; destructive, needs owner-approved windows. No infra change made. See OWNER_GATED_PROPOSALS.md |
+| FINAL-P1-001 | P1 | Operational resilience remains incomplete across the backup lifecycle | @owner | FINAL | partially-fixed |  |
+| HYGIENE-P1-001 | P1 | Committed `review-package/` is a stale snapshot duplicate of the source tree | @owner | HYGIENE | verified-fixed |  |
 | ADMIN-P2-001 | P2 | Admin/observability consoles are exposed through public routers without origin authentication | @owner | ADMIN | still-open |  |
 | API-P2-001 | P2 | Ingest contract relies on a shared secret header, not request signing or idempotency keys | @owner | API | partially-fixed |  |
 | ARCH-P2-001 | P2 | Declared container hardening lags the running containers | @owner | ARCH | partially-fixed |  |
