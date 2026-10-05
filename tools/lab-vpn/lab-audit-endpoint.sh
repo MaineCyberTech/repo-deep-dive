@@ -83,9 +83,9 @@ EOF
     cat >> "$CONF" <<EOF
 
 [Peer]
-# lab (advertises 172.23.128.0/20)
+# lab (advertises ${LAB_SUBNET:-172.23.128.0/20})
 PublicKey = ${LABPUB}
-AllowedIPs = ${LAB_IP}/32, 172.23.128.0/20
+AllowedIPs = ${LAB_IP}/32, ${LAB_SUBNET:-172.23.128.0/20}
 EOF
   else
     say "no LABPUB yet -> overlay has no lab peer; re-run 'ensure <labpub>' after the lab joins"

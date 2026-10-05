@@ -17,6 +17,11 @@ agent/dev ──(wg)──► mct-portal-dev  wgaudit0 10.250.0.1:51900
 Both lab subnets are advertised to clients. A client config whose `AllowedIPs` omits
 `192.168.222.0/24` will handshake but be unable to route to lab #2.
 
+> **Host move (2026-10).** Lab #2 (`testnuc`) is the current host; lab #1 remains in
+> the overlay as a fallback but has been powered off. Health checks pass when the
+> endpoint and **at least one** lab group is reachable; tooling prefers lab #2 when
+> both are up. Dispatch (`LAB_API_URL`) needs a runner API on the active lab.
+
 | Item | Value |
 |---|---|
 | Endpoint | `138.197.105.82:51900/udp` (`mct-portal-dev`) |
@@ -60,7 +65,7 @@ subnet collisions), refuse to touch `wg0`, and print an inventory.
 | variable | `LAB_ENDPOINT_USER` | `labvpn` |
 | variable | `LAB_OVERLAY_SERVER_PUB` | endpoint public key |
 | secret | `LAB_API_TOKEN` | lab API token (ci-runner) for remote dispatch |
-| variable | `LAB_API_URL` | `http://172.23.128.51:8722` |
+| variable | `LAB_API_URL` | lab runner API base; lab #1 `http://172.23.128.51:8722`, lab #2 `http://192.168.222.201:8722` (when its runner is up) |
 | secret | `NTFY_TOPIC` / `NTFY_USERPASS` | ntfy alerting for the health workflow |
 | variable | `NTFY_URL` | ntfy base URL (default `https://ntfy.sh`) |
 
@@ -92,8 +97,9 @@ ssh root@138.197.105.82 'bash /root/lab-audit-scoped-deploy.sh'
 # -> prints LABVPN_PRIVATE_KEY_FILE=/root/labvpn_ed25519 ; store it as secret LAB_ENDPOINT_SSH_KEY
 ```
 
-Deployment is verified: `wg show wgaudit0` handshake both ways, `ping 172.23.128.51`, and
-`curl http://172.23.128.51:8722/health`.
+Deployment is verified: `wg show wgaudit0` handshake both ways, plus either lab
+group — lab #2 (current): `ping 192.168.222.222` / `ping 192.168.222.201`; lab #1:
+`ping 172.23.128.51` and `curl http://172.23.128.51:8722/health`.
 
 ## Adding a lab host / second lab (multi-lab overlay)
 

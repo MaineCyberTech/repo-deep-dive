@@ -76,10 +76,22 @@ check_local() {
     if [ -z "${hs:-}" ] || [ "$hs" = "0" ]; then return 1; fi
     age=$(( $(date +%s) - hs )); [ "$age" -gt 300 ] && return 1
   fi
-  for ip in 10.250.0.1 172.23.128.50 172.23.128.51 172.23.128.52; do
-    ping -c2 -W2 "$ip" >/dev/null 2>&1 || ok=0
-  done
-  curl -fsS -m8 http://172.23.128.51:8722/health >/dev/null 2>&1 || ok=0
+  ping -c2 -W2 10.250.0.1 >/dev/null 2>&1 || ok=0
+  # Either lab group counts; the lab moved hosts in 2026-10 (docs/LAB_VPN.md).
+  local lab_ok=0
+  if ping -c2 -W2 172.23.128.50 >/dev/null 2>&1 \
+    && ping -c2 -W2 172.23.128.51 >/dev/null 2>&1 \
+    && ping -c2 -W2 172.23.128.52 >/dev/null 2>&1 \
+    && curl -fsS -m8 http://172.23.128.51:8722/health >/dev/null 2>&1; then
+    lab_ok=1
+  fi
+  if ping -c2 -W2 192.168.222.222 >/dev/null 2>&1 \
+    && ping -c2 -W2 192.168.222.201 >/dev/null 2>&1 \
+    && ping -c2 -W2 192.168.222.202 >/dev/null 2>&1 \
+    && ping -c2 -W2 192.168.222.203 >/dev/null 2>&1; then
+    lab_ok=1
+  fi
+  [ "$lab_ok" -eq 1 ] || ok=0
   return $(( ok == 1 ? 0 : 1 ))
 }
 check_local && local_reach=1

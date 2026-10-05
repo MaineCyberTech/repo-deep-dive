@@ -104,7 +104,7 @@ jobs:
           [Peer]
           PublicKey = ${{ steps.add.outputs.SERVER_PUB }}
           Endpoint = ${{ steps.add.outputs.ENDPOINT }}
-          AllowedIPs = 10.250.0.0/24, 172.23.128.0/20
+          AllowedIPs = 10.250.0.0/24, 172.23.128.0/20, 192.168.222.0/24
           PersistentKeepalive = 25
           EOF
           fi
@@ -134,7 +134,7 @@ jobs:
             echo "1. Download the \`lab-audit-$NAME\` artifact."
             echo "2. Import the \`.conf\` into the WireGuard app, or run:"
             echo '   `bash tools/lab-vpn/lab-audit-connect.sh lab-audit-'"$NAME"'.conf`'
-            echo "3. Verify: ping lab-endpoint (10.250.0.1), ci-runner.lab (172.23.128.51), edge-builder.lab (172.23.128.52)."
+            echo "3. Verify: ping lab-endpoint (10.250.0.1); lab #2 (current host): testnuc.lab (192.168.222.222), ci-runner2.lab (192.168.222.201); lab #1 (legacy): ci-runner.lab (172.23.128.51)."
             echo ""
             echo "Offboard later: run the **Lab agent offboarding** workflow with this name."
           } >> "$GITHUB_STEP_SUMMARY"

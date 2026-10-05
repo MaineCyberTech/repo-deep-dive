@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Overlay health check. Prints PASS/FAIL per check and RESULT: PASS|FAIL.
 #   lab-audit-verify.sh [--role endpoint|lab|client]
-# Env: IFACE ENDPOINT_IP LAB_HOSTS LAB_API
+# Env: IFACE ENDPOINT_IP LAB1_HOSTS LAB1_API LAB2_HOSTS LAB2_API
+#      (LAB_HOSTS / LAB_API remain as lab #1 aliases)
 set -uo pipefail
 
 ROLE=endpoint
@@ -16,8 +17,15 @@ case "$ROLE" in endpoint|lab|client) ;; *) echo "invalid role '$ROLE'" >&2; exit
 
 IFACE="${IFACE:-wgaudit0}"
 ENDPOINT_IP="${ENDPOINT_IP:-10.250.0.1}"
-LAB_HOSTS="${LAB_HOSTS:-172.23.128.50 172.23.128.51 172.23.128.52}"
-LAB_API="${LAB_API:-http://172.23.128.51:8722/health}"
+# Multi-lab: lab #1 (legacy Proxmox, 172.23.128.0/20) and lab #2 (testnuc,
+# 192.168.222.0/24 — the current host). The check passes when the endpoint AND
+# at least one lab group (all its hosts, plus its API when set) is reachable,
+# so a retired or powered-off lab cannot block the gate. Override with
+# LAB1_*/LAB2_*.
+LAB1_HOSTS="${LAB1_HOSTS:-${LAB_HOSTS:-172.23.128.50 172.23.128.51 172.23.128.52}}"
+LAB1_API="${LAB1_API:-${LAB_API:-http://172.23.128.51:8722/health}}"
+LAB2_HOSTS="${LAB2_HOSTS:-192.168.222.222 192.168.222.201 192.168.222.202 192.168.222.203}"
+LAB2_API="${LAB2_API:-}"
 STALE=300
 fail=0
 
@@ -50,13 +58,30 @@ else
   fi
 fi
 
-# 3. reachability of endpoint + lab hosts
-for ip in $ENDPOINT_IP $LAB_HOSTS; do
-  if ping -c1 -W2 "$ip" >/dev/null 2>&1; then check "ping $ip" 0; else check "ping $ip" 1; fi
-done
+# 3. endpoint reachability
+if ping -c1 -W2 "$ENDPOINT_IP" >/dev/null 2>&1; then check "ping $ENDPOINT_IP" 0; else check "ping $ENDPOINT_IP" 1; fi
 
-# 4. lab management API
-if curl -fsS -m6 "$LAB_API" >/dev/null 2>&1; then check "curl $LAB_API" 0; else check "curl $LAB_API" 1; fi
+# 4. lab reachability — a group is up when every host answers and its API
+#    (when configured) responds. At least one group must be up.
+lab_group_ok() { # hosts api
+  local ok=1 ip
+  for ip in $1; do ping -c1 -W2 "$ip" >/dev/null 2>&1 || ok=0; done
+  if [ -n "${2:-}" ]; then curl -fsS -m6 "$2" >/dev/null 2>&1 || ok=0; fi
+  [ "$ok" -eq 1 ]
+}
+lab1_ok=0; lab_group_ok "$LAB1_HOSTS" "$LAB1_API" && lab1_ok=1
+lab2_ok=0; lab_group_ok "$LAB2_HOSTS" "$LAB2_API" && lab2_ok=1
+if [ "$lab1_ok" -eq 1 ]; then
+  echo "PASS lab #1 reachable ($LAB1_HOSTS${LAB1_API:+ + api})"
+else
+  echo "INFO lab #1 unreachable ($LAB1_HOSTS${LAB1_API:+ + api})"
+fi
+if [ "$lab2_ok" -eq 1 ]; then
+  echo "PASS lab #2 reachable ($LAB2_HOSTS${LAB2_API:+ + api})"
+else
+  echo "INFO lab #2 unreachable ($LAB2_HOSTS${LAB2_API:+ + api})"
+fi
+check "at least one lab reachable" $(( (lab1_ok + lab2_ok) > 0 ? 0 : 1 ))
 
 if [ "$fail" -eq 0 ]; then
   echo "RESULT: PASS"
