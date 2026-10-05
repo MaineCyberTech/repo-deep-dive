@@ -96,9 +96,11 @@ EOF
   sysctl -w net.ipv4.ip_forward=1 >/dev/null
   ufw allow "${PORT}/udp" >/dev/null 2>&1 || true
   systemctl enable "wg-quick@${IFACE}" >/dev/null 2>&1 || true
-  # Self-heal: recreate the interface if the process ever dies.
-  mkdir -p "/etc/systemd/system/wg-quick@${IFACE}.service.d"
-  printf '[Service]\nRestart=always\nRestartSec=5\n' > "/etc/systemd/system/wg-quick@${IFACE}.service.d/restart.conf"
+  # wg-quick@.service is Type=oneshot; systemd rejects Restart= for oneshot units,
+  # so a "Restart=always" drop-in makes the unit a bad-setting that refuses to start.
+  # Remove any stale/invalid drop-in; the interface is kernel state kept alive by
+  # RemainAfterExit=yes and is recreated on boot via `enable`.
+  rm -f "/etc/systemd/system/wg-quick@${IFACE}.service.d/restart.conf"
   systemctl daemon-reload
   systemctl restart "wg-quick@${IFACE}"
   sleep 1

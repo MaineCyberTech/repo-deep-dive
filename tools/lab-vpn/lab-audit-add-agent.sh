@@ -131,7 +131,7 @@ Address = ${IP}/24
 [Peer]
 PublicKey = $(cat "$DIR/server.pub")
 Endpoint = ${EPHOST}:${PORT}
-AllowedIPs = ${SUBNET}.0/24, 172.23.128.0/20
+AllowedIPs = ${SUBNET}.0/24, 172.23.128.0/20, 192.168.222.0/24
 PersistentKeepalive = 25
 EOF
   chmod 600 "$CLIENT"
