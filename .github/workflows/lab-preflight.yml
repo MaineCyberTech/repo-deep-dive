@@ -45,6 +45,7 @@ jobs:
     env:
       HOST: ${{ vars.LAB_ENDPOINT_HOST }}
       USER: ${{ vars.LAB_ENDPOINT_USER }}
+      LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -56,9 +57,9 @@ jobs:
         run: |
           set -e
           if [ -z "$HOST" ] || [ -z "$USER" ]; then echo "::error::LAB_ENDPOINT_HOST/USER not configured"; exit 1; fi
-          [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
+          [ -n "$LAB_ENDPOINT_SSH_KEY" ] || { echo "::error::secret LAB_ENDPOINT_SSH_KEY is not set"; exit 1; }
           install -m700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
+          printf '%s\n' "$LAB_ENDPOINT_SSH_KEY" > ~/.ssh/lab_endpoint
           chmod 600 ~/.ssh/lab_endpoint
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 

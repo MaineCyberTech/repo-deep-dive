@@ -93,5 +93,39 @@ class PublishFailClosedTest(unittest.TestCase):
         self.assertEqual(manifest["secretScan"]["result"], "pass")
 
 
+class PublishGateTest(unittest.TestCase):
+    """EXEC-P1-001: the release gate must be able to return NO-GO for a P0."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.src = pathlib.Path(self.tmp.name) / "src"
+        self.src.mkdir()
+        self.pack = pathlib.Path(self.tmp.name) / "runs"
+        self.pack.mkdir()
+
+    def _publish(self, findings):
+        (self.src / "findings.json").write_text(
+            json.dumps({"findings": findings}), encoding="utf-8")
+        argv = ["publish_audit.py", "--repo", "demo", "--branch", "main",
+                "--sha", "a" * 40, "--source-dir", str(self.src),
+                "--pack-dir", str(self.pack), "--no-pr"]
+        with mock.patch.object(sys, "argv", argv):
+            self.assertEqual(pub.main(), 0)
+        dest = next(self.pack.glob("demo-*"))
+        return (dest / "RELEASE_GATE.md").read_text(encoding="utf-8")
+
+    def test_p0_yields_no_go(self):
+        gate = self._publish([{"id": "x", "severity": "P0", "area": "SEC",
+                               "title": "critical", "evidence": ["README.md:1"]}])
+        self.assertIn("NO-GO", gate)
+        self.assertNotIn("Verdict: **GO", gate)
+
+    def test_p1_yields_go_with_conditions(self):
+        gate = self._publish([{"id": "x", "severity": "P1", "area": "SEC",
+                               "title": "high", "evidence": ["README.md:1"]}])
+        self.assertIn("GO WITH CONDITIONS", gate)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -202,6 +202,31 @@ for f in prompts/[0-9][0-9]_*.md; do
 done
 if [[ -z "$vp_missing" ]]; then ok "report structures include Verification Performed"; else bad "missing Verification Performed:${vp_missing}"; fi
 
+# --- 11. Secret/scratch ignore patterns (HYGIENE-P2-001 / SECRET-P2-001) --------
+# .gitignore must ignore lab/VPN key material and generated scratch so it can never
+# be committed. `git check-ignore` on sample names asserts the patterns actually
+# match (intra-word corruption would silently break them). Skipped outside a git
+# work tree, e.g. a tarball export.
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  gi_missing=""
+  for sample in \
+    "lab-audit-demo.conf" \
+    "swap.swp" \
+    "peer.wgkey" \
+    "deterministic-out/findings.json" \
+    "infra/lab/terraform/terraform.tfstate" \
+    "infra/lab/terraform/terraform.tfstate.backup"; do
+    git check-ignore -q -- "$sample" || gi_missing="$gi_missing $sample"
+  done
+  if [[ -z "$gi_missing" ]]; then
+    ok "git check-ignore matches sample secret/scratch files"
+  else
+    bad "gitignore missing secret/scratch patterns:${gi_missing}"
+  fi
+else
+  ok "gitignore check skipped (not a git work tree)"
+fi
+
 # --- Result ---------------------------------------------------------------------
 echo
 if [[ $fail -eq 0 ]]; then

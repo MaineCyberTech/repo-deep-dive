@@ -35,19 +35,20 @@ jobs:
       NAME: ${{ inputs.agent_name }}
       HOST: ${{ inputs.endpoint_host != '' && inputs.endpoint_host || vars.LAB_ENDPOINT_HOST }}
       USER: ${{ inputs.endpoint_user != '' && inputs.endpoint_user || vars.LAB_ENDPOINT_USER }}
+      LAB_ENDPOINT_SSH_KEY: ${{ secrets.LAB_ENDPOINT_SSH_KEY }}
     steps:
       - name: Validate
         run: |
           set -e
           printf '%s' "$NAME" | grep -Eq '^[A-Za-z0-9_.-]{1,32}$' || { echo "::error::invalid agent_name"; exit 1; }
           if [ -z "$HOST" ] || [ -z "$USER" ]; then echo "::error::endpoint host/user not configured"; exit 1; fi
-          [ -n "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" ] || { echo "::error::LAB_ENDPOINT_SSH_KEY not set"; exit 1; }
+          [ -n "$LAB_ENDPOINT_SSH_KEY" ] || { echo "::error::LAB_ENDPOINT_SSH_KEY not set"; exit 1; }
 
       - name: Configure SSH
         run: |
           set -e
           install -m700 -d ~/.ssh
-          printf '%s\n' "${{ secrets.LAB_ENDPOINT_SSH_KEY }}" > ~/.ssh/lab_endpoint
+          printf '%s\n' "$LAB_ENDPOINT_SSH_KEY" > ~/.ssh/lab_endpoint
           chmod 600 ~/.ssh/lab_endpoint
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 

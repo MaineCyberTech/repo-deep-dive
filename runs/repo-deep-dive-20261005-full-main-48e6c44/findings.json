@@ -51,8 +51,8 @@
       "area": "EXEC",
       "owner": "@owner",
       "target": "EXEC",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "verified-fixed: publish_audit.py now calls the shared lib_findings.compute_gate (P0 -> NO-GO); unit test PublishGateTest asserts a P0 yields NO-GO.",
       "recommendation": "Share one gate function; add a P0 test asserting NO-GO; regenerate affected archived focused runs."
     },
     {
@@ -233,8 +233,8 @@
       "area": "HYGIENE",
       "owner": "@owner",
       "target": "HYGIENE",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "verified-fixed: .gitignore corrupted patterns restored; tools/lint_pack.sh asserts git check-ignore matches sample secret/scratch files.",
       "recommendation": "Restore the intended patterns and add a `git check-ignore` assertion to CI."
     },
     {
@@ -298,8 +298,8 @@
       "area": "SEC",
       "owner": "@owner",
       "target": "SEC",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "verified-fixed: SSH key moved to env: and referenced as \"$LAB_ENDPOINT_SSH_KEY\" in lab-preflight, lab-agent-onboard, lab-agent-offboard, lab-overlay-health.",
       "recommendation": "Pass the secret via `env:` (e.g. `SSH_KEY: ${{ secrets... }}`) and reference `\"$SSH_KEY\"` in the script."
     },
     {
@@ -311,8 +311,8 @@
       "area": "SEC",
       "owner": "@owner",
       "target": "SEC",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "verified-fixed: /sync fetch now carries the -c http.extraheader auth and an unresolvable ref returns HTTP 404; redeployed to ci-runner and verified (health + authenticated /run).",
       "recommendation": "Apply the same `-c http.extraheader=...` (or `GIT_CONFIG_*`) to the fetch, and fail when the requested ref does not resolve."
     },
     {
@@ -324,8 +324,8 @@
       "area": "SECRET",
       "owner": "@owner",
       "target": "SECRET",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "verified-fixed: .gitignore restores *.swp, lab-audit-*.conf, *.wgkey, deterministic-out/ and tfstate ignores; pack-lint git check-ignore assertion added.",
       "recommendation": "Restore the intended patterns ('*.swp', 'lab-audit-*.conf', '*.wgkey', 'deterministic-out/') and add a CI check that `git check-ignore` matches a sample secret file."
     },
     {
