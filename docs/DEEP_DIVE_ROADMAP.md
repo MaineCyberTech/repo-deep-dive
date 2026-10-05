@@ -50,7 +50,9 @@ Prioritized; each item is actionable.
     `coverage.md` per run.
 13. **First-class full-domain pass.** `tools/full_domain.py` drives the 46-prompt master runner with
     per-domain subagents that emit pack-schema findings, then aggregates — the "full-domain pass"
-    becomes a supported mode, not a manual prompt run.
+    becomes a supported mode, not a manual prompt run. **Done** (2026-10-04): driver +
+    `emit`/`aggregate` pipeline; first `--fast` pilot for falcon at `f9cb67d`
+    (`runs/falcon-20261004-fast-main-f9cb67d`).
 14. **Cross-repo / org lens.** The deterministic rollup exists; add an **LLM org lens** that reads all
     per-repo findings and surfaces systemic patterns (shared credential estates, copy-pasted CI,
     shared base images) as org-level findings.
@@ -72,6 +74,8 @@ Prioritized; each item is actionable.
     normalization/remap step.
 20. **Cost/latency control.** Deep-dives and full-domain passes are token-heavy; add a `--fast` mode
     (deterministic + security/supply-chain/CI only) vs `--full`, and cache per-repo inventories.
+    **Partially done** (2026-10-04): `tools/full_domain.py` has `--fast`/`--full`; per-repo
+    inventory caching remains.
 
 ## Immediate next actions (this cycle)
 - Extend the focused pass to `falcon-edge`, `mainecybertech`, `repo-deep-dive`; publish + remediate + merge.
