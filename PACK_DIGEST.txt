@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1964
+# files: 1976
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -358,8 +358,20 @@ fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/2026100
 6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
 a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
-faa1f33e38151dd4e0aac84e87e2aff3a606078c69f5e5c15938f03da2413404  ./runs/INDEX.md
+ff2780aabe97965cecb683c0beaf7dc7048f4aa6b0743c0bdf99ccd007a68116  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
+40bec1c6610fc37de257fae4eeade2dd0610d836da3cc5e171b76118c8f89064  ./runs/bench-test-20261007-1731-main-4ecee97/EXECUTIVE_SUMMARY.md
+c3ba715b06e74f994c6be4f7367ea7ab711c9584c93a1a61eeb2858d46d246f6  ./runs/bench-test-20261007-1731-main-4ecee97/INDEX.md
+ff23eb7a102b4ce4583a5b1ff5a61eb751ef4e1d945d58518622513a9795c85b  ./runs/bench-test-20261007-1731-main-4ecee97/RELEASE_GATE.md
+aa9125d55d1cfd58e5abc961c56ab3deb07a51c0e3e24e1634a0392bd9643398  ./runs/bench-test-20261007-1731-main-4ecee97/audit_manifest.json
+78e8d873cd94f4a487a60af3b249fd51c7d45479c6feafbe53d33d96d17ba00d  ./runs/bench-test-20261007-1731-main-4ecee97/deterministic-findings.json
+089c45576c1d7ac4977577fee9e7c5259047b691cb4beec626fd05289bcb1260  ./runs/bench-test-20261007-1731-main-4ecee97/findings.json
+3e3fac7eb5c7cb85dcc1d08a6afe16078bf5a43a87478ea284c32cb3ac842621  ./runs/bench-test-20261007-1731-main-4ecee97/follow_up_register.md
+ed307fe90caa2d53b4250284d40e8d2427d26334312aaedabb2866143d369e89  ./runs/bench-test-20261007-1731-main-4ecee97/lens_deterministic.md
+cd68bd6f60e299ab6bb2ed3b00f48fc01d6206fde5964e38d15568f7eb86e29e  ./runs/bench-test-20261007-1731-main-4ecee97/lens_focused_security_supply_chain_ci.md
+f4b166df026384082b13785d05324554cd1758ad3a6efab9eb4d5d5357d229c6  ./runs/bench-test-20261007-1731-main-4ecee97/patch_plan.md
+3e3fac7eb5c7cb85dcc1d08a6afe16078bf5a43a87478ea284c32cb3ac842621  ./runs/bench-test-20261007-1731-main-4ecee97/risk_register.md
+1f45d9476cba00e40a84445c48fa00061a5d69cc2931ed285495b10c6e896f82  ./runs/bench-test-20261007-1731-main-4ecee97/roadmap.md
 88aefd12b91b49219b1a07f44d47644c05478f40bd55c8c504d4880977b51f39  ./runs/buddy-20261003-0018-master-99abf29/01_repository_inventory.md
 e7878c7907825fa37948c95d826c0d1939d1c751da55671e2c8dfe9bfe25f94a  ./runs/buddy-20261003-0018-master-99abf29/02_architecture_runtime_topology.md
 dff13525ee6904127ae63435b084f4b2b83cc672997f31b3187aecea8ed67e38  ./runs/buddy-20261003-0018-master-99abf29/03_feature_implementation_map.md
