@@ -25,7 +25,20 @@
     ]
   },
   "findings": {
-    "total": 7
+    "bySeverity": {
+      "P1": 1,
+      "P2": 4,
+      "P3": 4
+    },
+    "byArea": {
+      "CI": 1,
+      "DATA": 1,
+      "DET": 2,
+      "GOV": 1,
+      "SAFE": 1,
+      "SUPPLY": 3
+    },
+    "total": 9
   },
   "secretScan": {
     "tool": "tools/publish_audit.py scan_secrets",

@@ -9,3 +9,5 @@
 | SAFE-P2-001 | P2 | Default battery runs host-impacting phases without opt-in, and the wrapper defeats the VRAM-fill confirmation | @owner | SAFE | open | Make integrity/soak phases opt-in (or require one explicit confirmation), stop passing --force by default, bound the fil |
 | CI-P3-001 | P3 | No CI, dependency automation, or secret scanning in the repository | @owner | CI | open | Add a minimal CI workflow (PSScriptAnalyzer / python compile / pytest plus gitleaks, pinned and sha256-verified) and Dep |
 | GOV-P3-001 | P3 | Repository is public while LICENSE declares the material PROPRIETARY AND CONFIDENTIAL | @owner | GOV | open | Either make the repository private or relicense for public distribution, and reconcile README/LICENSE with the actual vi |
+| DET-P3-001 | P3 | [CI] No GitHub Actions workflows | @owner | CI | open | Deterministic check: add a CI workflow (see CI-P3-001). |
+| DET-P3-002 | P3 | [PORT] .gitattributes missing (no line-ending policy) | @owner | PORT | open | Deterministic check: add .gitattributes (`* text=auto`, LF for shell scripts). |
