@@ -55,8 +55,8 @@
       "line": 246,
       "owner": "@owner",
       "target": "DATA",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "Post-audit 2026-10-09: recovered live 16:40Z; durable capacity fixes live-verified (C7 retirement; snapshot-repo relocation off the data LV; watermarks secured 93/96/98 with margin) - evidence REVIEW-FIX 20261009T191309Z + 20261009T200936Z; landing in main via falcon PR #49 (lineage gap tracked there). Residual detection gaps filed separately (WH-P1-001, OBS P1s).",
       "area": "DATA",
       "detail": "Live read-only evidence shows the single-node OpenSearch went RED 2026-10-07T19:20Z and stayed red ~45.5 h; EVE ingestion stalled ~41 h (falcon_eve_last_event_age_seconds peaked 143,946 s); falcon-eve-2026.10.08 has 0 docs; the 10.09 index holds a delayed flush (earliest event_time 2026-10-08T03:15:01Z, ingested_at up to 10-09T16:50Z); the aggregator logged 'Not retriable; dropping the request' with unavailable_shards_exception and component_events_dropped counts (62..13310); the edge spool purged 1,743,575,365 B across 13 rotations. The audited tree (08e20d1) still keeps the OpenSearch snapshot repo inside the data LV (compose/central/docker-compose.yml:78) and sets only enable_for_single_data_node; the relocation/watermark-margin fixes exist only on post-audit main 6e4fccd. Fix: land the capacity changes in the audited line, add a sink-failure DLQ/replay, and a bounded write-block drill asserting zero dropped events."
     },
@@ -111,7 +111,7 @@
       "note": "Same chain as prior CHAIN-P1-001 (20261002 run) / SEC-P1-002 (20261003 run); remediation committed at config level, never applied live.",
       "area": "CHAIN",
       "recommendation": "Deploy the narrowed ruleset (bootstrap/30-firewall.sh) and add a live firewall drift check; correct the 'Remediated' wording until a live artifact exists.",
-      "detail": "config/nftables/falcon.nft:30-33 replaces the blanket `iifname \"wg0\" accept` with explicit per-port allows (tcp 9443; tcp 15140/15141; tcp 514/1514/1515; udp 514/2055), and PORT_PROTOCOL_MATRIX.md:63-68 records SEC-P1-002 as remediated. Live verification shows the opposite: the running `inet falcon_filter` input chain still contains the blanket `iifname \"wg0\" accept` and /etc/nftables.conf is byte-identical to the pre-fix version (7bb6187^). With 8 WireGuard peers (client VPN + site peers) and the edge control plane listening on 0.0.0.0:9443 (mTLS only), any peer \u2014 or a leaked/misused peer key from the shared-token enrollment path \u2014 can reach every host listener via wg0, including 80/443 (origin consoles with no origin auth), 8791 (enroll), 9443, and SSH 22. No automated check compares the live ruleset to the repo config (exposure_edges_test.sh is offline/static; fw_negative_test.sh only checks drop counters), so the drift is silent. Fix: apply bootstrap/30-firewall.sh (or 32-inbound-mode.sh closed) to load the narrowed set and re-verify with a read-only `nft list chain inet falcon_filter input`; add a live-vs-repo firewall drift check."
+      "detail": "config/nftables/falcon.nft:30-33 replaces the blanket `iifname \"wg0\" accept` with explicit per-port allows (tcp 9443; tcp 15140/15141; tcp 514/1514/1515; udp 514/2055), and PORT_PROTOCOL_MATRIX.md:63-68 records SEC-P1-002 as remediated. Live verification shows the opposite: the running `inet falcon_filter` input chain still contains the blanket `iifname \"wg0\" accept` and /etc/nftables.conf is byte-identical to the pre-fix version (7bb6187^). With 8 WireGuard peers (client VPN + site peers) and the edge control plane listening on 0.0.0.0:9443 (mTLS only), any peer — or a leaked/misused peer key from the shared-token enrollment path — can reach every host listener via wg0, including 80/443 (origin consoles with no origin auth), 8791 (enroll), 9443, and SSH 22. No automated check compares the live ruleset to the repo config (exposure_edges_test.sh is offline/static; fw_negative_test.sh only checks drop counters), so the drift is silent. Fix: apply bootstrap/30-firewall.sh (or 32-inbound-mode.sh closed) to load the narrowed set and re-verify with a read-only `nft list chain inet falcon_filter input`; add a live-vs-repo firewall drift check."
     },
     {
       "id": "CI-P1-001",
@@ -542,7 +542,7 @@
       "status": "open",
       "note": "",
       "area": "EVOL",
-      "detail": "bootstrap/60-central-deploy.sh runs a config-driven securityadmin apply that REPLACES the whole internal-user set (documented in the script and in EVOLUTION_GUIDE \u00a78.1), so an out-of-band identity is silently deleted on the next re-run; R-28 is closed through declared identities + verify-after-rerun, but the recommended merge-safe/fail-loud apply is not implemented and owner decision E-4a is unsigned. Prior IDs: 20261002 EVOL-P2-001; 20260930 EVOL-P3-001. Fix: make the apply merge-safe or fail loud on undeclared users; keep the declared registry as the source of truth."
+      "detail": "bootstrap/60-central-deploy.sh runs a config-driven securityadmin apply that REPLACES the whole internal-user set (documented in the script and in EVOLUTION_GUIDE §8.1), so an out-of-band identity is silently deleted on the next re-run; R-28 is closed through declared identities + verify-after-rerun, but the recommended merge-safe/fail-loud apply is not implemented and owner decision E-4a is unsigned. Prior IDs: 20261002 EVOL-P2-001; 20260930 EVOL-P3-001. Fix: make the apply merge-safe or fail loud on undeclared users; keep the declared registry as the source of truth."
     },
     {
       "id": "FEAT-P2-001",
@@ -582,7 +582,7 @@
       "note": "Same issue as the prior full run; sizes grew since then.",
       "area": "HYGIENE",
       "recommendation": "Move generated SBOM/vuln JSON to release artifacts or compress; gate regeneration/freshness; keep in-repo only the provenance manifest.",
-      "detail": "sbom/ carries 25 CycloneDX SBOMs and 12 vulnerability scans (37 JSON files, 29 MB), with the largest single file now 3,064,465 bytes (opensearch-dashboards) \u2014 about 25x the ~122 KB maximum the prior run recorded. These are regenerated artifacts committed to git and gated only by `sbom_hashes.sh verify` plus the coverage/vuln gate; the prior remediation recommendation (move to release artifacts or compress and gate regeneration) is not implemented, and the in-repo register still lists this row open. Fix: publish SBOM/vuln JSON as release artifacts (or compress), keep only manifests/summaries in git, and add a freshness gate so stale scans cannot ship."
+      "detail": "sbom/ carries 25 CycloneDX SBOMs and 12 vulnerability scans (37 JSON files, 29 MB), with the largest single file now 3,064,465 bytes (opensearch-dashboards) — about 25x the ~122 KB maximum the prior run recorded. These are regenerated artifacts committed to git and gated only by `sbom_hashes.sh verify` plus the coverage/vuln gate; the prior remediation recommendation (move to release artifacts or compress and gate regeneration) is not implemented, and the in-repo register still lists this row open. Fix: publish SBOM/vuln JSON as release artifacts (or compress), keep only manifests/summaries in git, and add a freshness gate so stale scans cannot ship."
     },
     {
       "id": "HYGIENE-P2-002",
@@ -596,7 +596,7 @@
       "note": "",
       "area": "HYGIENE",
       "recommendation": "Update the release-gate reconciliation to the newest run and add a check that the referenced run is the newest committed run.",
-      "detail": "docs/RELEASE_GATE.md is the canonical front page for lab-vs-production reconciliation, but its 'Current audit opinion' section is run 20261003-0018 (commit 20b5e57) while the newest published full run \u2014 docs/audits/repo-deep-dive/20261005-0354-full-main-e267ce1 (committed dba374d) \u2014 reports GO WITH CONDITIONS with P0 x1 (OBS-P0-001) and 7 P1s. README.md:138 likewise says 'Current state (2026-10-02, audit reconciliation)'. An operator reading the canonical page would miss the newest P0 and its conditions. Fix: update the reconciliation page to the newest run (or make the pointer derive from the newest run folder) and refresh the README state line."
+      "detail": "docs/RELEASE_GATE.md is the canonical front page for lab-vs-production reconciliation, but its 'Current audit opinion' section is run 20261003-0018 (commit 20b5e57) while the newest published full run — docs/audits/repo-deep-dive/20261005-0354-full-main-e267ce1 (committed dba374d) — reports GO WITH CONDITIONS with P0 x1 (OBS-P0-001) and 7 P1s. README.md:138 likewise says 'Current state (2026-10-02, audit reconciliation)'. An operator reading the canonical page would miss the newest P0 and its conditions. Fix: update the reconciliation page to the newest run (or make the pointer derive from the newest run folder) and refresh the README state line."
     },
     {
       "id": "INFRA-P2-001",
@@ -842,7 +842,7 @@
       "status": "open",
       "note": "",
       "area": "PRIV",
-      "detail": "PRODUCTION_VERDICT.md binds repository commit c312ab7 and a 1,168-entry package (manifest 4476fc93\u2026) while PACKAGE_DIGEST.txt binds commit 69b3c80 and a 3,783-entry package (manifest 5f591655\u2026) with production_readiness=APPROVED; the verdict's readiness line still says NOT_SUPPORTED. C1 (re-review/rebind) remains OPEN, so reviewers cannot map the approval to the delivered data-handling configuration. Fix: at C1, regenerate the verdict from the ledgers per the template (identity block from PACKAGE_DIGEST.txt; corrected readiness wording) and publish the reviewer disposition + owner adoption; extend the digest/verdict consistency test to the binding fields. Cross-ref prior DOC-P2-004 (20260930 run)."
+      "detail": "PRODUCTION_VERDICT.md binds repository commit c312ab7 and a 1,168-entry package (manifest 4476fc93…) while PACKAGE_DIGEST.txt binds commit 69b3c80 and a 3,783-entry package (manifest 5f591655…) with production_readiness=APPROVED; the verdict's readiness line still says NOT_SUPPORTED. C1 (re-review/rebind) remains OPEN, so reviewers cannot map the approval to the delivered data-handling configuration. Fix: at C1, regenerate the verdict from the ledgers per the template (identity block from PACKAGE_DIGEST.txt; corrected readiness wording) and publish the reviewer disposition + owner adoption; extend the digest/verdict consistency test to the binding fields. Cross-ref prior DOC-P2-004 (20260930 run)."
     },
     {
       "id": "REL-P2-001",
@@ -1013,7 +1013,7 @@
       "status": "open",
       "note": "",
       "area": "ACM",
-      "detail": "docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-127 states the falcon, iris and soc Access apps each carry an `allow-owner-domain` policy plus a `bypass-owner-public-ip` policy for the owner's public address (the decision log records the bypass for 142.105.190.25/32 on the falcon app, 2026-09-21T19:05Z). Live from egress 142.105.190.25 (Cloudflare trace-verified) on 2026-10-09T21:24Z: falcon returns 302 to mainecybertech.cloudflareaccess.com (challenge, no bypass), while iris and soc return origin redirects (bypass honored). Either the falcon policy changed without a ledger entry or the doc is stale; the Access model documentation and the external-smoke rationale both depend on this. Fix: re-verify the three apps read-only via the Cloudflare API, record the current policies, and update ACCESS \u00a76 and the decision log."
+      "detail": "docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-127 states the falcon, iris and soc Access apps each carry an `allow-owner-domain` policy plus a `bypass-owner-public-ip` policy for the owner's public address (the decision log records the bypass for 142.105.190.25/32 on the falcon app, 2026-09-21T19:05Z). Live from egress 142.105.190.25 (Cloudflare trace-verified) on 2026-10-09T21:24Z: falcon returns 302 to mainecybertech.cloudflareaccess.com (challenge, no bypass), while iris and soc return origin redirects (bypass honored). Either the falcon policy changed without a ledger entry or the doc is stale; the Access model documentation and the external-smoke rationale both depend on this. Fix: re-verify the three apps read-only via the Cloudflare API, record the current policies, and update ACCESS §6 and the decision log."
     },
     {
       "id": "AI-P3-001",
@@ -1081,7 +1081,7 @@
       "note": "Same composition as prior CHAIN-P3-001; both legs verified live (exposure open; socket latent/not running).",
       "area": "CHAIN",
       "recommendation": "Add origin auth to public routers; remove docker.sock from the staged stack or keep it archive-only with a revival checklist.",
-      "detail": "The public Traefik routers (falcon-grafana, falcon-dash, iris-public, soc-wazuh, vpn-enroll; dynamic.yml:89-134) carry no origin authentication \u2014 only sec-headers and a permissive X-Forwarded-For rate limit \u2014 so Cloudflare Access is the only gate. The `ntfy-auth` middleware (dynamic.yml:26-28) is defined but referenced by no router; the ntfy public router serves the origin (200) but the app enforces deny-all auth. Live read-only probes show the origin reaches app logins directly (Grafana/Wazuh/IRIS 302 to their own login pages), and the owner-IP bypass is documented (ACCESS_AND_ACCOUNTS.md:133-134). Separately, the vendored Shuffle compose still mounts /var/run/docker.sock into shuffle-backend and shuffle-orborus (mct/compose/docker-compose.shuffle.yml:48,87) \u2014 host-root equivalent for anything that can drive a Shuffle workflow \u2014 but the stack is staged, not running (live `docker ps` shows no Shuffle containers and no running container mounts docker.sock). Fix: add origin auth (or a testable acceptance) to the public routers; keep the vendored stack archive-only or drop the socket mounts before any revival."
+      "detail": "The public Traefik routers (falcon-grafana, falcon-dash, iris-public, soc-wazuh, vpn-enroll; dynamic.yml:89-134) carry no origin authentication — only sec-headers and a permissive X-Forwarded-For rate limit — so Cloudflare Access is the only gate. The `ntfy-auth` middleware (dynamic.yml:26-28) is defined but referenced by no router; the ntfy public router serves the origin (200) but the app enforces deny-all auth. Live read-only probes show the origin reaches app logins directly (Grafana/Wazuh/IRIS 302 to their own login pages), and the owner-IP bypass is documented (ACCESS_AND_ACCOUNTS.md:133-134). Separately, the vendored Shuffle compose still mounts /var/run/docker.sock into shuffle-backend and shuffle-orborus (mct/compose/docker-compose.shuffle.yml:48,87) — host-root equivalent for anything that can drive a Shuffle workflow — but the stack is staged, not running (live `docker ps` shows no Shuffle containers and no running container mounts docker.sock). Fix: add origin auth (or a testable acceptance) to the public routers; keep the vendored stack archive-only or drop the socket mounts before any revival."
     },
     {
       "id": "CI-P3-001",
@@ -1237,7 +1237,7 @@
       "status": "open",
       "note": "",
       "area": "EVOL",
-      "detail": "There is no per-feature flag/kill-switch in either repository; EVOLUTION_GUIDE \u00a79 documents additive deploy + damping + canary/lab/stable (edge) + idempotent rollback as the official substitute, with real flags deferred to fleet scale. Owner decision E-4b is unsigned. Fix: record the acceptance (or fund the flag registry before multi-site expansion)."
+      "detail": "There is no per-feature flag/kill-switch in either repository; EVOLUTION_GUIDE §9 documents additive deploy + damping + canary/lab/stable (edge) + idempotent rollback as the official substitute, with real flags deferred to fleet scale. Owner decision E-4b is unsigned. Fix: record the acceptance (or fund the flag registry before multi-site expansion)."
     },
     {
       "id": "HYGIENE-P3-001",
@@ -1421,7 +1421,7 @@
       "note": "Same issue as the prior full run; the undocumented window has grown.",
       "area": "REL",
       "recommendation": "Add a root CHANGELOG/release-notes generator fed from git + ledgers; publish per-release drafts.",
-      "detail": "There is no root CHANGELOG.md or release-notes generator. mct/RELEASE-NOTES.md documents the vendored upstream MCT stack (v1.2.0, 2026-08-22), not falcon. Draft changelog/release notes exist only for older audit runs (20260930, 20261002); the newest full run (20261005) and the 11 commits since the delivered package (69b3c80..08e20d1) have none \u2014 including a P0 fix (#46), two P1 fixes (#47, #48), the P1 hygiene fix (#43), the CI runner move and the external-smoke posture change. Fix: add a generator fed from git history + the gate/decision ledgers; separate user/admin/operator/security notes."
+      "detail": "There is no root CHANGELOG.md or release-notes generator. mct/RELEASE-NOTES.md documents the vendored upstream MCT stack (v1.2.0, 2026-08-22), not falcon. Draft changelog/release notes exist only for older audit runs (20260930, 20261002); the newest full run (20261005) and the 11 commits since the delivered package (69b3c80..08e20d1) have none — including a P0 fix (#46), two P1 fixes (#47, #48), the P1 hygiene fix (#43), the CI runner move and the external-smoke posture change. Fix: add a generator fed from git history + the gate/decision ledgers; separate user/admin/operator/security notes."
     },
     {
       "id": "REL-P3-002",

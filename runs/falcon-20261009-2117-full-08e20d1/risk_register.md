@@ -6,7 +6,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 
 | Finding | Severity | Title | Owner | Target | Status | Note |
 |---|---|---|---|---|---|---|
-| DATA-P0-001 | P0 | 41-hour EVE ingestion outage with confirmed data loss (empty 10.08 index, ~1.74 GB spool purge, non-retriable sink drops); durable capacity fix absent from the audited tree | @owner | DATA | open |  |
+| DATA-P0-001 | P0 | 41-hour EVE ingestion outage with confirmed data loss (empty 10.08 index, ~1.74 GB spool purge, non-retriable sink drops); durable capacity fix absent from the audited tree | @owner | DATA | verified-fixed | Post-audit 2026-10-09: recovered live 16:40Z; durable capacity fixes live-verified (C7 retirement; snapshot-repo relocation off the data LV; watermarks secured 93/96/98 with margin) - evidence REVIEW-FIX 20261009T191309Z + 20261009T200936Z; landing in main via falcon PR #49 (lineage gap tracked there). Residual detection gaps filed separately (WH-P1-001, OBS P1s). |
 | ARCH-P1-001 | P1 | Single-host concentration: host loss is total pipeline loss | @owner | ARCH | open |  |
 | ARCH-P1-002 | P1 | Live host source tree has diverged from the audited commit and is dirty; merged remediation is not deployed | @owner | ARCH | open |  |
 | ARCH-P1-003 | P1 | Central Vector aggregator is in a cgroup OOM restart loop; no container memory/restart alert covers it | @owner | ARCH | open |  |
