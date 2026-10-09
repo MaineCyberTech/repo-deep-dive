@@ -70,7 +70,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | REL-P2-001 | P2 | Deployment state is not bound to any release: the live host runs a divergent worktree with uncommitted runtime config | @owner | REL | open |  |
 | RES-P2-001 | P2 | Host memory headroom exhausted: ~18.5% available, 4.5/8 GiB swap used, recurring OOM kills | @owner | RES | open | Aggregator OOM eliminated (1G limit live); host-level memory/swap pressure remains (owner: RAM/heap decisions). |
 | SBOM-P2-001 | P2 | Release/SBOM artifacts are integrity-checked but unsigned; image/SBOM license gate not enforced | @owner | SBOM | open |  |
-| SC-P2-001 | P2 | Dependabot vulnerability alerts disabled; Python CI dependencies uncovered by version updates | @owner | SC | open |  |
+| SC-P2-001 | P2 | Dependabot vulnerability alerts disabled; Python CI dependencies uncovered by version updates | @owner | SC | verified-fixed | Dependabot vulnerability alerts enabled 2026-10-09 (API PUT 204); pip ecosystem added to .github/dependabot.yml covering ci/requirements-ci.txt (falcon PR #49). |
 | SC-P2-002 | P2 | Inherited credential estate is still pending rotation and 19 vendored scripts source credential files wholesale | @owner | SC | open |  |
 | SEARCH-P2-001 | P2 | Retention gaps remain on the Wazuh indexer alerts class and IRIS; RETENTION_MATRIX.md is stale vs the live clusters | @owner | SEARCH | still-open | Partial: snapshot repo relocated off the data LV; Wazuh-indexer alerts class + IRIS retention remain open (owner-gated). |
 | SEC-P2-001 | P2 | Public-facing routers have no origin authentication; `ntfy-auth` is dead config | @owner | SEC | open |  |
@@ -102,7 +102,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | INV-P3-002 | P3 | Delivery pack fidelity artifact ships two unresolved 'unexpected; investigate' entries | @owner | INV | open |  |
 | INV-P3-003 | P3 | Gate claim 'a stale digest fails' is not implemented; the delivery digest binds an 11-commit-old tree | @owner | INV | open |  |
 | NOTIF-P2-001 | P3 | ntfy-auth middleware is still dead config; ntfy-native deny-all is the actual control | @owner | NOTIF | partially-fixed |  |
-| NOTIF-P3-001 | P3 | Stale ntfy test-topic ACLs remain in the live user DB from the storm/probe tests | @owner | NOTIF | open |  |
+| NOTIF-P3-001 | P3 | Stale ntfy test-topic ACLs remain in the live user DB from the storm/probe tests | @owner | NOTIF | verified-fixed | Stale storm/probe test-topic ACLs revoked for falcon-relay (deny); falcon-alerts write retained and the owner read intact (falcon PR #49). |
 | OBS-P3-001 | P3 | Live alerting config is uncommitted drift ahead of the audited commit (edge-alerts.yaml) | @owner | OBS | open |  |
 | ORCH-P3-001 | P3 | Run id does not start with the timestamp required by the consumer repo's lifecycle check | @owner | ORCH | open |  |
 | PERF-P3-001 | P3 | Measured performance envelope and capacity model are stale; no performance budgets exist | @owner | PERF | open |  |

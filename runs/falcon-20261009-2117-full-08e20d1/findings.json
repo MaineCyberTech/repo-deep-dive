@@ -892,8 +892,8 @@
       "line": 237,
       "owner": "@owner",
       "target": "SC",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "Dependabot vulnerability alerts enabled 2026-10-09 (API PUT 204); pip ecosystem added to .github/dependabot.yml covering ci/requirements-ci.txt (falcon PR #49).",
       "area": "SC",
       "detail": "GitHub-native dependency vulnerability alerting is off: GET /vulnerability-alerts -> 404 and GET /dependabot/alerts -> 403 'Dependabot alerts are disabled for this repository' (a settings toggle; unlike branch protection the API does not cite a plan limit). .github/dependabot.yml:1-7 configures only the github-actions ecosystem, so ci/requirements-ci.txt (hash-pinned pyyaml 6.0.3, zizmor 1.30.1) has no update bot. Code scanning/dependency review are GHAS plan-gated (403) and the dependency-graph SBOM endpoint is 404. Compensating controls: committed trivy scans gated by --require-vuln with 12 images waived to 2026-12-31, gitleaks, and the Python license gate. Fix: enable Dependabot alerts; add a pip ecosystem entry for /ci; keep the trivy refresh."
     },
@@ -1314,8 +1314,8 @@
       "line": 118,
       "owner": "@owner",
       "target": "NOTIF",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "Stale storm/probe test-topic ACLs revoked for falcon-relay (deny); falcon-alerts write retained and the owner read intact (falcon PR #49).",
       "area": "NOTIF",
       "recommendation": "Deny the stale test-topic ACLs and add a prune/review step to the runbook.",
       "detail": "Live `ntfy user list`/`ntfy access` on falcon-central-ntfy-1 show ~11 leftover test topics granted to falcon-relay (falconstorm*, relayprobe*, probe*, cap*, manualburst* - manualburst is deny). They are residue of the NOTIF-P3-001 storm/probe tests and are not pruned by automation/alerting/provision_ntfy.sh, which manages only the four production users/ACLs. Hygiene: remove the stale ACLs (`ntfy access falcon-relay <topic> deny`) and add a prune/review note to the notification runbook."
