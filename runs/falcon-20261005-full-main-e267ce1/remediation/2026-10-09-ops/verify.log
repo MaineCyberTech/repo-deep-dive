@@ -1,0 +1,38 @@
+>>> falcon: evidence/raw/REVIEW-FIX/20261009T191309Z_c7-retire-old-volumes.out (tail)
+[2026-10-09T19:13:16Z] retire: deleted multi-node_worker-wazuh-logs
+[2026-10-09T19:13:17Z] retire: deleted multi-node_wazuh-indexer-data-1
+[2026-10-09T19:13:17Z] retire: deleted multi-node_wazuh-indexer-data-2
+[2026-10-09T19:13:17Z] retire: deleted multi-node_wazuh-indexer-data-3
+=== post-delete verification ===
+--- root LV after ---
+/dev/mapper/ubuntu--vg-ubuntu--lv  171G   80G   84G  49% /
+--- named volumes remaining for these 7 (expect none) ---
+  none
+--- containers still healthy ---
+multi-node-wazuh.master-1|Up 7 days
+multi-node-wazuh.worker-1|Up 7 days
+multi-node-wazuh1.indexer-1|Up 7 days
+multi-node-wazuh2.indexer-1|Up 7 days
+multi-node-wazuh3.indexer-1|Up 7 days
+multi-node-wazuh.dashboard-1|Up 7 days
+multi-node-nginx-1|Up 7 days
+[2026-10-09T19:13:17Z] retire: done; the bind copies under /srv/falcon/docker-volumes remain the live data
+
+>>> falcon: evidence/raw/REVIEW-FIX/20261009T200936Z_os-snapshot-repo-relocate.out (full)
+/var/lib/falcon-snapshots/opensearch => /srv/falcon/backups/opensearch
+---
+lrwxrwxrwx 1 root root 36 Oct  9 20:07 /srv/falcon/backups/opensearch -> /var/lib/falcon-snapshots/opensearch
+/dev/mapper/ubuntu--vg-ubuntu--lv    171G  136G   28G  83% /
+/dev/mapper/ubuntu--vg-falcon--data  221G  127G   85G  60% /srv/falcon
+---
+{"snapshots":[{"snapshot":"snap-20261007-033000", ...}, {"snapshot":"snap-20261009-164150", ...}]}  (both listed via the new mount)
+
+>>> additional verifications performed this session
+- rsync byte-equality before removing the old copy: 1,684 files / 60,034,488,833 bytes EQUAL.
+- probe snapshot created + deleted through the new mount (index falcon-eve-2026.10.08, 0 docs source).
+- one-index restore from snap-20261009-164150 through the new mount: shards 1/1 successful.
+- watermarks present persistently (93/96/98); no cluster blocks.
+
+>>> DO -> lab verification (lab listener file /var/log/falcon-tls/messages.log)
+2026-10-09T20:23:25.546086+00:00 mct-portal-dev falcon-do-test forwarder-restore test 2026-10-09T20:23:25Z
+(DO side: rsyslogd ESTAB 10.99.0.10:49224 -> 10.99.0.1:1514; config /etc/rsyslog.d/60-falcon-tls-forward.conf)

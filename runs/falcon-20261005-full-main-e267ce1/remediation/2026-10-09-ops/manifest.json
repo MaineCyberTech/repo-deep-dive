@@ -1,0 +1,37 @@
+{
+  "bundle": "2026-10-09-ops",
+  "run": "falcon-20261005-full-main-e267ce1",
+  "created": "2026-10-09T21:05:00Z",
+  "purpose": "Reconcile post-audit notes for the 2026-10-09 operational closures (capacity/data-LV work and the DO host-log forwarder). No finding statuses changed.",
+  "changes": [
+    {
+      "area": "capacity / data LV",
+      "items": [
+        "C7 retirement executed: the 7 migrated Wazuh named volumes deleted after the observation window (root LV 68% -> 49%).",
+        "OpenSearch snapshot repo (~56 GiB) relocated off the data LV to the root LV (container path unchanged; old host path is a compatibility symlink); data LV 87% -> 60%.",
+        "Data-LV watermark incident (2026-10-09) recovered: snapshots pruned, orphan create-index block cleared, watermarks set persistently to 93/96/98 with full margin after the relocation."
+      ],
+      "evidence": [
+        "falcon: evidence/raw/REVIEW-FIX/20261009T191309Z_c7-retire-old-volumes.out",
+        "falcon: evidence/raw/REVIEW-FIX/20261009T200936Z_os-snapshot-repo-relocate.out",
+        "falcon: docs/runbooks/CAPACITY_AND_TELEMETRY.md (snapshot repository relocation)",
+        "falcon: ledgers/decision_log.md 2026-10-09T20:15Z",
+        "falcon PR #49 (branch ops/20261009-snapshot-repo-relocate-clean)"
+      ]
+    },
+    {
+      "area": "DO host logs (N-21 residual)",
+      "items": [
+        "DO host-log TLS forwarder restored over the VPN: rsyslog omfwd/TLS to 10.99.0.1:1514 with x509/name server verification and a disk-assisted queue.",
+        "Verified end-to-end 2026-10-09T20:23:25Z (test line received at the lab listener)."
+      ],
+      "evidence": [
+        "falcon PR #49 commit 2 (c13a416)",
+        "falcon: docs/runbooks/CAPACITY_AND_TELEMETRY.md (DO host-log forwarding over the VPN)",
+        "falcon: ledgers/decision_log.md 2026-10-09T20:40Z"
+      ]
+    }
+  ],
+  "statuses_changed": [],
+  "notes_updated": ["DATA-P1-001", "SEARCH-P2-001", "DR-P3-001"]
+}
