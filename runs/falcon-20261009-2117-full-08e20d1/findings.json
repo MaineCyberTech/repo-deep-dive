@@ -500,8 +500,8 @@
       "line": 277,
       "owner": "@owner",
       "target": "DOC",
-      "status": "open",
-      "note": "",
+      "status": "verified-fixed",
+      "note": "CURRENT_STATE refreshed 2026-10-10 (85-rule catalogue, C7 DONE, monitoring/DO notes, new 2026-10-09/10 section); README count 79->85 with the drift test enforcing (28/28) - falcon PR #49.",
       "area": "DOC",
       "detail": "docs/CURRENT_STATE.md (last modified 2026-10-03) calls itself the authoritative current-state page but now contradicts the README and the generated catalogue on the alert-rule count (77 vs 79), still lists C7 volume deletion as pending ~2026-10-08 although the retirement executed 2026-10-09 in this clone (main 6e4fccd / ops c13a416), and the EVOLUTION_GUIDE state block still describes C2 credential residuals and a firing pairing-drift alert although CURRENT_STATE records C2 DONE and pairing restored 2026-10-03. ALERT_FIRING_PROOFS.md also lags at 77/75 coverage after the two OBS-P0-001 rules. Fix: refresh CURRENT_STATE.md and the evolution-guide state block from the ledgers + generated catalogue (append a 2026-10-09 section), refresh the firing-proof coverage, and extend the README-ledger drift test to rule counts."
     },
@@ -711,8 +711,8 @@
       "line": 132,
       "owner": "@owner",
       "target": "OBS",
-      "status": "open",
-      "note": "Live is now 85 rules; the ALERT_CATALOGUE refresh is pending.",
+      "status": "verified-fixed",
+      "note": "ALERT_CATALOGUE regenerated from live Grafana 2026-10-10 (85 rules); the README/catalogue drift test enforces the counts - falcon PR #49.",
       "area": "OBS",
       "detail": "The committed catalogue (79 alerts) lists the three textfile-collector rules that are not provisioned live, and omits falcon-feed-stale-wazuh, which is live; live Grafana has 77 rules. The file header says 'Generated from the live Grafana rules' and the generator docstring claims 'regenerated from the live rules so it cannot drift from what is deployed' (automation/validation/build_alert_catalogue.py:1-9) - both false against the current lab. Fix: regenerate the catalogue after closing the deployment gap (finding 1) and add a catalogue-vs-live comparison to the drift checks."
     },

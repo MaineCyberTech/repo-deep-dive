@@ -40,7 +40,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | CI-P2-002 | P2 | external-smoke no longer asserts Cloudflare Access posture and passes on an owner-IP bypass | @owner | CI | open |  |
 | CI-P2-003 | P2 | Repository Actions settings default to permissive (write token, PR approvals, any action, no SHA-pin requirement) | @owner | CI | open |  |
 | CTR-P2-001 | P2 | Adopted MCT/Wazuh stacks run without baseline container hardening or healthchecks | @owner | CTR | open |  |
-| DOC-P2-002 | P2 | The 'authoritative' current-state page lags its sources (rule count, condition status, follow-up list) | @owner | DOC | open |  |
+| DOC-P2-002 | P2 | The 'authoritative' current-state page lags its sources (rule count, condition status, follow-up list) | @owner | DOC | verified-fixed | CURRENT_STATE refreshed 2026-10-10 (85-rule catalogue, C7 DONE, monitoring/DO notes, new 2026-10-09/10 section); README count 79->85 with the drift test enforcing (28/28) - falcon PR #49. |
 | DR-P2-001 | P2 | OpenSearch disk watermarks left relaxed (93/96/98) after the Oct 9 incident; cluster still yellow with 44 unassigned shards | @owner | DR | verified-fixed | Watermarks reverted to defaults (single-node enable retained) at 55% used (falcon PR #49); the 44 unassigned shards are replicas on a single-node cluster (by design). |
 | DR-P2-002 | P2 | Bulk telemetry snapshot repositories are stored offsite unencrypted; only config/secrets archives are encrypted | @owner | DR | open |  |
 | EVOL-P2-001 | P2 | The OpenSearch identity apply is not merge-safe (R-28 hazard documented; owner decision pending) | @owner | EVOL | open |  |
@@ -56,7 +56,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | IR-P2-002 | P2 | Escalation contacts remain placeholders; incident escalation path unverified (IR-P2-005 open) | @owner | IR | open |  |
 | IR-P2-003 | P2 | Recurring incidents lack post-incident review; Oct 8-9 backup failure has no root-cause record | @owner | IR | partially-fixed | The 2026-10-08/09 incidents now have root-cause records (decision log 2026-10-09: capacity incident, backup failures, OOM loop); a recurring post-incident-review practice remains owner-side. |
 | NOTIF-P2-002 | P2 | Notification noise remains high: 409 messages/48h, 361 FIRING/RESOLVED transitions, and sub-repeat-interval flapping on several rules | @owner | NOTIF | open |  |
-| OBS-P2-001 | P2 | ALERT_CATALOGUE.yaml contradicts live Grafana while claiming it cannot drift | @owner | OBS | open | Live is now 85 rules; the ALERT_CATALOGUE refresh is pending. |
+| OBS-P2-001 | P2 | ALERT_CATALOGUE.yaml contradicts live Grafana while claiming it cannot drift | @owner | OBS | verified-fixed | ALERT_CATALOGUE regenerated from live Grafana 2026-10-10 (85 rules); the README/catalogue drift test enforces the counts - falcon PR #49. |
 | OBS-P2-002 | P2 | Alert noise/flapping high during incidents; root-disk projection false-positive from the relocation step | @owner | OBS | open | The root-disk projection should self-clear as retention stabilizes; alert-noise tuning remains. |
 | ORCH-P2-001 | P2 | Committed 2026-10-05 full-run record contradicts the canonical gate and omits the domain evidence | @owner | ORCH | open |  |
 | ORCH-P2-002 | P2 | full_domain.py hardcodes profile=base and records area codes as lenses; falcon-lab coverage is not representable | @owner | ORCH | open |  |
