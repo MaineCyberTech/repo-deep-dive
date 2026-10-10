@@ -1553,12 +1553,12 @@ e1059b01d06619cdcf87b8403695c3aa898533616a2c04b934913fa54beeb344  ./runs/mainecy
 670b62c3611e5d5c46f6b60b3bba754bb80e58bee6656ccd471eca5219d9525b  ./runs/mainecybertech-20261004-full-main-9c0b88c/audit_manifest.json
 77e6da6c9a86fe87dbdec288f3f44ab8f6973b3cabb33fb44f1ed4d986a7e285  ./runs/mainecybertech-20261004-full-main-9c0b88c/coverage.md
 37a7e0d25c590284bb4f666c60d4e0aa9660be773422a27d158703188e04fce5  ./runs/mainecybertech-20261004-full-main-9c0b88c/deterministic-findings.json
-35149f994b97538ab9958659a9b91adc7eee233cfcad2d1c6db248fb5ef90872  ./runs/mainecybertech-20261004-full-main-9c0b88c/findings.json
-36d1fdb6eb594a02e3ee76c6dcef1c5e1daebf46d44d73921668d58884cc5974  ./runs/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md
+b651665c0a31b99bcfc61219568a2b4faef46278530b3fed9fcfdad97a475539  ./runs/mainecybertech-20261004-full-main-9c0b88c/findings.json
+415e58dac437b6912bc4aa27a3b44ec24430c1288991c9e0363915a43ad0212f  ./runs/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md
 8b4a35620f3a8dfe080907f49380c24d8ce07c93c892b1eeeebbb7843f617d7e  ./runs/mainecybertech-20261004-full-main-9c0b88c/lens_deterministic.md
 ef3ca31f9a3e19ac839b77ee470f28a1b7de93f23d796302d0de427faaec5b2f  ./runs/mainecybertech-20261004-full-main-9c0b88c/patch_plan.md
 e31af45c67fe467ea27881d18d2b067f2c6a8e5e0b243a36602cfc0ece94d9a6  ./runs/mainecybertech-20261004-full-main-9c0b88c/remediation_plan.json
-36d1fdb6eb594a02e3ee76c6dcef1c5e1daebf46d44d73921668d58884cc5974  ./runs/mainecybertech-20261004-full-main-9c0b88c/risk_register.md
+415e58dac437b6912bc4aa27a3b44ec24430c1288991c9e0363915a43ad0212f  ./runs/mainecybertech-20261004-full-main-9c0b88c/risk_register.md
 b15890e7d60a3f6828ffb52bd25d5c0cf373613895a6bb34476cb1233e4d2409  ./runs/mainecybertech-20261004-full-main-9c0b88c/roadmap.md
 c3ff84ffe7bb9658da39da9728a1b339a48c6835f7ad7f1ae91eabc519c737a9  ./runs/mainecybertech-20261004-full-main-9c0b88c/verification_log.md
 53ea972dba482a93f9b1e56a258fb34c93f3fb74029bbae4e5cb1c40690bc6e8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/01_repository_inventory.md
