@@ -1,0 +1,201 @@
+# Live snapshot — 2026-10-09T21:19:48Z
+# host: falcon · user: user · mode: read-only capture
+
+## Uptime / load
+ 21:19:48 up 8 days, 19:32,  2 users,  load average: 18.86, 18.88, 18.38
+
+## Memory
+               total        used        free      shared  buff/cache   available
+Mem:            12Gi        10Gi       363Mi        13Mi       2.8Gi       2.6Gi
+Swap:          8.0Gi       4.3Gi       3.7Gi
+
+## Disk
+Filesystem                           Size  Used Avail Use% Mounted on
+/dev/mapper/ubuntu--vg-ubuntu--lv    171G  136G   28G  83% /
+/dev/mapper/ubuntu--vg-falcon--data  221G  115G   97G  55% /srv/falcon
+
+## Failed systemd units
+  UNIT                  LOAD   ACTIVE SUB    DESCRIPTION
+● falcon-backup.service loaded failed failed Monitoring backup job (snapshot + encrypted config + offsite attempt)
+● fwupd-refresh.service loaded failed failed Refresh fwupd metadata and update motd
+● fwupd.service         loaded failed failed Firmware update daemon
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+3 loaded units listed.
+
+## Falcon-related units
+  dev-disk-by\x2did-dm\x2dname\x2dubuntu\x2d\x2dvg\x2dfalcon\x2d\x2ddata.device                                           loaded    active     plugged         /dev/disk/by-id/dm-name-ubuntu--vg-falcon--data
+  dev-mapper-ubuntu\x2d\x2dvg\x2dfalcon\x2d\x2ddata.device                                                                loaded    active     plugged         /dev/mapper/ubuntu--vg-falcon--data
+  dev-ubuntu\x2dvg-falcon\x2ddata.device                                                                                  loaded    active     plugged         /dev/ubuntu-vg/falcon-data
+  srv-falcon.mount                                                                                                        loaded    active     mounted         /srv/falcon
+  edge-control-plane.service                                                                                              loaded    active     running         Falcon Edge Sensor control plane (lab)
+  falcon-adsb-exporter.service                                                                                            loaded    inactive   dead            Falcon ADS-B metrics exporter (textfile)
+  falcon-alert-canary.service                                                                                             loaded    inactive   dead            Falcon alert-path canary: weekly end-to-end proof (lab ntfy, independent ntfy, alert relay)
+  falcon-alert-relay.service                                                                                              loaded    active     running         Grafana alert relay: formats alert webhooks into readable ntfy notifications
+● falcon-backup.service                                                                                                   loaded    failed     failed          Monitoring backup job (snapshot + encrypted config + offsite attempt)
+  falcon-cold-copy.service                                                                                                loaded    inactive   dead            Falcon R2 cold copy: snapshot the oldest eligible falcon-eve-* index before ISM deletes it
+  falcon-container-drift.service                                                                                          loaded    inactive   dead            Falcon container drift check (running vs declared compose)
+  falcon-diagnostics.service                                                                                              loaded    inactive   dead            Falcon Edge sensor diagnostics collector (lab host; audit OBS-P2-003)
+  falcon-disk-guard.service                                                                                               loaded    inactive   dead            Falcon disk guard: reclaim space below the configured free-space threshold and alert
+  falcon-docker-user-firewall.service                                                                                     loaded    active     exited          mon lab: restrict Docker-published ports to the management subnet
+  falcon-edge-cleanup.service                                                                                             loaded    inactive   dead            Edge bake workspace cleanup (bake temp + superseded image revisions)
+  falcon-edge-metrics.service                                                                                             loaded    inactive   dead            Falcon Edge fleet metrics exporter (node-exporter textfile collector)
+  falcon-edge-operator-cert.service                                                                                       loaded    inactive   dead            Renew the lab operator certificate when it is close to expiry
+  falcon-edge-secrets-backup.service                                                                                      loaded    inactive   dead            Back up the lab control-plane secrets (mode 0600 archive)
+  falcon-enrollment-closure.service                                                                                       loaded    inactive   dead            Enrollment-closure public-path quiet check (daily)
+  falcon-heartbeat.service                                                                                                loaded    inactive   dead            Falcon dead-man heartbeat (Phase 9 WS6 prototype; production must run outside the monitored stack)
+  falcon-inventory-metrics.service                                                                                        loaded    inactive   dead            Falcon fleet inventory metrics exporter (node-exporter textfile collector)
+  falcon-inventory.service                                                                                                loaded    inactive   dead            Falcon fleet inventory scan
+  falcon-metrics.service                                                                                                  loaded    activating start     start Export monitoring-health metrics for Prometheus
+  falcon-nfacctd.service                                                                                                  loaded    active     running         nfacctd NetFlow/IPFIX collection (license-free)
+  falcon-pipeline-e2e.service                                                                                             loaded    inactive   dead            Falcon pipeline end-to-end assertion (marked event through the aggregator syslog TCP listener)
+  falcon-pmacct.service                                                                                                   loaded    active     running         pmacctd flow telemetry on the SPAN interface (license-free)
+  falcon-service-probe.service                                                                                            loaded    inactive   dead            Falcon service probe: user-facing availability metrics for Prometheus
+  falcon-span-interface.service                                                                                           loaded    active     exited          Bring up the SPAN capture interface (ens19) in promiscuous mode
+  falcon-vpn-enroll.service                                                                                               loaded    active     running         Falcon client VPN peer enrollment service
+  falcon-wazuh-agent-proxy.service                                                                                        loaded    active     running         Proxy Wazuh traffic to the manager 127.0.0.1:1516
+  falcon-wazuh-backup.service                                                                                             loaded    inactive   dead            Wazuh indexer snapshot job (audit DATA-P1-002; fs repository, keep 14)
+  falcon-wazuh-enroll-proxy.service                                                                                       loaded    active     running         Proxy Wazuh traffic to the manager 127.0.0.1:1517
+  falcon-wazuh-agent-proxy.socket                                                                                         loaded    active     running         Falcon Wazuh proxy socket (VPN only) for port 15140
+  falcon-wazuh-enroll-proxy.socket                                                                                        loaded    active     running         Falcon Wazuh proxy socket (VPN only) for port 15141
+  blockdev@dev-mapper-ubuntu\x2d\x2dvg\x2dfalcon\x2d\x2ddata.target                                                       loaded    inactive   dead            Block Device Preparation for /dev/mapper/ubuntu--vg-falcon--data
+  falcon-adsb-exporter.timer                                                                                              loaded    active     waiting         Run the Falcon ADS-B exporter every 30 seconds
+  falcon-alert-canary.timer                                                                                               loaded    active     waiting         Weekly Falcon alert-path canary (Mondays 06:00 UTC)
+  falcon-backup.timer                                                                                                     loaded    active     waiting         Run the monitoring backup job daily
+  falcon-cold-copy.timer                                                                                                  loaded    active     waiting         Run the Falcon R2 cold copy daily at 04:40 UTC
+  falcon-container-drift.timer                                                                                            loaded    active     waiting         Run the Falcon container drift check every 5 minutes
+  falcon-diagnostics.timer                                                                                                loaded    active     waiting         Falcon Edge sensor diagnostics collection (hourly, lab host)
+  falcon-disk-guard.timer                                                                                                 loaded    active     waiting         Run the Falcon disk guard every 15 minutes
+  falcon-edge-cleanup.timer                                                                                               loaded    active     waiting         Daily edge bake workspace cleanup
+  falcon-edge-metrics.timer                                                                                               loaded    active     waiting         Run the Falcon Edge fleet metrics exporter every 5 minutes
+  falcon-edge-operator-cert.timer                                                                                         loaded    active     waiting         Daily operator-certificate expiry check
+  falcon-edge-secrets-backup.timer                                                                                        loaded    active     waiting         Daily edge secrets backup
+  falcon-enrollment-closure.timer                                                                                         loaded    active     waiting         Run the enrollment-closure public-path check daily
+  falcon-heartbeat.timer                                                                                                  loaded    active     waiting         Hourly Falcon dead-man heartbeat
+  falcon-inventory-metrics.timer                                                                                          loaded    active     waiting         Run the Falcon fleet inventory metrics exporter hourly
+  falcon-inventory.timer                                                                                                  loaded    active     waiting         Daily Falcon fleet inventory scan (lab)
+  falcon-metrics.timer                                                                                                    loaded    active     running         Run monitoring-health metrics export every minute
+  falcon-pipeline-e2e.timer                                                                                               loaded    active     waiting         Falcon pipeline end-to-end assertion every 15 minutes
+  falcon-service-probe.timer                                                                                              loaded    active     waiting         Run the Falcon service probe every two minutes
+  falcon-wazuh-backup.timer                                                                                               loaded    active     waiting         Run the Wazuh indexer snapshot job daily
+
+## Falcon-related timers
+Fri 2026-10-09 21:20:00 UTC      11s Fri 2026-10-09 21:15:00 UTC 4min 48s ago falcon-container-drift.timer     falcon-container-drift.service
+Fri 2026-10-09 21:20:00 UTC      11s Fri 2026-10-09 21:18:01 UTC 1min 46s ago falcon-service-probe.timer       falcon-service-probe.service
+Fri 2026-10-09 21:20:12 UTC      24s Fri 2026-10-09 21:15:12 UTC 4min 35s ago falcon-edge-metrics.timer        falcon-edge-metrics.service
+Fri 2026-10-09 21:20:15 UTC      27s Fri 2026-10-09 21:19:45 UTC       2s ago falcon-adsb-exporter.timer       falcon-adsb-exporter.service
+Fri 2026-10-09 21:20:25 UTC      37s Fri 2026-10-09 19:22:55 UTC 1h 56min ago falcon-inventory-metrics.timer   falcon-inventory-metrics.service
+Fri 2026-10-09 21:25:10 UTC     5min Fri 2026-10-09 21:10:10 UTC     9min ago falcon-pipeline-e2e.timer        falcon-pipeline-e2e.service
+Fri 2026-10-09 21:30:00 UTC    10min Fri 2026-10-09 21:15:00 UTC 4min 48s ago falcon-disk-guard.timer          falcon-disk-guard.service
+Fri 2026-10-09 22:00:00 UTC    40min Fri 2026-10-09 21:00:12 UTC    19min ago falcon-heartbeat.timer           falcon-heartbeat.service
+Fri 2026-10-09 22:02:37 UTC    42min Fri 2026-10-09 21:01:52 UTC    17min ago falcon-diagnostics.timer         falcon-diagnostics.service
+Sat 2026-10-10 00:00:00 UTC 2h 40min Fri 2026-10-09 00:00:00 UTC      21h ago falcon-enrollment-closure.timer  falcon-enrollment-closure.service
+Sat 2026-10-10 01:58:32 UTC 4h 38min Fri 2026-10-09 01:58:32 UTC      19h ago falcon-edge-operator-cert.timer  falcon-edge-operator-cert.service
+Sat 2026-10-10 02:08:00 UTC 4h 48min Fri 2026-10-09 02:08:00 UTC      19h ago falcon-edge-secrets-backup.timer falcon-edge-secrets-backup.service
+Sat 2026-10-10 03:05:00 UTC 5h 45min Fri 2026-10-09 03:05:15 UTC      18h ago falcon-wazuh-backup.timer        falcon-wazuh-backup.service
+Sat 2026-10-10 03:30:00 UTC       6h Fri 2026-10-09 03:30:15 UTC      17h ago falcon-backup.timer              falcon-backup.service
+Sat 2026-10-10 03:52:01 UTC       6h Fri 2026-10-09 03:44:15 UTC      17h ago falcon-inventory.timer           falcon-inventory.service
+Sat 2026-10-10 04:40:00 UTC       7h Fri 2026-10-09 04:40:15 UTC      16h ago falcon-cold-copy.timer           falcon-cold-copy.service
+Sat 2026-10-10 05:10:00 UTC       7h Fri 2026-10-09 05:10:10 UTC      16h ago falcon-edge-cleanup.timer        falcon-edge-cleanup.service
+Mon 2026-10-12 06:00:00 UTC   2 days Mon 2026-10-05 06:00:15 UTC   4 days ago falcon-alert-canary.timer        falcon-alert-canary.service
+-                                  - Fri 2026-10-09 21:19:45 UTC       2s ago falcon-metrics.timer             falcon-metrics.service
+
+## Listening sockets (first 60)
+Netid State  Recv-Q Send-Q         Local Address:Port  Peer Address:PortProcess
+udp   UNCONN 0      0                    0.0.0.0:2055       0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:5182       0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:15140      0.0.0.0:*          
+udp   UNCONN 0      0                 127.0.0.54:53         0.0.0.0:*          
+udp   UNCONN 0      0              127.0.0.53%lo:53         0.0.0.0:*          
+udp   UNCONN 0      0      192.168.222.228%ens18:68         0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:514        0.0.0.0:*          
+udp   UNCONN 0      0                    0.0.0.0:1518       0.0.0.0:*          
+udp   UNCONN 0      0                          *:52605            *:*          
+udp   UNCONN 0      0                       [::]:5182          [::]:*          
+udp   UNCONN 0      0                          *:56616            *:*          
+udp   UNCONN 0      0                          *:41913            *:*          
+udp   UNCONN 0      0                          *:58360            *:*          
+udp   UNCONN 0      0                          *:58700            *:*          
+udp   UNCONN 0      0                          *:47447            *:*          
+udp   UNCONN 0      0                          *:50088            *:*          
+udp   UNCONN 0      0                          *:50479            *:*          
+tcp   LISTEN 0      4096         192.168.222.228:3306       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:1518       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:1516       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:1517       0.0.0.0:*          
+tcp   LISTEN 0      25                   0.0.0.0:1514       0.0.0.0:*          
+tcp   LISTEN 0      25                   0.0.0.0:1515       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.8.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.17.0.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:514        0.0.0.0:*          
+tcp   LISTEN 0      4096           127.0.0.53%lo:53         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:80         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:22         0.0.0.0:*          
+tcp   LISTEN 0      4096                 0.0.0.0:443        0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:9598       0.0.0.0:*          
+tcp   LISTEN 0      4096         192.168.222.228:1433       0.0.0.0:*          
+tcp   LISTEN 0      4096               10.99.0.1:15140      0.0.0.0:*          
+tcp   LISTEN 0      4096               10.99.0.1:15141      0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:8443       0.0.0.0:*          
+tcp   LISTEN 0      4096         192.168.222.228:21         0.0.0.0:*          
+tcp   LISTEN 0      4096         192.168.222.228:23         0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:9200       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.5.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096         192.168.222.228:8008       0.0.0.0:*          
+tcp   LISTEN 0      4096              127.0.0.54:53         0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.6.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.4.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.1.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.7.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      5                    0.0.0.0:9443       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:20242      0.0.0.0:*          
+tcp   LISTEN 0      5                    0.0.0.0:8791       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:2586       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.2.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      512                127.0.0.1:49374      0.0.0.0:*          
+tcp   LISTEN 0      4096         192.168.222.228:9100       0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.0.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:38937      0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:5601       0.0.0.0:*          
+tcp   LISTEN 0      4096               127.0.0.1:55000      0.0.0.0:*          
+tcp   LISTEN 0      5                 172.30.3.1:9099       0.0.0.0:*          
+tcp   LISTEN 0      25                      [::]:1514          [::]:*          
+tcp   LISTEN 0      25                      [::]:1515          [::]:*          
+
+## WireGuard
+(unavailable: permission or not installed)
+
+## Docker (expected unavailable for the audit account)
+(unavailable)
+
+## Local HTTP probes (unauthenticated)
+  http://127.0.0.1:2586/v1/health -> 200
+  http://127.0.0.1:9200 -> 000ERR
+  https://127.0.0.1/ -> 404
+
+## Journal errors (last 20, if readable)
+Oct 09 19:41:45 falcon systemd[1]: Failed to start fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Oct 09 19:56:16 falcon systemd[1]: Failed to start falcon-pipeline-e2e.service - Falcon pipeline end-to-end assertion (marked event through the aggregator syslog TCP listener).
+Oct 09 20:10:09 falcon sudo[1008608]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/true
+Oct 09 20:15:12 falcon systemd[1]: Failed to start falcon-edge-metrics.service - Falcon Edge fleet metrics exporter (node-exporter textfile collector).
+Oct 09 20:19:52 falcon sudo[1040331]:     user : a password is required ; PWD=/home/user ; USER=root ; COMMAND=/usr/bin/journalctl -u falcon-diagnostics.service --no-pager -n 20
+Oct 09 20:20:06 falcon systemd[1]: Failed to start falcon-edge-metrics.service - Falcon Edge fleet metrics exporter (node-exporter textfile collector).
+Oct 09 20:21:21 falcon kernel: Memory cgroup out of memory: Killed process 847389 (vector) total-vm:2484156kB, anon-rss:504872kB, file-rss:6656kB, shmem-rss:0kB, UID:1000 pgtables:4172kB oom_score_adj:0
+Oct 09 20:24:55 falcon kernel: Memory cgroup out of memory: Killed process 1046192 (vector) total-vm:1934768kB, anon-rss:513060kB, file-rss:8192kB, shmem-rss:0kB, UID:1000 pgtables:3152kB oom_score_adj:0
+Oct 09 20:26:26 falcon kernel: Memory cgroup out of memory: Killed process 1055801 (vector) total-vm:1561008kB, anon-rss:513556kB, file-rss:9088kB, shmem-rss:0kB, UID:1000 pgtables:2896kB oom_score_adj:0
+Oct 09 20:30:21 falcon systemd[1]: Failed to start falcon-edge-metrics.service - Falcon Edge fleet metrics exporter (node-exporter textfile collector).
+Oct 09 20:41:10 falcon systemd[1]: Failed to start falcon-pipeline-e2e.service - Falcon pipeline end-to-end assertion (marked event through the aggregator syslog TCP listener).
+Oct 09 20:45:08 falcon kernel: Memory cgroup out of memory: Killed process 1062180 (vector) total-vm:2514864kB, anon-rss:506912kB, file-rss:9472kB, shmem-rss:0kB, UID:1000 pgtables:4272kB oom_score_adj:0
+Oct 09 20:50:25 falcon systemd[1]: Failed to start falcon-edge-metrics.service - Falcon Edge fleet metrics exporter (node-exporter textfile collector).
+Oct 09 20:50:25 falcon systemd[1]: Failed to start fwupd.service - Firmware update daemon.
+Oct 09 20:50:50 falcon systemd[1]: Failed to start fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Oct 09 21:05:04 falcon systemd[1]: Failed to start fwupd.service - Firmware update daemon.
+Oct 09 21:05:29 falcon systemd[1]: Failed to start fwupd-refresh.service - Refresh fwupd metadata and update motd.
+Oct 09 21:09:16 falcon kernel: Memory cgroup out of memory: Killed process 1123279 (vector) total-vm:2701744kB, anon-rss:509768kB, file-rss:9728kB, shmem-rss:0kB, UID:1000 pgtables:4504kB oom_score_adj:0
+Oct 09 21:10:23 falcon systemd[1]: Failed to start falcon-edge-metrics.service - Falcon Edge fleet metrics exporter (node-exporter textfile collector).
+Oct 09 21:19:12 falcon kernel: Memory cgroup out of memory: Killed process 1195193 (vector) total-vm:2264496kB, anon-rss:510656kB, file-rss:9728kB, shmem-rss:0kB, UID:1000 pgtables:3804kB oom_score_adj:0
+
+# end of snapshot
