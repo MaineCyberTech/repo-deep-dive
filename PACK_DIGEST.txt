@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 1976
+# files: 1978
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -1110,9 +1110,11 @@ b37bffe344d99d9c1e150cef12f3cf09e4588a1eeefbc77a759e357b9c26b880  ./runs/falcon-
 0a2fa1a755af9813e72453fdda5931638e6e287cb059f7d5a756dc4d497e62f1  ./runs/falcon-20261005-full-main-e267ce1/coverage.md
 d67bb6462410899d5efcfb6cd7eac41842be30aa7c1b2be346eaebfe37e4b0ac  ./runs/falcon-20261005-full-main-e267ce1/deterministic-findings.json
 8916b7bc8de4fde04c3451b8e82d9bb7aba1a47251178710c421769976a6f6cc  ./runs/falcon-20261005-full-main-e267ce1/findings.json
-f5d195e833dfd71719ec932b532e63d1c83680d2ddec661753e6ff9a7fc48d33  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
+4c5fc132e7cd8fb67f0666552284bc80ddfef485392da560e5e7c9ff4b8110cf  ./runs/falcon-20261005-full-main-e267ce1/follow_up_register.md
 88eb640212cce439b86fda1396860ccb1c2b00fdefadf80eac3a6b1472bc99c7  ./runs/falcon-20261005-full-main-e267ce1/lens_deterministic.md
 21c6167629bf5aebc4ad4646e56df84a1d7927ed6ac951bd2e0ba21102e6678b  ./runs/falcon-20261005-full-main-e267ce1/patch_plan.md
+ba2ad9c38af131d555917fe48256673b45e859973346cf7b9b786d4bb04d8910  ./runs/falcon-20261005-full-main-e267ce1/remediation/2026-10-09-ops/manifest.json
+c3f0dec792df775bdaaacad4e958be74b1583f3fa89001b9173a6e88f2c369ff  ./runs/falcon-20261005-full-main-e267ce1/remediation/2026-10-09-ops/verify.log
 b6dc9fc89924073a661b8e6fa4465cb5021a164266f176dfe264bb8332788b52  ./runs/falcon-20261005-full-main-e267ce1/remediation_plan.json
 f5d195e833dfd71719ec932b532e63d1c83680d2ddec661753e6ff9a7fc48d33  ./runs/falcon-20261005-full-main-e267ce1/risk_register.md
 b62548a4f5872ca71fb2a8415adbbb85b33e5e4805758d02933b6321c64c9783  ./runs/falcon-20261005-full-main-e267ce1/roadmap.md
