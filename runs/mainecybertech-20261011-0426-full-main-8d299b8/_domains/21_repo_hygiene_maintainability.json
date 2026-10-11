@@ -1,0 +1,319 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "area": "HYGIENE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:48Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Committed prompt/audit corpus bloats the repo and review surface",
+      "evidence": [
+        "git ls-files prompts | wc -l = 632 files; git ls-files -z prompts | xargs -0 du -cb = 9,421,195 bytes (~9.0 MiB) across 6 vendored packs (hardening 70, webstore 193, 60-modules 222, portal-alignment 63, repo-deep-dive 53, repo_audit 28)",
+        "prompts/PROVENANCE.md \u2014 630 files pinned in prompts/manifest.json (SHA-256 per file + per-pack tree hashes); the 2026-10-03 note records that the five dated prior-run snapshots (157 files) were removed (INV-P3-001)",
+        "scripts/verify-prompts.js \u2014 verify mode recomputed by hand (Python replica of the utf8+CRLF-normalised SHA-256): 630/630 hashes match, 0 mismatches at 8d299b8d; CI runs it in validate.yml",
+        "git ls-files docs/audits = 75 files / 2,729,701 bytes; docs/audits/README.md defines the run-directory output contract",
+        "7 tracked *.pyc files under prompts/**/__pycache__/ and binary xlsx/docx/png assets are inside the pinned corpus"
+      ],
+      "impact": "~12 MiB of historical prompt/audit material is cloned, indexed and reviewed on every change; it dominates the diff surface for a repo whose application code is ~6 MB per app. The pinning guard prevents silent tampering but also freezes generated binaries (.pyc, xlsx) as 'content'.",
+      "recommendation": "Owner decision: keep the pinned corpus but move it to a separate read-only repo or a release artifact, and drop the two remaining generated binaries from the pin; at minimum add a note to CONTRIBUTING.md that prompts/ is historical data, not product code.",
+      "owner": "repo maintainer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: prior-run snapshots are gone and the manifest verifies clean (630/630); the 632-file / 9.4 MB corpus remains committed. Same status as the 20261004 register (previously partially-fixed, owner decision).",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P2",
+      "title": "Duplicate product catalogs have diverged",
+      "evidence": [
+        "apps/api/src/data/products.json (3,522,201 B) vs apps/web/lib/catalog/data/products.json (2,533,263 B): 245 common SKUs, all 245 differ in the same 6 fields (marketingCopy, customerOutcomes, whatIsIncluded, bestFor, internalProcedure, fulfillmentWorkflow) \u2014 Python structural diff at 8d299b8d",
+        "git log apps/web/lib/catalog/data/products.json \u2014 2918891e/cce023c9 'Enrich store catalog: hand-authored ... copy for all 245 products'; the API copy was never re-synced (last touched 62de9c1b/81b54a85)",
+        "prompts/mct-full-webstore-product-catalog-pack/data/products.json and .../repo_patch/apps/web/lib/catalog/products.json are a third byte-identical copy (md5 d1efd7fe...), differing from both app copies",
+        "apps/api/src/lib/store-catalog.ts:1 imports the API copy as the fallback catalog; scripts/seed-store.ts:4 reads apps/api/src/data/products.json",
+        "AGENTS.md:94-95 records the divergence as known debt ('Reconcile to one canonical catalog ... when the catalog content workflow is defined')",
+        "no guard: grep products.json in .github/ and both app test trees returns no sync/equality check"
+      ],
+      "impact": "The API/seed path serves the short reverted copy while the web storefront serves the enriched copy, so the same product reads differently depending on the surface; every content edit must be made twice, and the third copy inside the prompt pack will drift silently.",
+      "recommendation": "Pick one canonical source (suggest apps/web copy + a build/seed step), delete the API duplicate and the prompt-pack data copies, and add a CI check that any remaining copy is byte-identical or generated from the canonical file.",
+      "owner": "content owner + web/API principal engineers",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: still 245/245 products divergent in 6 content fields; AGENTS.md now documents it as open known debt but no code or guard changed. Previously partially-fixed at 9c0b88c; residual unchanged.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Stale and machine-specific generated documentation",
+      "evidence": [
+        "Fixed instance: AGENTS.md:3 and review.md:9 now say `MaineCyberTech/mainecybertech` (commit 3e53b3da 'chore: close HYG-P3-001'); review.md is guarded by scripts/sync-review-md.mjs --check in .github/actions/unit-tests/action.yml:63",
+        "docs/GAP_ANALYSIS.md:149 \u2014 'comparative audit against reference repo `C:\\temp\\chat`'",
+        "docs/MT-P0-001-RLS-remediation-design.md:5 \u2014 'Repo: `C:\\temp\\mainecybertech-portal` (branch `develop`)'",
+        "docs/audits/repo-deep-dive/REAUDIT_REPORT_20261004.md:9-10,20-26,208 \u2014 `C:\\temp\\reaudit\\<repo>\\VERIFY.md` and `file:///C:/temp/...` links to files that exist only on the author's machine (added 2026-10-04, after the HYG-P3-001 fix)",
+        "no tracked text has CRLF issues (git ls-files --eol: 0 crlf files) \u2014 this is a path-content problem, not an EOL problem"
+      ],
+      "impact": "Operators and future agents reading these tracked docs see absolute Windows paths that resolve nowhere; the AGENTS.md instance was the one that misled agents about the repo location, and the class has already reappeared in the audit report published a day later.",
+      "recommendation": "Replace machine paths with repo-relative or URL references in the three files; extend scripts/check-docs-links.mjs (or a small grep gate) to fail on `C:\\` / `file:///C:` in tracked markdown.",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: the AGENTS.md/review.md fix is present and effective, but 3 other tracked docs still carry machine-specific paths (one of them published after the fix). Downgraded from verified-fixed to partially-fixed.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Generated artifacts are inconsistently tracked",
+      "evidence": [
+        ".gitignore:58-65 ignores sbom.cdx.json, sbom.spdx.json and licenses.json; git ls-files for those names returns nothing (exit 1)",
+        ".github/actions/dependency-audit/action.yml:31-40 \u2014 'Ensure generated license/SBOM artifacts stay untracked' fails the job when git ls-files finds licenses.json / sbom.cdx.json / sbom.spdx.json",
+        "the guard action is wired into .github/workflows/test.yml:52 (PR) and .github/workflows/validate.yml:17 (deploy gate)",
+        "commit 3e7a39bb removed the committed licenses.json and added the gate (HYG-P3-002 / INV-P2-001)"
+      ],
+      "impact": "The specific artifacts that previously drifted (license aggregate, SBOM) can no longer be committed, so a stale copy cannot masquerade as current. Residual instances of tracked generated files are filed separately (see 'Committed Python bytecode and a stale build artifact are tracked').",
+      "recommendation": "None for this scope; keep the guard. Apply the same ignore-and-gate pattern to apps/web/public/version.json and __pycache__ (separate finding).",
+      "owner": "platform/supply-chain",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: guard present and wired into both CI paths; licenses.json/sbom.* untracked. Previous status verified-fixed holds.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P2",
+      "title": "17 tracked shell scripts lack the exec bit; documented ./scripts/... commands fail",
+      "evidence": [
+        "git ls-files -s '*.sh' at 8d299b8d: 19 files, all mode 100755, 0 at 100644",
+        ".github/workflows/validate.yml:19-31 \u2014 'Verify tracked shell scripts are executable' (PORT-001) fails the deploy gate if any tracked *.sh is 100644",
+        "docs/ROLLBACK_PROCEDURES.md:141,175 and README.md:93-95 still document ./scripts/... invocation, which now works on Linux/macOS"
+      ],
+      "impact": "Closed: operators following the incident/rollback docs no longer hit 'Permission denied', and the guard prevents reintroduction.",
+      "recommendation": "None; keep the validate.yml guard.",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: 19/19 tracked .sh are 100755 and validate.yml:19-31 fails closed on any 100644. Previously verified-fixed at 9c0b88c (PR #74).",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P2",
+      "title": "AdminDocumentsCenterClient.tsx is a 2,322-line single component",
+      "evidence": [
+        "apps/web/components/admin/AdminDocumentsCenterClient.tsx \u2014 2,322 lines; one default-exported component (line 271) plus ~30 file-local helpers (docName/docDescription/FileThumb/ConfirmModal/... at lines 63-270)",
+        "26 useState/useEffect occurrences in the same file (grep -c)",
+        "next largest non-generated source files: apps/web/lib/module-actions.ts 1,690; apps/worker/src/tasks/module-tasks.ts 1,639; apps/api/src/routes/projects.ts 1,261; apps/web/components/admin/ProjectTaskListV5.tsx 1,013",
+        "coverage for the file exists (apps/web __tests__ route coverage 271 suites) so a split can be verified incrementally"
+      ],
+      "impact": "The admin documents center concentrates document CRUD, visibility, preview, upload and org branding state in one module; every change risks unrelated regressions and review is effectively impossible line-by-line.",
+      "recommendation": "Extract the row/thumbnail/confirm-modal helpers and the upload/preview state machines into sibling files (AdminDocumentsTable, DocumentUploadDialog, useDocumentFilters); target <600 lines per file.",
+      "owner": "web principal engineer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; no previous register row covers component size.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Dead modules and a dead component with zero references",
+      "evidence": [
+        "apps/api/src/lib/feature-flags.ts:8,17 \u2014 isFeatureEnabled/getFeatureFlags; `git grep -n 'isFeatureEnabled|getFeatureFlags'` across all tracked files returns 0 hits outside the file",
+        "apps/web/lib/catalog/proposal-actions.ts:2 \u2014 generateProposal server action (returns a hardcoded URL); 0 hits for the exact symbol outside the file (generateProposalDraft* matches are a different feature)",
+        "apps/web/lib/subnav-styles.ts:1 \u2014 navClass; 0 references repo-wide",
+        "apps/web/components/store/CategoryVisualHeader.tsx:34 \u2014 default export; 0 imports; only the prompt pack mentions the name",
+        "all four files were last touched between 2026-07-25 and 2026-07-29 and never referenced since"
+      ],
+      "impact": "Dead modules imply functionality that does not exist (a feature-flag system, a proposal generator, a nav-style helper, a category header) and inflate the review surface; the proposal action is a stub that returns ok:true without doing anything.",
+      "recommendation": "Delete the three modules and the component in one cleanup PR; if any is planned work, move it to a tracked issue instead of shipping a stub.",
+      "owner": "repo maintainer + web/API leads",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Only CategoryVisualHeader.tsx surfaced from a whole-tree orphan scan; the three lib modules were confirmed by exact-symbol grep.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Orphaned one-off catalog scripts and their 1.2 MB content-map pipeline",
+      "evidence": [
+        "7 scripts have zero references in .github/, package.json, apps/ or packages/: apply-content-map.js, fix-apostrophe.js, fix-cat.js, fix-everything-dupes.js, generate-details.js, generate-fulfillment.js, generate-product-content.js",
+        "scripts/apply-content-map.js:5-6 reads scripts/content-map/ and scripts/content-map-fulfillment/ (24 JSON files, 1.2 MB) and is itself unreferenced; all 490 map entries already match product ids baked into apps/web/lib/catalog/data/products.json",
+        "scripts/generate-details.js:263-264 destructively rewrites the 2.5 MB catalog: fs.unlinkSync(products.json) then renameSync(products-temp.json)",
+        "none of the seven appear in scripts/README.md (see the stale-index finding); seed-store.ts (also 0 CI references) is at least mentioned in docs"
+      ],
+      "impact": "Re-running an undocumented one-off generator can overwrite the hand-enriched catalog (the exact copy that already diverged from the API copy); the pipeline's existence implies a content workflow that no longer exists.",
+      "recommendation": "Move the seven scripts plus both content-map directories to an archive branch/tag, or delete them; if they are kept, list them in scripts/README.md under a clearly marked 'one-off / do not run' heading.",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Overlaps the catalog-divergence finding but is independently actionable (file cleanup).",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Committed Python bytecode and a stale build artifact are tracked",
+      "evidence": [
+        "git ls-files | grep -E '__pycache__|\\.pyc$' = 7 files, e.g. prompts/hardening_prompt_pack/engine/global_risk/__pycache__/global_risk_engine.cpython-314.pyc and prompts/portal-alignment/engine/{analytics,diff,remediation,trends}/__pycache__/*.pyc; .gitignore has no __pycache__/.pyc entry",
+        "the .pyc files are pinned in prompts/manifest.json, so the integrity guard freezes compiled bytecode as reviewed content",
+        "apps/web/public/version.json is tracked and stale: {branch:'unknown', run:'0', sha:'unknown', date:'2026-08-05T00:46:23.829Z'}; apps/web/scripts/generate-version.js rewrites it on every build (apps/web/package.json 'build': 'pnpm generate:version && next build') and .gitignore does not list it"
+      ],
+      "impact": "Compiled bytecode from a developer's Python 3.14 environment is committed (clutter, potential leak of local paths/symbols); the tracked version.json serves 'unknown/0' version data whenever a build step is skipped, and its committed copy contradicts the current commit.",
+      "recommendation": "git rm the seven .pyc files, add __pycache__/ and *.pyc to .gitignore, regenerate prompts/manifest.json, and either untrack apps/web/public/version.json or generate it in CI before deploy.",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; distinct from HYG-P3-002 (licenses/SBOM gate) which remains verified-fixed.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Stray duplicate snippet file with local dev auth seed data",
+      "evidence": [
+        "supabase/snippets/Untitled query 314.sql (filename contains spaces) is byte-identical to supabase/seeds/00_local_auth_users.corrected.v2.sql \u2014 both md5 493f2c58224ffd1119b965b415d2bbac",
+        "the file contains 2 INSERT blocks with auth.users rows including encrypted_password hashes for the local demo users (values redacted); it was added in the initial commit 4a87279f and never touched",
+        "git grep for 'supabase/snippets' or 'Untitled query' outside prompts/docs returns no consumer; the whole supabase/snippets/ directory is otherwise empty"
+      ],
+      "impact": "A misleading duplicate of a seed file sits where a Supabase Studio 'save snippet' artifact would land; it invites edits to the wrong copy and keeps dev credential hashes in a second location. Low live risk (local-only users, bcrypt hashes).",
+      "recommendation": "Delete supabase/snippets/Untitled query 314.sql (keep the seeds/ copy) or move it under supabase/seeds/ with a clear name if it is intentionally kept.",
+      "owner": "backend/data lead",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Root package script `sbom:licenses` is known-broken on the pinned pnpm",
+      "evidence": [
+        "package.json:27 \u2014 \"sbom:licenses\": \"pnpm licenses list --json > licenses.json\" with \"packageManager\": \"pnpm@10.34.3\"",
+        ".github/actions/dependency-audit/action.yml:22-24 \u2014 comment: 'Uses scripts/collect-licenses.mjs, NOT `pnpm licenses list --json`, which exits 1 on pnpm 10.34.x and writes an error document to stdout (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE)'",
+        "scripts/collect-licenses.mjs:5-13 \u2014 reproduces the failure ('on pnpm v10.34.3 after any install, exits 1 and writes {\"error\":{...}} to STDOUT ... the shell redirect produced a licenses.json containing an error object')",
+        ".github/workflows/sbom.yml:36-43 \u2014 the workflow was switched to scripts/collect-licenses.mjs for the same reason"
+      ],
+      "impact": "A developer following the root script silently writes an error document to licenses.json, then gets a confusing failure from license-gate/SBOM; three code comments document the breakage but the script was never updated.",
+      "recommendation": "Change the script to \"node scripts/collect-licenses.mjs --out licenses.json\" (matching CI) and delete the `pnpm licenses list` invocation.",
+      "owner": "platform/supply-chain",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; CI itself is unaffected (it already uses the working script).",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "scripts/README.md index is stale: 14 scripts (10 active CI guards) are undocumented",
+      "evidence": [
+        "scripts/README.md:3 \u2014 'Last updated 2026-08-01'",
+        "14 scripts present on disk but absent from the README index: apply-content-map.js, backfill-profile-pii.mjs, check-docs-counts.mjs, check-docs-links.mjs, check-required-checks.mjs, check-rls-predicate.mjs, collect-licenses.mjs, generate-db-types.js, generate-details.js, openapi-audit.js, seed-store.ts, sync-review-md.mjs, verify-prompts.js, verify-rls.mjs",
+        "10 of those are executed by CI (.github/actions/unit-tests/action.yml:27-63, .github/actions/dependency-audit/action.yml) or by root package scripts (package.json backfill:profile-pii)",
+        "the README's platform table documents only the local-stack/backup PowerShell+bash pairs; the one-off content scripts it does list (fix-*.js, generate-*) are exactly the ones with zero references"
+      ],
+      "impact": "The index points maintainers at dead one-off scripts while hiding the guards that enforce schema/docs/RLS hygiene; a new contributor cannot discover the checks from the scripts entry point.",
+      "recommendation": "Regenerate the script index (or add a small script that diffs scripts/ against the README table, similar to check-required-checks.mjs) and move one-off entries into a 'historical' subsection.",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "No circular-dependency guard; one live import cycle in the worker",
+      "evidence": [
+        "Python import-graph scan of apps/api, apps/worker, apps/web (relative + @/ + @mct/* aliases), packages/sdk, packages/ui at 8d299b8d: 756 files with local imports, exactly 1 cycle",
+        "cycle: apps/worker/src/metrics.ts:2 imports getRegisteredTaskTypes from ./task-registry; apps/worker/src/task-registry.ts:3 imports taskExecutionsTotal/taskExecutionDuration from ./metrics (used at metrics.ts:105 inside getMetrics())",
+        "no dependency-cruiser / madge / eslint-plugin-import (import/no-cycle) anywhere in package.json files or .github/ workflows",
+        "cross-boundary direction is otherwise clean: 0 imports from one app into another, 0 imports from packages into apps (only type imports of @mct/sdk/database.types in api/worker)"
+      ],
+      "impact": "The worker cycle is currently benign (both uses are inside functions), but nothing prevents the next one; cycles across modules are a classic source of undefined-at-import-time failures in the bundled worker/api builds.",
+      "recommendation": "Move the registry-length gauge read out of metrics.ts (pass the count in from the metrics endpoint caller) to break the cycle, and add madge --circular or eslint import/no-cycle as a non-blocking CI report, then make it blocking.",
+      "owner": "worker/platform engineer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; cycle reproduced from source, not from a tool run (node/madge unavailable on the audit host).",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Explicit `any` is lint-disabled and 63 `supabase as any` casts sit at the typed-client boundary",
+      "evidence": [
+        "packages/config/tsconfig.base.json:9 \u2014 \"strict\": true for all packages (good)",
+        "apps/api/eslint.config.js:21, apps/web/eslint.config.mjs:45, apps/worker/eslint.config.js:21 \u2014 \"@typescript-eslint/no-explicit-any\": \"off\" in every app config; @typescript-eslint/no-unused-vars is only \"warn\"",
+        "apps/api/src: 76 `: any`/`as any` occurrences outside tests, including 63 `supabase as any` (proposals.ts 13, approvals.ts 8, findings.ts 7, client-onboarding-command-center.ts 5, ...) \u2014 almost all at loadOwned(req, supabase as any, ...) call sites",
+        "apps/api/src/lib/tenant.ts:66-76 types loadOwned's client as a hand-written structural subset of SupabaseClient; apps/api/src/lib/db-types.ts provides sanctioned toJson/asInsert/asUpdate boundary helpers",
+        "0 @ts-ignore / @ts-expect-error in the repo; 15 eslint-disable lines, mostly @next/next/no-img-element with justification"
+      ],
+      "impact": "The any-casts are localized but defeat the generated Database types exactly where tenant scoping is enforced (loadOwned); lint cannot flag new casts, so the pattern is spreading file by file.",
+      "recommendation": "Type loadOwned's client parameter as SupabaseClient<Database> (or a generic) and drop the casts; turn @typescript-eslint/no-explicit-any back to \"warn\" so new occurrences are visible in review.",
+      "owner": "API principal engineer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; counts are grep-based, no build/typecheck was run (node unavailable on the audit host).",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "AGENTS.md (120 KB) doubles as a historical changelog and is mirrored into review.md",
+      "evidence": [
+        "AGENTS.md \u2014 1,003 lines / 120,423 bytes; the current-state contract is the top ~338 lines, then 'Audit findings ledger (2026-08-26)' at line 339, 'Prompt Pack Verification' at 425 and 'Completed Work' session logs from line 470 to EOF (sections dated 2026-08-26 through 2026-09-27)",
+        "review.md \u2014 1,003 lines / 120,644 bytes, generated from AGENTS.md and guarded by scripts/sync-review-md.mjs --check (.github/actions/unit-tests/action.yml:63, validate.yml:110)",
+        "CHANGELOG.md exists and is maintained separately (468 lines, Unreleased section), so the session history in AGENTS.md is a second changelog",
+        "docs/audits/README.md:52-56 points readers at AGENTS.md 'Known Debt' and 'Completed Work' as the running audit summary"
+      ],
+      "impact": "Every agent session and every review.md consumer loads ~240 KB of duplicated historical narrative; the current contract is buried, and two files must be kept in sync for every doc edit. The bloat also makes the doc-count guards fragile (they parse this file).",
+      "recommendation": "Move the ledger/completed-work sections to CHANGELOG.md or docs/audits history and keep AGENTS.md as a current-state contract (<300 lines); review.md then shrinks automatically.",
+      "owner": "repo maintainer",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; adjacent to HYG-P2-001 (corpus bloat) and DOC-P3-001 (dated audits) but a distinct file with its own fix.",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Audit run layout contract is not met by the committed repo-deep-dive runs",
+      "evidence": [
+        "docs/audits/README.md layout contract requires docs/audits/<pack>/<run>/report.md per run ('report.md # human-readable findings + status')",
+        "docs/audits/repo-deep-dive/20261002-0344-develop-6286137/, 20261004-0700-main-178b91c/ and mainecybertech-20261004-full-main-9c0b88c/ contain no report.md (they ship INDEX.md / EXECUTIVE_SUMMARY.md / registers instead); the four manual runs do have report.md",
+        "docs/audits/README.md Runs table lists only the comprehensive and ui-ux runs; the three repo-deep-dive runs are absent from the index",
+        "docs/audits/repo-deep-dive/REAUDIT_REPORT_20261004.md sits at pack level rather than in a dated run directory, and its local references are machine paths (see HYG-P3-001)"
+      ],
+      "impact": "The documented contract and the committed artifacts disagree, so tooling or agents that expect report.md (or the Runs index) cannot discover the audits; the pack-level re-audit report breaks the 'never overwrite / always a run dir' rule.",
+      "recommendation": "Either amend docs/audits/README.md to the actual layout (INDEX.md + registers) or rename the entry file to report.md; add the three runs to the Runs table and move/rename REAUDIT_REPORT_20261004.md into a run directory.",
+      "owner": "audit/repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; artifact-layout hygiene, complementary to DOC-P3-001 (which is about staleness markers).",
+      "area": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "title": "Two Redis client libraries coexist in apps/api",
+      "evidence": [
+        "apps/api/package.json \u2014 depends on both \"redis\": \"^4.7.0\" and \"ioredis\": \"^5.11.1\"",
+        "apps/api/src/lib/health.ts:1 and apps/api/src/middleware/cache.ts:2 import from \"redis\" (node-redis)",
+        "apps/api/src/lib/idempotency.ts:1 imports Redis from \"ioredis\"; the worker uses ioredis (BullMQ requirement)",
+        "pnpm-lock resolves one version of each (redis 4.7.1, ioredis 5.11.1) \u2014 no version duplication, but two client APIs and two connection pools"
+      ],
+      "impact": "Two Redis clients mean duplicated connection/metrics handling and two upgrade paths for the same infrastructure dependency; operators must reason about both when tuning or rotating Redis credentials.",
+      "recommendation": "Consolidate on ioredis (already required by BullMQ) or document why node-redis is needed for health/cache; remove the other dependency.",
+      "owner": "API principal engineer",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; low urgency, both usages are real.",
+      "area": "HYGIENE"
+    }
+  ],
+  "report": "# Repository Hygiene, Maintainability, and Code Health Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `MaineCyberTech/mainecybertech` (`/tmp/opencode/mct-audit-target`, read-only)\n- Branch: `main`\n- Commit SHA: `8d299b8d`\n- Generated at: 2026-10-11\n- Auditor: domain subagent 21 (HYGIENE), full-pass rerun\n- Area code: HYGIENE (previous register rows used `HYG`; verification rows keep their original titles)\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/21_repo_hygiene_maintainability.md`\n- Scope limitations: read-only static review; `node`, `pnpm` and `rg` are not installed on the audit host, so repo guards were re-implemented in short Python/`git grep` snippets and marked as such; no build, test, install or typecheck was run.\n\n## Scope\n\nReviewed at `8d299b8d`: folder/file naming, duplicate/dead/unused code, generated and build artifacts, imports and circular dependencies, large files/components, type safety/`any`, error handling, TODO/FIXME, logging consistency, config sprawl, competing patterns, package scripts, dependency boundaries, test utilities, docs drift, changelog/ADRs. Not reviewed: runtime behaviour, database state, live GitHub settings, and anything requiring a build (typecheck/lint/test execution). Cross-domain rows (DOC, ACM, RLS, INV, AI) were not duplicated; where a previous row is owned by another area it was left to that owner (see Open Questions).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `git ls-files`, `git ls-files -s`, `git ls-files --eol`, `du -cb` | inventory | file set, exec bits, EOLs, corpus size | 2,823 tracked files; 19 `.sh` all 100755; 0 CRLF files |\n| `prompts/manifest.json` + `scripts/verify-prompts.js` algorithm | generated artifact | pinning guard | Python replica (utf8 + CRLF-normalise SHA-256): 630/630 match, 0 mismatches |\n| `apps/api/src/data/products.json` vs `apps/web/lib/catalog/data/products.json` (+2 pack copies) | data | duplicate catalogs | 245 common SKUs, 245 differ in 6 fields; 3 distinct copies |\n| Import-graph scan (Python, relative + `@/` + `@mct/*`) | code | circular deps / boundaries | 756 files with local imports; 1 cycle; 0 cross-app imports |\n| Orphan scan (exact symbol grep) over `apps/**`, `packages/**` | code | dead code | 3 dead lib modules, 1 dead component, 7 dead scripts, 1 dead duplicate snippet |\n| `apps/web/components/admin/AdminDocumentsCenterClient.tsx` | code | large component | 2,322 lines, one component, 26 state/effect hooks |\n| ESLint/TS configs (`apps/*/eslint.config.*`, `packages/config/tsconfig.base.json`) | config | type safety, unused vars | `strict: true`; `no-explicit-any` off; `no-unused-vars` warn |\n| `.gitignore`, `.github/actions/dependency-audit/action.yml`, `validate.yml` | CI/config | generated artifacts + exec-bit guard | licenses/SBOM untracked and gated; exec-bit gate present |\n| `scripts/README.md` vs `scripts/` listing | docs | docs drift | 14 scripts (10 active guards) undocumented; \"Last updated 2026-08-01\" |\n| `docs/audits/README.md` + run directories | docs/artifacts | artifact layout contract | 3 repo-deep-dive runs lack `report.md`; Runs table omits them |\n| `AGENTS.md` / `review.md` / `CHANGELOG.md` / `docs/adr/README.md` | docs | agent contract, changelog/ADRs | AGENTS.md 1,003 lines/120 KB; review.md generated mirror; 11 ADRs (7 table-only, disclosed) |\n| Markdown link check (Python replica of `check-docs-links.mjs`, extended to all 294 non-audit md) | docs | docs drift | 0 broken links |\n| Previous run `follow_up_register.md` HYG rows + `PORT-P2-001` | register | verification duty | re-verified at 8d299b8d (table below) |\n\n## Verification Performed\n\n| Command / check | Observed result |\n|---|---|\n| `git ls-files -s '*.sh' \\| awk '{print $1}' \\| sort \\| uniq -c` | `19 100755`, 0 files at 100644 \u2192 PORT-P2-001 fixed |\n| `sed -n '19,31p' .github/workflows/validate.yml` | exec-bit guard present (PORT-001), fails the deploy gate on any 100644 `.sh` |\n| Python replica of `scripts/verify-prompts.js` verify | 630/630 manifest hashes match at 8d299b8d; 0 missing/added/changed |\n| Python structural diff of the four `products.json` copies | API vs web: 245/245 differ (6 fields each); pack data vs pack repo_patch: byte-identical; both differ from the apps |\n| `git grep -nE '\\bgenerateProposal\\b' \\| grep -v proposal-actions.ts` | 0 hits \u2192 dead stub confirmed |\n| `git grep -n 'isFeatureEnabled\\|getFeatureFlags\\|navClass'` (all tracked files) | 0 hits outside their defining files |\n| Whole-tree orphan scan for `apps/web/components/**` | 1 unreferenced component: `CategoryVisualHeader.tsx` |\n| Import-cycle DFS (Python) | 1 cycle: `apps/worker/src/metrics.ts` \u2194 `apps/worker/src/task-registry.ts` |\n| `git grep -c 'supabase as any' -- apps/api/src` | 63 casts; 76 `any`-ish lines in API non-test code |\n| `git ls-files \\| grep -E '__pycache__\\|\\.pyc$'` | 7 committed `.pyc` files; `.gitignore` has no entry |\n| `cat apps/web/public/version.json` | tracked stale artifact: `{\"sha\":\"unknown\",\"date\":\"2026-08-05...\"}`; rewritten by `apps/web/scripts/generate-version.js` at build |\n| `md5sum \"supabase/snippets/Untitled query 314.sql\" supabase/seeds/00_local_auth_users.corrected.v2.sql` | identical (`493f2c58...`) \u2192 dead duplicate |\n| `git grep -l` per script name across `.github/`, `package.json`, `apps/`, `packages/` | 7 scripts with 0 references (content-map pipeline) |\n| Docs link check (294 non-audit md files) | 0 broken links |\n| Machine-path grep `C:\\\\Users\\|C:\\\\temp` in tracked docs | 3 files still carry machine paths (AGENTS.md/review.md fixed) |\n| `git ls-files -s` on licenses/SBOM names + `sed -n '31,40p' .github/actions/dependency-audit/action.yml` | guard present, artifacts untracked \u2192 HYG-P3-002 holds |\n| `git ls-files -s` mode audit + guard inspection | PORT-P2-001 verified-fixed |\n| Dead-RLS-key scan (effective-policy extraction + permission catalog + role grants) | No live policy references a catalog-absent permission pair except on tables dropped by 5302055; `documents/tickets/projects:manage` were replaced by 5302129 \u2192 residual belongs to the ACM/RLS domains (already filed there) |\n\n### Verification duty \u2014 previous register rows\n\n| Previous row | Re-verified at 8d299b8d | Status |\n|---|---|---|\n| HYG-P2-001 Committed prompt/audit corpus bloats the repo and review surface | Prior-run snapshots removed (PROVENANCE.md note), manifest verifies clean; 632 files / 9.4 MB remain committed | partially-fixed |\n| HYG-P2-002 Duplicate product catalogs have diverged | 245/245 SKUs differ; AGENTS.md documents it as open debt; no sync/guard added | partially-fixed |\n| HYG-P3-001 Stale and machine-specific generated documentation | AGENTS.md:3/review.md:9 fixed (3e53b3da); GAP_ANALYSIS.md:149, MT-P0-001:5 and REAUDIT_REPORT_20261004.md:9-10 still carry `C:\\temp` paths | partially-fixed (was verified-fixed) |\n| HYG-P3-002 Generated artifacts are inconsistently tracked | licenses/SBOM untracked + guard in dependency-audit action wired to test.yml/validate.yml | verified-fixed |\n| PORT-P2-001 17 tracked shell scripts lack the exec bit | 19/19 `.sh` now 100755; validate.yml:19-31 guard | verified-fixed |\n\n## Executive Summary\n\nThe repo's *guards* are unusually good: exec bits, prompt provenance, docs links/counts, generated DB types, OpenAPI coverage, review.md mirror and SBOM/license tracking are all machine-checked in CI, and every one of those checks reproduces clean at `8d299b8d`. Docs links: 0 broken across 294 markdown files. Dependency boundaries are clean (no cross-app imports, single lockfile versions). TODO/FIXME debt is essentially zero in source (1 ops note).\n\nThe *debt* is concentrated in three places. First, duplication: the product catalog exists in four files with three different contents, and the API copy is a stale generation of the web copy. Second, orphans: three dead lib modules, one dead component, seven unreferenced one-off scripts plus their 1.2 MB content-map pipeline, and a stray duplicate seed snippet. Third, generated artifacts that escaped the otherwise-good gates: seven committed `.pyc` files and a stale `apps/web/public/version.json`. One 2,322-line component is the main complexity hotspot; one benign import cycle exists in the worker with no cycle-detection tooling.\n\nRecommended next actions: delete the dead modules/scripts/component and the stray snippet (single cleanup PR), reconcile the catalog copies behind one canonical source, add `__pycache__`/`version.json` handling, fix the known-broken `sbom:licenses` script, and split `AdminDocumentsCenterClient.tsx`.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Prompt corpus | `prompts/` (632 files, 9.4 MB) | vendored prompt packs + generated outputs | pinned (630 files in manifest), documented in PROVENANCE.md | Low | owner decision to externalise; HYG-P2-001 |\n| Audit outputs | `docs/audits/` (75 files, 2.7 MB) | published audit runs | 3 repo-deep-dive runs lack `report.md`; Runs table incomplete | Low | layout finding |\n| Product catalogs | `apps/api/src/data/products.json`, `apps/web/lib/catalog/data/products.json`, 2 pack copies | store catalog content | 4 copies / 3 contents; API copy stale | Medium | HYG-P2-002 |\n| Dead modules | `apps/api/src/lib/feature-flags.ts`, `apps/web/lib/catalog/proposal-actions.ts`, `apps/web/lib/subnav-styles.ts` | unused helpers/stubs | 0 references | Low | delete |\n| Dead component | `apps/web/components/store/CategoryVisualHeader.tsx` | category header UI | 0 imports | Low | delete |\n| Orphan scripts | `scripts/{apply-content-map,fix-*,generate-details,generate-fulfillment,generate-product-content}.js` + `scripts/content-map*/` | one-off catalog tooling | 0 references; 490/490 ids already baked in | Medium (destructive) | archive/delete |\n| Generated artifacts | `apps/web/public/version.json`, `prompts/**/__pycache__/*.pyc` (7) | build output / bytecode | tracked and stale | Low | new finding |\n| Duplicate snippet | `supabase/snippets/Untitled query 314.sql` | dev auth seed copy | byte-identical to `seeds/00_local_auth_users.corrected.v2.sql` | Low | delete |\n| Guards (strengths) | `.github/actions/unit-tests`, `dependency-audit`, `validate.yml` | CI hygiene gates | all reproduce clean | \u2014 | see scorecard |\n| Large component | `apps/web/components/admin/AdminDocumentsCenterClient.tsx` | admin documents center | 2,322 lines, 26 hooks | Medium | split |\n| Agent contract | `AGENTS.md` + generated `review.md` | agent/reviewer reference | 1,003 lines / 120 KB each, half is history | Low | trim |\n| Config set | 7 tsconfigs, 4 eslint, 4 jest, 2 vercel, 2 compose, 4 env examples | monorepo config | bounded and documented; two Redis clients in API | Low | minor |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Folder/file naming | 4 | kebab-case throughout apps; `tools/` holds one file while `scripts/` holds 50 | `supabase/snippets/Untitled query 314.sql`; `(2)`/`(3)` vendored names | delete stray snippet; keep vendored names as-is (pinned) |\n| Duplicate/dead/unused code | 2 | 3 dead modules, 1 dead component, 7 dead scripts, 1 dead snippet, 4 catalog copies | no dead-code lint; one-off scripts undocumented | cleanup PR + orphan check |\n| Generated/build artifacts | 3 | DB types/OpenAPI/review/manifest/licenses/SBOM all gated and green | `.pyc` + stale `version.json` tracked | ignore + untrack; extend gate |\n| Imports and circular deps | 3 | 756-file graph, 1 cycle, 0 cross-app imports | no madge/eslint-plugin-import | break cycle; add report-only check |\n| Large files/components | 3 | 1 component >2,300 lines; 4 modules 1,000\u20131,700 | no size lint | split AdminDocumentsCenterClient |\n| Type safety/`any` usage | 3 | `strict: true`, 0 ts-ignore, sanctioned `db-types.ts` helpers | `no-explicit-any` off; 63 `supabase as any` | type `loadOwned`; warn on new `any` |\n| Error handling | 4 | no empty catch blocks in source; structured logging at 805 catch sites; 15 justified disables | not exhaustively reviewed per route | keep; API domain owns response semantics |\n| TODO/FIXME | 5 | 1 real TODO (`infra/digitalocean/docker-compose.yml:245`, digest re-pin note); placeholders only in tests | none | keep the TODO discipline |\n| Logging consistency | 4 | pino (api/worker), server pino + client logger (web); 2 `console.log` in build/env tooling | 4 logger modules | acceptable; document web split |\n| Config sprawl | 4 | bounded config set with shared base tsconfig/eslint; two `vercel.json`/compose files documented as intentional | two Redis client libs | consolidate Redis |\n| Competing patterns | 3 | CJS `.js` vs ESM `.mjs` in scripts; node-redis + ioredis; two Vercel configs | no standard for new scripts | state ESM-only for new scripts |\n| Package scripts | 3 | all targets exist; `sbom:licenses` known-broken; two PowerShell-only root scripts | stale script not fixed | point to `collect-licenses.mjs` |\n\nOverall: **3.2 / 5** \u2014 well-guarded but carrying real duplication/orphan debt.\n\n## Detailed Review\n\n### Item: Product catalog duplication\n\n- Evidence: four copies; 245/245 SKUs differ in 6 content fields between API and web; pack copies byte-identical to each other; no guard.\n- What it does: web storefront imports `apps/web/.../products.json`; API fallback and `scripts/seed-store.ts` read `apps/api/src/data/products.json`; the pack keeps an unapplied `repo_patch/` copy.\n- Risks: user-visible copy differs by surface; silent drift on every edit; destructive one-off generators target the web copy.\n- Recommended improvement: canonical file + generated copies, or delete the API copy and read through the DB/seed.\n\n### Item: Dead code inventory\n\n- Evidence: exact-symbol greps; orphan scan; git history shows last touches 2026-07-25\u202607-30.\n- Current controls: none (no dead-code lint; `no-unused-vars` is only a warning in app configs and lint-staged `--max-warnings=0` only covers staged files).\n- Recommended improvement: delete in one PR; add `knip`/`ts-prune` as a report-only CI job.\n\n### Item: Generated artifacts\n\n- Evidence: `.gitignore` + dependency-audit guard for licenses/SBOM; manifest pins `.pyc`; `version.json` stale; `generate-version.js` rewrites it at build.\n- Recommended improvement: untrack `.pyc` and `version.json`; extend the existing \"stay untracked\" guard pattern rather than inventing a new one.\n\n### Item: CI guard suite (strength)\n\n- Evidence: `unit-tests` action runs OpenAPI validation + coverage audit, docs counts, docs links, DB types check, `verify-rls.mjs`, `check-rls-predicate.mjs`, `sync-review-md.mjs --check`; `dependency-audit` runs license/SBOM gates; `validate.yml` adds exec-bit and required-check parity checks; prompt provenance is pinned.\n- Verification: docs links 0 broken; manifest 630/630; catalog/route/openapi path parity holds; exec bits 19/19.\n- Gap: no circular-dependency check, no dead-code check, no size check.\n\n### Item: AGENTS.md / review.md\n\n- Evidence: 1,003 lines each; history from line 339; generated mirror guarded.\n- Recommended improvement: keep contract + current debt in AGENTS.md; move session logs to CHANGELOG/docs/audits.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| HYGIENE-001 | Folder/file naming | 4 spaced filenames | none | stray snippet | P3 | delete snippet |\n| HYGIENE-002 | Duplicate/dead/unused code | 4 dead modules, 7 dead scripts | none | no lint | P3 | cleanup PR |\n| HYGIENE-003 | Generated/build artifacts | `.pyc`, `version.json` | licenses/SBOM gate only | two classes untracked-free | P3 | extend ignore/gate |\n| HYGIENE-004 | Imports and circular deps | 1 cycle | none | no tool | P3 | break + report check |\n| HYGIENE-005 | Large files/components | 2,322-line component | none | no size lint | P2 | split |\n| HYGIENE-006 | Type safety/any usage | 63 casts; any off | strict base + helpers | lint silent | P3 | type `loadOwned` |\n| HYGIENE-007 | Error handling | no empty catches | logger + Sentry | \u2014 | \u2014 | keep |\n| HYGIENE-008 | TODO/FIXME | 1 TODO | review discipline | \u2014 | \u2014 | keep |\n| HYGIENE-009 | Logging consistency | 4 logger modules | per-runtime split | minor | P3 | document |\n| HYGIENE-010 | Config sprawl | bounded set | shared base configs | 2 Redis libs | P3 | consolidate |\n| HYGIENE-011 | Competing patterns | CJS/ESM mix | none stated | new-script drift | P3 | ESM-only rule |\n| HYGIENE-012 | Package scripts | `sbom:licenses` broken | CI uses correct path | stale script | P3 | fix script |\n\n## Findings\n\nFindings are in the machine-readable companion (`21_repo_hygiene_maintainability.json`); titles:\n\n- P2 \u2014 AdminDocumentsCenterClient.tsx is a 2,322-line single component\n- P2 \u2014 Committed prompt/audit corpus bloats the repo and review surface *(verification: partially-fixed)*\n- P2 \u2014 Duplicate product catalogs have diverged *(verification: partially-fixed)*\n- P2 \u2014 17 tracked shell scripts lack the exec bit; documented `./scripts/...` commands fail *(verification: verified-fixed)*\n- P3 \u2014 Stale and machine-specific generated documentation *(verification: partially-fixed, downgraded from verified-fixed)*\n- P3 \u2014 Generated artifacts are inconsistently tracked *(verification: verified-fixed)*\n- P3 \u2014 Dead modules and a dead component with zero references\n- P3 \u2014 Orphaned one-off catalog scripts and their 1.2 MB content-map pipeline\n- P3 \u2014 Committed Python bytecode and a stale build artifact are tracked\n- P3 \u2014 Stray duplicate snippet file with local dev auth seed data\n- P3 \u2014 Root package script `sbom:licenses` is known-broken on the pinned pnpm\n- P3 \u2014 `scripts/README.md` index is stale: 14 scripts (10 active CI guards) are undocumented\n- P3 \u2014 No circular-dependency guard; one live import cycle in the worker\n- P3 \u2014 Explicit `any` is lint-disabled and 63 `supabase as any` casts sit at the typed-client boundary\n- P3 \u2014 AGENTS.md (120 KB) doubles as a historical changelog and is mirrored into review.md\n- P3 \u2014 Audit run layout contract is not met by the committed repo-deep-dive runs\n- P3 \u2014 Two Redis client libraries coexist in apps/api\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Catalog edits applied to only one copy | P2 | High | User-visible copy mismatch by surface | 245/245 divergent SKUs | canonical source + guard |\n| One-off generator re-run overwrites enriched catalog | P2 | Low | Content loss in a 2.5 MB hand-edited file | `generate-details.js:263-264` unlink/rename | archive scripts |\n| Dead stubs read as real features | P3 | Medium | Wasted work, false expectations | `proposal-actions.ts` returns `ok:true` | delete |\n| Dead predicates/policies mislead RLS reviewers | P3 | Medium | Future widening on a dead clause | ACM/RLS domains (not duplicated) | catalog lint |\n| Stale version served in non-standard deploys | P3 | Low | Support confusion | `version.json` `sha:unknown` | generate at deploy |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\nNone. No finding in this domain blocks release; the P2s are maintainability debt, not correctness failures.\n\n### This Week\n\n- Delete the dead modules/component and the stray snippet (one PR, low risk).\n- Fix `sbom:licenses` to call `scripts/collect-licenses.mjs`.\n- Untrack `.pyc` + `version.json`; extend `.gitignore`; regenerate the prompt manifest.\n\n### This Month\n\n- Reconcile the catalog copies behind one canonical source (content owner + web/API).\n- Split `AdminDocumentsCenterClient.tsx`; type `loadOwned` and drop the 63 `supabase as any` casts.\n- Archive the one-off catalog scripts and content-map directories.\n\n### Later / Platform Evolution\n\n- Add report-only CI jobs for circular deps, dead code and file size, then ratchet.\n- Trim AGENTS.md to a current-state contract; keep history in CHANGELOG/docs/audits.\n- Align `docs/audits/README.md` with the actual run layout; regenerate the scripts index.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Delete 3 dead modules + 1 component | removes misleading stubs | `feature-flags.ts`, `proposal-actions.ts`, `subnav-styles.ts`, `CategoryVisualHeader.tsx` | `pnpm lint && pnpm typecheck` |\n| Delete stray snippet | removes duplicate seed + credential copy | `supabase/snippets/Untitled query 314.sql` | `git ls-files supabase/snippets` |\n| `git rm` `.pyc`, ignore `__pycache__` | removes generated binaries from the pin | 7 files + `.gitignore` | `node scripts/verify-prompts.js generate && verify` |\n| Fix `sbom:licenses` | one-line, matches CI | `package.json` | `pnpm sbom:licenses && node scripts/license-gate.mjs` |\n| Untrack `version.json` | removes stale artifact | `apps/web/public/version.json`, `.gitignore` | `pnpm --filter=web build` |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Canonical catalog + generated copies | P2 | content owner + web/API | M | product decision |\n| Split AdminDocumentsCenterClient | P2 | web principal engineer | M | existing tests |\n| Circular-dep + dead-code + size CI checks | P3 | repo maintainer | S\u2013M | none |\n| Machine-path lint for tracked markdown | P3 | repo maintainer | S | `check-docs-links.mjs` |\n| AGENTS.md trim | P3 | repo maintainer | M | none |\n| Redis client consolidation | P3 | API principal engineer | S | none |\n\n## Suggested Tests\n\n- **CI/static:** a markdown gate that fails on `C:\\` / `file:///C:` in tracked docs; a catalog-identity test asserting the API and web catalogs are byte-identical or generated from one file; `madge --circular` (or `import/no-cycle`) as a report-only job; a scripts-index check (scripts/ \u2194 scripts/README.md).\n- **Unit:** none required for the deletions; add a `loadOwned` type-level test that would fail if the `as any` casts return.\n- **Regression:** keep `verify-prompts.js verify`, `sync-review-md.mjs --check`, `check-docs-links.mjs` and the exec-bit guard green \u2014 they are the regression net for this domain.\n- **Manual:** after untracking `version.json`, build web once and confirm `public/version.json` is regenerated with the current SHA.\n\n## Suggested Documentation Updates\n\n- `scripts/README.md` \u2014 regenerate the index; mark one-off scripts historical; add the 10 CI guards.\n- `docs/audits/README.md` \u2014 align the layout contract/Runs table with the committed run artifacts (or add `report.md`).\n- `AGENTS.md`/`review.md` \u2014 move ledger/history to CHANGELOG or docs/audits; keep the current contract.\n- `CONTRIBUTING.md` \u2014 one line: new scripts are ESM `.mjs`; `prompts/` is historical data, not product code.\n- `docs/ENVIRONMENT_VARIABLES.md` \u2014 note that `version.json` is generated at build and untracked once fixed.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Which catalog copy is canonical for the storefront? | blocks the dedup fix | product/content-owner decision |\n| Is the prompt corpus intended to stay in-repo long-term? | HYG-P2-001 closure | owner decision (AGENTS.md flags it) |\n| Are the one-off catalog scripts still needed for a future content pass? | archive vs delete | content-owner confirmation |\n| Should `prompts/` continue to pin binary artifacts (`.pyc`, `.xlsx`)? | pin semantics | maintainer decision |\n| Is `version.json` intentionally committed for Vercel previews? | untrack vs keep | deployment owner (AGENTS.md:688 notes Vercel previews) |\n\n## Appendix\n\n- Reproduce the manifest check without node:\n  `python3 - <<'EOF'` \u2026 read `prompts/manifest.json`, hash `prompts/<path>` as `sha256(raw.decode('utf-8','replace').replace('\\r\\n','\\n'))`, compare \u2014 0 mismatches.\n- Import-graph scan: DFS over resolved relative + `@/` + `@mct/*` imports of `.ts/.tsx` (excluding `node_modules`, `dist`, `.next`, `__tests__`); cycle list: `apps/worker/src/metrics.ts \u2194 apps/worker/src/task-registry.ts`.\n- Catalog diff: `python3` keyed by SKU; 245/245 differ in `marketingCopy`, `customerOutcomes`, `whatIsIncluded`, `bestFor`, `internalProcedure`, `fulfillmentWorkflow`.\n- Machine-path residual lines: `docs/GAP_ANALYSIS.md:149`, `docs/MT-P0-001-RLS-remediation-design.md:5`, `docs/audits/repo-deep-dive/REAUDIT_REPORT_20261004.md:9-10,20-26,208`.\n- Cross-domain note (not duplicated): dead-RLS-key scan found the live schema free of catalog-absent permission pairs except policies on tables dropped by `supabase/migrations/5302055_cleanup_dead_tables.sql`; `documents/tickets/projects:manage` were replaced by `5302129`. The ACM/RLS domains already own that row.\n"
+}
