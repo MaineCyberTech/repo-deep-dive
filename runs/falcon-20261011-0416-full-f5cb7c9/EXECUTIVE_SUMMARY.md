@@ -6,18 +6,19 @@
 
 ## Findings
 
-- 126 total: P0 0, P1 9, P2 59, P3 58.
+- 126 total: P0 0, P1 10, P2 57, P3 59.
 - Domains covered: deterministic, 00_audit_orchestrator, 01_repository_inventory, 02_architecture_runtime_topology, 03_feature_implementation_map, 06_security_authz_tenancy_audit, 24_access_control_matrix_audit, 25_multi_tenant_isolation_attack_simulation, 26_admin_console_abuse_case_audit, 07_data_schema_migration_runtime_validation, 37_supabase_rls_policy_deep_dive, 08_api_contracts_realtime_integrations, 27_webhook_delivery_replay_idempotency_audit, 28_file_upload_download_security_audit, 29_billing_payments_reconciliation_audit, 30_notification_email_push_delivery_audit, 31_search_indexing_privacy_audit, 10_github_actions_cicd_governance, 34_branch_protection_required_checks, 11_supply_chain_dependency_secrets, 35_sbom_license_policy, 36_container_runtime_security, 38_env_secret_rotation, 12_infra_deployment_environment_drift, 09_testing_quality_release_confidence, 13_resilience_recovery_failure_modes, 32_backup_restore_drill, 33_incident_tabletop_exercise, 14_observability_monitoring_incident_readiness, 15_performance_scalability_cost, 04_usability_workflow_audit, 05_ui_ux_accessibility_audit, 17_mobile_pwa_responsive_access, 18_privacy_compliance_data_governance, 39_analytics_tracking_privacy, 16_documentation_devex_operator_readiness, 19_platform_evolution_extensibility, 20_ai_automation_agent_readiness, 21_repo_hygiene_maintainability, 45_exploit_chain_attack_path_audit, 22_final_risk_register_roadmap, 23_executive_summary_release_gate, 40_release_notes_changelog_generator.
 
 Top risks:
 
 - `ARCH-P1-001` — Single-host concentration: host loss is total pipeline loss
-- `DATA-P1-001` — Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate
+- `DATA-P1-001` — Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate (alerts class not ISM-managed)
 - `DR-P1-002` — Offsite upload state truncated to empty by the 2026-10-10 run; the 2026-10-11 run is re-uploading the full 68.3 GiB repository and the offsite success stamp is 33.6 h stale (24 h RPO target breached)
 - `EVOL-P1-001` — Cross-repo shared tooling has drifted and still has no pin/hash enforcement
 - `EVOL-P1-002` — MCT vendoring policy is proposed but not enforced; the pin gate remains blind to mct/compose
-- `PERF-P1-002` — Root LV below the guard threshold: reclaim loop, alert every 15 min
+- `PERF-P1-002` — Root LV sits below the guard's 20 GiB threshold: 48 failed reclaims in ~19 h, alerting every 15 min, and no effective reclaim path for the root-resident snapshot repo
 - `PRIV-P1-001` — Wazuh indexer and IRIS case data still have no retention or deletion window (owner-gated)
 - `RES-P1-002` — Root LV below the 20 GiB disk-guard threshold; guard failing every 15 min while the snapshot repository grows ~4.3-5.5 GiB/night
+- `RES-P2-002` — Wazuh VPN proxy socket boot race is not fixed: systemd still deletes the socket jobs on boot (listeners dead 45 min after the Oct 11 reboot)
 - `WH-P1-001` — OpenSearch sink drops failed batches with no dead-letter/replay path (detection now closed and live-verified)
 

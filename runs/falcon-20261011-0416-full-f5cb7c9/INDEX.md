@@ -10,7 +10,7 @@
 - Branch: `main`
 - Commit: `f5cb7c9`
 - Release gate: **GO WITH CONDITIONS**
-- Findings: 126 total — P0 0, P1 9, P2 59, P3 58
+- Findings: 126 total — P0 0, P1 10, P2 57, P3 59
 
 ## Domains
 

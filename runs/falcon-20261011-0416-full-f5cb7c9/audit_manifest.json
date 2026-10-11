@@ -19,7 +19,7 @@
     "profile": "base",
     "readOnly": true,
     "secretsRedacted": true,
-    "generatedAt": "2026-10-11T05:12:40Z",
+    "generatedAt": "2026-10-11T05:25:13Z",
     "domains": [
       "deterministic",
       "00_audit_orchestrator",
@@ -114,9 +114,9 @@
   },
   "findings": {
     "bySeverity": {
-      "P1": 9,
-      "P2": 59,
-      "P3": 58
+      "P1": 10,
+      "P2": 57,
+      "P3": 59
     },
     "byArea": {
       "ACM": 4,
