@@ -6,8 +6,8 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 
 | Finding | Severity | Title | Owner | Target | Status | Note |
 |---|---|---|---|---|---|---|
-| ARCH-P1-001 | P1 | Single-host concentration: host loss is total pipeline loss | @owner | ARCH | open |  |
-| DATA-P1-001 | P1 | Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate (alerts class not ISM-managed) | @owner | DATA | partially-fixed |  |
+| ARCH-P1-001 | P1 | Single-host concentration: host loss is total pipeline loss | @owner | ARCH | owner-accepted | Carried; owner-accepted (2026-10-09 register + owner acceptance records). Single-host concentration is a design acceptance; unchanged this run. |
+| DATA-P1-001 | P1 | Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate (alerts class not ISM-managed) | @owner | DATA | owner-accepted | Carried; the retention/deletion window decision is owner-gated (same class as PRIV-P1-001, owner-accepted). The detection gap (wazuh-alerts-4.x not ISM-managed) is tracked separately. |
 | DR-P1-002 | P1 | Offsite upload state truncated to empty by the 2026-10-10 run; the 2026-10-11 run is re-uploading the full 68.3 GiB repository and the offsite success stamp is 33.6 h stale (24 h RPO target breached) | @owner | DR | partially-fixed | Upload in progress (full 68.3 GiB re-upload after the 0-byte state truncation; started 03:37Z); stuck-run detection added (falcon_backup_service_state + rules, PR #55); truncation root cause = the #51 path fix. RPO breach persists until the upload completes - monitor. |
 | EVOL-P1-001 | P1 | Cross-repo shared tooling has drifted and still has no pin/hash enforcement | @owner | EVOL | owner-accepted |  |
 | EVOL-P1-002 | P1 | MCT vendoring policy is proposed but not enforced; the pin gate remains blind to mct/compose | @owner | EVOL | owner-accepted |  |

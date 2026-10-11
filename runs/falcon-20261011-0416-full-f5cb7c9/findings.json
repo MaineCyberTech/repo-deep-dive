@@ -54,8 +54,8 @@
       "line": 461,
       "owner": "@owner",
       "target": "ARCH",
-      "status": "open",
-      "note": "",
+      "status": "owner-accepted",
+      "note": "Carried; owner-accepted (2026-10-09 register + owner acceptance records). Single-host concentration is a design acceptance; unchanged this run.",
       "area": "ARCH",
       "detail": "All capture, storage, metrics, alerting and delivery run on one Ubuntu 24.04 KVM host with no warm standby; host loss is total monitoring loss (the edge buffers ~2 GiB, then blocks). Recorded owner-accepted from the 2026-10-05 run (documented RTO/RPO acceptance); no infra change. Fix path remains a warm standby or a tested RTO/RPO acceptance artifact."
     },
@@ -67,8 +67,8 @@
       "line": 360,
       "owner": "@owner",
       "target": "DATA",
-      "status": "partially-fixed",
-      "note": "",
+      "status": "owner-accepted",
+      "note": "Carried; the retention/deletion window decision is owner-gated (same class as PRIV-P1-001, owner-accepted). The detection gap (wazuh-alerts-4.x not ISM-managed) is tracked separately.",
       "area": "DATA",
       "detail": "The repository states the Wazuh estate has no retention (RETENTION_MATRIX.md:19-27 'none configured (GAP)', 'no ISM policy exists on the Wazuh indexer cluster'; SCHEMA_AND_RETENTION.md:65 'not managed here'). The live 3-node Wazuh indexer cluster has five ISM policies and 56 managed indices: security-auditlog-* 37, wazuh-states-* 14, wazuh-monitoring-2026.38w/39w, wazuh-statistics-2026.38w/39w, elastiflow-flow (rollover + delete @14d). However, all 15 wazuh-alerts-4.x-* indices (the highest-volume class) are NOT in ISM's managed set (explain: policy_id null, enabled null) even though their _settings name wazuh-retention - the attachment never took effect. The newest monitoring/statistics indices (2026.40w) are also unmanaged. IRIS case data remains unbounded (RESTORE.md:350 OPEN; live volume 78 MB, no retention job). Fix: correct the docs to the live policy set, re-attach the alerts policy (or record the exception), add a read-only checker comparing ISM's managed set against a declared per-class matrix, and decide the IRIS lifecycle."
     },
