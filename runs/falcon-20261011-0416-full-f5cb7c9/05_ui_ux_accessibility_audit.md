@@ -1,0 +1,122 @@
+# 05_ui_ux_accessibility_audit — Prompt 05 - UI/UX, Design System, and Accessibility Audit
+
+- Run: `falcon-20261011-0416-full-f5cb7c9`
+- Target: `falcon` @ `f5cb7c9` (branch `main`)
+- Domain: `05_ui_ux_accessibility_audit.md` (area UX, prompt)
+
+## Verification Performed
+
+# UI/UX, Design System, and Accessibility Audit
+
+## Audit Metadata
+
+- Audit name: `repo-deep-dive`
+- Run: `falcon-20261011-0416-full-f5cb7c9`
+- Repository: `falcon` (single-host monitoring lab)
+- Branch: `main` / Commit SHA: `f5cb7c96cacefb2e8b1dedc1f15e633d9072264b`
+- Generated at: `2026-10-11T04:45:00Z`
+- Auditor: subagent (area UX), read-only
+- Area code: UX
+- Output path (repo convention): `docs/audits/repo-deep-dive/falcon-20261011-0416-full-f5cb7c9/05_ui_ux_accessibility_audit.md`
+- Scope limitations: no first-party product UI, design system, CSS/Tailwind theme, component library, Storybook, or visual/a11y test suite exists in this repository; the audit is **Not Applicable** by scope (see Evidence).
+
+## Scope
+
+The prompt targets a product UI: design tokens, CSS/Tailwind/theme, reusable components, layouts/nav, forms/dialogs/toasts/tables/cards, icons/color/typography/spacing, focus states, keyboard nav, ARIA, semantic HTML, responsive breakpoints, dark mode, skeletons/errors/empty states, Storybook, and visual/a11y tests. This repository authors none of those. The only visual surfaces are third-party renderers (Grafana, OpenSearch Dashboards, ntopng, ntfy) fed by provisioned JSON (`config/dashboards/`), and the alert-notification copy produced by `automation/alerting/ntfy_relay.py` (operator-facing text, not a UI). WCAG-style checks therefore have no first-party DOM or component to evaluate; third-party renderer accessibility is outside this repository's authorship.
+
+## Evidence Reviewed
+
+| Evidence | Type | Why relevant | Notes |
+|---|---|---|---|
+| Negative search for UI assets: `package.json`, `*.tsx/jsx/vue/svelte`, `*.css`, `index.html` | Command | Proves no first-party UI/design system | No matches anywhere, including `mct/` |
+| `find . -type f -name '*.html'` | Command | Finds any authored HTML | Only 2 generated audit dashboards in `docs/audits/...` (previous audit runs) with inline CSS; not a product UI |
+| `config/dashboards/dashboards.json`, `index-patterns.json`, `saved-searches.json`, `README.md` | Config/Doc | The only repo-authored visual content | OpenSearch Dashboards JSON rendered by third-party UI |
+| Search for `storybook|axe-core|lighthouse|playwright|cypress` in `*.json/yml/yaml/toml/txt` (excluding sbom/audits) | Command | Confirms absence of UI/a11y regression tooling | No matches |
+| `automation/alerting/ntfy_relay.py` | Source | Produces operator-facing notification copy | Text/formatting only; no UI components |
+| Prior run `falcon-20261009-2117-full-08e20d1/_domains/05_ui_ux_accessibility_audit.json` | Prior report | Baseline | N/A, no findings |
+| `falcon-20261011-0400-verify-main-584e1a3/follow_up_register.md` | Prior register | Reconciliation | No UX entries |
+
+## Verification Performed
+
+| Evidence | Type | Why relevant | Notes |
+|---|---|---|---|
+| File-type inventory (above) at `f5cb7c9` | Command | Confirms absence of design tokens/CSS/components/tests | Zero matches |
+| HTML scan | Command | Rules out an authored page | 2 audit-run dashboards only (generated artifacts) |
+| UI-tooling keyword scan | Command | Confirms absence of Storybook/axe/Playwright/Lighthouse | Zero matches in source trees |
+| Dashboard JSON inspection | Config | Confirms dashboards are data JSON, not styled components | Panels/saved searches only |
+| Prior-run reconciliation | Doc | Consistency | Prior full run N/A; newest verification run has no UX rows |
+
+## Executive Summary
+
+Not Applicable. The repository contains no product UI or design system to audit: no CSS/theme, components, layouts, focus states, ARIA or a11y tests are authored here. Dashboards are provisioned JSON rendered by Grafana/OpenSearch Dashboards, and operator-facing copy lives in the alert relay. No finding is raised. Accessibility of the third-party renderers is their maintainers' scope; operator-facing dashboard usability is covered indirectly by the observability/operator-readiness domains.
+
+## Inventory
+
+| Item | Path / symbol | Purpose | Current state | Risk | Notes |
+|---|---|---|---|---|---|
+| Design tokens / theme | - | - | Absent | N/A | No CSS/Tailwind in repo |
+| Component library | - | - | Absent | N/A | No first-party components |
+| Dashboards | `config/dashboards/dashboards.json` | Provision Grafana/OSD content | Present | Low | Third-party renderer |
+| Alert copy | `automation/alerting/ntfy_relay.py` | Operator notifications | Present | Low | Text formatting, no UI |
+| Storybook / visual tests | - | - | Absent | N/A | No UI to test |
+| Generated audit dashboards | `docs/audits/repo-deep-dive/<run>/dashboard.html` | Static audit-run scorecards | Present (2 files) | Low | Generated by the audit pack; not a product UI |
+
+## Domain Scorecard
+
+| Category | Score | Evidence | Gap | Recommended action |
+|---|---:|---|---|---|
+| Design tokens | 0 (N/A) | No UI | N/A | None |
+| CSS/Tailwind/theme | 0 (N/A) | No UI | N/A | None |
+| Reusable components | 0 (N/A) | No UI | N/A | None |
+| Layouts/nav | 0 (N/A) | Third-party renderers | N/A | None |
+| Forms/dialogs/toasts/tables/cards | 0 (N/A) | No UI | N/A | None |
+| Icons/color/typography/spacing | 0 (N/A) | No UI | N/A | None |
+| Focus states | 0 (N/A) | No first-party DOM | N/A | None |
+| Keyboard nav | 0 (N/A) | No first-party DOM | N/A | None |
+| ARIA | 0 (N/A) | No first-party DOM | N/A | None |
+| Semantic HTML | 0 (N/A) | Only generated audit dashboards | N/A | None |
+| Responsive breakpoints | 0 (N/A) | No first-party DOM | N/A | None |
+| Dark mode | 0 (N/A) | No UI | N/A | None |
+
+## Findings
+
+_No findings in this domain (Not Applicable by scope)._
+
+## Prior-Run Comparison
+
+- Prior full run `falcon-20261009-2117-full-08e20d1`: N/A, no findings. Current run: same conclusion, re-verified at `f5cb7c9`. Nothing to reconcile.
+- Newest statuses (`falcon-20261011-0400-verify-main-584e1a3/follow_up_register.md`): no UX-domain entries.
+
+## Risks
+
+| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |
+|---|---|---|---|---|---|
+| N/A | - | - | - | - | - |
+
+## Recommendations
+
+None for this domain. If the owner adds a first-party console (e.g. a triage UI), this domain becomes assessable and should be re-scoped with WCAG checks.
+
+## Open Questions
+
+| Question | Why it matters | Evidence needed |
+|---|---|---|
+| Any plan to author a first-party dashboard/console UI? | Would make this domain assessable | Owner roadmap |
+| Should provisioned-dashboard panel quality be reviewed under this domain? | Avoids overlap with observability | Orchestrator scope decision |
+
+## Appendix
+
+Negative searches run at `f5cb7c9` (2026-10-11):
+
+```bash
+find . -path ./.git -prune -o -type f \( -name 'package.json' -o -name '*.tsx' -o -name '*.css' -o -name 'index.html' \) -print  # none
+find . -path ./.git -prune -o -type f -name '*.html' -print
+# -> docs/audits/repo-deep-dive/20261002-0522-main-67dec27/dashboard.html
+# -> docs/audits/repo-deep-dive/20261003-0018-fix-backup-abort-markers-20b5e57/dashboard.html
+grep -rliE 'storybook|axe-core|lighthouse|playwright|cypress' --include='*.json' --include='*.yml' \
+  --include='*.yaml' --include='*.toml' --include='*.txt' . | grep -viE 'sbom|audits'   # none
+```
+
+## Findings
+
+_No findings in this domain._
