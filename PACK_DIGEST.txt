@@ -1405,12 +1405,12 @@ b403c78c9e5712c34623b874bb9630fd487096930e32bf42a4f488f52efa8be6  ./runs/falcon-
 56ba4e164a7aa4e8af6f7c371f525de3d40639ecb4ca97e630fa8763904708ef  ./runs/falcon-20261011-0416-full-f5cb7c9/audit_manifest.json
 88a796eebca895d982ca36a1998ff5cc61c95d07bf5afa86bea848a55ee2dafa  ./runs/falcon-20261011-0416-full-f5cb7c9/coverage.md
 40c95ee52bf17b7df5297022afcfdbc9a26575571fedfaae3d5ee5ef2f6087ab  ./runs/falcon-20261011-0416-full-f5cb7c9/deterministic-findings.json
-29be3bb8d9ffaa1f9d05c1e3921d6f87bf7684596339b46214561b5cf6981908  ./runs/falcon-20261011-0416-full-f5cb7c9/findings.json
-d94a7620c7ed273782cc4788b377b06a034e5285d942b5a8ac7c13dd08163ca7  ./runs/falcon-20261011-0416-full-f5cb7c9/follow_up_register.md
+f0524779ff6bfe0a75826508370f2b69ac5dee2a6c291f32ee3d5ae7a52c707d  ./runs/falcon-20261011-0416-full-f5cb7c9/findings.json
+8eb4f5efadbb0f1e2b0d9e22fbce34e718c6a7c9e0415f901cd50a4fc7c9e6f9  ./runs/falcon-20261011-0416-full-f5cb7c9/follow_up_register.md
 6c8a005c7517ca8cd14cf33db0167687e3d932e3e9e4f659974eb109ea3df118  ./runs/falcon-20261011-0416-full-f5cb7c9/lens_deterministic.md
 ed4d997ba658a10a93cf871b54ee4aa61f8ddc5352cd04cd9723f8c17d2e4f12  ./runs/falcon-20261011-0416-full-f5cb7c9/live_snapshot.txt
 50885dd51680e0d0bbe02e2325a7a4783cbc74dd0bd42ada822b2b414c9f59c7  ./runs/falcon-20261011-0416-full-f5cb7c9/patch_plan.md
-d94a7620c7ed273782cc4788b377b06a034e5285d942b5a8ac7c13dd08163ca7  ./runs/falcon-20261011-0416-full-f5cb7c9/risk_register.md
+8eb4f5efadbb0f1e2b0d9e22fbce34e718c6a7c9e0415f901cd50a4fc7c9e6f9  ./runs/falcon-20261011-0416-full-f5cb7c9/risk_register.md
 82bbe63360ee1df3f8a0e28cd2d7bff73faa79fcd0b8bbab00f474c550026b32  ./runs/falcon-20261011-0416-full-f5cb7c9/roadmap.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
