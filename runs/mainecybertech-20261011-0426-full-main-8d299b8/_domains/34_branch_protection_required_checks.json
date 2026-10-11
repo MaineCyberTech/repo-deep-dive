@@ -1,0 +1,275 @@
+{
+  "domain": "34_branch_protection_required_checks",
+  "file": "34_branch_protection_required_checks.md",
+  "area": "BP",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:19:36Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "`main` requires a context (`Dependency Review`) that no job emits",
+      "evidence": [
+        ".github/branch-protection/main.json:4-10 \u2014 contexts are the emitted check-run names ('Test / test (20.x)', 'Lint / lint (20.x)', 'TypeCheck / typecheck', 'E2E / e2e (20.x)', 'Dependency Review / review')",
+        ".github/workflows/dependency-review.yml:1,11 \u2014 workflow name 'Dependency Review' + job id 'review' emits the check-run 'Dependency Review / review'",
+        "scripts/check-required-checks.mjs:101-160 \u2014 derives every emitted check-run name from .github/workflows/*.yml and fails when a required context has no producer; wired at .github/workflows/validate.yml:33-39",
+        "python3 replication of the guard (node not installed on the audit host) \u2014 all 8 required contexts across main.json/develop.json match an emitted job name: PASS"
+      ],
+      "impact": "Before the fix, main's required context could never be satisfied by the real workflow (or could be satisfied by any app publishing that name), silently weakening or blocking the merge gate.",
+      "recommendation": "Keep the guard wired and extend it to the PR path (see the new guard-coverage finding). Re-run `node scripts/check-required-checks.mjs` whenever a job is renamed. Apply the committed JSON to GitHub (`gh api -X PUT .../branches/main/protection --input .github/branch-protection/main.json`).",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: contexts in main.json:4-10/develop.json:4-8 are exact check-run names; fix commit 8b02f91a (ancestor of main) added scripts/check-required-checks.mjs and the validate.yml guard. Residual: applying the committed JSON to GitHub is a repo-admin action, not verifiable from the repo (README.md:10-15 documents the manual PUT).",
+      "area": "BP"
+    },
+    {
+      "severity": "P1",
+      "title": "`enforce_admins:false` lets administrators bypass all required checks and reviews",
+      "evidence": [
+        ".github/branch-protection/main.json:12 \u2014 \"enforce_admins\": true",
+        ".github/branch-protection/develop.json:10 \u2014 \"enforce_admins\": true",
+        "commit 8b02f91a \u2014 diff flipped enforce_admins false->true on both branches"
+      ],
+      "impact": "With enforce_admins true, admins can no longer merge past required checks/reviews, so the gate applies to every actor.",
+      "recommendation": "Apply both JSON files to GitHub and confirm `gh api .../branches/main/protection` shows enforce_admins=true. Pair with the break-glass runbook so a stuck required check does not become an ad-hoc UI bypass.",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: main.json:12 and develop.json:10 set enforce_admins true. Live application remains a repo-admin action (same residual as the required-checks finding).",
+      "area": "BP"
+    },
+    {
+      "severity": "P1",
+      "title": "Production deploy path uses the unguarded `prod` environment, not `prod-approval`",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:566-571 \u2014 prod `deploy` job attaches `environment: ${{ needs.setup.outputs.name == 'prod' && 'prod-approval' || 'dev' }}`",
+        ".github/workflows/terraform-do.yml:202 \u2014 `terraform-apply-prod` uses environment prod-approval",
+        "docs/RELEASING.md:96-105 \u2014 documents the prod-approval approval gate and that required reviewers are a GitHub setting"
+      ],
+      "impact": "App and infra production mutations now share one approval environment, so one required-reviewer configuration gates both.",
+      "recommendation": "Configure >=1 required reviewer on prod-approval and prove the pause with a dispatched prod deploy. Until then the environment attachment is inert (documented as CI-P1-001).",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: deploy-do.yml:571 attaches prod-approval for prod (fix commit de8d898c, ancestor of main). Residual: required reviewers on prod-approval are a GitHub Environment setting; docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:19-21 states none are configured yet \u2014 tracked operator-gated as CI-P1-001.",
+      "area": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "`require_code_owner_reviews:false` makes the committed CODEOWNERS advisory only",
+      "evidence": [
+        ".github/branch-protection/main.json:15 \u2014 \"require_code_owner_reviews\": true",
+        ".github/branch-protection/develop.json:13 \u2014 \"require_code_owner_reviews\": true",
+        ".github/CODEOWNERS:4-44 \u2014 team ownership map (@mainecybertech/leads/backend/frontend/platform/infrastructure)",
+        "commit 8b02f91a \u2014 diff flipped require_code_owner_reviews false->true on both branches"
+      ],
+      "impact": "A PR touching owned paths (e.g. .github/workflows/, apps/api/, supabase/) now needs an approving review from the mapped team, closing the gap where CODEOWNERS was advisory.",
+      "recommendation": "Apply the JSON to GitHub; verify each @mainecybertech/* team exists and has members (cannot be checked from the repo); add a CODEOWNERS validator (see the CODEOWNERS-validation finding).",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: both JSON files set require_code_owner_reviews true (8b02f91a). The 20261004 register carried this row as open/unverified; the committed fix predates that run. Residual: live application and team membership are not verifiable from the repository (Unknown).",
+      "area": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "No break-glass / bypass process for branch protection, and no bypass audit trail",
+      "evidence": [
+        "grep -rniE 'break[- ]glass|breakglass|bypass' over repo (excluding prompts/ and node_modules) \u2014 no repo-governance emergency-merge procedure; docs/runbooks/break-glass-register.md is an MSP product feature for client accounts, not the repository's own branch protection",
+        "AGENTS.md:58-62 \u2014 'Human approval required: ... Widening RLS policies, changing branch protection, or rotating secrets' \u2014 states the control but defines no emergency path, approver, or time-box",
+        ".github/branch-protection/README.md:10-21 \u2014 only apply/inspect commands; nothing records who bypassed protection or why",
+        "no workflow or script reads the GitHub audit log or records bypass events"
+      ],
+      "impact": "With enforce_admins:true and no documented bypass, a required check that never reports (see the path-filter finding) or a GitHub outage blocks every merge, including docs; the only escape is an undocumented, unaudited UI/protection edit by an admin. There is no record to review after the fact.",
+      "recommendation": "Add docs/RUNBOOK_EMERGENCY_MERGE.md: trigger conditions, incident ticket reference, named approver (owner), time-box, exact steps, mandatory post-incident review; record each bypass from the GitHub audit log (`gh api /orgs/{org}/audit-log` filtered to protected_branch events) in the incident. Consider GitHub Rulesets with an explicit bypass-actor list so bypasses are attributed and logged.",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: no break-glass/emergency-merge procedure exists for repository protection; unchanged since 20261002-0344.",
+      "area": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "No drift detection between committed branch-protection JSON and live GitHub settings",
+      "evidence": [
+        "grep -rn 'branch-protection|/protection' over .github/workflows/*.yml \u2014 only validate.yml:33-39 runs the static name check and .github/branch-protection/README.md:10-21 documents manual gh api commands",
+        "scripts/check-required-checks.mjs only compares committed JSON against committed workflows; it never fetches live settings",
+        "no scheduled workflow fetches repos/{owner}/{repo}/branches/{main,develop}/protection or environments"
+      ],
+      "impact": "The committed as-code config can silently diverge from what GitHub actually enforces (manual UI edits, failed applies, partial applies), and nothing fails or alerts; the audit trail for protection changes lives only in the GitHub audit log.",
+      "recommendation": "Add a scheduled (weekly) + workflow_dispatch drift job that fetches `branches/{main,develop}/protection`, normalizes it to the committed JSON shape, and fails on diff (store both as artifacts); a token with administration:read is required (default GITHUB_TOKEN cannot read protection). Optionally open an issue or PR with the live state.",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still no live-drift automation; unchanged since 20261002-0344. The new check-required-checks guard is static only.",
+      "area": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "Path-filtered required checks can leave `main`/`develop` protected by checks that never run",
+      "evidence": [
+        ".github/workflows/test.yml:10-14, .github/workflows/lint.yml:8-11, .github/workflows/typecheck.yml:8-11 \u2014 deliberately no `paths:` on pull_request; comments cite BP-P2-004",
+        ".github/workflows/e2e.yml:12-22 \u2014 pull_request is still path-filtered (apps/web/e2e/**, apps/web/playwright.config.ts, apps/web/app/**, apps/web/components/**, packages/**, supabase/seeds/**, supabase/migrations/**, e2e.yml)",
+        ".github/branch-protection/main.json:8 \u2014 'E2E / e2e (20.x)' is a required context on main; develop.json does not require it",
+        "docs/CI.md:13 lists the E2E path filter while the Gate column says 'Blocking on PR'; docs/CI.md:132-135 only covers test/lint/typecheck"
+      ],
+      "impact": "A PR to main that does not touch any filtered path (docs-only, apps/api-only, scripts/**, .github/branch-protection/**) never starts e2e.yml, so the required check stays 'Expected - Waiting for status to be reported' and the PR cannot merge \u2014 for admins too, because enforce_admins is true. This is the remaining half of the BP-P2-004 class the previous reconciliation closed on test.yml alone.",
+      "recommendation": "Remove the `paths:` filter from e2e.yml's pull_request trigger (matching test/lint/typecheck), or add an always-running companion job that reports success when the real suite is intentionally skipped. Update docs/CI.md:132-135 to state that E2E is required on main and unfiltered. A CI test should assert that every context in *.json comes from a workflow whose pull_request trigger has no paths filter.",
+      "owner": "repo admin (owner decision)",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: test/lint/typecheck are unfiltered (fix present), but e2e remains path-filtered while required on main. Previous register marked this verified-fixed based on test.yml only; the e2e residual was not checked.",
+      "area": "BP"
+    },
+    {
+      "severity": "P3",
+      "title": "Hotfix and emergency-deploy documentation is a stub and partially stale",
+      "evidence": [
+        "docs/technical-writing/migration-guide.md:153-160 \u2014 'Emergency Deployment (Hotfix)' is a 5-line stub with duplicate step numbering ('3. Fast-track review' followed by '3. Merge to main') and '1 approver minimum', which understates the now-required CODEOWNERS review",
+        "grep -rniE 'hotfix' over docs/ \u2014 this is the only hotfix procedure; docs/RELEASING.md and docs/RELEASE.md define the normal promotion path but no emergency path",
+        "docs/ROLLBACK_PROCEDURES.md:248-258 \u2014 covers rollback and prod-approval, but not emergency change approval/backport"
+      ],
+      "impact": "An operator following the only hotfix doc gets a procedure that is ambiguous (duplicate numbering) and stale about review requirements; the emergency path is effectively tribal knowledge.",
+      "recommendation": "Replace the stub with a real runbook (or link a new docs/RUNBOOK_EMERGENCY_MERGE.md): branch from main, scope limit, required reviews incl. CODEOWNERS, which gates may be skipped and why, approval record, backport to develop, post-incident review.",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: stub unchanged since 20261002-0344; no new hotfix documentation found.",
+      "area": "BP"
+    },
+    {
+      "severity": "P3",
+      "title": "Dependabot has no security-update separation or triage SLA, and PR template has no enforced link to required checks",
+      "evidence": [
+        ".github/PULL_REQUEST_TEMPLATE.md:20 \u2014 '- [ ] Required checks green (see `branch-protection/README.md`)' (fixed part; added in b49aaa9c)",
+        ".github/dependabot.yml:3-97 \u2014 npm/github-actions/docker/terraform updates, all target-branch develop, weekly; no security-update grouping, no reviewers/assignees, no triage labels beyond 'dependencies'/'ci'",
+        "docs/DEPENDENCY_POLICY.md:63-65 \u2014 'Security updates should be triaged promptly; the audit noted a large backlog' \u2014 no numeric SLA or owner",
+        "Dependabot security updates are a GitHub repository setting, not expressible in dependabot.yml (unverifiable from the repo)"
+      ],
+      "impact": "Security-relevant bumps can sit behind the weekly version-update queue with no owner/SLA; the PR checklist is advisory and not machine-enforced.",
+      "recommendation": "Add a triage SLA and owner to docs/DEPENDENCY_POLICY.md, label/route security updates (or enable Dependabot security updates + code scanning alerts), and optionally add a required-check reminder link. Keep the PR-template link to the required-checks table.",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "confidence": "medium",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: PR template now links branch-protection/README.md (PULL_REQUEST_TEMPLATE.md:20); dependabot security separation and triage SLA still absent.",
+      "area": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "Required-check guard is not run on pull requests or on branch-protection-only changes",
+      "evidence": [
+        ".github/workflows/validate.yml:4 \u2014 `on: workflow_call` only; the guard step is at validate.yml:33-39",
+        ".github/workflows/test.yml:26-65 \u2014 PR jobs (test, security-scan, secrets-scan) do not call validate.yml or run scripts/check-required-checks.mjs; the shared unit-tests composite (.github/actions/unit-tests/action.yml:16-63) does not include it either",
+        ".github/workflows/deploy-do.yml:18-29 \u2014 push trigger paths exclude .github/branch-protection/**, so a commit that only edits the protection JSON never triggers validate",
+        ".github/workflows/terraform-do.yml:3-32 \u2014 manual/schedule only",
+        "grep -rn 'check-required-checks' \u2014 only validate.yml:39 and the script itself"
+      ],
+      "impact": "A PR can edit main.json/develop.json (e.g. require a context no job emits, or remove a required check) without the guard ever running; the mismatch is only caught later when some app-path push triggers deploy-do's validate job, where it fails the deploy gate. A branch-protection-only commit can stay unvalidated indefinitely.",
+      "recommendation": "Run `node scripts/check-required-checks.mjs` in the PR gate (a step in test.yml, or add it to the unit-tests composite used by both test.yml and validate.yml), and/or add `.github/branch-protection/**` to a validate trigger. Document the script in scripts/README.md.",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d: the control added by 8b02f91a is real but is only reachable through the deploy gate, not the PR that changes the protected-check list.",
+      "area": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "`deploy-do` manual dispatch can target prod from an arbitrary ref, bypassing the develop->main promotion model",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:4-15 \u2014 workflow_dispatch inputs: deploy_target choice [dev, prod], rollback_sha",
+        ".github/workflows/deploy-do.yml:69-84 \u2014 environment resolves to prod when `github.ref_name == 'main'` OR `github.event.inputs.deploy_target == 'prod'`, regardless of which ref the run was dispatched from",
+        ".github/workflows/deploy-do.yml:566-571 \u2014 the prod deploy job attaches prod-approval",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:19-21 \u2014 'none are configured yet, so the approval gate is not yet in force'"
+      ],
+      "impact": "Any user with write/Actions permission can dispatch the workflow against a non-main branch with deploy_target=prod and deploy unmerged code to production, bypassing branch protection and the develop->main promotion trail. Today the only countermeasure is the prod-approval required-reviewer list, which the repo documents as not yet configured; severity rises to P1 while that remains true.",
+      "recommendation": "Fail the setup job when deploy_target=prod and github.ref != refs/heads/main (with an explicit, logged owner override if needed), or move prod dispatch to a separate workflow restricted to main; ensure prod-approval reviewers are configured and test the pause.",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; related operator-gated residual tracked as CI-P1-001 (reviewer configuration).",
+      "area": "BP"
+    },
+    {
+      "severity": "P2",
+      "title": "Security scan jobs are not required checks, so failing scans do not block merges",
+      "evidence": [
+        ".github/branch-protection/main.json:4-10 and develop.json:4-8 \u2014 required contexts are only Test / test (20.x), Lint / lint (20.x), TypeCheck / typecheck (and E2E / e2e (20.x) on main)",
+        ".github/workflows/test.yml:44-65 \u2014 security-scan (dependency audit + Trivy fs) and secrets-scan run on PRs but their check-runs ('Test / security-scan', 'Test / secrets-scan') are not required",
+        ".github/workflows/codeql.yml:1-22 \u2014 CodeQL runs on PR/push but is not in any required context and is not part of validate.yml",
+        "docs/CI.md:20 \u2014 CodeQL Gate column says 'Blocking'"
+      ],
+      "impact": "A PR with a failing secret scan, dependency audit, or CodeQL analysis can still merge because only 'Test / test (20.x)' is required. The push-side validate gate re-runs the audit and secret scan only when a deploy-triggering path changes (deploy-do.yml:18-29), so a docs-only change carrying a secret is never rescanned after merge. The CI.md 'Blocking' label for CodeQL is inaccurate unless a live ruleset (not expressible in the committed classic-protection JSON) enforces code scanning.",
+      "recommendation": "Add the security contexts (Test / security-scan, Test / secrets-scan, and the CodeQL analyze check) to the required lists, or adopt a GitHub Ruleset with 'Require code scanning results'; otherwise correct docs/CI.md's Gate column to 'Best-effort/alerting'. Verify the live ruleset state when applying protection.",
+      "owner": "security/CI owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d. Live CodeQL enforcement (ruleset 'code scanning results') cannot be verified from the repo \u2014 mark that part Unknown.",
+      "area": "BP"
+    },
+    {
+      "severity": "P3",
+      "title": "Operator checklists disagree on which prod environments need required reviewers (`prod` vs `prod-approval`)",
+      "evidence": [
+        "docs/RELEASE_GATE.md:60-61 \u2014 operator checklist names only `prod-approval` for required reviewers",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:7-13 and 142-146 \u2014 requires reviewers on BOTH `prod` (prod Supabase migrations, CI-004) and `prod-approval`",
+        ".github/workflows/supabase-migrations.yml:34 \u2014 prod migrations attach `environment: prod` (not prod-approval); the prod deploy attaches prod-approval at deploy-do.yml:571"
+      ],
+      "impact": "An operator working from RELEASE_GATE.md alone may configure only prod-approval, leaving `supabase db push` to production (a production mutation on push to main) without a human gate.",
+      "recommendation": "Name both environments in docs/RELEASE_GATE.md's reviewer item, or complete the suggested migration of supabase-migrations to prod-approval once its environment-scoped secrets are confirmed there (GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:12-14).",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the underlying `prod` reviewer requirement is documented (CI-004) but omitted from the consolidated release gate checklist.",
+      "area": "BP"
+    },
+    {
+      "severity": "P3",
+      "title": "check-required-checks guard mis-models explicit job names combined with matrices",
+      "evidence": [
+        "scripts/check-required-checks.mjs:31-37 \u2014 comment claims 'A job WITH an explicit name: keeps that literal string (matrix vars are not expanded in the job name by GitHub)'",
+        "scripts/check-required-checks.mjs:107-117 \u2014 when a job has an explicit name, the literal string (with ${{ matrix.* }}) is added to the emitted set",
+        ".github/workflows/codeql.yml:22-29 \u2014 job `analyze` has `name: Analyze (${{ matrix.language }})` with matrix language [javascript-typescript]; GitHub expands matrix values in job names, so the real check-run is 'CodeQL / Analyze (javascript-typescript)'"
+      ],
+      "impact": "The emitted-name map is wrong for name+matrix jobs (CodeQL today). If such a check is ever added to a required list, the guard would report a false MISSING (or, worse, accept a literal placeholder string as a real check name), and its 'did you mean' hints are wrong.",
+      "recommendation": "Expand matrix values when building explicit job names, or restrict the guard to job ids and document the limitation; add a fixture test with a name+matrix job.",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d. GitHub's matrix expansion in job names is documented behavior but was not reproduced against a live check-run list during this audit.",
+      "area": "BP"
+    },
+    {
+      "severity": "P3",
+      "title": "No CODEOWNERS validation; invalid team handles silently disable owner-review enforcement",
+      "evidence": [
+        ".github/CODEOWNERS:4-44 \u2014 five team handles (@mainecybertech/leads, /backend, /frontend, /platform, /infrastructure)",
+        ".github/branch-protection/main.json:15, develop.json:13 \u2014 require_code_owner_reviews true, only effective when the referenced owners resolve",
+        "grep -rn 'CODEOWNERS' .github/workflows scripts \u2014 no validator, syntax check, or team-existence check in CI",
+        "team existence/membership cannot be verified from the repository (Unknown)"
+      ],
+      "impact": "A typo, renamed team, or empty team makes the owner-review requirement a silent no-op while the committed config claims enforcement; nothing fails to alert operators.",
+      "recommendation": "Add a CI check that parses CODEOWNERS and verifies each @org/team handle exists (e.g. `gh api orgs/MaineCyberTech/teams/<slug>` with an administration:read token) plus a syntax check (codeowners-validator or equivalent); document required team membership.",
+      "owner": "repo admin (owner decision)",
+      "target": "this quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the underlying enforcement gap (require_code_owner_reviews false) is fixed, but nothing validates that the map resolves to real reviewers.",
+      "area": "BP"
+    }
+  ],
+  "report": "# Branch Protection and Required Checks Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive (full hardening edition, base profile)\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `MaineCyberTech/mainecybertech` (read-only worktree `/tmp/opencode/mct-audit-target`)\n- Branch: `main`\n- Commit SHA: `8d299b8d` (`8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd`)\n- Generated at: 2026-10-11\n- Auditor: domain subagent 34 (area code BP)\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/34_branch_protection_required_checks.md`\n- Scope limitations: no live GitHub API access. Everything about *applied* protection, environment reviewer lists, team membership, and the audit log is `Unknown` / `not reproducible`. This report audits the committed as-code configuration, the workflows' emitted check names, and the documented process. No GitHub settings were changed.\n\n## Scope\n\nReviewed: all 20 `.github/workflows/*.yml`, the committed branch-protection JSON for `main`/`develop` and its README, `CODEOWNERS`, the PR template, `dependabot.yml`, the branch/release/hotfix docs (`RELEASING.md`, `RELEASE.md`, `ROLLBACK_PROCEDURES.md`, `technical-writing/migration-guide.md`, `RELEASE_GATE.md`, `GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, `CI.md`), the required-check guard (`scripts/check-required-checks.mjs`), and the previous run's BP findings for verification duty.\n\nNot reviewed: live GitHub repository settings (protection, rulesets, environments, team membership, audit log), GitHub-side Dependabot security-update toggles, and anything that requires `pnpm install`/build/test execution (prohibited by the run rules).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `.github/branch-protection/main.json`, `develop.json` | Config (as code) | The protection payloads | Applied manually per README; live state Unknown |\n| `.github/branch-protection/README.md` | Docs | Apply/inspect commands, required-check table | Manual `gh api` only |\n| `scripts/check-required-checks.mjs` + `.github/workflows/validate.yml:33-39` | Guard | Required contexts must match emitted check-runs | Wired into deploy gate only |\n| `.github/workflows/{test,lint,typecheck,e2e,dependency-review}.yml` | Workflows | Emit the required check-runs | E2E still path-filtered |\n| `.github/workflows/deploy-do.yml`, `terraform-do.yml`, `supabase-migrations.yml` | Workflows | Prod mutation paths and environments | prod-approval vs prod split |\n| `.github/CODEOWNERS` | Config | Ownership map for required owner reviews | No validator |\n| `.github/PULL_REQUEST_TEMPLATE.md` | Template | Advisory checklist incl. required checks link | Not machine-enforced |\n| `.github/dependabot.yml` | Config | Update coverage and routing | No security grouping/SLA |\n| `docs/RELEASING.md`, `RELEASE.md`, `ROLLBACK_PROCEDURES.md`, `RELEASE_GATE.md`, `GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, `CI.md`, `technical-writing/migration-guide.md`, `AGENTS.md` | Docs | Documented process vs code | Hotfix stub; reviewer-checklist inconsistency |\n| `docs/audits/repo-deep-dive/20261002-0344-develop-6286137/{34_branch_protection_required_checks.md,branch_protection_recommendation.md}` | Prior audit | Baseline for verification duty | Commit-bound, now partly stale |\n\n## Verification Performed\n\n| Command | Observed result |\n|---|---|\n| `git rev-parse HEAD` | `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd`; `git merge-base --is-ancestor 8b02f91a 8d299b8d` \u2192 yes (fix is on main) |\n| `node scripts/check-required-checks.mjs` | not run \u2014 `node` is not installed on the audit host (exit 127). Replicated the script's logic in Python (read-only, `/tmp/opencode/bp-check.py`) |\n| `python3 /tmp/opencode/bp-check.py` | `OK` for all 8 required contexts across 2 branch-protection files against 86 derived check-run names; `PASS` |\n| `grep -rniE \"break[- ]glass\\|bypass\"` (excl. prompts/node_modules) | No repository-governance emergency-merge procedure; only client-product content and RLS-bypass metrics |\n| `grep -rn \"branch-protection\\|/protection\" .github/workflows/*.yml` | Only `validate.yml:33-39` (static name check) and README manual commands \u2014 no live-drift job |\n| `grep -n \"environment:\" .github/workflows/*.yml` | `deploy-do.yml:571` prod-approval (prod deploy), `terraform-do.yml:202` prod-approval (prod apply), `supabase-migrations.yml:34` `prod`, read-only jobs use `prod`/`dev` |\n| `git log --oneline 9c0b88c..8d299b8d -- .github/ ...` | Since the previous run only `dependabot.yml`, backup workflows, `deploy-do.yml` (alerting/SSH pinning), `secret-history-scan.yml`, `supabase-migrations.yml` changed \u2014 no protection/workflow-name changes |\n| `git show 8b02f91a -- .github/branch-protection/ scripts/check-required-checks.mjs` | contexts corrected, `enforce_admins` and `require_code_owner_reviews` flipped to true, guard added |\n| `sed -n`/`grep` on e2e/test/lint/typecheck triggers | test/lint/typecheck unfiltered; **e2e pull_request still path-filtered** while required on main |\n\n## Executive Summary\n\nThe governance layer is materially stronger than at the 20261002 baseline. The committed protection payloads now name the exact check-runs that workflows emit (`Test / test (20.x)` \u2026 `Dependency Review / review`), `enforce_admins` and `require_code_owner_reviews` are `true` on both branches, a static guard (`scripts/check-required-checks.mjs`) fails CI when a required context stops resolving, and the prod deploy/apply jobs share the `prod-approval` environment. Verification duty: three P1 rows and the P2 CODEOWNERS row are `verified-fixed` at `8d299b8d`.\n\nThe remaining risks are not in the JSON payload but around it:\n\n1. **The BP\u2013P2-004 class is only half fixed** \u2014 `E2E / e2e (20.x)` is required on `main` but its `pull_request` trigger is still path-filtered, so docs-only/API-only PRs to `main` leave the check unreported and cannot merge (admins included).\n2. **No break-glass and no drift detection** \u2014 both previous P2 rows are still open; with `enforce_admins: true` a stuck check has no documented, audited escape, and nothing compares the committed JSON with live GitHub state.\n3. **The new guard is not on the path that changes the guard's inputs** \u2014 it runs only via the deploy gate, not on PRs or branch-protection-only commits.\n4. **Manual dispatch can target prod from any ref**, and security scans (secrets-scan, dependency audit, CodeQL) are not required checks, so their failures do not block merges.\n\nRecommended next actions: un-filter E2E (or add an always-reporting companion), wire the guard into the PR gate, write the emergency-merge runbook, add the drift job, and apply the committed JSON with the reviewer lists \u2014 all owner/repo-admin actions except the first two.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Protection payload `main` | `.github/branch-protection/main.json` | 5 required contexts, strict, admin-enforced, 1 review + code owners, no force-push/deletions | Fixed as code | Live application Unknown | README apply command only |\n| Protection payload `develop` | `.github/branch-protection/develop.json` | 3 required contexts, same review rules | Fixed as code | Live application Unknown | E2E intentionally not required |\n| Required-check guard | `scripts/check-required-checks.mjs` | Static check contexts\u2194workflow jobs | Works; replicated PASS | Not run on PRs/bp-only changes | validate.yml:39 |\n| CODEOWNERS | `.github/CODEOWNERS` | Team ownership map | Present; owner reviews required | Teams unverifiable; no validator | 5 team handles |\n| PR template | `.github/PULL_REQUEST_TEMPLATE.md` | Review checklist | Links required-check table | Advisory only | line 20 |\n| Dependabot | `.github/dependabot.yml` | npm/actions/docker/terraform updates \u2192 develop | Weekly, grouped | No security grouping/SLA | 8 update entries |\n| Prod deploy gate | `deploy-do.yml:566-571` | Human approval env for prod | prod-approval attached | Reviewers not configured (docs) | CI-P1-001 residual |\n| Prod apply gate | `terraform-do.yml:198-202` | Terraform prod apply | prod-approval | Same | Manual-only workflow |\n| Prod migrations | `supabase-migrations.yml:34` | `supabase db push` to prod | `prod` environment | Reviewers on `prod` required but omitted from RELEASE_GATE checklist | CI-004 |\n| Hotfix docs | `docs/technical-writing/migration-guide.md:153-160` | Emergency deploy | Stub | Ambiguous/stale | Only hotfix doc |\n| Drift detection | \u2014 | Live vs committed protection | Absent | Silent divergence | No workflow |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Workflows/jobs | 4 | Pinned SHAs, fail-closed gates, attestations (`deploy-do.yml:538-563`), PR-only dedup design | Guard not on PR path; security jobs non-required | Wire guard into `test.yml`; add security contexts |\n| PR templates | 3 | `PULL_REQUEST_TEMPLATE.md:9-20` | Advisory, not enforced | Optional: PR-label/bot checks |\n| CODEOWNERS | 3 | Map present; `require_code_owner_reviews: true` | No validator; teams unverifiable | Add CODEOWNERS CI check |\n| Dependabot | 3 | 8 entries incl. digest-pinned docker dirs | No security grouping/SLA | Add SLA + routing |\n| Release/deploy/migration/security workflows | 4 | Fail-closed deploy gate, prod-only e2e/migrate gates, attestation verify | Prod dispatch from any ref; CodeQL not blocking | Ref guard; required scanning |\n| Branch/release/hotfix docs | 3 | `RELEASING.md`, `RELEASE.md`, `ROLLBACK_PROCEDURES.md` are strong | Hotfix stub; `prod` vs `prod-approval` checklist mismatch | Runbook + checklist fix |\n| Environment approvals | 2 | `prod-approval` attached to prod deploy+apply | Reviewer lists not configured (docs); two prod envs | Configure reviewers; align checklist |\n| Manual dispatch | 3 | Inputs documented; rollback path fail-closed | Prod target from arbitrary ref | Restrict prod dispatch to main |\n| Workflow risks | 3 | E2E path-filter residual; guard coverage gap | See findings | See recommendations |\n\n## Detailed Review\n\n### Item: Required status checks vs emitted check-runs\n\n- Evidence: `main.json:4-10` (`Test / test (20.x)`, `Lint / lint (20.x)`, `TypeCheck / typecheck`, `E2E / e2e (20.x)`, `Dependency Review / review`); `develop.json:4-8` (first three); workflow names/jobs as listed in the Appendix.\n- What it does: pins merges to real check-runs.\n- How it appears to work: GitHub matches each context string exactly to a reported check-run; the Python replication confirms every context has a producing job.\n- Missing controls: the guard runs only in the deploy gate; E2E remains path-filtered on PRs.\n- Risks: unreported required check on filtered PRs (blocked merges); unvalidated edits to the JSON.\n- Suggested tests: assert each required context maps to a workflow whose `pull_request` trigger is unfiltered.\n\n### Item: Review rules and CODEOWNERS\n\n- Evidence: `main.json:13-17`, `develop.json:11-15` (1 approval, dismiss stale, require code owners, conversation resolution); `.github/CODEOWNERS:4-44`.\n- Missing controls: no CODEOWNERS syntax/team validator; team membership Unknown.\n- Risks: silent no-op owner enforcement on a typo.\n\n### Item: Environments and approvals\n\n- Evidence: `deploy-do.yml:571`, `terraform-do.yml:202`, `supabase-migrations.yml:34`, `docs/RELEASING.md:96-105`, `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:7-21,140-153`, `docs/RELEASE_GATE.md:60-61`.\n- What it does: attaches `prod-approval` to app deploy + terraform apply; `prod` to migrations.\n- Missing controls: live reviewer lists (operator action); the consolidated checklist names only `prod-approval`.\n\n### Item: Manual dispatch surfaces\n\n- Evidence: `deploy-do.yml:4-15,69-84` (deploy_target/rollback_sha); `terraform-do.yml:14-21` (`apply` bool); `supabase-migrations.yml:4-10` (`allow_drift`); `build-push.yml`, backup/dispatch workflows.\n- Risks: prod deploy from arbitrary ref; rollback dispatch intentionally skips e2e/migrate gates but still verifies attestations (`deploy-do.yml:436-492`).\n\n### Item: Hotfix / emergency path\n\n- Evidence: `docs/technical-writing/migration-guide.md:153-160`; no hotfix section in `RELEASING.md`/`RELEASE.md`; `AGENTS.md:58-62` requires approval but defines no exception path.\n- Risks: undocumented, unaudited bypass-by-necessity when a required check is stuck.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| BP-001 | Workflows/jobs | `main.json:4-10`, workflows | Exact check-run names; static guard | Guard not on PR path | P2 | Wire guard into PR gate |\n| BP-002 | PR templates | `PULL_REQUEST_TEMPLATE.md:20` | Checklist links required checks | Advisory only | P3 | Keep; optional enforcement |\n| BP-003 | CODEOWNERS | `CODEOWNERS:4-44`; `main.json:15` | Owner reviews required | No validator; teams Unknown | P3 | CODEOWNERS CI check |\n| BP-004 | Dependabot | `dependabot.yml:3-97` | Broad weekly coverage | No security grouping/SLA | P3 | SLA + routing |\n| BP-005 | Release/deploy/migration/security workflows | `deploy-do.yml`, `validate.yml`, `codeql.yml` | Fail-closed deploy gate; attestation verify | CodeQL/secrets scans non-required; prod dispatch any ref | P2 | Required scans; ref guard |\n| BP-006 | Branch/release/hotfix docs | `RELEASING.md`, `migration-guide.md:153` | Normal path documented | Hotfix stub; checklist mismatch | P3 | Runbook + checklist fix |\n| BP-007 | Environment approvals | `deploy-do.yml:571`, `supabase-migrations.yml:34` | Environments attached | Reviewers not configured (docs) | P2 (operator) | Configure; align docs |\n| BP-008 | Manual dispatch | `deploy-do.yml:4-15,72` | Inputs documented | Prod from arbitrary ref | P2 | Restrict prod to main |\n| BP-009 | Workflow risks | `e2e.yml:12-22`, `main.json:8` | E2E required on main | Path-filtered required check | P2 | Un-filter or companion job |\n\n## Findings\n\nVerification duty rows keep the previous titles; IDs will be re-assigned by the aggregator (previous IDs shown for traceability).\n\n| Prev ID | Severity | Title | Status at 8d299b8d |\n|---|---|---|---|\n| BP\u2013P1-001 | P1 | `main` requires a context (`Dependency Review`) that no job emits | verified-fixed |\n| BP\u2013P1-002 | P1 | `enforce_admins:false` lets administrators bypass all required checks and reviews | verified-fixed |\n| BP\u2013P1-003 | P1 | Production deploy path uses the unguarded `prod` environment, not `prod-approval` | verified-fixed |\n| BP\u2013P2-001 | P2 | `require_code_owner_reviews:false` makes the committed CODEOWNERS advisory only | verified-fixed |\n| BP\u2013P2-002 | P2 | No break-glass / bypass process for branch protection, and no bypass audit trail | still-open |\n| BP\u2013P2-003 | P2 | No drift detection between committed branch-protection JSON and live GitHub settings | still-open |\n| BP\u2013P2-004 | P2 | Path-filtered required checks can leave `main`/`develop` protected by checks that never run | partially-fixed |\n| BP\u2013P3-001 | P3 | Hotfix and emergency-deploy documentation is a stub and partially stale | still-open |\n| BP\u2013P3-002 | P3 | Dependabot has no security-update separation or triage SLA, and PR template has no enforced link to required checks | partially-fixed |\n| \u2014 | P2 | Required-check guard is not run on pull requests or on branch-protection-only changes | open (new) |\n| \u2014 | P2 | `deploy-do` manual dispatch can target prod from an arbitrary ref, bypassing the develop\u2192main promotion model | open (new) |\n| \u2014 | P2 | Security scan jobs are not required checks, so failing scans do not block merges | open (new) |\n| \u2014 | P3 | Operator checklists disagree on which prod environments need required reviewers (`prod` vs `prod-approval`) | open (new) |\n| \u2014 | P3 | check-required-checks guard mis-models explicit job names combined with matrices | open (new) |\n| \u2014 | P3 | No CODEOWNERS validation; invalid team handles silently disable owner-review enforcement | open (new) |\n\nFull evidence, impact, and remediation for every row are in `_domains/34_branch_protection_required_checks.json`.\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Docs-only/API-only PR to `main` cannot merge (missing E2E check) | P2 | High | Delivery friction; incentive to bypass | `e2e.yml:12-22`, `main.json:8` | Remove paths filter / companion job |\n| Committed protection silently diverges from live settings | P2 | Medium | Weakens gate without notice | No drift job | Scheduled drift workflow |\n| Stuck check with no break-glass \u2192 ad-hoc unaudited bypass | P2 | Medium | Audit gap | `AGENTS.md:58-62`, no runbook | Emergency-merge runbook + audit-log capture |\n| Unmerged code deployed to prod via dispatch | P2 | Low\u2013Medium | Production change outside review trail | `deploy-do.yml:72` | Ref guard + reviewers |\n| Failing secret/security scan merges | P2 | Medium | Secret or vulnerable dep reaches branches | required contexts omit scans | Add scans to required checks |\n| Owner review silently no-op | P3 | Low | False sense of enforcement | No validator | CODEOWNERS CI check |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\n- Configure \u22651 required reviewer on `prod-approval` **and** `prod` (operator action; tracked as CI-P1-001/CI-004), then prove the prod deploy pauses.\n- Apply the committed JSON to GitHub and confirm `enforce_admins`, contexts, and code-owner reviews live (`gh api .../branches/{main,develop}/protection`).\n\n### This Week\n\n- Un-filter `E2E / e2e (20.x)` on `pull_request` (or add an always-reporting companion) so the required check on `main` always reports.\n- Add the required-check guard to the PR gate (`test.yml` or the shared `unit-tests` composite) and include `.github/branch-protection/**` in a validating trigger.\n- Guard `deploy-do` against `deploy_target: prod` from non-`main` refs.\n\n### This Month\n\n- Add the drift-detection workflow (live protection vs committed JSON, artifact evidence).\n- Write `docs/RUNBOOK_EMERGENCY_MERGE.md` with incident ticket, named approver, time-box, and audit-log capture; consider Rulesets with an explicit bypass list.\n- Decide whether secrets-scan/dependency-audit/CodeQL should be required checks; align `docs/CI.md` either way.\n- Add a CODEOWNERS validator and confirm the `@mainecybertech/*` teams exist with members.\n- Fix the hotfix stub and the `prod`/`prod-approval` checklist inconsistency.\n\n### Later / Platform Evolution\n\n- Migrate classic branch protection to GitHub Rulesets (bypass actors, required workflows, code-scanning requirement, clearer audit).\n- Fix the guard's matrix+name modeling and add a fixture test.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Add `node scripts/check-required-checks.mjs` step to `test.yml` | Catches broken required contexts on the PR that changes them | `.github/workflows/test.yml` | Open a PR that renames a job; guard fails |\n| Add `paths:`-free E2E or companion job | Required check always reports on `main` PRs | `.github/workflows/e2e.yml`, `main.json` | Docs-only PR to main shows E2E green |\n| Ref guard in `deploy-do` setup | Blocks prod deploys from feature branches | `.github/workflows/deploy-do.yml` | Dispatch from a branch with `deploy_target: prod` fails |\n| Checklist fix in `RELEASE_GATE.md` | Operators configure both prod envs | `docs/RELEASE_GATE.md` | Review of doc against matrix doc |\n| Document the guard in `scripts/README.md` | Discoverability for operators | `scripts/README.md` | Doc link check passes |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Drift-detection workflow (protection + environments) | P2 | repo admin/platform | M | Token with administration:read |\n| Emergency-merge runbook + bypass audit capture | P2 | repo admin/security | S | GitHub audit-log access |\n| Required security contexts or ruleset | P2 | security/CI owner | S\u2013M | Owner decision on blocking vs alerting |\n| Prod-dispatch ref restriction | P2 | platform/CI owner | S | None |\n| CODEOWNERS validator | P3 | platform/CI owner | S | Org team read token |\n| Rulesets migration | P3 | repo admin | M | Owner decision |\n| Guard matrix+name fix + fixture | P3 | platform/CI owner | S | None |\n\n## Suggested Tests\n\n- **CI (unit)**: fixture workflow with a name+matrix job; assert the guard's emitted-name expansion (regression for the mis-modeling finding).\n- **CI (guard)**: assert every context in `.github/branch-protection/*.json` comes from a workflow whose `pull_request` trigger has no `paths:` filter.\n- **CI (CODEOWNERS)**: parse and validate handles; fail when a team cannot be resolved.\n- **Manual (protection)**: open a PR with a failing required check \u2192 merge blocked for non-admin and admin; PR touching `.github/workflows/` \u2192 owner review required; docs-only PR to `main` \u2192 E2E reports green.\n- **Manual (approval)**: dispatch `deploy-do` `deploy_target: prod` \u2192 pauses at \"Waiting for approval\"; dispatch from a feature branch \u2192 fails before deploy.\n- **Scheduled (drift)**: edit protection in the UI \u2192 drift job fails; restore \u2192 green.\n\n## Suggested Documentation Updates\n\n- `docs/RUNBOOK_EMERGENCY_MERGE.md` (new) \u2014 break-glass process and audit trail.\n- `docs/CI.md` \u2014 E2E required-check/path-filter note; correct CodeQL gate wording.\n- `docs/RELEASE_GATE.md` \u2014 reviewers on both `prod` and `prod-approval`.\n- `docs/technical-writing/migration-guide.md` \u2014 replace the hotfix stub.\n- `scripts/README.md` \u2014 document `check-required-checks.mjs`.\n- `docs/DEPENDENCY_POLICY.md` \u2014 security-update triage SLA and owner.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Is the committed JSON actually applied to GitHub today, and does it match? | Determines whether any as-code finding is live | `gh api repos/.../branches/{main,develop}/protection` |\n| Are required reviewers configured on `prod` and `prod-approval`? | The only human gate on prod mutations | `gh api repos/.../environments` or settings capture |\n| Do the five `@mainecybertech/*` teams exist with members? | `require_code_owner_reviews` effectiveness | Org teams API |\n| Is a live ruleset requiring code-scanning results present? | Whether CodeQL is truly blocking | Rulesets API |\n| Are Dependabot security updates enabled repo-side? | Covers the security-update gap not expressible in config | Repo settings API |\n\n## Appendix\n\n### Workflow-to-required-check mapping (at 8d299b8d)\n\n| Required context | Emitted by | Trigger coverage | Required on |\n|---|---|---|---|\n| `Test / test (20.x)` | `test.yml` job `test` (matrix 20.x) | PR main/develop (no paths filter) | main, develop |\n| `Lint / lint (20.x)` | `lint.yml` job `lint` (matrix 20.x) | PR main/develop (no paths filter) | main, develop |\n| `TypeCheck / typecheck` | `typecheck.yml` job `typecheck` | PR main/develop (no paths filter) | main, develop |\n| `E2E / e2e (20.x)` | `e2e.yml` job `e2e` (matrix 20.x) | PR main/develop **with paths filter**; `workflow_call` on prod deploy | main |\n| `Dependency Review / review` | `dependency-review.yml` job `review` | PR main/develop (no paths filter) | main |\n\nNon-required PR jobs: `Test / security-scan`, `Test / secrets-scan`, `CodeQL / Analyze (javascript-typescript)`, Chromatic, SBOM. Deploy-gate jobs (reusable `validate.yml`): `Validate / audit` (incl. the required-check guard), `Validate / test`, `Validate / secrets-scan`, `Validate / lint`, `Validate / typecheck`, `Validate / prompt-provenance`.\n\n### Key commands and outputs\n\n- `python3 /tmp/opencode/bp-check.py` \u2192 8/8 contexts OK, PASS (replication of `scripts/check-required-checks.mjs`; node unavailable).\n- `git log --oneline -S \"require_code_owner_reviews\" -- .github/branch-protection/` \u2192 files introduced in `431692fc`; the true-flip is visible in `git show 8b02f91a`.\n- `git log --oneline -S \"prod-approval\" -- .github/workflows/deploy-do.yml` \u2192 `de8d898c` (2026-10-02) \"put production deploys behind the same approval gate as infrastructure\".\n- `grep -rn \"check-required-checks\" .github/workflows/ scripts/README.md` \u2192 only `validate.yml:39` (not in the PR path, not documented in scripts/README.md).\n\n### Workflow inventory observations (adjacent to this domain, not filed as BP findings)\n\n- `docs/CI.md:28`, `AGENTS.md:300` and `review.md:306` still document `wireguard-endpoint.yml`, which was removed from the repository in `52304944` (\"chore(ci): remove one-time DO firewall workflow\", 2026-10-04). CI/ docs domains own the correction; it matters here only because operators use CI.md as the workflow-to-check reference.\n- `.github/workflows/secret-history-scan.yml` exists but is absent from the `docs/CI.md` workflow table (grep for the filename returns no row).\n- The deploy-gate mapping above is derived from the committed files at `8d299b8d`; `docs/CI.md:10-22` matches it for the required checks.\n\n### Mermaid: required-check resolution\n\n```mermaid\nflowchart LR\n  subgraph Committed\n    MJ[main.json contexts] --> G[check-required-checks.mjs]\n    DJ[develop.json contexts] --> G\n  end\n  subgraph Workflows\n    T[test.yml: test 20.x] --> G\n    L[lint.yml: lint 20.x] --> G\n    TC[typecheck.yml: typecheck] --> G\n    E[e2e.yml: e2e 20.x] --> G\n    DR[dependency-review.yml: review] --> G\n  end\n  G -->|PASS| V[validate.yml audit job]\n  V -->|deploy gate only| D[deploy-do push to develop/main]\n  P[PR gate test.yml] -.->|guard NOT run| X[no coverage]\n```\n"
+}

@@ -1,0 +1,362 @@
+{
+  "domain": "12_infra_deployment_environment_drift",
+  "file": "12_infra_deployment_environment_drift.md",
+  "area": "INFRA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:19:36Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "SSH is open to the internet on both droplets (admin_ip_ranges default 0.0.0.0/0 and CI never overrides it)",
+      "evidence": [
+        "infra/terraform/digitalocean/variables.tf:76-91 \u2014 admin_ip_ranges is REQUIRED (no default) and validates length > 0; the comment states SSH can never be silently fail-open",
+        "infra/terraform/digitalocean/firewall.tf:20-24 \u2014 the DO firewall SSH rule uses source_addresses = var.admin_ip_ranges (no hardcoded 0.0.0.0/0)",
+        "infra/terraform/digitalocean/cloud-init.yml:23-26 \u2014 UFW renders one `ufw allow from ${cidr} to any port 22` per admin_ip_ranges entry",
+        ".github/workflows/terraform-do.yml:99-110 \u2014 pre-plan step fails when secrets.ADMIN_IP_RANGES is empty or contains 0.0.0.0/0 / ::/0",
+        ".github/workflows/terraform-do.yml:74-76 \u2014 ADMIN_IP_RANGES is read from secrets and written into the generated tfvars"
+      ],
+      "impact": "A world-open SSH allowlist can no longer be applied by CI or by a plain terraform apply; the previous P1 (SSH exposed on both droplets) is closed in code.",
+      "recommendation": "Keep the fail-closed variable and guard. Operator action remains: set ADMIN_IP_RANGES (office/VPN CIDRs) in the dev and prod environments before the next apply; re-verify the live DO firewall + UFW after apply.",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: variables.tf has no default + validation; terraform-do.yml rejects empty/world-open CIDRs before plan; cloud-init mirrors the list into UFW. Residual is operator-gated (set the secret), not code.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P1",
+      "title": "Terraform state-locking fix is incompatible with the pinned Terraform version (use_lockfile requires >= 1.10, workflows pin 1.9)",
+      "evidence": [
+        "infra/terraform/digitalocean/providers.tf:2-4 \u2014 required_version = \">= 1.15\" with a comment tying it to use_lockfile",
+        "infra/terraform/digitalocean/providers.tf:16-18 \u2014 backend s3 uses use_lockfile = true",
+        ".github/workflows/terraform-do.yml:52,215,255 \u2014 hashicorp/setup-terraform terraform_version: 1.15.9 in plan and both apply jobs",
+        "scripts/install-terraform.ps1:5 \u2014 downloads terraform 1.15.9 for Windows operators"
+      ],
+      "impact": "S3-native state locking is actually supported by the pinned toolchain, so concurrent applies can no longer corrupt state on a version mismatch.",
+      "recommendation": "No change; keep the version pin and required_version in sync if the toolchain is bumped.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: required_version >= 1.15 + workflow/script pin 1.15.9 both present and mutually consistent.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P2",
+      "title": "Prometheus alert rules have no delivery path (no Alertmanager)",
+      "evidence": [
+        "infra/digitalocean/docker-compose.yml:244-307 \u2014 alertmanager service (prom/alertmanager:v0.28.1 digest-pinned, envsubst-style awk render, healthcheck on /-/healthy)",
+        "infra/digitalocean/docker-compose.yml:226-228 \u2014 prometheus depends_on alertmanager: service_healthy",
+        "infra/digitalocean/prometheus.yml:14-17 \u2014 alerting.alertmanagers target alertmanager:9093",
+        "infra/digitalocean/alertmanager.tmpl.yml:86-100,147-152 \u2014 Watchdog route to the external watchdog receiver",
+        ".github/workflows/deploy-do.yml:739-747 \u2014 prod deploy fails when ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty (IR-P0-003 fail-closed)",
+        ".github/workflows/deploy-do.yml:801-805 \u2014 alertmanager.tmpl.yml is copied to /opt/mct-portal before compose up"
+      ],
+      "impact": "Firing alerts now have a delivery path (ntfy/Slack webhook receivers) plus an off-box dead-man's switch; the rule-evaluation-only gap is closed.",
+      "recommendation": "No code change. Operator: provision ALERTMANAGER_CRITICAL_WEBHOOK_URL + ALERTMANAGER_WEBHOOK_USER/PASS (ntfy relay) and confirm a test alert lands in the portal topic.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: Alertmanager service + routing template + deploy-time fail-closed guard all present.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P2",
+      "title": "Dev droplet capacity is under-provisioned and the CI value drifts from dev.tfvars.example",
+      "evidence": [
+        ".github/workflows/terraform-do.yml:77-81 \u2014 DROPLET_SIZE resolves to s-2vcpu-2gb (prod) / s-1vcpu-2gb (dev), with a comment naming INFRA-P2-004 and the live dev droplet",
+        "infra/terraform/digitalocean/env/dev.tfvars.example:6-9 \u2014 droplet_size = \"s-1vcpu-2gb\" with the same rationale",
+        "infra/terraform/digitalocean/variables.tf:24-28 \u2014 droplet_size default s-2vcpu-2gb (prod default)"
+      ],
+      "impact": "The CI apply and the documented dev tfvars now agree, so a dev apply will not silently recreate/shrink the droplet.",
+      "recommendation": "No change; if the compose stack grows, revisit the 2GB floor in both places together.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: CI dev size and dev.tfvars.example both s-1vcpu-2gb (PR #51 lineage).",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P2",
+      "title": "Operations documentation contradicts the current pipeline and configuration",
+      "evidence": [
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:54 \u2014 claims deploy concurrency uses cancel-in-progress: true; deploy-do.yml:43 sets cancel-in-progress: false",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:144 \u2014 claims terraform-do is \"Triggered on push to main/develop\"; terraform-do.yml:3-16 is manual-dispatch only (plus a dormant weekly schedule)",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:137 \u2014 lists firewall ports 22/80/443/2376; firewall.tf:20-48 has no 2376 rule and cloud-init.yml:29-30 explicitly says \"do NOT open 2376\"",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:48 \u2014 says Migrations are required for \"All deploys\"; deploy-do.yml:531-535 gates migrate-gate to prod only",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:38 \u2014 documents API health \"(200/526)\" and web \"(non-000)\"; deploy-do.yml:893-934 requires API 200, web 200/301/302/307 and a fatal worker probe",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:58 \u2014 says old images are pruned via `docker image prune -af`; deploy-do.yml:861-862 uses `docker rmi -f` on mct-* plus `docker image prune -f`",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:92 \u2014 documents Redis health as `redis-cli -a <password>`; compose:56-61 authenticates via REDISCLI_AUTH to keep the password off argv",
+        "docs/ROLLBACK_PROCEDURES.md:219-220 \u2014 documents Terraform state at bucket mct-portal-tfstate-<env> key terraform/do/terraform.tfstate; env/backend.prod.hcl:4-5 is portal-terraform-state-production + digitalocean/prod/terraform.tfstate",
+        "infra/digitalocean/README.md:9-16 \u2014 service table lists 6 services and omits alertmanager; supporting-file list (45-51) omits alertmanager.tmpl.yml and metrics-token",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:78 \u2014 calls METRICS_TOKEN an optional bearer gate; it is now required for the Prometheus scrape, and the matrix has no ALERTMANAGER_* or NTFY_ALERTS_* rows",
+        "docs/CI.md:23-25 and docs/RELEASING.md:130-131 \u2014 describe backup/restore failure notification as Slack; db-backup.yml:48-66 now posts to ntfy (NTFY_ALERTS_*) with Slack as fallback"
+      ],
+      "impact": "Operators following the handbook/runbook can take wrong actions during an incident (wrong concurrency expectation, wrong firewall assumption, wrong rollback/state paths, wrong health semantics) and cannot find the alerting secrets they must provision.",
+      "recommendation": "Do one docs-sync PR: fix FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md (concurrency, terraform trigger, firewall ports, migration gating, health checks, prune, redis health), fix ROLLBACK_PROCEDURES.md \u00a74 state paths and push-to-apply step, add alertmanager + metrics-token to infra/digitalocean/README.md, and add ALERTMANAGER_*/NTFY_ALERTS_*/METRICS_TOKEN rows to GITHUB_SECRETS_AND_VARIABLES_MATRIX.md. Add a doc guard (grep-based check) for the handful of load-bearing facts (concurrency value, terraform trigger, 2376 absence).",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: some docs were updated (CI.md, FINAL_OPERATOR_MAP.md, README.md, RELEASING.md) but the operations handbook, rollback \u00a74, infra README and secrets matrix still contradict the code. Previously open (carried from 20261002); this run re-checked every cited line.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P2",
+      "title": "Integration/security env vars referenced by the app schema are not delivered by the deploy pipeline",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:578-637 \u2014 every app-schema integration/security secret is forwarded to the setup step as an env var",
+        ".github/workflows/deploy-do.yml:647 \u2014 envs list contains 50 names; a mechanical diff shows 46 printf-written vars + 4 control vars and no name mismatch",
+        ".github/workflows/deploy-do.yml:669-716 \u2014 all 46 vars are written to /opt/mct-portal/.env via printf (no shell re-expansion), chmod 600 at :717",
+        ".github/workflows/deploy-do.yml:718-727 \u2014 METRICS_TOKEN is written to /opt/mct-portal/metrics-token, chowned 65534:65534, mode 400, matching the prom/prometheus container user (commit 00cb3da6)",
+        "apps/api/src/config/env.ts:19-74 and apps/worker/src/env.ts:5-43 \u2014 schema cross-check: every non-defaulted var in both schemas is present in the deploy envs list; only optional tunables (SENTRY_TRACES_SAMPLE_RATE, SENTRY_RELEASE, WORKER_CONCURRENCY, WORKER_TIMEOUT, SQS_QUEUE_URL, TASK_QUEUE_ENABLED) rely on code defaults",
+        "infra/digitalocean/docker-compose.yml:88,216,26-28 \u2014 METRICS_TOKEN is passed to the API and the token file is mounted read-only into Prometheus, with credentials_file wired in prometheus.yml:26-28"
+      ],
+      "impact": "The original gap (schema vars never reaching the droplet) is closed for every required and integration/security variable, including the new alerting and metrics wiring.",
+      "recommendation": "No change. Optional follow-up: a small CI check that diffs the two Zod schemas against the deploy envs list so a future schema var cannot be added without delivery.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d with a mechanical comparison (50 envs vs 46 printf writes vs compose ${...} references): no drift. Correction to the prior note: NTFY_ALERTS_* are CI-only notifier secrets for db-backup/storage-backup/db-restore-test (db-backup.yml:48-66), not droplet .env vars; they are correctly absent from deploy-do.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P2",
+      "title": "Redis container hardening was weakened and its password remains in process arguments",
+      "evidence": [
+        "infra/digitalocean/redis-entrypoint.sh:13-21 \u2014 writes requirepass to a 0600 /tmp/redis.conf and execs redis-server with the file (password never on argv)",
+        "infra/digitalocean/docker-compose.yml:37 \u2014 user: redis (the entrypoint replaces the official privilege-dropping one)",
+        "infra/digitalocean/docker-compose.yml:56-61 \u2014 healthcheck authenticates via REDISCLI_AUTH env, not `-a <password>`",
+        "infra/digitalocean/docker-compose.yml:3-7,30 \u2014 cap_drop ALL + no-new-privileges; :44 REDIS_PASSWORD required with no fallback"
+      ],
+      "impact": "The password is no longer readable via `ps`/docker inspect argv, and the container keeps the hardened capability profile.",
+      "recommendation": "No change; keep the entrypoint and the REDISCLI_AUTH healthcheck together if Redis is upgraded.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: password-file entrypoint + user:redis + REDISCLI_AUTH healthcheck all present.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "`env/prod.tfvars` is tracked despite an ignore rule that names it",
+      "evidence": [
+        ".gitignore:57 \u2014 `**/env/*.tfvars` ignore rule",
+        "git ls-files output \u2014 only infra/terraform/digitalocean/env/dev.tfvars.example and env/prod.tfvars.example are tracked; no real tfvars file",
+        "git check-ignore -v \u2014 confirms infra/terraform/digitalocean/env/dev.tfvars is ignored"
+      ],
+      "impact": "Real tfvars (secrets) under env/ can no longer be committed accidentally; the previous tracking mistake is gone.",
+      "recommendation": "No change to the env/ rule; see the separate finding about the module-root tfvars path the CI workflow and one runbook use.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: only *.example files are tracked; the ignore rule matches the env/ paths.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "Restore test uses a different Postgres major than the backup script and verifies only table counts",
+      "evidence": [
+        "scripts/backup-database.sh:45-50 \u2014 docker fallback dumps with `postgres:15` when no local pg_dump exists (CI runners have pg_dump installed, so this path is off-CI)",
+        ".github/workflows/db-restore-test.yml:110-116 \u2014 restores into postgres:16-alpine",
+        ".github/workflows/db-restore-test.yml:135-232 \u2014 verification is no longer table-count-only: it asserts public tables, migrations, critical-table rows, newest audit_logs age (RPO canary), tenant-scoping columns and RLS-enabled counts, failing with ::error",
+        ".github/restore-test-baseline.env:1-27 \u2014 documented floors (RESTORE_MIN_TABLES=120, RESTORE_MAX_DATA_AGE_DAYS=2, RESTORE_MAX_TABLES_WITHOUT_RLS=0)"
+      ],
+      "impact": "The deep-verification half of the finding is fixed (a truncated/stale/policy-stripped dump now fails). The residual version skew only affects the non-CI docker fallback path, which could dump with a client major different from the server being restored.",
+      "recommendation": "Pin both sides to the same major (e.g. postgres:16 in scripts/backup-database.sh:48, or make the version a single variable), and state the Supabase server major in the runbook so the client is chosen deliberately.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: verification is now deep (IR-P1-004 fix), but the docker fallback still pins postgres:15 vs postgres:16-alpine in the restore test.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "`docs/RTO_RPO.md` claims Redis AOF persistence that compose does not enable",
+      "evidence": [
+        "docs/RTO_RPO.md:12 \u2014 Redis row: \"AOF persistence; recreated from DB on loss\"",
+        "infra/digitalocean/docker-compose.yml:27-61 \u2014 the redis service sets no command/appendonly config and mounts redis-data; the only redis.conf written is redis-entrypoint.sh:17-21 (`requirepass` only)",
+        "redis:7-alpine defaults \u2014 RDB snapshotting only; no appendonly"
+      ],
+      "impact": "The documented Redis RPO (24h) is not backed by AOF; queue state on restart depends on RDB snapshots, and in-flight BullMQ jobs can be lost without the documented mitigation being real.",
+      "recommendation": "Either enable AOF (`--appendonly yes` with the named volume, verify memory/disk impact on the 1-vCPU dev droplet) or correct RTO_RPO.md to state RDB-snapshot-only and that in-flight queue work is re-driven by producers/retries. Add a comment in compose recording the decision.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: no appendonly anywhere in the stack; RTO_RPO.md:12 unchanged. Previously open (carried from 20261002).",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "`infra/terraform/README.md` references an `aws/` directory that does not exist",
+      "evidence": [
+        "infra/terraform/README.md:3-6 \u2014 now states the AWS root \"was removed after the migration to DigitalOcean\" and documents only digitalocean/",
+        "git log \u2014 commit c5b579be \"chore(infra): ... drop dead aws/ reference\""
+      ],
+      "impact": "The README no longer sends operators looking for a non-existent directory.",
+      "recommendation": "No change.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: README explicitly records the AWS removal and the digitalocean-only layout.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "Terraform is manual-dispatch only, so the \"push to trigger apply\" rollback runbook step is a no-op",
+      "evidence": [
+        "docs/ROLLBACK_PROCEDURES.md:199-203 \u2014 \"Push to trigger terraform-do workflow\" / \"will run a plan on the PR/push and apply automatically (dev) or require prod-approval (main)\"",
+        ".github/workflows/terraform-do.yml:3-16 \u2014 on: schedule + workflow_dispatch only; a comment records the 2026-09-29 decision",
+        "docs/CI.md:98-104 and docs/FINAL_OPERATOR_MAP.md:34 \u2014 already document manual-dispatch only, so the runbook is the outlier"
+      ],
+      "impact": "An operator following \u00a74 during an infrastructure rollback pushes a revert and believes an apply was triggered; nothing runs, and the rollback silently does not happen.",
+      "recommendation": "Rewrite ROLLBACK_PROCEDURES.md \u00a74 to \"merge the revert, then dispatch terraform-do with apply=true (prod requires prod-approval)\" and delete the push-to-trigger sentence. Optionally cross-link docs/CI.md.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: terraform-do.yml has no push/PR triggers, ROLLBACK_PROCEDURES.md:199-203 still instructs pushing to trigger. Previously open (carried from 20261002).",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P2",
+      "title": "Manual rollback script cannot authenticate to GHCR and defaults to the wrong image prefix",
+      "evidence": [
+        "scripts/rollback.sh:25 \u2014 GHCR_PREFIX default is `ghcr.io/mainecybertech/mainecybertech-portal`; the pipeline and compose use `ghcr.io/mainecybertech/mainecybertech` (deploy-do.yml:97 computes it from github.repository; infra/digitalocean/docker-compose.yml:69)",
+        "scripts/rollback.sh:42-51 \u2014 the remote heredoc references $GHCR_TOKEN/$GHCR_USER but the ssh command forwards neither (no SendEnv; the vars are not passed as arguments), so the login line fails (unbound variable under set -u, swallowed by `|| true`) and no registry login happens",
+        "scripts/rollback.sh:63-67 \u2014 API health check treats ANY non-000 HTTP code as success (a 500 passes)",
+        "scripts/rollback.sh:70-72 \u2014 worker health is explicitly non-fatal (\"skipped (non-fatal)\"), contradicting the pipeline's fatal worker gate (deploy-do.yml:905-922)",
+        "scripts/rollback.sh:42,70 \u2014 StrictHostKeyChecking=no on both ssh invocations, while the pipeline verifies a pinned host key (deploy-do.yml:883-891)"
+      ],
+      "impact": "The documented manual rollback tool (scripts/README.md:37) fails or reports success incorrectly during an incident: the wrong prefix means it pulls nothing unless GHCR_PREFIX is overridden, and even then the private-registry login cannot succeed. Weak health checks can declare a broken rollback complete.",
+      "recommendation": "Fix the script in one PR: default GHCR_PREFIX to `ghcr.io/mainecybertech/mainecybertech` (or read it from the compose/.env), pass GHCR_TOKEN/GHCR_USER as ssh arguments (or require `docker login` on the droplet first), make worker health fatal, require 200/301/302/307 for the API/web checks, and use StrictHostKeyChecking=yes with a pinned host key (or explicitly document it as the last-resort path). Add a CI shellcheck/lint pass and keep it in parity with deploy-do's health gate.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; found while auditing the rollback path (domain scope: deploy scripts, rollback). Not run against the droplet.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P2",
+      "title": "Deploy health gate ignores the monitoring and reverse-proxy containers",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:835-858 \u2014 the container-health gate inspects only mct-portal-api-1, mct-portal-web-1 and mct-portal-worker-1; alertmanager, prometheus, caddy and redis are never asserted",
+        "infra/digitalocean/docker-compose.yml:244-307 \u2014 alertmanager renders alertmanager.tmpl.yml with an awk one-liner that exits non-zero if any placeholder survives (container restart-loops on failure); prometheus depends_on it (:226-228), so a broken alertmanager also removes Prometheus",
+        "infra/digitalocean/docker-compose.yml:207-237 \u2014 prometheus has no healthcheck at all",
+        "infra/digitalocean/docker-compose.yml:302-307 \u2014 alertmanager DOES define a healthcheck, so it could be asserted but is not",
+        ".github/workflows/deploy-do.yml:728-752 \u2014 the only alerting guard is the prod watchdog-URL emptiness check; nothing verifies the rendered config or the running container"
+      ],
+      "impact": "A deploy can finish green while the alert delivery path (Alertmanager/Prometheus) is down, so rule-based alerts and the internal metrics pipeline are silently absent. In prod the external dead-man's switch eventually pages; in dev (no watchdog) the loss is silent, and the deploy reports success.",
+      "recommendation": "Extend the health gate to assert `container_health alertmanager` (and optionally prometheus/caddy), or add a post-up `docker compose ps` assertion that every service with a healthcheck is healthy, failing the deploy (and triggering the existing rollback) otherwise. Also consider a `promtool check config`-style pre-flight in the deploy or CI.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d. Related: CTR-P2-004 fixed the worker half of the gate; this is the observability half.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "infra/digitalocean/.env.example omits the alerting and internal-metrics variables the compose stack reads",
+      "evidence": [
+        "infra/digitalocean/.env.example:1-71 \u2014 contains no METRICS_TOKEN, ALERTMANAGER_WATCHDOG_WEBHOOK_URL, ALERTMANAGER_CRITICAL_WEBHOOK_URL, ALERTMANAGER_DEFAULT_WEBHOOK_URL, ALERTMANAGER_SLACK_API_URL, ALERTMANAGER_WEBHOOK_USER/PASS, MFA_ENFORCEMENT_ENABLED, JIRA_WEBHOOK_SECRET, JSM_WEBHOOK_SECRET or M365_CLIENT_STATE",
+        "infra/digitalocean/docker-compose.yml:88,216 \u2014 METRICS_TOKEN and the ./metrics-token mount are part of the API/Prometheus wiring",
+        "infra/digitalocean/docker-compose.yml:251-266 \u2014 alertmanager reads seven ALERTMANAGER_* variables, each defaulting to a no-op loopback URL when unset",
+        "infra/digitalocean/docker-compose.yml:89,91-92 \u2014 MFA_ENFORCEMENT_ENABLED, JIRA_WEBHOOK_SECRET and JSM_WEBHOOK_SECRET are read from .env"
+      ],
+      "impact": "An operator provisioning the stack by hand from .env.example (the file the infra README calls the template) silently gets no metrics auth and a no-op alert delivery path, with no boot error. The CI deploy path is unaffected because it writes .env from secrets.",
+      "recommendation": "Add the missing keys to infra/digitalocean/.env.example with explanatory comments (especially that ALERTMANAGER_WATCHDOG_WEBHOOK_URL must be an off-box URL and METRICS_TOKEN must match the API/Prometheus pair), and keep it in sync with compose. Optionally add a CI check that every ${VAR:?...} / ${VAR...} in the droplet compose appears in the example.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the app-level .env.example files (apps/api, apps/worker, apps/web) are current \u2014 this is the droplet template only.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "Terraform tfvars generated/referenced at the module root are not covered by the .gitignore rule",
+      "evidence": [
+        ".gitignore:57 \u2014 the only tfvars rule is `**/env/*.tfvars`",
+        "git check-ignore -v infra/terraform/digitalocean/dev.tfvars \u2014 no match (not ignored); only env/dev.tfvars is ignored",
+        ".github/workflows/terraform-do.yml:66-95 \u2014 the workflow writes $TF_ENV.tfvars into the module root (working-directory infra/terraform/digitalocean), containing DO/Cloudflare tokens and the SSH allowlist",
+        "docs/ROLLBACK_PROCEDURES.md:209-211,230 \u2014 the runbook tells operators to run `terraform plan -var-file=dev.tfvars` in infra/terraform/digitalocean, the same unignored path",
+        "scripts/validate-terraform-env.sh:7-8,17 \u2014 the placeholder guard only scans env/*.tfvars, so it would not scan a module-root file either"
+      ],
+      "impact": "An operator following the rollback runbook creates a secrets-bearing tfvars at a path git does not ignore; a routine `git add -A` could commit live DO and Cloudflare credentials. CI-generated files are ephemeral, so the exposure is the documented local workflow.",
+      "recommendation": "Widen the ignore to the whole module (e.g. `infra/terraform/**/*.tfvars` with `!*.example`) or change the workflow/runbook to always use env/<env>.tfvars. Extend validate-terraform-env.sh to scan both locations, and add a pre-commit/gitleaks rule for tfvars contents.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; complements INFRA-P3-008 (the env/ rule works, the module-root path is uncovered).",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "Cloud-init UFW SSH allowlist is applied only at droplet creation, so narrowed allowlists leave stale host rules",
+      "evidence": [
+        "infra/terraform/digitalocean/droplet.tf:11-20 \u2014 user_data (cloud-init) renders the UFW rules; lifecycle ignore_changes = [user_data] means an existing droplet is never re-rendered",
+        "infra/terraform/digitalocean/cloud-init.yml:23-26 \u2014 per-CIDR `ufw allow from ...` rules are additive at first boot",
+        "infra/terraform/digitalocean/firewall.tf:12-24 \u2014 the DO cloud firewall is the authoritative allowlist and does update on apply, so removal is enforced at the network edge"
+      ],
+      "impact": "Defense-in-depth drift: after narrowing admin_ip_ranges, the droplet's UFW still allows the removed CIDRs. The DO firewall still blocks them, so the effective control holds, but the in-host layer no longer mirrors the documented \"UFW mirrors this same allowlist\" claim (firewall.tf:15).",
+      "recommendation": "Either manage UFW out-of-band (a documented `ufw --force reset` + re-add procedure, or an ansible/ssh step in the deploy) or soften the firewall.tf comment and record the create-time-only behavior in docs. A small terraform `null_resource`/remote-exec is not recommended on the deploy path; documentation plus a runbook step is the low-risk fix.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; code-only evidence, live droplet UFW not inspected (no authorization).",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "METRICS_TOKEN has no fail-closed deploy guard; an empty token leaves the API scrape permanently down",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:739-747 \u2014 prod fail-closed guard exists only for ALERTMANAGER_WATCHDOG_WEBHOOK_URL",
+        ".github/workflows/deploy-do.yml:722-727 \u2014 an empty METRICS_TOKEN still writes an empty /opt/mct-portal/metrics-token file",
+        "apps/api/src/config/env.ts:61-63 \u2014 METRICS_TOKEN is optional in the schema",
+        "apps/api/src/app.ts:154-171 \u2014 when no token is configured the API 404s every /metrics request",
+        "infra/digitalocean/prometheus.yml:20-32 \u2014 the mct-api scrape sends the credentials file as a bearer token; a 404 makes up==0",
+        "infra/digitalocean/prometheus.rules.yml:8-16 \u2014 MCTServiceDown fires on up==0 for mct-api/mct-worker for 2m"
+      ],
+      "impact": "If METRICS_TOKEN is missing in an environment, the deploy stays green but the API scrape is permanently down: MCTServiceDown fires continuously (alert noise that can mask real outages) and the RLS/impersonation rules never evaluate because their metrics are absent. This is a configuration-drift footgun, not an exposure (the endpoint fails closed).",
+      "recommendation": "Treat METRICS_TOKEN like the watchdog in prod: fail the deploy when it is empty (or when the written token file is empty), and/or make the Prometheus api scrape conditional. Add a post-deploy assertion that the mct-api target is up.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the prod secret is reported set in the 20261011 reconciliation, so this is a structural guard gap, not a live outage claim.",
+      "area": "INFRA"
+    },
+    {
+      "severity": "P3",
+      "title": "Prometheus alert-rule unit tests exist but are not run in CI",
+      "evidence": [
+        "infra/digitalocean/prometheus.rules.test.yml:1-8 \u2014 promtool unit tests with a header documenting the manual `docker run ... promtool test rules` commands; they exist because two earlier versions of MCTTenantScopeRegression could never fire",
+        "grep for promtool/rules.test across .github/ and package.json \u2014 no workflow or composite action invokes them (only deploy-do.yml copies prometheus.rules.yml to the droplet)",
+        ".github/workflows/validate.yml:1-110 \u2014 the deploy gate runs shell-exec-bit, branch-protection, unit, secret, lint, typecheck and prompt-provenance checks, but no Prometheus rule check",
+        "infra/digitalocean/prometheus.rules.yml:1-4 \u2014 rules are copied verbatim to the droplet by deploy-do.yml:800, so a syntactically valid but non-firing rule ships silently"
+      ],
+      "impact": "The regression the test file was written to prevent (a rule that can never fire, or a syntax break) can re-enter through a PR with no CI signal; the only guard is someone remembering to run promtool manually.",
+      "recommendation": "Add a small CI job (or a step in validate.yml's audit job) that runs `promtool check rules` and `promtool test rules` against the pinned prom/prometheus:v3.5.1 image (same command documented in the test file header). It is fast and needs no credentials.",
+      "owner": "platform/infrastructure",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; OBS-P2-001's note records a manual promtool run, but no CI wiring exists.",
+      "area": "INFRA"
+    }
+  ],
+  "report": "# Infrastructure, Deployment, and Environment Drift Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `MaineCyberTech/mainecybertech` (read-only worktree at `/tmp/opencode/mct-audit-target`)\n- Branch: `main`\n- Commit SHA: `8d299b8d` (merge of PR #168)\n- Generated at: 2026-10-11\n- Auditor: domain subagent (area INFRA, prompt `12_infra_deployment_environment_drift.md`)\n- Area code: INFRA\n- Output path: `docs/audits/{name}/{run}/12_infra_deployment_environment_drift.md` (pack run folder: `_domains/`)\n- Scope limitations:\n  - No access to the live droplets, DO API, Terraform state, GHCR, Cloudflare, or GitHub environment settings. Everything below is repository evidence; live drift is explicitly marked `unverifiable`.\n  - No `terraform`/`docker`/`promtool` execution was attempted (resource discipline; long-running commands prohibited). The promtool test file was read, not run.\n  - Secrets are referenced by name and `path:line` only; no values were read or printed.\n\n## Scope\n\nReviewed: `infra/digitalocean/**` (droplet compose stack, Caddyfile variants, Prometheus rules/config, Alertmanager template, redis entrypoint, `.env.example`), `infra/terraform/digitalocean/**` (providers, variables, droplet, firewall, DNS, outputs, cloud-init, tfvars examples, backend configs, lock file), `.github/workflows/deploy-do.yml`, `terraform-do.yml`, `supabase-migrations.yml`, `backup-dispatch.yml`, `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml`, the app Dockerfiles and `.dockerignore`, `apps/*/src` env schemas and web env validation, `scripts/rollback.sh`, `scripts/backup-database.sh`, `scripts/validate-terraform-env.sh`, and the ops docs (`FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md`, `ROLLBACK_PROCEDURES.md`, `RELEASING.md`, `CI.md`, `MONITORING_AND_ALERTING.md`, `ENVIRONMENT_VARIABLES.md`, `GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, `RTO_RPO.md`, `infra/digitalocean/README.md`, `infra/terraform/README.md`).\n\nNot reviewed (owned by other domains): container runtime hardening deep dive (CTR prompt 36), backup/restore drill execution (DR 32), incident response (IR 33), observability design (OBS 14), CI governance/branch protection (CI 10, BP 34), supply chain/SBOM (SC 11, SBOM 35).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `infra/digitalocean/docker-compose.yml` | Droplet compose | Source of truth for all 7 services, users, healthchecks, limits, volumes | 344 lines, read in full |\n| `infra/digitalocean/{Caddyfile,Caddyfile.dev,Caddyfile.prod}` | Reverse proxy | TLS, headers, /metrics exposure per env | diffed dev vs prod |\n| `infra/digitalocean/prometheus.{yml,rules.yml,rules.test.yml}`, `alertmanager.tmpl.yml` | Observability config | Alert path, scrape auth, dead-man's switch | read in full |\n| `infra/digitalocean/redis-entrypoint.sh`, `.env.example`, `README.md` | Runtime config | Password off argv, env template, service inventory | read in full |\n| `infra/terraform/digitalocean/*.tf`, `cloud-init.yml`, `env/*` | Terraform | Firewall/SSH, droplet, DNS, state backend, tfvars | read in full |\n| `.github/workflows/deploy-do.yml` (935 lines) | Deploy pipeline | Env delivery, health gate, rollback, attestation gate | read in full |\n| `.github/workflows/terraform-do.yml` | Infra pipeline | Manual-only, drift plan, prod-approval | read in full |\n| `.github/workflows/{db-backup,db-restore-test,storage-backup,backup-dispatch,supabase-migrations}.yml` | Ops workflows | Backup hooks, restore verification, migration coupling | read in full / key sections |\n| `apps/api/Dockerfile`, `apps/worker/Dockerfile`, `apps/web/Dockerfile`, `.dockerignore` | Images | Non-root users, healthchecks, build args, no secrets | read in full |\n| `apps/api/src/config/env.ts`, `apps/worker/src/env.ts`, `apps/web/lib/env.ts` | Runtime validators | Env schema (source of truth for delivery comparison) | read in full |\n| `scripts/rollback.sh`, `scripts/backup-database.sh`, `scripts/validate-terraform-env.sh` | Deploy/ops scripts | Rollback path, dump version, tfvars guard | read in full |\n| Ops docs listed in Scope | Documentation | Consistency vs current pipeline/config | line-level comparison |\n\n## Verification Performed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `git log --oneline -3` | command | Bind the audit to the exact commit | `8d299b8d Merge PR #168` |\n| `git ls-files infra/terraform/digitalocean/env/` + `git ls-files \\| grep -i tfvars` | command | INFRA\u2013P3-008 re-verify | only `*.example` tracked |\n| `git check-ignore -v infra/terraform/digitalocean/{dev,prod}.tfvars` | command | tfvars ignore coverage | module-root paths NOT ignored |\n| `git ls-files -s scripts/rollback.sh infra/digitalocean/redis-entrypoint.sh` | command | exec-bit regression (PORT-001) | `100755` on both |\n| Python diff: deploy envs list (50) vs printf writes (46) vs compose `${VAR}` refs | command | env name drift (INFRA\u2013P2-006) | zero mismatches (control vars only) |\n| `grep -rn \"TASK_QUEUE_ENABLED\\|appendonly\\|promtool\" ...` | command | schema defaults, Redis AOF claim, rules tests | see findings |\n| `bash -c 'set -euo pipefail; echo \"$UNSET\" \\| cat \\|\\| true'` | command | Confirm rollback script login failure mode | pipeline failure swallowed by `\\|\\| true`; shell continues |\n| `grep -rn \"cancel-in-progress\\|terraform-do\" docs/*.md` | command | docs consistency (INFRA\u2013P2-005) | 8 contradictions captured |\n| Read of previous run registers (`follow_up_register.md`, `risk_register.md`, `12_infra_*.md` at 9c0b88c) | evidence | verification duty | 12 INFRA rows re-checked |\n\nLive checks deliberately not performed: SSH/UFW/DO firewall state, droplet `.env` contents, Terraform state, GHCR tags, GitHub environment settings. All such rows are marked `unverifiable` below.\n\n## Executive Summary\n\nThe infrastructure domain is in materially better shape than at the 20261004 baseline. The 12 INFRA rows from the previous register were re-verified at `8d299b8d`: **8 are verified-fixed**, 1 is partially-fixed, and 3 remain open (all documentation/configuration drift). The strongest work is in the deploy pipeline: the droplet `.env` is now written from 46 secrets with no shell re-expansion, the env-delivery gap (INFRA\u2013P2-006) is closed for every non-defaulted schema variable, `METRICS_TOKEN` is delivered to both the API and the Prometheus scrape via a 0600/400 file owned by the container user (commits `8f8dbe42`, `ddbc389c`, `00cb3da6`), and the Alertmanager/ntfy dead-man's switch is fully wired with a prod fail-closed guard.\n\nRemaining risks cluster in three places. **(1) Operator-facing truth drift:** the deployment handbook, rollback runbook \u00a74, the infra README and the secrets matrix still describe the pre-remediation pipeline (concurrency, Terraform triggers, firewall port 2376, migration gating, health semantics, state bucket names, Slack-only alerting, optional METRICS_TOKEN). **(2) The manual rollback tool is broken:** `scripts/rollback.sh` defaults to a stale GHCR prefix and never forwards registry credentials, and its health checks are weaker than the pipeline's. **(3) Deploy confidence stops at api/web/worker:** a deploy can finish green while Alertmanager/Prometheus (the alert delivery path) is down, and an empty `METRICS_TOKEN` produces a permanently-failing API scrape with no deploy-time guard. Live Terraform-vs-droplet drift remains unverifiable from the repository; the weekly plan-only drift check is present but dormant (`TF_DRIFT_PLAN_ENABLED` unset) and the DO token is reportedly 401 (CI-domain rows own that).\n\nRecommended next actions: fix `scripts/rollback.sh` (P2), extend the deploy health gate to the monitoring containers (P2), and do a single documentation-sync PR (P2/P3) covering every contradiction listed in the findings.\n\n## Inventory\n\n### Environment inventory (droplet `.env`, written by `deploy-do.yml:669-716`)\n\n| Group | Variables | Delivery |\n|---|---|---|\n| Supabase / auth | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET` | required by compose (`${VAR:?}`) and by both app schemas |\n| Domains / CORS | `APP_DOMAIN`, `API_DOMAIN`, `CORS_ORIGIN` | computed in `setup` from branch/target |\n| Queue | `REDIS_PASSWORD` (required), `REDIS_URL` (compose-built) | password in `.env`; URL built in compose |\n| Payments / PII | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `FIELD_ENCRYPTION_KEY` (prod fail-closed at API boot) | optional in schema, fail-closed for PII key |\n| Integrations | `JIRA_*`, `JSM_*`, `M365_*`, `PUBLIC_*_WEBHOOK_URL`, `SMTP_*`, `EMAIL_FROM`, `TURNSTILE_SECRET_KEY`, `SENTRY_DSN` | all forwarded |\n| Security toggles | `MFA_ENFORCEMENT_ENABLED`, `RLS_READS_ENABLED`, `RLS_WRITES_ENABLED` | forwarded (empty = service-role default) |\n| Metrics | `METRICS_TOKEN` | `.env` + `/opt/mct-portal/metrics-token` (65534:65534, 0400) |\n| Alerting | `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` (prod fail-closed), `ALERTMANAGER_CRITICAL_WEBHOOK_URL`, `ALERTMANAGER_DEFAULT_WEBHOOK_URL`, `ALERTMANAGER_SLACK_API_URL`, `ALERTMANAGER_SLACK_CHANNEL` (var), `ALERTMANAGER_WEBHOOK_USER/PASS` | forwarded; compose substitutes no-op loopback when unset |\n| Build/deploy | `IMAGE_TAG`, `GHCR_IMAGE_PREFIX` | passed at `docker compose up`, not written to `.env` |\n| CI-only notifiers | `NTFY_ALERTS_URL/USER/PASS`, `SLACK_WEBHOOK_URL` | GitHub secrets used by backup/restore workflows only, correctly not in `.env` |\n\n### Runtime config inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Droplet compose | `infra/digitalocean/docker-compose.yml` | 7 services, all with `cap_drop: ALL`, `no-new-privileges`, `mem_limit`, `pids_limit`, bounded json-file logs | functional | low | redis/api/worker/prometheus/alertmanager read-only rootfs + tmpfs |\n| Reverse proxy | `Caddyfile.dev` / `Caddyfile.prod` / `Caddyfile` fallback | TLS + headers, SSE flush, `/metrics` 404 on prod | functional | low | dev Caddyfile omits the `/metrics` 404 block; the API 404s unauthenticated requests anyway |\n| Scrape auth | `prometheus.yml:26-28`, `docker-compose.yml:216` | Bearer token from `./metrics-token` | functional | low | token required for a successful scrape (see METRICS_TOKEN guard finding) |\n| Alert routing | `alertmanager.tmpl.yml`, compose `:278-293` | awk-render at start, fail on surviving placeholder, Watchdog \u2192 external URL | functional | low | state volume `alertmanager-data` |\n| Redis | compose `:27-61`, `redis-entrypoint.sh` | password-file entrypoint, `user: redis`, `REDISCLI_AUTH` healthcheck | functional | low | no AOF (see RTO_RPO finding) |\n| App images | `apps/*/Dockerfile` | non-root (`appuser`/`nextjs`), healthchecks, digest-pinned node:20-alpine, npm/corepack removed | functional | low | web build args are all `NEXT_PUBLIC_*` (public by design) |\n\n### Deployment inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| App deploy | `.github/workflows/deploy-do.yml` | push main/develop + dispatch (`deploy_target`, `rollback_sha`); build/scan/attest/verify; SSH deploy; health gate; auto-revert | functional | medium | health gate covers api/web/worker only |\n| Infra deploy | `.github/workflows/terraform-do.yml` | manual dispatch + dormant weekly plan-only drift check; prod-approval on apply | manual-only by design | medium | operator-gated on DO token |\n| Migrations | `.github/workflows/supabase-migrations.yml` | `db push --include-all`, dry-run artifact, fail-closed post-push drift check | functional | medium | prod gate runs before app deploy (reverse path is manual; IR/DR rows own this) |\n| Backups | `backup-dispatch.yml` \u2192 `db-backup.yml`, `storage-backup.yml`, `db-restore-test.yml` | daily/weekly, encrypted, offsite option, ntfy+Slack failure notify | functional | low | dispatched onto `develop` from `main` |\n| Manual rollback | `scripts/rollback.sh` | operator rollback by SHA | broken (prefix + credentials) | medium | see finding |\n| CI rollback | `deploy-do.yml:11-15,38,435-515,807-858` | `rollback_sha` dispatch, attestation allow-list, auto-revert to previous tag | functional | low | fail-closed provenance verification |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Dockerfiles | 4 | digest-pinned base images, non-root users, healthchecks, npm/corepack removed (`apps/*/Dockerfile`) | no image-level secret scan differences (trivy image scan exists in deploy path) | keep |\n| Compose | 4 | 7 services hardened, bounded logs, resource/PID limits, named volumes, explicit required env | health gate ignores alertmanager/prometheus/caddy | extend health gate |\n| Terraform/OpenTofu | 4 | fail-closed SSH, required_version/use_lockfile consistent, provider lock file, env-isolated backends | live drift unverifiable; drift plan dormant; module-root tfvars unignored | widen ignore + doc sync |\n| Cloud/hosting config | 3 | DNS records per env, droplet monitoring tag, cloud-init UFW | UFW create-time only; live state unverified | document/automate UFW refresh |\n| Deploy scripts | 3 | `.env` via printf, chmod 600, token file ownership, retries, auto-revert | rollback.sh broken; health gate narrow | fix rollback.sh + gate |\n| Reverse proxy | 4 | per-env Caddyfiles, SSE flush, security headers, TLS certs | dev Caddyfile lacks the prod `/metrics` 404 (app-level gate covers) | optional consistency |\n| Environment examples | 3 | app-level `.env.example` files current; droplet `.env.example` missing alerting/metrics keys | drift in `infra/digitalocean/.env.example` | add missing keys |\n| Runtime validators | 4 | Zod boot validation; prod fail-closed for PII key + Turnstile; web prod fail-fast for API URL | METRICS_TOKEN not guarded | add prod guard |\n| Secret references | 4 | env-only delivery, no argv secrets, no client-exposed secrets found | NTFY/ALERTMANAGER rows missing from the secrets matrix | update matrix |\n| Build args | 4 | web build args all `NEXT_PUBLIC_*`; no secret in build args | none found | keep |\n| Container users | 4 | redis, appuser (1001), nextjs (1001); metrics-token chowned to 65534 | none found | keep |\n| Health/readiness/liveness | 3 | per-container healthchecks; deploy gate + SSH worker probe + HTTPS checks | monitoring stack unchecked; caddy healthcheck is config-validation only | extend gate |\n\n## Detailed Review\n\n### Item: Droplet compose stack\n\n- Evidence: `infra/digitalocean/docker-compose.yml:1-344`.\n- What it does: defines redis, api, worker, web, prometheus, alertmanager, caddy with shared `x-security` (cap_drop ALL, no-new-privileges) and bounded json-file logging.\n- How it appears to work: deploy copies the file to `/opt/mct-portal/` and runs `docker compose -p mct-portal up -d` with `IMAGE_TAG`/`GHCR_IMAGE_PREFIX`.\n- Dependencies: `.env`, `redis-entrypoint.sh`, `prometheus.yml`, `prometheus.rules.yml`, `alertmanager.tmpl.yml`, `Caddyfile*`, `certs/`, `metrics-token` \u2014 all copied by `deploy-do.yml:789-805` (metrics-token written at `:722-727`).\n- Current controls: `${VAR:?}` for SUPABASE_*/JWT_SECRET/REDIS_PASSWORD/IMAGE_TAG; read-only rootfs for api/worker/web/prometheus/alertmanager; tmpfs `/tmp`; healthchecks on redis/api/worker/alertmanager/caddy.\n- Missing controls: no healthcheck on prometheus; the deploy gate does not assert alertmanager/prometheus/caddy.\n- Risks: a broken alerting path can ship green (see finding).\n- Recommended improvement: assert every healthchecked service in the deploy gate.\n- Suggested tests: CI `docker compose config` render check with a fixture `.env`; a compose-level healthcheck assertion script.\n- Suggested docs: add alertmanager/metrics-token to `infra/digitalocean/README.md`.\n\n### Item: Terraform droplet/firewall/DNS\n\n- Evidence: `variables.tf:76-92`, `firewall.tf:20-48`, `cloud-init.yml:19-30`, `droplet.tf:1-21`, `dns.tf:1-73`, `providers.tf:1-31`, `env/backend.*.hcl`, `.terraform.lock.hcl`.\n- What it does: one droplet per env (dev/prod state isolated), DO firewall (SSH allowlist + Cloudflare IPs on 80/443), UFW mirror at first boot, proxied A records for app/api/www per domain, S3 backend with native locking.\n- Current controls: SSH fail-closed in code + CI guard; `prevent_destroy` on droplet/firewall/DNS; provider lock file with hashes.\n- Missing controls: live-state drift detection is dormant; UFW is create-time only; module-root tfvars unignored.\n- Risks: documented-vs-live drift is unverifiable without operator access; narrowed SSH allowlists leave stale host rules (edge still blocks).\n- Recommended improvement: enable the drift plan after token rotation; widen the tfvars ignore; document the UFW behavior.\n- Suggested tests: `terraform fmt -check` (already in CI), `terraform validate` with a dummy tfvars fixture in CI, `tflint` optionally.\n- Suggested docs: `infra/terraform/README.md` is now accurate; add the UFW note.\n\n### Item: Deploy pipeline (env delivery, health, rollback)\n\n- Evidence: `deploy-do.yml:578-637` (envs), `:669-716` (`.env`), `:718-727` (token file), `:739-752` (guards), `:764-862` (deploy + health + prune), `:869-934` (HTTPS/SSH checks).\n- What it does: writes `.env` from secrets without interpolation, copies config, pulls with retries, compose up with auto-revert on failure, health-gates api/web/worker, prunes only after health.\n- Current controls: fail-closed gates (`deploy` `if:` block `:550-562`), attestation verification, prod-approval environment, watchdog fail-closed guard.\n- Missing controls: monitoring containers not gated; METRICS_TOKEN not gated.\n- Risks: alerting path loss ships green; empty token yields permanent scrape failure.\n- Recommended improvement: extend gate; add token guard.\n- Suggested tests: a workflow-lint that asserts the health-gate service list covers all healthchecked services.\n- Suggested docs: sync `FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` \u00a7Deploy Workflow.\n\n### Item: Manual rollback script\n\n- Evidence: `scripts/rollback.sh:25,42-51,63-72`.\n- What it does: resolves the droplet IP, SSHes in, pulls `mct-{api,worker,web}:<sha>`, compose up, health checks.\n- Current controls: SHA/arg validation is minimal (no hex check like the workflow), `set -euo pipefail`.\n- Missing controls: correct GHCR prefix, credential forwarding, strict host-key checking, meaningful health assertions, fatal worker check.\n- Risks: documented operator tool fails during an incident (see finding).\n- Recommended improvement: see finding recommendation.\n- Suggested tests: shellcheck in CI; a dry-run mode that prints the resolved image refs without SSH.\n- Suggested docs: mark the workflow-dispatch path as primary in `scripts/README.md`.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| INFRA-001 | Dockerfiles | `apps/*/Dockerfile` | digest pins, non-root, healthcheck | none found | \u2014 | keep |\n| INFRA-002 | Compose | `infra/digitalocean/docker-compose.yml` | hardened 7-service stack | health gate coverage | P2 | extend gate |\n| INFRA-003 | Terraform/OpenTofu | `infra/terraform/digitalocean/**` | fail-closed SSH, locking, isolated backends | live drift unverifiable | P2 | enable drift plan (CI-owned) |\n| INFRA-004 | Cloud/hosting config | `dns.tf`, `cloud-init.yml`, `firewall.tf` | terraform-managed DNS/firewall | UFW create-time only | P3 | document/automate |\n| INFRA-005 | Deploy scripts | `deploy-do.yml`, `scripts/rollback.sh` | fail-closed app deploy | rollback.sh broken | P2 | fix script |\n| INFRA-006 | Reverse proxy | `Caddyfile*` | TLS + headers + SSE | dev lacks /metrics 404 (app-level gate) | P3 | optional parity |\n| INFRA-007 | Environment examples | `infra/digitalocean/.env.example` | app examples current | droplet example missing keys | P3 | add keys |\n| INFRA-008 | Runtime validators | `apps/*/src` env schemas | Zod + prod fail-closed | METRICS_TOKEN unguarded | P3 | add guard |\n| INFRA-009 | Secret references | deploy envs vs schemas | 46 vars delivered, no argv secrets | matrix doc missing rows | P3 | update matrix |\n| INFRA-010 | Build args | `deploy-do.yml:332-338`, web Dockerfile | public-only args | none found | \u2014 | keep |\n| INFRA-011 | Container users | compose users, Dockerfile users | redis/appuser/nextjs | none found | \u2014 | keep |\n| INFRA-012 | Health/readiness/liveness | compose healthchecks, deploy gate | api/web/worker gated | monitoring unchecked | P2 | extend gate |\n\n## Findings\n\nVerification rows keep the previous register titles and IDs (INFRA-*); new findings are marked `new`.\n\n| Ref | Severity | Status | Title |\n|---|---|---|---|\n| INFRA\u2013P1-001 | P1 | verified-fixed | SSH is open to the internet on both droplets (admin_ip_ranges default 0.0.0.0/0 and CI never overrides it) |\n| INFRA\u2013P1-002 | P1 | verified-fixed | Terraform state-locking fix is incompatible with the pinned Terraform version (use_lockfile requires >= 1.10, workflows pin 1.9) |\n| INFRA\u2013P2-003 | P2 | verified-fixed | Prometheus alert rules have no delivery path (no Alertmanager) |\n| INFRA\u2013P2-004 | P2 | verified-fixed | Dev droplet capacity is under-provisioned and the CI value drifts from dev.tfvars.example |\n| INFRA\u2013P2-005 | P2 | still-open | Operations documentation contradicts the current pipeline and configuration |\n| INFRA\u2013P2-006 | P2 | verified-fixed | Integration/security env vars referenced by the app schema are not delivered by the deploy pipeline |\n| INFRA\u2013P2-007 | P2 | verified-fixed | Redis container hardening was weakened and its password remains in process arguments |\n| INFRA\u2013P3-008 | P3 | verified-fixed | `env/prod.tfvars` is tracked despite an ignore rule that names it |\n| INFRA\u2013P3-009 | P3 | partially-fixed | Restore test uses a different Postgres major than the backup script and verifies only table counts |\n| INFRA\u2013P3-010 | P3 | still-open | `docs/RTO_RPO.md` claims Redis AOF persistence that compose does not enable |\n| INFRA\u2013P3-011 | P3 | verified-fixed | `infra/terraform/README.md` references an `aws/` directory that does not exist |\n| INFRA\u2013P3-012 | P3 | still-open | Terraform is manual-dispatch only, so the \"push to trigger apply\" rollback runbook step is a no-op |\n| new | P2 | open | Manual rollback script cannot authenticate to GHCR and defaults to the wrong image prefix |\n| new | P2 | open | Deploy health gate ignores the monitoring and reverse-proxy containers |\n| new | P3 | open | infra/digitalocean/.env.example omits the alerting and internal-metrics variables the compose stack reads |\n| new | P3 | open | Terraform tfvars generated/referenced at the module root are not covered by the .gitignore rule |\n| new | P3 | open | Cloud-init UFW SSH allowlist is applied only at droplet creation, so narrowed allowlists leave stale host rules |\n| new | P3 | open | METRICS_TOKEN has no fail-closed deploy guard; an empty token leaves the API scrape permanently down |\n| new | P3 | open | Prometheus alert-rule unit tests exist but are not run in CI |\n\nFull evidence, impact, recommendation, owner, target, confidence and verification notes are in the companion JSON (`_domains/12_infra_deployment_environment_drift.json`, 19 findings).\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Operator follows stale handbook/runbook during an incident | P2 | High | Wrong concurrency/firewall/rollback action | `FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:54,137,144`; `ROLLBACK_PROCEDURES.md:199-203,219-220` | docs-sync PR |\n| Manual rollback fails (wrong prefix / no registry auth) | P2 | Medium | Extended outage during rollback | `scripts/rollback.sh:25,42-51` | fix script; prefer workflow dispatch |\n| Deploy green while alert delivery is down | P2 | Medium | Undetected monitoring loss (prod paged by watchdog after grace) | `deploy-do.yml:835-858`; compose `:244-307` | extend health gate |\n| Empty METRICS_TOKEN \u2192 permanent MCTServiceDown noise | P3 | Medium | Alert fatigue, masked real outages | `deploy-do.yml:722-727`; `app.ts:154-171`; `prometheus.yml:20-32` | fail-closed guard |\n| Live Terraform drift undetected | P2 | Medium | Infra divergence from code | `terraform-do.yml:14-15,38`; `docs/CI.md:106-110` | rotate DO token, set `TF_DRIFT_PLAN_ENABLED=true` (CI-owned) |\n| Unignored module-root tfvars with live tokens | P3 | Low | Credential commit | `.gitignore:57`; `git check-ignore`; `deploy-do.yml:95` | widen ignore rule |\n| Stale UFW allow rules after narrowing SSH allowlist | P3 | Low | Defense-in-depth drift (edge still blocks) | `droplet.tf:17-20`; `cloud-init.yml:24-26` | document/manage UFW |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\nNone found in this domain at `8d299b8d`. The previous P1s (SSH fail-closed, state locking) are verified fixed; the remaining items are P2/P3.\n\n### This Week\n\n1. Fix `scripts/rollback.sh`: correct the GHCR prefix default, forward `GHCR_TOKEN`/`GHCR_USER` (or document a droplet-side login), make worker health fatal, require 200/301/302/307 for API/web, and verify the droplet host key. (P2)\n2. Extend the deploy health gate to assert `alertmanager` (and optionally `prometheus`/`caddy`) health before pruning/returning success. (P2)\n\n### This Month\n\n3. Single documentation-sync PR covering every contradiction in INFRA\u2013P2-005 and INFRA\u2013P3-012 (handbook, rollback \u00a74, infra README, secrets matrix, CI/RELEASING ntfy wording). (P2/P3)\n4. Add `METRICS_TOKEN` to the prod fail-closed guards alongside the watchdog URL. (P3)\n5. Add the missing keys to `infra/digitalocean/.env.example`. (P3)\n\n### Later / Platform Evolution\n\n6. Widen the tfvars ignore to the module root (or move all tfvars to `env/`) and extend `validate-terraform-env.sh`. (P3)\n7. Wire `promtool check rules` + `promtool test rules` into the deploy gate. (P3)\n8. Decide Redis persistence (enable AOF or correct `RTO_RPO.md`) and document the UFW create-time behavior. (P3)\n9. Re-enable `terraform-do` push/PR triggers once the DO token is rotated and `prod-approval` reviewers are set (CI-owned); enable the weekly drift plan.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| One-line GHCR prefix fix in rollback.sh | Restores the documented rollback path | `scripts/rollback.sh:25` | shellcheck + dry-run |\n| Add `alertmanager` to the health loop | Closes a silent monitoring-loss path | `.github/workflows/deploy-do.yml:840` | next deploy shows alertmanager asserted |\n| Add METRICS_TOKEN to the prod guard | Removes a permanent-alert footgun | `.github/workflows/deploy-do.yml:739-747` | deploy fails when secret empty |\n| Add missing `.env.example` keys | Manual deploys stop silently losing alerting | `infra/digitalocean/.env.example` | compose config render |\n| Fix handbook concurrency/firewall lines | Cheap, high-trust doc repair | `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:54,137,144` | doc review |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Rollback script parity with the pipeline (auth, health, host key) | P2 | platform/infrastructure | S | none |\n| Deploy health gate covers all healthchecked services | P2 | platform/infrastructure | S | none |\n| Docs-sync PR (handbook + rollback + README + matrix) | P2 | platform/infrastructure | M | none |\n| METRICS_TOKEN prod guard + scrape-up assertion | P3 | platform/infrastructure | S | secret availability |\n| Droplet `.env.example` completeness + CI parity check | P3 | platform/infrastructure | S | none |\n| tfvars ignore coverage + validator scope | P3 | platform/infrastructure | S | none |\n| promtool rules tests in CI | P3 | platform/infrastructure | S | pinned image |\n| Redis AOF decision (enable or document RDB-only) | P3 | platform/infrastructure | S | dev droplet memory check |\n| UFW refresh strategy (runbook or automation) | P3 | platform/infrastructure | M | operator access |\n| Live drift verification (rotate DO token, enable TF_DRIFT_PLAN_ENABLED) | P2 | platform/CI owner | S | DO token + reviewers |\n\n## Suggested Tests\n\n- **CI**: `docker compose -f infra/digitalocean/docker-compose.yml config` with a fixture env file (catches missing/renamed variables).\n- **CI**: env-parity check that diffs `apps/api/src/config/env.ts` + `apps/worker/src/env.ts` (non-defaulted keys) against the `deploy-do.yml` envs list and printf block.\n- **CI**: `promtool check rules` + `promtool test rules` (existing `prometheus.rules.test.yml`) using the pinned prom/prometheus image.\n- **CI**: shellcheck (or `bash -n`) on `scripts/*.sh`, plus a rollback dry-run mode that resolves and prints image refs without SSH.\n- **CI**: a health-gate coverage check that every compose service with a `healthcheck:` is asserted in the deploy gate (static parse).\n- **Manual (operator)**: after the next prod deploy, confirm Alertmanager `/api/v2/alerts` shows Watchdog and that stopping alertmanager triggers the external dead-man's switch within its grace period (documented in `MONITORING_AND_ALERTING.md:343-352`).\n- **Manual**: after enabling drift detection, run `terraform plan` from CI and confirm \"No changes.\" on a clean tree.\n- **Security**: extend gitleaks/pre-commit patterns for `*.tfvars` contents (do_token, cloudflare_api_token) to catch the unignored path.\n\n## Suggested Documentation Updates\n\n1. `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` \u2014 concurrency (`cancel-in-progress: false`), Terraform manual-dispatch, firewall ports (no 2376), prod-only migration gate, health-check semantics (200/301/302/307 + fatal worker), prune commands, Redis health via `REDISCLI_AUTH`, secret count.\n2. `docs/ROLLBACK_PROCEDURES.md` \u2014 \u00a74 state bucket/key names (`portal-terraform-state-<env>`, `digitalocean/<env>/terraform.tfstate`), remove \"push to trigger\", tfvars path (`env/`), Redis `-a` example.\n3. `infra/digitalocean/README.md` \u2014 add alertmanager to the service table; add `alertmanager.tmpl.yml` and `metrics-token` to supporting files.\n4. `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md` \u2014 add `ALERTMANAGER_*` and `NTFY_ALERTS_*` rows; mark `METRICS_TOKEN` required for the scrape path; note ntfy as the primary backup notifier.\n5. `docs/CI.md` and `docs/RELEASING.md` \u2014 ntfy-primary wording for backup/restore failure notification.\n6. `docs/RTO_RPO.md` \u2014 Redis persistence truth (AOF vs RDB) and queue-loss semantics.\n7. `infra/digitalocean/.env.example` \u2014 add METRICS_TOKEN, ALERTMANAGER_*, MFA_ENFORCEMENT_ENABLED, JIRA/JSM webhook secrets, M365_CLIENT_STATE.\n8. `infra/terraform/README.md` \u2014 add a note that UFW rules are create-time only and the DO firewall is authoritative.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Does the live dev/prod droplet match the committed Terraform (size, firewall, UFW, DNS)? | Core drift question; unverifiable from the repo | `terraform plan` output at `8d299b8d` after token rotation |\n| Is `ADMIN_IP_RANGES` actually set in dev/prod environments? | SSH remains fail-closed only if the secret exists | GitHub environment settings (operator) |\n| Are `METRICS_TOKEN` and `ALERTMANAGER_*` secrets present in dev and prod? | Determines whether the alerting path and scrape are live | GitHub environment secrets (operator) |\n| Are the GHCR app images public or private? | Determines the blast radius of the rollback script's missing login | GHCR package visibility (operator) |\n| Does the prod `prod-approval` environment have required reviewers? | Gate effectiveness (CI-owned row CI-P1-001) | GitHub settings (operator) |\n| Is `TF_DRIFT_PLAN_ENABLED` set and is `DO_API_TOKEN` valid? | Whether drift detection actually runs | GitHub variables + a dispatch run |\n| What Postgres major does the Supabase project run? | Needed to choose the dump/restore client major deliberately | Supabase dashboard |\n| Was the dead-man's switch ever exercised end-to-end? | \"Configured\" vs \"exercised\" (shared rules \u00a7Verification) | A recorded alertmanager-stop drill |\n\n## Appendix\n\n### Environment matrix (dev vs prod, repository view)\n\n| Aspect | dev | prod |\n|---|---|---|\n| Branch | `develop` (or dispatch target dev) | `main` (or dispatch target prod) |\n| Domains | `app/api/www.mainecybertech.us` | `app/api/www.mainecybertech.com` |\n| Droplet name / size | `mct-portal-dev` / `s-1vcpu-2gb` | `mct-portal-prod` / `s-2vcpu-2gb` |\n| Terraform backend | `portal-terraform-state-development` / `digitalocean/dev/terraform.tfstate` | `portal-terraform-state-production` / `digitalocean/prod/terraform.tfstate` |\n| GitHub environment | `dev` (no approval) | `prod` (migrations/read-only) + `prod-approval` (deploy/apply) |\n| TLS | `tls internal` (Caddyfile.dev) | Cloudflare Origin CA certs (Caddyfile.prod) |\n| Test accounts page | enabled (`NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=true`) | disabled |\n| Watchdog fail-closed | warns | deploy fails when empty |\n| Migrations gate | skipped | required before deploy |\n| E2E gate | skipped | required before deploy |\n\n### Hardening checklist\n\n- [x] Non-root container users (redis/appuser/nextjs)\n- [x] Digest-pinned third-party images; app images SHA-tagged + attestation-verified\n- [x] Capability drop + no-new-privileges on every service\n- [x] Read-only rootfs where feasible + tmpfs for writable paths\n- [x] Memory + PID limits on every service; bounded container logs\n- [x] Healthchecks on redis/api/worker/alertmanager/caddy\n- [ ] Healthcheck coverage enforced by the deploy gate (api/web/worker only today)\n- [x] Secrets delivered via env/printf, never argv or build args\n- [x] METRICS_TOKEN bearer gate on `/metrics`, token file 0400 owned by container user\n- [ ] Fail-closed guard for an empty METRICS_TOKEN\n- [x] Alertmanager delivery + external dead-man's switch with prod fail-closed guard\n- [ ] Alert rules unit tests run in CI\n- [x] SSH fail-closed in Terraform + CI guard\n- [ ] UFW refresh strategy for narrowed allowlists\n- [ ] tfvars ignore coverage at the module root\n- [ ] Documented + tested manual rollback path (script currently broken)\n\n### Unverifiable items (marked, not asserted)\n\n- Live droplet state, UFW contents, DO firewall state, Terraform state contents.\n- GitHub environment secrets/variables and `prod-approval` reviewer configuration.\n- GHCR package visibility and whether the referenced image tags still exist for old SHAs.\n- Whether the dead-man's switch has been exercised (no dated drill artifact found in the repository).\n\n### Commands run (exact, read-only)\n\n```\ngit log --oneline -3\ngit status --short\ngit ls-files infra/terraform/digitalocean/env/\ngit ls-files | grep -i tfvars\ngit ls-files -s scripts/rollback.sh infra/digitalocean/redis-entrypoint.sh\ngit check-ignore -v infra/terraform/digitalocean/dev.tfvars infra/terraform/digitalocean/env/dev.tfvars\ngrep -rn \"NTFY\" --include=\"*.yml\" --include=\"*.md\" --include=\"*.ts\" .\ngrep -rn \"TF_DRIFT_PLAN_ENABLED\" .\ngrep -rn \"promtool|rules.test\" .github/ package.json\npython3 (envs-list vs printf vs compose ${VAR} comparison)\nbash -c 'set -euo pipefail; echo \"$UNSET\" | cat || true; echo REACHED'\n```\n"
+}

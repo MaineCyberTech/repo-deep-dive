@@ -1,0 +1,321 @@
+{
+  "domain": "16_documentation_devex_operator_readiness",
+  "file": "16_documentation_devex_operator_readiness.md",
+  "area": "DOC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:48Z",
+  "findings": [
+    {
+      "severity": "P3",
+      "title": "Dated point-in-time audit reports are mixed with current runbooks with no archive/staleness marker",
+      "evidence": [
+        "docs/audits/repo-deep-dive/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md:1-3 \u2014 register is bound to `main 9c0b88c` and carries per-finding statuses but has no historical/staleness banner; it sits under docs/ next to current runbooks",
+        "docs/audits/README.md:30-37 \u2014 the Runs table lists only the 2026-08-26 comprehensive run and four 2026-09-27 ui-ux runs; none of the committed repo-deep-dive runs (20261002-0344, 20261004-0700, mainecybertech-20261004-full-main-9c0b88c) or REAUDIT_REPORT_20261004.md is indexed",
+        "docs/audits/repo-deep-dive/REAUDIT_REPORT_20261004.md:8-9 \u2014 machine-local paths (`C:\\temp\\reaudit\\...`, `C:\\Users\\admin\\AppData\\Local\\Temp\\...`) are committed into docs/",
+        "docs/INDEX.md:35-44 \u2014 'Audits & Reviews' lists dated point-in-time audits with no marker that they are snapshots",
+        "docs/INCIDENT_RESPONSE.md:114-115,133-135 \u2014 current runbook references `backup_restore_drill_plan.md` / `incident_tabletop_scenarios.md`, which exist only inside docs/audits/repo-deep-dive/20261002-0344-develop-6286137/ (verified by find)"
+      ],
+      "impact": "Readers and AI agents can treat superseded 9c0b88c statuses as current state, and 'runbooks' referenced by the incident plan resolve only inside a dated audit folder. This is the same class of defect as the stale RELEASE_GATE.md finding below.",
+      "recommendation": "Add a 'historical \u2014 superseded' banner to each dated audit run directory and list all runs in docs/audits/README.md; replace machine-local paths; point incident-doc references at living runbooks (or the explicit audit path) and add a guard/lint that flags machine-local paths under docs/.",
+      "owner": "docs owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d (not fixed): the committed audit corpus was synced in PR #164/#168 but still has no staleness marker and the docs/audits index still omits every repo-deep-dive run. Original DOC-P3-001 status carried: open at 9c0b88c.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "Operations documentation contradicts the current pipeline and configuration",
+      "evidence": [
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:54 \u2014 says deploy concurrency is `cancel-in-progress: true` and 'the first deploy is cancelled'; .github/workflows/deploy-do.yml:40-43 sets `cancel-in-progress: false` (deploys are queued, never aborted)",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:144 \u2014 'Triggered on push to main/develop ... Apply is gated: dev applies directly'; .github/workflows/terraform-do.yml:3-21 is manual-dispatch only plus a weekly drift plan that stays dormant until TF_DRIFT_PLAN_ENABLED=true, and apply requires the `apply` input",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:99 \u2014 prod environment '(no protection rules)'; docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:6-15 states prod needs 1+ required reviewers because supabase-migrations mutates production",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:135 \u2014 'variables.tf \u2014 12 variables'; infra/terraform/digitalocean/variables.tf has 13 `variable` blocks",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:137 \u2014 firewall 'ports 22/80/443/2376'; infra/terraform/digitalocean/firewall.tf:22-57 opens 22 only to var.admin_ip_ranges and 80/443 only to Cloudflare ranges \u2014 there is no 2376 rule",
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:104 and docs/ENVIRONMENT_VARIABLES.md:149 \u2014 droplet `.env` written 'via SSH heredoc'; deploy-do.yml:667-715 writes it with `printf` (explicit comment that printf does not re-expand values) and a separate prepare step writes metrics-token (deploy-do.yml:719-722)",
+        "README.dev.md:393,403,411,432 \u2014 PR terraform plans and 'Merges to develop/main run terraform-do.yml' with automatic apply; same contradiction with the manual-only workflow"
+      ],
+      "impact": "Operators following the handbook/README.dev expect queued-vs-cancelled deploy semantics, an automatic Terraform apply on push, a firewall port that does not exist, and a different env-delivery mechanism than the pipeline actually uses.",
+      "recommendation": "Update the handbook and README.dev to the manual terraform-dispatch model, queue semantics, actual variable/firewall counts, and printf-based env delivery; add the missing alertmanager/env-delivery details in one pass.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still open \u2014 the handbook and README.dev still describe the retired push-triggered Terraform flow and the old concurrency behavior. Carried from full run 20261002 (develop 6286137); now verified against current code.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "Rollback documentation is stale (Terraform push flow) and repeats the false approval claim",
+      "evidence": [
+        "docs/ROLLBACK_PROCEDURES.md:199-203 \u2014 \u00a74 'Push to trigger terraform-do workflow' and 'The terraform-do.yml workflow will run a plan on the PR/push and apply automatically (dev) or require prod-approval (main)'; terraform-do.yml:3-21 is manual-dispatch/schedule only and apply is gated by the `apply` input",
+        "docs/ROLLBACK_PROCEDURES.md:239-253 \u2014 the 'Prod-approval environment' section now correctly states required reviewers are a GitHub setting and 'there is no working manual-approval gate' until populated (approval claim corrected)"
+      ],
+      "impact": "An operator attempting an infrastructure rollback waits for a push-triggered workflow that never runs; the approval-gate half of the finding is closed.",
+      "recommendation": "Replace \u00a74 with the actual path: `gh workflow run terraform-do.yml --ref <branch> -f apply=true` (plan first), noting prod-approval reviewers must be configured; keep the corrected approval section.",
+      "owner": "platform engineering (release owner)",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: the false approval claim is fixed in ROLLBACK_PROCEDURES.md:239-253; the Terraform push-flow instruction at :199-203 is still stale. Carried from full run 20261002; re-verified against terraform-do.yml:3-21.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "`AGENTS.md` documents the worker consumer incorrectly and omits the queue backend divergence",
+      "evidence": [
+        "AGENTS.md:17 \u2014 worker row now reads 'Queue consumer (`consumer-sqs.ts`; BullMQ/SQS/inline)' (backend divergence now named \u2014 partial fix)",
+        "AGENTS.md:326-328 \u2014 'Worker (142 lines)' and 'Consumer: SQS-based (`runWorkerTasks` from `consumer-sqs.ts`)'; apps/worker/src/main.ts is 166 lines and apps/worker/src/consumer-sqs.ts:80-96 dispatches to BullMQ (consumer-bullmq.ts) or inline by QUEUE_BACKEND",
+        "infra/digitalocean/docker-compose.yml:138 \u2014 production sets QUEUE_BACKEND: bullmq; apps/worker/src/env.ts:11 defaults to inline and :58-63 rejects inline in production"
+      ],
+      "impact": "Agents and operators reading the reference can believe the worker is SQS-only and misread the line count when reasoning about the consumer path.",
+      "recommendation": "Update the Worker section to describe the dispatcher (BullMQ in prod, inline default in dev, SQS legacy) and the real main.ts size.",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: line 17 fixed, Worker section at :326-328 still says 'SQS-based' with a stale '142 lines'. Carried from full run 20261002; re-verified against main.ts/consumer-sqs.ts.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "`docs/CI.md` documents the SBOM workflow as \"Blocking\" but it gates nothing",
+      "evidence": [
+        "docs/CI.md:29 \u2014 SBOM row now reads 'CycloneDX lockfile SBOM ... Artifact-only (not a gate)'",
+        ".github/workflows/sbom.yml:23-58 \u2014 generates, validates and uploads the artifact; there is no SBOM context in .github/branch-protection/*.json or scripts/check-required-checks.mjs"
+      ],
+      "impact": "The documentation now matches behavior: the SBOM is an artifact, not a required check.",
+      "recommendation": "None beyond keeping the wording in sync if sbom.yml is ever promoted to a gate.",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: docs/CI.md:29 states artifact-only and sbom.yml is not a required check. Original row (area SBOM) was open at 9c0b88c with the doc claiming 'Blocking'.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "Incident-response and breach docs still describe the alerting dead-man's switch as undeployed and list closed gaps",
+      "evidence": [
+        "docs/INCIDENT_RESPONSE.md:124-127 \u2014 'there is no independent dead-man's switch. Alertmanager ... is referenced by infra/digitalocean/prometheus.rules.yml but not deployed ... a total monitoring failure is silent'",
+        "docs/DATA_BREACH_RESPONSE.md:143-147 \u2014 'Alertmanager is not deployed; prometheus.rules.yml says delivery requires it. The Watchdog rule has no receiver, so a total loss of the monitoring path is silent'",
+        "docs/DATA_BREACH_RESPONSE.md:412,446-447 \u2014 repeats the 'Alertmanager gap (IR-P0-003)' as a current limitation",
+        "docs/DATA_BREACH_RESPONSE.md:452-455 \u2014 lists 'Scheduled backup/restore not proven to run / verify deeply (DR-P0-001, DR-P0-002, IR-P1-004, IR-P1-005)' as an open gap; all four are verified-fixed",
+        "Current state: infra/digitalocean/docker-compose.yml:244 deploys the alertmanager service; infra/digitalocean/alertmanager.tmpl.yml:12-14,144-155 routes Watchdog to an external dead-man's-switch receiver; .github/workflows/deploy-do.yml:739-746 fails the prod deploy when ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty; .github/workflows/db-restore-test.yml:135-201 asserts restore integrity",
+        "docs/audits/repo-deep-dive/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md \u2014 IR-P0-003, DR-P0-001, DR-P0-002, IR-P1-004, IR-P1-005 all recorded verified-fixed at 9c0b88c"
+      ],
+      "impact": "During a real incident or breach, responders are told the monitoring path is silent and backups unverified, which contradicts the deployed stack and the verified-fixed register; this can drive wrong detection/notification decisions and breach timelines.",
+      "recommendation": "Rewrite the 'Known gap' sections to the deployed state (Alertmanager + watchdog receiver live; restore test asserts integrity/freshness) and keep only genuinely open gaps (on-call rota unassigned, IR-P2-002/IR-P1-006 effectiveness). Add a doc guard/checklist step that re-reads the register when an IR finding closes.",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d (not in the previous register). Cross-ref: register rows IR-P0-003 / DR-P0-001 / DR-P0-002 are verified-fixed; these docs were not updated when they closed.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "docs/RELEASE_GATE.md is a stale status artifact contradicting the current verified-fixed register",
+      "evidence": [
+        "docs/RELEASE_GATE.md:3-6 \u2014 bound to run `20261003-0018-fix-p2-batch-31-2295958d` (commit `2295958d`), i.e. an older run than the committed 9c0b88c register",
+        "docs/RELEASE_GATE.md:31-36 \u2014 release-blocking exit criteria still list SEC-P1-001, SEC-P2-002, CI-P1-001, OBS-P2-001 and OBS-P2-003 as not green",
+        "docs/RELEASE_GATE.md:45-49 \u2014 fail-closed register marks PII field encryption, Turnstile, search scoping, API keys and demo/test data all 'open'",
+        "docs/audits/repo-deep-dive/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md:69,220,180,122,95,143,144,119 \u2014 SEC-P1-001, SEC-P2-008 (Turnstile), OBS-P2-001, CI-P2-007 (branch protection), API-P2-006 (search), FEAT-P2-001 (API keys) and FEAT-P2-002 (demo data) are all verified-fixed at 9c0b88c",
+        "docs/RELEASING.md:136-137 \u2014 calls docs/RELEASE_GATE.md 'the consolidated release-readiness gate (exit criteria, fail-closed decisions and the go-live operator checklist)'"
+      ],
+      "impact": "The canonical pre-promotion gate tells an operator that closed, release-blocking controls are still open; it is a status artifact that contradicts its own source of truth (the run register) and erodes trust in the release process.",
+      "recommendation": "Regenerate docs/RELEASE_GATE.md from the current register (or replace it with a pointer to the latest run's RELEASE_GATE + AGENTS.md Known Debt) and add the run/commit binding to the header so staleness is visible.",
+      "owner": "release owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Self-consistency check (shared rules \u00a7Verification discipline): status artifact contradicts the register it summarizes.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "Alert-delivery secrets (NTFY_ALERTS_*, ALERTMANAGER_*) are missing from the canonical secret docs, which still name Slack as the only channel",
+      "evidence": [
+        ".github/workflows/db-backup.yml:51-62 (same shape in db-restore-test.yml:244-255 and storage-backup.yml:61-72) \u2014 failure notices post to NTFY_ALERTS_URL/USER/PASS with Slack only as fallback",
+        ".github/workflows/deploy-do.yml:622-631,647,709-715 \u2014 forwards ALERTMANAGER_WATCHDOG/CRITICAL/DEFAULT_WEBHOOK_URL, ALERTMANAGER_SLACK_API_URL/CHANNEL and ALERTMANAGER_WEBHOOK_USER/PASS into the droplet .env",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:83-93 \u2014 the backup/restore secrets table lists only SLACK_WEBHOOK_URL and has no NTFY_ALERTS_*; the file has no ALERTMANAGER_* entry at all",
+        "docs/SECRETS_ROTATION.md:9-58 \u2014 48-entry rotation inventory contains no NTFY_ALERTS_* and no ALERTMANAGER_* secrets",
+        "docs/CI.md:23-25, docs/RELEASING.md:130, docs/DATA_BREACH_RESPONSE.md:140, docs/ENVIRONMENT_VARIABLES.md:145 \u2014 still describe backup/restore failure notification as Slack-only",
+        "docs/MONITORING_AND_ALERTING.md:329-337 documents the ALERTMANAGER_* env vars but not as GitHub secrets in the matrix"
+      ],
+      "impact": "The 'single source' secret matrix and the rotation inventory omit the credentials that actually deliver backup and monitoring alerts. A rebuild/rotation/audit of the alerting path can silently lose alert delivery (the exact failure DR-P2-001 was reconciled for, mainecybertech#157).",
+      "recommendation": "Add NTFY_ALERTS_URL/USER/PASS and the seven ALERTMANAGER_* values to docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md and the docs/SECRETS_ROTATION.md inventory; change CI/RELEASING/breach wording to 'ntfy primary, Slack fallback'.",
+      "owner": "platform/security + docs",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Related: register row SECRET-P2-001 (rotation inventory lag) and DR-P2-001 (ntfy delivery verified) \u2014 this is the documentation side of both.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "docs/GAP_ANALYSIS.md is an AWS-era historical draft presented as current",
+      "evidence": [
+        "docs/GAP_ANALYSIS.md:7 \u2014 '2,225 unit/integration tests across 272 suites + 57 E2E spec files \u2014 all passing (verified 2026-08-01)'; repo now has 3,490 tests / 90 E2E specs (AGENTS.md:80-88)",
+        "docs/GAP_ANALYSIS.md:23 \u2014 'All 6 deploy workflows gated'; .github/workflows contains 20 workflows",
+        "docs/GAP_ANALYSIS.md:24 \u2014 '5 seed files covering all 25+ tables'; supabase/seeds has 9 .sql files",
+        "docs/GAP_ANALYSIS.md:27 \u2014 'Terraform (12 files) ... SSM secrets (23 parameters), CloudWatch alarms, autoscaling, Slack notifications'; infra/terraform/digitalocean has 6 .tf files and is DigitalOcean-only (docs/adr/README.md:24, ADR-001)",
+        "docs/GAP_ANALYSIS.md:149 \u2014 machine-local path `C:\\temp\\chat`",
+        "docs/INDEX.md:31 \u2014 listed under Architecture & Design as current 'gap analysis, known issues, recommendations' with no historical marker; docs/ARCHITECTURAL_ANALYSIS.md:338 already flagged it as stale"
+      ],
+      "impact": "Developers and AI agents reading the INDEX-listed gap analysis get superseded counts and an AWS architecture (SSM/CloudWatch/autoscaling) that the platform deliberately left (ADR-001).",
+      "recommendation": "Mark it historical with the same banner style as docs/API_ENDPOINT_INVENTORY.md:3-6 (or rewrite to current state) and remove the machine-local path.",
+      "owner": "docs",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Extended check: 'documents presented as current that are historical drafts'.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P2",
+      "title": "docs/technical-writing/migration-guide.md documents commands and a release process that do not exist",
+      "evidence": [
+        "docs/technical-writing/migration-guide.md:15,275 \u2014 `pnpm supabase:reset:auto`; no such script exists in any package.json (root scripts at package.json:5-30; also no `supabase:start`, `supabase:status`, `deploy`); scripts/dev-setup.sh:332 calls the same missing script",
+        "docs/technical-writing/migration-guide.md:25-33 \u2014 'All migrations follow the timestamp-based convention' with 2024 examples; the repo uses sequential 5302xxx files (latest supabase/migrations/5302436_restore_platform_admin_rls_gates.sql) and docs/SUPABASE_MIGRATION_WORKFLOW.md:30 instructs the 5302xxx form",
+        "docs/technical-writing/migration-guide.md:206-207 \u2014 `curl https://app.mainecybertech.com/api/health`; no web /api/health route exists (no apps/web/app/api directory)",
+        "docs/technical-writing/migration-guide.md:216-232 \u2014 tag-based release process ('git tag v1.2.0 ... GitHub Actions creates release'); docs/RELEASING.md:55-61 states the commit SHA is authoritative and there is no git tag requirement, and no release/tagging workflow exists",
+        "docs/INDEX.md:56 \u2014 lists the file as 'Comprehensive deployment and migration guide' with no marker"
+      ],
+      "impact": "A new implementer following the INDEX-listed guide hits missing commands and a release/tag process that is not the documented one; scripts/dev-setup.sh fails at the same step.",
+      "recommendation": "Rewrite the guide against the current workflow (or mark it historical) and fix scripts/dev-setup.sh:332 to `supabase db reset`.",
+      "owner": "docs + platform engineering",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Extended check: broken references / unresolvable paths in documents presented as current.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "Migration/workflow/OpenAPI counts drift in README.md, docs/ONBOARDING.md and the endpoint inventory, and the count guard does not cover them",
+      "evidence": [
+        "README.md:45 \u2014 'database / RLS foundation (127 migrations)'; the repo has 134 (AGENTS.md:149)",
+        "docs/ONBOARDING.md:51 \u2014 'migrations/ 127 SQL migration files'; docs/ONBOARDING.md:55 \u2014 'CI/CD workflows (16 total)'; the repo has 20",
+        "docs/ONBOARDING.md:305 \u2014 'authoritative 412-path spec'; docs/openapi.yaml has 418 paths (docs/INDEX.md:210 and scripts/check-docs-counts.mjs agree on 418)",
+        "docs/API_ENDPOINT_INVENTORY.md:5 \u2014 '(412 paths)' in its historical banner",
+        "scripts/check-docs-counts.mjs:9-29,145-171 \u2014 the guard checks README test/E2E counts and AGENTS.md counts, but not README/ONBOARDING migration counts, ONBOARDING workflow counts, or these OpenAPI path counts"
+      ],
+      "impact": "New developers and agents get a wrong sense of repo scale, and CI cannot catch the drift because the guard does not read these files.",
+      "recommendation": "Correct to 134 migrations / 20 workflows / 418 paths and extend scripts/check-docs-counts.mjs to parse README.md and docs/ONBOARDING.md (or drop the hardcoded numbers).",
+      "owner": "docs / repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Related closed finding DATA-P3-002/DATA-P3-002 was about migration counts gated in CI \u2014 the guard still misses these locations.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "docs/MONITORING_AND_ALERTING.md contradicts the now-wired metrics and the fail-closed /metrics gate",
+      "evidence": [
+        "docs/MONITORING_AND_ALERTING.md:130-134 \u2014 five metric rows still say 'defined, not wired'; all are wired: apps/api/src/lib/metrics.ts:202-262 (record*/set*), routes/organizations.ts:331, routes/projects.ts:288, routes/tickets.ts:221, routes/documents.ts:305, routes/search.ts:213, routes/admin.ts:46, routes/users.ts:98, lib/idempotency.ts:110, services/supabase.ts:59",
+        "docs/MONITORING_AND_ALERTING.md:117 \u2014 '/metrics ... optionally gated by METRICS_TOKEN (returns 404 when the token is set and not supplied)'; apps/api/src/app.ts:154-171 + routes/health.ts:16-26 fail closed: the endpoint 404s when no token is configured too",
+        "docs/ENVIRONMENT_VARIABLES.md:77 \u2014 METRICS_TOKEN 'Required: No', while the Prometheus scrape depends on it (deploy-do.yml:719-722 writes the metrics-token file; infra/digitalocean/prometheus.yml:22-28 uses it as a credentials_file)",
+        "docs/MONITORING_AND_ALERTING.md:253 \u2014 memory limits list web 256m; infra/digitalocean/docker-compose.yml:199 sets web mem_limit 512m"
+      ],
+      "impact": "Incident responders misjudge which observability signals exist, believe /metrics can be exposed by leaving the token unset (the opposite is true), and read wrong container limits.",
+      "recommendation": "Mark the five metrics 'live', describe the fail-closed gate ('404 unless METRICS_TOKEN is configured and presented'), note the Prometheus credentials-file dependency, and fix the memory table.",
+      "owner": "platform/observability",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. IR-P2-001 (metrics wiring) was reconciled in mainecybertech#147; the doc was not updated.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "docs/TROUBLESHOOTING.md and docs/ONBOARDING.md name wrong deploy secrets/containers and stale memory limits",
+      "evidence": [
+        "docs/TROUBLESHOOTING.md:39 \u2014 tells operators to confirm 'the `DO_SSH_KEY` secret'; no such secret exists \u2014 the deploy uses CI_SSH_PRIVATE_KEY (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:40, deploy-do.yml:881)",
+        "docs/TROUBLESHOOTING.md:39 \u2014 'The workflow also prunes old images before loading new ones'; deploy-do.yml:771 explicitly says no prune happens before, and :831-862 prunes only after the container health gate",
+        "docs/TROUBLESHOOTING.md:50 \u2014 web container 'compose now sets 256MB'; infra/digitalocean/docker-compose.yml:199 sets 512m",
+        "docs/ONBOARDING.md:288-290 \u2014 `docker logs mct-api` / `mct-worker` / `mct-redis`; deployed containers are `mct-portal-<svc>-1` (deploy runs `docker compose -p mct-portal`; no container_name is set in compose)"
+      ],
+      "impact": "Operators chase a non-existent secret and the wrong log targets during an incident, and misread the web memory cap.",
+      "recommendation": "Correct the secret name, prune order, memory figure and container names in both docs.",
+      "owner": "docs / platform",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Extended check: 'validate docs against existing scripts/configs'.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "docs/audits/README.md index omits the committed repo-deep-dive runs and its naming contract does not match them",
+      "evidence": [
+        "docs/audits/README.md:13 \u2014 layout contract says `<run> = YYYY-MM-DD (or YYYY-MM-DD-<n>)`; actual directories are 20261002-0344-develop-6286137, 20261004-0700-main-178b91c and mainecybertech-20261004-full-main-9c0b88c",
+        "docs/audits/README.md:30-37 \u2014 Runs table lists only comprehensive-audit/2026-08-26 and the four ui-ux-docs-completeness runs; REAUDIT_REPORT_20261004.md and all repo-deep-dive runs are absent",
+        "docs/audits/README.md:8-27 \u2014 contract requires report.md per run; the repo-deep-dive runs ship INDEX.md + findings.json + registers instead",
+        "docs/audits/repo-deep-dive/REAUDIT_REPORT_20261004.md:8-9 \u2014 contains machine-local paths"
+      ],
+      "impact": "The most recent audits cannot be discovered from the audit index, and the stated contract no longer describes what is committed.",
+      "recommendation": "Add all runs (with pack + date + commit) to the Runs table, update the layout contract to the pack's actual file set, and mark the dated runs historical.",
+      "owner": "docs",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Companion to the DOC-P3-001 still-open row above.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "scripts/README.md omits 14 scripts, including every CI guard script",
+      "evidence": [
+        "scripts/README.md:19-48 \u2014 script index lists ~25 scripts; 14 files in scripts/ are not mentioned: check-docs-counts.mjs, check-docs-links.mjs, check-required-checks.mjs, check-rls-predicate.mjs, verify-prompts.js, verify-rls.mjs, sync-review-md.mjs, generate-db-types.js, openapi-audit.js, collect-licenses.mjs, seed-store.ts, backfill-profile-pii.mjs, apply-content-map.js, generate-details.js (filesystem comparison)",
+        "scripts/README.md:3 \u2014 'Last updated 2026-08-01'",
+        "AGENTS.md:153 \u2014 the agent reference lists several of the missing scripts, so the two indexes disagree"
+      ],
+      "impact": "Contributors cannot discover the repo's guard/generation scripts from the scripts index, even though CI and AGENTS.md depend on them.",
+      "recommendation": "Regenerate the script index from the directory (or add a CI check that every scripts/* file is mentioned).",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. 'Reviewed Script docs' checklist item.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "AGENTS.md production compose table omits the alertmanager service",
+      "evidence": [
+        "AGENTS.md:190-198 \u2014 'Docker Compose services (DigitalOcean production)' table lists api, web, worker, redis, caddy, prometheus",
+        "infra/digitalocean/docker-compose.yml:244 \u2014 alertmanager is a deployed service (mem_limit 128m at :299) and docs/MONITORING_AND_ALERTING.md:154,282 document it"
+      ],
+      "impact": "Agents and operators reading the reference can conclude alertmanager is not part of the production stack \u2014 the same misreading that produced the stale incident-response gap claims.",
+      "recommendation": "Add the alertmanager row (internal port 9093, mem 128m) to the table.",
+      "owner": "repo maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d.",
+      "area": "DOC"
+    },
+    {
+      "severity": "P3",
+      "title": "Migration naming docs contradict each other and the repo's actual 5302xxx sequence",
+      "evidence": [
+        "docs/migrations/naming-guide.md:95 \u2014 'All new migrations should use the ISO-date format' documented above (20240115120000-style)",
+        "docs/SUPABASE_MIGRATION_WORKFLOW.md:30 \u2014 'Create supabase/migrations/5302426_short_description.sql (next number)'",
+        "docs/technical-writing/migration-guide.md:25-33 \u2014 repeats the timestamp convention",
+        "Actual tree: 134 files, all 5302xxx, latest 5302436_restore_platform_admin_rls_gates.sql"
+      ],
+      "impact": "An agent following the naming guide creates an ISO-dated file that sorts before the 5302xxx sequence, risking apply-order surprises in `supabase db push --include-all` and fresh `db reset` runs.",
+      "recommendation": "Pick one convention (the sequential 5302xxx form that practice uses) and align naming-guide, SUPABASE_MIGRATION_WORKFLOW and technical-writing/migration-guide; add a guard that rejects new files outside the chosen pattern.",
+      "owner": "backend/DB lead + docs",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d.",
+      "area": "DOC"
+    }
+  ],
+  "report": "# Documentation, Developer Experience, and Operator Readiness Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: MaineCyberTech/mainecybertech (read-only clone at `/tmp/opencode/mct-audit-target`)\n- Branch: `main`\n- Commit SHA: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd` (Merge PR #168: promote develop to main)\n- Generated at: 2026-10-11\n- Auditor: domain subagent `16_documentation_devex_operator_readiness` (area `DOC`)\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/16_documentation_devex_operator_readiness.md`\n- Scope limitations: read-only; no Node/Docker/pnpm in the audit container (running `scripts/check-docs-counts.mjs` and the quick start was impossible \u2014 guards were re-derived by reading their parsers), no `gh` API access, so live GitHub state is unverifiable. Nothing under the target repo was modified.\n\n## Scope\n\nReviewed: README.md, README.dev.md, AGENTS.md/review.md, CONTRIBUTING.md, SECURITY.md, docs/INDEX.md, docs/ONBOARDING.md, docs/LOCAL_DEVELOPMENT_CHECKLIST.md, docs/testing.md, docs/ENVIRONMENT_VARIABLES.md, docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md, docs/SECRETS_ROTATION.md, docs/MONITORING_AND_ALERTING.md, docs/CI.md, docs/RELEASING.md, docs/ROLLBACK_PROCEDURES.md, docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md, docs/RTO_RPO.md, docs/TROUBLESHOOTING.md, docs/INCIDENT_RESPONSE.md, docs/DATA_BREACH_RESPONSE.md, docs/PLATFORM_FAILURE_RUNBOOKS.md, docs/RELEASE_GATE.md, docs/GAP_ANALYSIS.md, docs/migrations/*, docs/technical-writing/migration-guide.md, docs/API_ENDPOINT_INVENTORY.md, docs/ARCHITECTURE_DIAGRAM.md, docs/adr/README.md, docs/modules|features|runbooks indexes, docs/audits/**, scripts/README.md, prompts/PROVENANCE.md, plus the deploy/backup/alerting workflows and configs the docs describe.\n\nNot reviewed: module feature specs and runbooks content (60+60, sampled via indexes), docs/seo/**, handoff bundle binaries, the 632-file prompt corpus content, and live GitHub/Actions state.\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `README.md`, `README.dev.md`, `docs/ONBOARDING.md`, `docs/LOCAL_DEVELOPMENT_CHECKLIST.md` | Onboarding | Quick start, counts, promotion path | Walked literally against scripts/workflows |\n| `AGENTS.md` (1,003 lines) + `review.md` (1,009 lines) | Agent reference | Counts, worker model, guardrails | Counts re-derived from the filesystem |\n| `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, `docs/SECRETS_ROTATION.md`, `docs/ENVIRONMENT_VARIABLES.md` | Env/secret docs | Deploy env delivery, backup/alerting secrets | Compared against deploy-do/db-backup/storage-backup |\n| `docs/MONITORING_AND_ALERTING.md`, `infra/digitalocean/{alertmanager.tmpl.yml,prometheus.rules.yml,docker-compose.yml}` | Observability | Metrics wiring, /metrics auth, alert path | Code-level cross-check |\n| `docs/INCIDENT_RESPONSE.md`, `docs/DATA_BREACH_RESPONSE.md`, `docs/PLATFORM_FAILURE_RUNBOOKS.md` | Incident docs | Operator readiness | Compared against IR-P0-003 closure |\n| `docs/RELEASE_GATE.md`, `docs/RELEASING.md`, `docs/ROLLBACK_PROCEDURES.md`, `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Release/ops | Status artifacts vs current pipeline | Register cross-check |\n| `docs/CI.md`, `.github/workflows/*` | CI docs | Workflow tables, Slack/ntfy claims | 20 workflows, 3,086 lines |\n| `docs/GAP_ANALYSIS.md`, `docs/technical-writing/migration-guide.md`, `docs/API_ENDPOINT_INVENTORY.md` | Historical drafts | Staleness / unresolvable references | INDEX-listed as current |\n| `docs/audits/**`, `docs/INDEX.md` | Audit corpus/index | Staleness markers, run index | Committed registers inspected |\n| `scripts/README.md`, `scripts/check-docs-counts.mjs`, `scripts/check-docs-links.mjs` | Script docs/guards | Guard coverage, script index | 46 scripts vs index |\n\n## Verification Performed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `git log --oneline -8`; `git ls-files -s scripts/*.sh` | Command | Commit/exec-bit state | HEAD = `8d299b8d`; scripts are `100755` |\n| Filesystem counts: migrations 134, workflows 20, E2E specs 90, seeds 9, scripts (recursive) 81, web pages 319, components 102 | Command | Verify AGENTS.md \"File Counts\" | All AGENTS.md counts match |\n| `find docs/audits -maxdepth 3 -type d`; `diff` committed register vs pack register | Command | Audit corpus staleness | Committed copy == 9c0b88c register; no banner |\n| `python3` link check over INDEX/README/README.dev/CONTRIBUTING | Command | Broken references | All links resolve |\n| `node scripts/check-docs-counts.mjs` | Command | Count guard | Not executable here (`node: command not found`, exit 127); parser read instead |\n| Literal walk of README quick start | Manual | Onboarding | Not executable (no Docker/pnpm); compared `scripts/start-local-stack.sh` line-by-line against README \u2014 consistent |\n| `grep -rn` NTFY/ALERTMANAGER across `.github`, `docs`, `infra` | Command | Alerting docs vs pipeline | Workflows use ntfy; docs mostly say Slack |\n| `grep -rn` metrics record*/set* in `apps/api/src` | Command | Monitoring doc accuracy | All five \"not wired\" metrics are wired |\n| `grep -rn` `DO_SSH_KEY`, `supabase:reset:auto`, `412 paths`, `127 migrations` | Command | Doc-vs-code checks | Each confirmed stale |\n| Read of `app.ts:154-171`, `health.ts:16-26`, `field-encryption.ts:43-55` | Code read | Security-behavior claims | /metrics fails closed; PII encryption throws in prod |\n\n## Executive Summary\n\nThe documentation set is unusually large and mostly high-quality: `AGENTS.md` counts are filesystem-accurate, `docs/testing.md` is a guarded canonical reference, `docs/PLATFORM_FAILURE_RUNBOOKS.md` and `docs/INCIDENT_RESPONSE.md` are recent and well structured, and the release/rollback docs correctly describe the `prod-approval` operator gate and the backup S3/encryption contract. The docs-counts guard is real and wired into CI.\n\nThe dominant risk is **staleness of \"current state\" artifacts after the October remediation waves**. Several docs describe the pipeline, alerting path, or status of findings as they were before fixes landed:\n\n- Incident and breach docs still say Alertmanager is not deployed and the dead-man's switch does not exist (`IR-P0-003` was verified-fixed), and still list closed backup findings as open gaps.\n- `docs/RELEASE_GATE.md` \u2014 referenced by `RELEASING.md` as the consolidated release gate \u2014 is bound to an older run and lists closed, release-blocking controls as open.\n- The operator handbook and `README.dev.md` still describe push-triggered Terraform applies, cancelled deploys, a non-existent firewall port, and heredoc env delivery.\n- The canonical secret matrix and rotation inventory omit every `NTFY_ALERTS_*` and `ALERTMANAGER_*` secret, and CI/RELEASING/breach docs still name Slack as the failure channel, after the ntfy migration.\n- Historical drafts (`GAP_ANALYSIS.md`, `technical-writing/migration-guide.md`) are INDEX-listed without markers and contain AWS-era content, missing pnpm scripts, and wrong release/tag instructions.\n\nThe verification duty was applied: the single previous DOC row (`DOC-P3-001`) is still open; four documentation-subject rows from other areas were re-verified (`INFRA-P2-005` still-open, `REL-P2-004` partially-fixed, `RES-P3-003` partially-fixed, `SBOM-P2-003` verified-fixed).\n\n17 findings: 8 \u00d7 P2, 9 \u00d7 P3 (12 new, 5 verification rows). No P0/P1. Recommended next action: one \"truth-up\" docs PR per artifact class (incident/breach, release gate, handbook/README.dev, secret matrix), plus extending `check-docs-counts.mjs` to the files it misses.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| README | `README.md` | Overview/quick start | Current except migration count | Low | `:45` 127 vs 134 |\n| Dev onboarding | `README.dev.md`, `docs/ONBOARDING.md` | Setup/promotion | Partly stale | Medium | Terraform push claims, counts, container names |\n| Agent reference | `AGENTS.md` / `review.md` | Agent contract | Counts accurate; worker section stale | Low | Compose table omits alertmanager |\n| Testing docs | `docs/testing.md` | Canonical test guide | Current, guarded | None | a11y 25/68 matches spec |\n| Env docs | `docs/ENVIRONMENT_VARIABLES.md` | App vars | Current for app vars; alerting secrets missing | Medium | `METRICS_TOKEN` \"Required: No\" |\n| Secret matrix | `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md` | Canonical secret list | Missing NTFY/ALERTMANAGER | High | Slack-only backup row |\n| Rotation | `docs/SECRETS_ROTATION.md` | Rotation policy | Good; inventory incomplete | Medium | 48 entries, no alerting secrets |\n| Monitoring | `docs/MONITORING_AND_ALERTING.md` | Observability | Alert path current; metrics status stale | Medium | \"defined, not wired\" x5 |\n| CI | `docs/CI.md` | Workflow reference | Mostly current | Low | SBOM row fixed; Slack-only claims |\n| Release | `docs/RELEASING.md` | Promotion | Current | Low | Slack-only backup line |\n| Release gate | `docs/RELEASE_GATE.md` | Go-live gate | Stale (older run) | High | Contradicts register |\n| Rollback | `docs/ROLLBACK_PROCEDURES.md` | Rollback | Approval fixed; Terraform push stale | Medium | \u00a74 |\n| Operator handbook | `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual | Stale pipeline details | High | Concurrency/terraform/firewall/counts |\n| Incident | `docs/INCIDENT_RESPONSE.md` | IR plan | Stale alerting gaps | High | IR-P0-003 closed |\n| Breach | `docs/DATA_BREACH_RESPONSE.md` | Breach plan | Stale detection gaps | High | Same + backup findings |\n| Platform runbooks | `docs/PLATFORM_FAILURE_RUNBOOKS.md` | Failure modes | Current | None | `prod.tfvars` path nit |\n| Gap analysis | `docs/GAP_ANALYSIS.md` | Known gaps | AWS-era historical draft | Medium | INDEX-listed as current |\n| Migration docs | `docs/migrations/naming-guide.md`, `docs/SUPABASE_MIGRATION_WORKFLOW.md`, `docs/technical-writing/migration-guide.md` | DB changes | Contradictory/stale | Medium | ISO vs 5302xxx |\n| API inventory | `docs/API_ENDPOINT_INVENTORY.md` | Endpoint list | Marked historical; count stale | Low | 412 vs 418 |\n| Audit corpus | `docs/audits/**` | Point-in-time audits | No staleness markers; index incomplete | Medium | Machine paths committed |\n| Script docs | `scripts/README.md` | Script index | Missing 14 scripts | Low | Guards absent |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| README | 3 | Accurate quick start, CI table, security model | Stale migration count (`:45`) | Fix count + guard it |\n| Local setup | 3 | `start-local-stack.sh` matches README; dev-setup exists | ONBOARDING Windows-only env sync; `dev-setup.sh:332` missing script | Fix sync step + script |\n| Env docs | 3 | Thorough per-service tables; guarded app vars | Alerting secrets missing; METRICS_TOKEN requirement | Add NTFY/ALERTMANAGER; fix metrics note |\n| Architecture/API docs | 2 | `ARCHITECTURE_DIAGRAM.md`, ADR index current | `GAP_ANALYSIS.md` AWS-era; endpoint count stale | Mark/rewrite gap analysis |\n| DB/migration docs | 2 | Workflow + rollback paths accurate | Naming conventions contradict; technical guide stale | Pick one convention; fix guide |\n| Testing docs | 4 | Canonical, counts guarded in CI, a11y counts accurate | Minor: none material | Keep |\n| Deploy/rollback docs | 2 | RELEASING/ROLLBACK approval sections current | Handbook + README.dev describe retired Terraform flow | Truth-up both docs |\n| Incident/security docs | 2 | Comprehensive IR/breach plans; good structure | Alerting/backup gaps stale; on-call rota unassigned | Update gaps; assign rota |\n| Contribution/coding standards | 3 | CONTRIBUTING + AGENTS patterns; review.md mirrored | Script index gaps | Regenerate script index |\n| PR/release process | 2 | RELEASING current | RELEASE_GATE stale; tag process contradicts | Regenerate gate |\n| Operator manuals | 2 | Handbook rich but stale | Multiple pipeline contradictions | One truth-up PR |\n| Troubleshooting | 2 | PLATFORM_FAILURE_RUNBOOKS current | TROUBLESHOOTING wrong secret/containers/limits | Fix 4 items |\n\n## Detailed Review\n\n### Item: Release-gate status artifact\n\n- Evidence: `docs/RELEASE_GATE.md:3-6,31-36,45-49`; committed register `docs/audits/repo-deep-dive/mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md`.\n- What it does: consolidates release exit criteria and operator actions for the 20261003 run.\n- Current controls: referenced by `RELEASING.md:136-137`; statuses are per-finding and dated.\n- Missing controls: no run/commit binding refresh, no staleness marker, no link to the latest register.\n- Risks: operators treat closed controls as open (or lose trust in the gate).\n- Recommended improvement: regenerate from the 9c0b88c/8d299b8d register or replace with a pointer to the latest run + `AGENTS.md` Known Debt.\n- Suggested tests: a docs guard that asserts any \"release gate\" artifact's run id matches the newest committed register.\n- Suggested docs: keep one authoritative gate; archive old ones.\n\n### Item: Incident/breach gap lists\n\n- Evidence: `docs/INCIDENT_RESPONSE.md:124-127`; `docs/DATA_BREACH_RESPONSE.md:143-147,412,446-455`; `infra/digitalocean/docker-compose.yml:244`; `alertmanager.tmpl.yml:12-14,144-155`; `deploy-do.yml:739-746`.\n- What it does: tells responders what detection is missing.\n- Current controls: Alertmanager deployed with an external watchdog receiver; restore test asserts integrity/freshness.\n- Missing controls: the docs were not updated when IR-P0-003/DR-P0-001/DR-P0-002/IR-P1-004/IR-P1-005 closed.\n- Risks: wrong incident decisions and breach timelines.\n- Recommended improvement: update the gap lists; keep only genuinely open gaps.\n- Suggested tests: tabletop read-through against the current register each quarter.\n- Suggested docs: add \"last verified against register\" line.\n\n### Item: Alert-delivery secret documentation\n\n- Evidence: `db-backup.yml:51-62`, `deploy-do.yml:622-631,647,709-715`, `GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:83-93`, `SECRETS_ROTATION.md:9-58`, `CI.md:23-25`.\n- What it does: defines the secret inventory and notification channels.\n- Current controls: workflows fail closed and post to ntfy.\n- Missing controls: matrix/rotation omit NTFY/ALERTMANAGER; prose still says Slack.\n- Risks: alert delivery lost during rebuild/rotation; audit trail wrong.\n- Recommended improvement: add the 10 secret names; update prose.\n- Suggested tests: a script that extracts `secrets.*` from workflows and diffs against the matrix.\n- Suggested docs: matrix + rotation + CI/RELEASING/breach.\n\n### Item: Operator handbook pipeline details\n\n- Evidence: `FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:54,99,104,135,137,144`; `deploy-do.yml:40-43,667-722,771,831-862`; `terraform-do.yml:3-21`; `firewall.tf:22-57`; `variables.tf` (13).\n- What it does: operator manual for deploy/rollback/infra.\n- Current controls: many sections (approval gate, rollback SHA) are accurate.\n- Missing controls: concurrency/terraform/firewall/secret-count/env-delivery sections stale.\n- Risks: operators expect wrong behavior during incidents.\n- Recommended improvement: one truth-up PR with the evidence above.\n- Suggested tests: doc lint comparing workflow trigger/concurrency strings.\n- Suggested docs: handbook + README.dev.\n\n### Item: Historical drafts presented as current\n\n- Evidence: `GAP_ANALYSIS.md:7,23,24,27,149`; `technical-writing/migration-guide.md:15,25-33,206-232,275`; `API_ENDPOINT_INVENTORY.md:5`.\n- What it does: INDEX-listed guidance for gaps/migrations/endpoints.\n- Current controls: `API_ENDPOINT_INVENTORY.md` has a historical banner (good pattern).\n- Missing controls: `GAP_ANALYSIS.md` and the migration guide have none.\n- Risks: wrong architecture/counts/commands for developers and agents.\n- Recommended improvement: reuse the banner pattern or rewrite.\n- Suggested tests: `check-docs-links`-style lint for \"historical\" markers on dated docs.\n- Suggested docs: INDEX entries should carry `(historical)`.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| DOC-001 | README | `README.md` | Accurate quick start/CI table | 127 vs 134 migrations | P3 | Fix + guard |\n| DOC-002 | Local setup | `start-local-stack.sh` | Script matches README | ONBOARDING sync step Windows-only | P3 | Document cross-platform path |\n| DOC-003 | Env docs | `ENVIRONMENT_VARIABLES.md` | Per-service tables | Alerting secrets; METRICS_TOKEN note | P2 | Add secrets; fix note |\n| DOC-004 | Architecture/API docs | `ARCHITECTURE_DIAGRAM.md`, `GAP_ANALYSIS.md` | Diagram current | Gap analysis AWS-era | P2 | Mark historical |\n| DOC-005 | DB/migration docs | `SUPABASE_MIGRATION_WORKFLOW.md` | Reverse-migration path accurate | Naming contradiction; stale guide | P3 | Align conventions |\n| DOC-006 | Testing docs | `docs/testing.md` | Canonical + guarded | \u2014 | \u2014 | Keep |\n| DOC-007 | Deploy/rollback docs | `RELEASING.md`, handbook | Approval gate accurate | Handbook/README.dev Terraform + concurrency | P2 | Truth-up |\n| DOC-008 | Incident/security docs | `INCIDENT_RESPONSE.md`, breach doc | Plans complete | Stale alerting/backup gaps | P2 | Update gaps |\n| DOC-009 | Contribution/coding standards | `CONTRIBUTING.md`, AGENTS patterns | Adequate | Script index gaps | P3 | Regenerate index |\n| DOC-010 | PR/release process | `RELEASING.md`, `RELEASE_GATE.md` | Branch model accurate | Stale release gate | P2 | Regenerate gate |\n| DOC-011 | Operator manuals | Handbook, `PLATFORM_FAILURE_RUNBOOKS.md` | Failure runbooks current | Handbook stale | P2 | Truth-up |\n| DOC-012 | Troubleshooting | `TROUBLESHOOTING.md` | Symptom/fix structure | Wrong secret/containers/limits | P3 | Fix four items |\n\n## Findings\n\nIDs are assigned by the aggregator. Severity/status per the run JSON.\n\n1. **Dated point-in-time audit reports are mixed with current runbooks with no archive/staleness marker** \u2014 P3, still-open (verification). Evidence: `docs/audits/README.md:30-37` (index omits every repo-deep-dive run), committed 9c0b88c register without banner, `REAUDIT_REPORT_20261004.md:8-9` machine-local paths, `INCIDENT_RESPONSE.md:114-135` referencing audit-folder-only runbooks. Fix: banner + index + path hygiene.\n2. **Operations documentation contradicts the current pipeline and configuration** \u2014 P2, still-open (verification of INFRA-P2-005). Evidence: handbook `:54,99,104,135,137,144`; `README.dev.md:393,403,411,432`; `deploy-do.yml:40-43,667-722`; `terraform-do.yml:3-21`; `firewall.tf:22-57`. Fix: update both docs.\n3. **Rollback documentation is stale (Terraform push flow) and repeats the false approval claim** \u2014 P2, partially-fixed (verification of REL-P2-004). `ROLLBACK_PROCEDURES.md:199-203` still says push triggers terraform-do; `:239-253` approval section corrected. Fix: replace \u00a74.\n4. **`AGENTS.md` documents the worker consumer incorrectly and omits the queue backend divergence** \u2014 P3, partially-fixed (verification of RES-P3-003). `AGENTS.md:17` fixed; `:326-328` still \"SQS-based\"/\"142 lines\"; actual dispatcher `consumer-sqs.ts:80-96`, prod `QUEUE_BACKEND=bullmq` (compose `:138`).\n5. **`docs/CI.md` documents the SBOM workflow as \"Blocking\" but it gates nothing** \u2014 P2, verified-fixed (verification of SBOM-P2-003). `docs/CI.md:29` now \"Artifact-only (not a gate)\".\n6. **Incident-response and breach docs still describe the alerting dead-man's switch as undeployed and list closed gaps** \u2014 P2, open. Evidence: `INCIDENT_RESPONSE.md:124-127`; `DATA_BREACH_RESPONSE.md:143-147,412,446-455`; deployed alertmanager (`compose:244`, `alertmanager.tmpl.yml:144-155`, `deploy-do.yml:739-746`).\n7. **docs/RELEASE_GATE.md is a stale status artifact contradicting the current verified-fixed register** \u2014 P2, open. `RELEASE_GATE.md:3-6,31-36,45-49` vs register verified-fixed rows; referenced as the gate by `RELEASING.md:136-137`.\n8. **Alert-delivery secrets (NTFY_ALERTS_*, ALERTMANAGER_*) are missing from the canonical secret docs, which still name Slack as the only channel** \u2014 P2, open. `db-backup.yml:51-62`; matrix `:83-93`; rotation inventory `:9-58`; `CI.md:23-25`; `RELEASING.md:130`; `DATA_BREACH_RESPONSE.md:140`.\n9. **docs/GAP_ANALYSIS.md is an AWS-era historical draft presented as current** \u2014 P2, open. `GAP_ANALYSIS.md:7,23,24,27,149`; INDEX `:31`.\n10. **docs/technical-writing/migration-guide.md documents commands and a release process that do not exist** \u2014 P2, open. Missing pnpm scripts (`:15,210,274-279`), timestamp naming (`:25-33`), web `/api/health` (`:206-207`), tag release (`:216-232`); `dev-setup.sh:332`.\n11. **Migration/workflow/OpenAPI counts drift and the count guard does not cover them** \u2014 P3, open. `README.md:45`; `ONBOARDING.md:51,55,305`; `check-docs-counts.mjs:9-29,145-171`.\n12. **docs/MONITORING_AND_ALERTING.md contradicts the now-wired metrics and the fail-closed /metrics gate** \u2014 P3, open. `:117,130-134,253`; `app.ts:154-171`; `health.ts:16-26`; `prometheus.yml:22-28`.\n13. **docs/TROUBLESHOOTING.md and docs/ONBOARDING.md name wrong deploy secrets/containers and stale memory limits** \u2014 P3, open. `TROUBLESHOOTING.md:39,50`; `ONBOARDING.md:288-290`.\n14. **docs/audits/README.md index omits the committed repo-deep-dive runs and its naming contract does not match them** \u2014 P3, open. `:13,30-37`.\n15. **scripts/README.md omits 14 scripts, including every CI guard script** \u2014 P3, open. `:19-48` vs filesystem.\n16. **AGENTS.md production compose table omits the alertmanager service** \u2014 P3, open. `AGENTS.md:190-198` vs `compose:244`.\n17. **Migration naming docs contradict each other and the repo's actual 5302xxx sequence** \u2014 P3, open. `naming-guide.md:95` vs `SUPABASE_MIGRATION_WORKFLOW.md:30` vs tree.\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Responders act on a stale alerting/backup gap list | High | High | Wrong incident decisions, delayed breach detection | Findings 6, 16 | Update IR/breach docs; quarterly register read-through |\n| Release gate blocks or misleads promotion | High | Medium | Release friction, eroded trust | Finding 7 | Regenerate gate from register |\n| Alert delivery lost during secret rotation/rebuild | High | Medium | Silent backup/monitoring failures | Finding 8 | Add secrets to matrix/rotation; add workflow-vs-matrix guard |\n| Operator follows stale Terraform/concurrency steps | Medium | High | Wasted incident time, wrong expectations | Findings 2, 3 | Truth-up handbook/README.dev/rollback |\n| Developer/agent follows AWS-era or missing commands | Medium | High | Wasted time, broken local setup | Findings 9, 10, 15 | Mark historical; fix commands; index scripts |\n| Counts drift silently (guard blind spots) | Low | High | Wrong scale assumptions | Finding 11 | Extend `check-docs-counts.mjs` |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\nNone. (No P0/P1 in this domain.)\n\n### This Week\n\n- Update `docs/INCIDENT_RESPONSE.md` \u00a78 and `docs/DATA_BREACH_RESPONSE.md` detection/gap lists to the deployed alerting and backup state (finding 6).\n\n### This Month\n\n- Regenerate `docs/RELEASE_GATE.md` from the current register (finding 7).\n- Truth-up the operator handbook + `README.dev.md` Terraform/concurrency/env-delivery sections (finding 2) and `ROLLBACK_PROCEDURES.md` \u00a74 (finding 3).\n- Add `NTFY_ALERTS_*` and `ALERTMANAGER_*` to the secret matrix and rotation inventory; switch CI/RELEASING/breach prose to ntfy-primary (finding 8).\n- Mark `GAP_ANALYSIS.md` historical and rewrite/mark `technical-writing/migration-guide.md` (findings 9, 10).\n- Add staleness banners to `docs/audits/**` and complete `docs/audits/README.md` (findings 1, 14).\n\n### Later / Platform Evolution\n\n- Extend `check-docs-counts.mjs` to README/ONBOARDING (finding 11); add a workflow-secrets-vs-matrix diff script (finding 8); add a historical-marker lint (findings 9, 10).\n- Align migration naming conventions and add a filename-pattern guard (finding 17).\n- Fix remaining P3 doc accuracy items (findings 4, 12, 13, 15, 16).\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Fix 127\u2192134 / 16\u219220 / 412\u2192418 | Stops obvious drift | `README.md`, `docs/ONBOARDING.md`, `docs/API_ENDPOINT_INVENTORY.md` | `grep` counts vs filesystem |\n| Add alertmanager row to AGENTS compose table | Prevents \"not deployed\" misreading | `AGENTS.md` | Diff vs compose services |\n| Correct `DO_SSH_KEY`\u2192`CI_SSH_PRIVATE_KEY` and prune order | Operator accuracy | `docs/TROUBLESHOOTING.md` | Read vs `deploy-do.yml` |\n| Add \"historical\" banner to GAP_ANALYSIS | One-line protection | `docs/GAP_ANALYSIS.md` | Pattern matches API inventory |\n| Add NTFY/ALERTMANAGER rows to matrix | Audit/rotation completeness | matrix + rotation docs | Diff workflow `secrets.*` vs matrix |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Register-driven doc refresh for IR/breach | P2 | platform lead | S | Finding 6 |\n| Release gate regeneration + run binding | P2 | release owner | S | Finding 7 |\n| Secret inventory completion + guard | P2 | platform/security | M | Finding 8 |\n| Handbook/README.dev truth-up | P2 | infra | M | Findings 2, 3 |\n| Historical-draft marking + audit index | P3 | docs | S | Findings 1, 9, 10, 14 |\n| Count-guard extension | P3 | repo maintainer | S | Finding 11 |\n| Monitoring/metrics doc refresh | P3 | observability | S | Finding 12 |\n| Migration naming alignment + guard | P3 | DB lead | S | Finding 17 |\n\n## Suggested Tests\n\n- **CI/docs guard:** extend `scripts/check-docs-counts.mjs` to README.md, docs/ONBOARDING.md and docs/API_ENDPOINT_INVENTORY.md (migrations/workflows/paths); fail on drift.\n- **Secret-inventory guard:** extract `secrets.*`/`vars.*` names from `.github/workflows/**` and assert each appears in `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md` (ignore-list for computed values).\n- **Historical-marker lint:** every `docs/audits/<pack>/<run>/` directory and any doc whose title/banner states a commit must contain a \"historical\" marker; every INDEX entry for a dated audit carries `(historical)`.\n- **Status-artifact consistency check:** a script that parses `docs/RELEASE_GATE.md` finding ids and compares statuses against the newest `follow_up_register.md`; fail on contradiction.\n- **Doc-command smoke test:** assert every `pnpm <script>` mentioned in docs exists in a package.json; assert referenced shell scripts exist and are executable.\n- **Manual quarterly walk:** run the README quick start on a clean Linux box and the ONBOARDING path on Windows; record failures.\n\n## Suggested Documentation Updates\n\n- `docs/INCIDENT_RESPONSE.md` \u2014 \u00a78 gap list; \u00a77 playbook references to audit-folder-only files.\n- `docs/DATA_BREACH_RESPONSE.md` \u2014 detection gaps; Slack\u2192ntfy; closed backup findings.\n- `docs/RELEASE_GATE.md` \u2014 regenerate or replace with a pointer to the latest run.\n- `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` \u2014 concurrency, terraform, firewall, variables count, env delivery, secret list.\n- `README.dev.md` \u2014 terraform promotion path.\n- `docs/ROLLBACK_PROCEDURES.md` \u2014 \u00a74 terraform rollback command.\n- `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, `docs/SECRETS_ROTATION.md` \u2014 NTFY/ALERTMANAGER entries.\n- `docs/CI.md`, `docs/RELEASING.md` \u2014 ntfy-primary backup notifications; backup-dispatch 05:00 cron.\n- `docs/MONITORING_AND_ALERTING.md` \u2014 metrics statuses, fail-closed /metrics, memory table.\n- `docs/GAP_ANALYSIS.md`, `docs/technical-writing/migration-guide.md` \u2014 historical banner or rewrite.\n- `docs/ONBOARDING.md`, `README.md`, `docs/API_ENDPOINT_INVENTORY.md` \u2014 counts; cross-platform env sync; container names.\n- `docs/audits/README.md` + run directories \u2014 index + staleness banners.\n- `scripts/README.md` \u2014 regenerate index.\n- `docs/migrations/naming-guide.md` vs `docs/SUPABASE_MIGRATION_WORKFLOW.md` \u2014 one convention.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Which artifact is the single authoritative \"current state\" \u2014 the latest run register, `AGENTS.md`, or `docs/RELEASE_GATE.md`? | Deciding which to refresh and what to archive | Owner decision; then bind artifacts to it |\n| Is the on-call rota still unassigned (INCIDENT_RESPONSE \u00a78)? | IR plan \"not operational until names recorded\" | GitHub/team confirmation (not in repo) |\n| Is `prod-approval` reviewer configuration now live? | Docs correctly say it cannot live in the repo | `gh api repos/.../environments` (not accessible here) |\n| Should migration naming be ISO-date (guide) or sequential (practice)? | Prevents mis-ordered migrations | Owner decision; then align docs + guard |\n| Are the alerting secrets (`NTFY_ALERTS_*`, `ALERTMANAGER_*`) actually set in both environments? | Docs cannot confirm provisioning | GitHub environment listing (not accessible here) |\n\n## Appendix\n\n### Commands run (read-only)\n\n```bash\ncd /tmp/opencode/mct-audit-target\ngit log --oneline -8\nls supabase/migrations/*.sql | wc -l                    # 134\nls .github/workflows/*.yml | wc -l                      # 20\nfind apps/web/e2e -name '*.spec.ts' | wc -l             # 90\nfind docs -name '*.md' | wc -l                          # 342\npython3  # filesystem counts + link checks + page counts\ngrep -rn \"NTFY_ALERTS\\|ALERTMANAGER_\" .github docs infra\ngrep -rn \"record\\|setActive\" apps/api/src/lib/metrics.ts apps/api/src/routes apps/api/src/services\ngrep -rn \"DO_SSH_KEY\\|supabase:reset:auto\\|412 paths\\|127 migrations\" docs README.md\nnode scripts/check-docs-counts.mjs                      # node not found (exit 127) \u2014 parser read instead\n```\n\n### New-developer journey (literal walk)\n\n1. `git clone` \u2192 `pnpm install` \u2014 documented, consistent.\n2. `./scripts/start-local-stack.sh` \u2014 script exists, executable, checks docker/node/pnpm, runs `pnpm install`, `supabase start`, `db reset`, writes `apps/*/.env.local`, starts API+web. README matches. **Not executable in the audit container** (no Docker/Node) \u2014 marked not reproducible.\n3. ONBOARDING alternative: `pnpm supabase:env:sync` runs `powershell ... sync_supabase_env.auto.v2.ps1 -EnvFile .env.local` \u2192 writes the repo-root `.env.local`, which compose does not consume (`docker-compose.yml:8,25,43` read `apps/*/.env.local`); Linux/macOS only get the `.ps1` pointer. Gap recorded (finding 11/13 class).\n4. Test commands in README/testing.md all exist in package.json.\n5. Promotion path: README/README.dev correctly describe develop\u2192main and prod-approval, but README.dev's Terraform lines are stale (finding 2).\n\n### Documentation set recommendation\n\nKeep: `AGENTS.md`/`review.md`, `docs/INDEX.md`, `docs/testing.md`, `docs/PLATFORM_FAILURE_RUNBOOKS.md`, `docs/RELEASING.md`, `docs/RTO_RPO.md`, `docs/MONITORING_AND_ALERTING.md` (\u00a79), `docs/SECRETS_ROTATION.md` (procedure quality), ADRs, module/feature/runbook indexes. Add: a `docs/CURRENT_STATE.md` (or a banner convention) naming the newest run register and commit; a docs-accuracy CI guard; staleness banners on all dated audits.\n"
+}

@@ -1,0 +1,366 @@
+{
+  "domain": "07_data_schema_migration_runtime_validation",
+  "file": "07_data_schema_migration_runtime_validation.md",
+  "area": "DATA",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:46Z",
+  "findings": [
+    {
+      "severity": "P0",
+      "title": "Orphan cleanup can recursively delete a bucket's contents",
+      "evidence": [
+        "apps/worker/src/tasks/orphan-cleanup.ts:52-67 \u2014 isFolderEntry() treats null/absent `id` as a folder; isFolderLike() rejects trailing-slash/prefix paths",
+        "apps/worker/src/tasks/orphan-cleanup.ts:78-130 \u2014 listAllFiles() recurses folder-by-folder with pagination (LIST_PAGE_SIZE=100), a MAX_DEPTH=8 cap and fail-closed read errors",
+        "apps/worker/src/tasks/orphan-cleanup.ts:227-235 \u2014 any non-object path (root, no slash, folder-like) aborts the bucket instead of being passed to storage.remove()",
+        "apps/worker/src/__tests__/orphan-cleanup.test.ts:369-445 \u2014 regression tests for folder entry (null id), .emptyFolderPlaceholder, root path and a folder surfaced with a non-null id"
+      ],
+      "impact": "The scheduled cleanup can no longer delete a whole bucket by passing a folder prefix to remove(); catastrophic storage-loss path is closed.",
+      "recommendation": "Keep the folder-aware recursion + unsafe-path abort; add the storage integration fixture (nested objects + true orphan) suggested in the previous run to prove remove() is only ever handed concrete keys.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: recursive paginated listing, folder-entry rejection and the unsafe-path abort are all present with dedicated tests (orphan-cleanup.test.ts:369-445). Node was unavailable, so the suite was read, not executed.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P1",
+      "title": "Approved-membership RLS predicate reintroduced six times; pending/suspended members could access tenant data",
+      "evidence": [
+        "scripts/check-rls-predicate.mjs:38,77,100 \u2014 guard scans every migration newer than BASELINE_VERSION=5302430 and fails on a raw status-unfiltered membership predicate",
+        ".github/actions/unit-tests/action.yml:59 \u2014 guard is wired into the shared unit-tests action used by test.yml and validate.yml",
+        "Python reimplementation of the guard regex over supabase/migrations (>5302430): 0 violations (node unavailable, so the script itself was not executed)",
+        "supabase/migrations/5302057_fix_bootstrap_rls_fk_indexes.sql:39-55 \u2014 notifications_insert_system_or_admin is still the live INSERT policy; its admin branch is `select 1 from public.memberships m ... where m.user_id = auth.uid() ... and r.key in ('super_admin','admin')` with no m.status='approved'",
+        "grep supabase/migrations for notifications policies: only 5302029 and 5302057 ever create/replace them \u2014 no later migration rewrites this policy"
+      ],
+      "impact": "Residual write-injection path: a pending/suspended member holding an admin-role membership can insert notifications for other users in the org via the anon-key + JWT PostgREST path. No tenant data read is exposed by this residual, but the register's claim that all module policies use the approved-membership helper is not fully true.",
+      "recommendation": "Add a follow-up migration that rewrites notifications_insert_system_or_admin with public.user_has_role(organization_id, array['super_admin','admin']) (or an explicit m.status='approved' filter); consider raising the check-rls-predicate baseline once the historical policy set is clean.",
+      "owner": "backend/data governance",
+      "target": "this week",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: the guard is present and effective for new migrations (0 violations reproduced), but the pre-baseline notifications INSERT policy still carries the raw predicate without an approved filter and remains live.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P1",
+      "title": "`retention` worker task performs unbounded deletes and reports success on partial failure",
+      "evidence": [
+        "apps/worker/src/tasks/retention.ts:23,31 \u2014 BATCH_SIZE=1000 and MAX_BATCHES=200 bound each purge",
+        "apps/worker/src/tasks/retention.ts:58-84 \u2014 purgeInBatches() selects ids, deletes in chunks, reports real counts and marks truncation",
+        "apps/worker/src/tasks/retention.ts:104-115,156-165 \u2014 non-positive windows are refused; any sub-purge error returns { ok: false, error }",
+        "apps/worker/src/__tests__/retention.test.ts:83-124 \u2014 tests for invalid windows, bounded batches, honest failure and empty backlog"
+      ],
+      "impact": "Mass-delete lock/latency risk and silent purge failure are both addressed.",
+      "recommendation": "Keep the bounded batching; close the remaining test gap on age-boundary behaviour (see the separate retention-boundary finding).",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: bounded batching, truncation reporting and honest {ok:false} are present with tests. Residual documented separately: the test mock ignores the age cutoff, so the fresh-vs-expired boundary is unproven.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P1",
+      "title": "Soft-delete columns remain dead schema; DELETE endpoints hard-delete",
+      "evidence": [
+        "supabase/migrations/5302432_drop_unused_soft_delete_columns.sql:1-31 \u2014 begin/commit migration drops deleted_at/deleted_by from tickets, projects and documents plus their indexes, citing DATA-P1-003",
+        "grep deleted_at|deleted_by in apps/, packages/ and supabase/migrations (excluding the two historical migrations and docs/audits): no live code or type references",
+        "packages/sdk/src/database.types.ts \u2014 regenerated without deleted_at (no hits)",
+        "docs/ROLLBACK_PROCEDURES.md:64-76 \u2014 documents the hard-delete product decision and that recovery is backup/PITR-based"
+      ],
+      "impact": "Schema no longer advertises tombstone semantics the code never implemented; no false recoverability.",
+      "recommendation": "None required; keep the documented hard-delete contract in ROLLBACK_PROCEDURES.md aligned with the API.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: the columns were dropped in 5302432 (commit 925ec007, ancestor of this commit), no app/type references remain, and hard-delete semantics are documented. The previous run's 'still open at 9c0b88c' was stale.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Blanket `anon` DML grant + default privileges make every future table anon-writable unless RLS happens to stop it",
+      "evidence": [
+        "supabase/migrations/5302434_anon_privilege_least_privilege.sql:34-44 \u2014 revokes the default-privilege grants for tables and sequences from anon",
+        "supabase/migrations/5302434_anon_privilege_least_privilege.sql:46-72 \u2014 revokes the blanket per-table grant, then re-grants INSERT only on public_interactions, store_analytics_events and store_quotes plus SELECT on four public store catalog tables",
+        "supabase/migrations/5302434_anon_privilege_least_privilege.sql:24,73 \u2014 migration is begin/commit wrapped",
+        "No migration after 5302434 creates a table and re-grants anon default DML (5302435/5302436 create no tables)"
+      ],
+      "impact": "Least-privilege restored: future tables are deny-by-default for anon and the public surface is an explicit allowlist.",
+      "recommendation": "Keep the allowlist comment pattern; add a regression check that asserts information_schema.role_table_grants for anon matches the allowlist.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: 5302434 removes the blanket/default anon DML and keeps only the three INSERT + four SELECT grants; the migration is transaction-wrapped and no later migration reintroduces a default grant.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Destructive table-replacement migrations are not transaction-wrapped",
+      "evidence": [
+        "supabase/migrations/5302406_device_profiles.sql:3-7 \u2014 comment claims 'Idempotent... Safe to re-run', then `drop table if exists public.device_profiles cascade;` + `create table` with no begin/commit",
+        "supabase/migrations/5302407_network_diagrams.sql:8-15 \u2014 same pattern: 'Safe to re-run' comment, `drop table if exists network_diagrams;` + `create table`, no begin/commit",
+        "supabase/migrations/5302055_cleanup_dead_tables.sql:4-12 \u2014 nine `drop table ... cascade` statements (plus an FK swap) with no begin/commit",
+        "docs/migrations/naming-guide.md:168 \u2014 the repo's own standard: 'Use transactions - Wrap multi-statement migrations in BEGIN; ... COMMIT;'",
+        "tools/migration_chain_check.sh:102 \u2014 each migration is applied with `psql -f` (no --single-transaction), so a mid-file failure commits the drops and leaves the schema partially applied",
+        "supabase/migrations/5302110_restore_document_permissions.sql:1-10 \u2014 real precedent: 5302055's unwrapped `drop table ... cascade` silently destroyed can_read_document() and two documents policies and had to be forward-fixed"
+      ],
+      "impact": "A failure between the drop and the create loses the old table's data and leaves the schema broken; the 'safe to re-run' comment is also misleading because re-applying the file on a populated database drops live rows.",
+      "recommendation": "Wrap every destructive migration in begin;/commit; (or rename/replace via create-new + transactional swap), archive data before drop, and correct the 'safe to re-run' comments; consider adding a static check that fails any migration containing `drop table`/`drop column` outside begin/commit.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still open. 5302406:5, 5302407:13 and 5302055:4-12 remain unwrapped and unarchived; the repo's own naming guide and psql-based chain check make the failure mode concrete.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "`orphan-cleanup` deletes storage objects based on a truncated listing",
+      "evidence": [
+        "apps/worker/src/tasks/orphan-cleanup.ts:6-10,97-127 \u2014 listAllFiles() pages with LIST_PAGE_SIZE=100 until a short page, so the listing is not truncated",
+        "apps/worker/src/tasks/orphan-cleanup.ts:119-123 \u2014 exceeding MAX_LISTED=10_000 aborts the bucket rather than acting on a partial view",
+        "apps/worker/src/__tests__/orphan-cleanup.test.ts:211-226 \u2014 'pages through a bucket larger than one listing page'"
+      ],
+      "impact": "The cleanup can no longer classify unlisted objects as orphans.",
+      "recommendation": "Keep the pagination + refusal semantics; add the real-storage integration fixture to prove no object outside the listing is removed.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: paginated recursive listing with a hard cap and abort semantics, covered by a pagination test.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Migration CI dry-run diff is non-blocking; drift is never gated",
+      "evidence": [
+        ".github/workflows/supabase-migrations.yml:90-125 \u2014 post-push `supabase db diff --linked --schema public`, ANSI stripped, fails with ::error on any alter/create/drop/comment/grant/revoke; allow_drift=1 downgrades to warning only via workflow_dispatch",
+        ".github/workflows/supabase-migrations.yml:68-83 \u2014 the dry-run plan is captured and uploaded as a 30-day artifact before the push",
+        ".github/workflows/supabase-migrations.yml:23-26,58-60 \u2014 migrations are serialized per branch and the Supabase CLI is pinned to 2.107.0"
+      ],
+      "impact": "Unreconciled schema drift now blocks the migration workflow instead of being swallowed by `|| true`.",
+      "recommendation": "Keep the post-push diff gate; optionally add a required-review note when allow_drift=1 is used.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: the drift check runs after the push, strips ANSI, and fails closed; the only bypass is an explicit reviewed dispatch input.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "`audit_logs` org-delete cascade destroys compliance history; 365-day purge has no archive",
+      "evidence": [
+        "supabase/migrations/5302108_fix_audit_logs_cascade.sql:2-7 \u2014 audit_logs.organization_id FK is `on delete cascade`",
+        "apps/worker/src/tasks/retention.ts:9-12,129-132 \u2014 audit_logs rows older than 365 days are deleted; no archive step",
+        "apps/api/src/routes/organizations.ts:397-419 \u2014 DELETE /organizations/:id hard-deletes the org, cascading away every audit row for it",
+        "grep archive|purge in apps/api/src and apps/worker/src: no audit archive sink exists (only storage/backup scripts mention archives)"
+      ],
+      "impact": "Tenant offboarding and routine ageing both erase the compliance evidence trail; no cold-storage copy exists to reconstruct it.",
+      "recommendation": "Either change the FK to `on delete set null` (column is nullable) or write audit rows to an archive sink before org deletion and before the 365-day purge; record the retention/archive decision in the data-governance docs.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: cascade is unchanged (5302108) and the 365-day purge has no archive; the org DELETE route still hard-deletes. Previously carried unverified from 20261002.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Several stores lack a retention policy and owner",
+      "evidence": [
+        "Migration parse: 118 public tables define a created/captured timestamp; only three have purge code (audit_logs, notifications via apps/worker/src/tasks/retention.ts:129-134; public_interactions via 5302117 + apps/worker/src/tasks/public-interaction-retention.ts)",
+        "No purge exists for impersonation_log (5302133, cross-tenant access log), satisfaction_pulses (customer feedback text, 5302079), webhook_deliveries / webhook_dead_letters (request bodies, 5302032/5302050), document_shares (5302043) or business_os_snapshots (5302416)",
+        "supabase/migrations/5302071_governance.sql:54-75 \u2014 a retention_policies table exists, but apps/worker/src/tasks/retention.ts:9-12 hardcodes 365/90 days and never consults it",
+        "docs/MODULE_SPECS_GAP_AUDIT_2026-08-05.md:412 \u2014 independently documents that purge thresholds are hardcoded rather than driven by retention_policies rows"
+      ],
+      "impact": "Unbounded growth of PII/audit-adjacent stores with no disposal owner; the product's retention_policies registry is not enforced by the only purge worker.",
+      "recommendation": "Publish a retention inventory (table \u2192 policy \u2192 owner \u2192 last exercised) and extend the retention task to the listed stores; either wire retention_policies into the worker or document why internal purges are hardcoded.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still open. The set of unpurged timestamped stores is unchanged and the worker purge remains hardcoded. Previously carried unverified from 20261002.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Generated DB types / schema can drift from migration intent",
+      "evidence": [
+        ".github/actions/unit-tests/action.yml:47 \u2014 `node scripts/generate-db-types.js --check` runs in the shared unit-tests action (test.yml + validate.yml)",
+        "scripts/generate-db-types.js:570-588 \u2014 --check regenerates in memory and fails on any byte difference (line endings normalized)",
+        "scripts/generate-db-types.js:250-253 \u2014 DROP COLUMN is parsed (parseAlterTableDrop), which is why 5302432's dropped columns are absent from the types",
+        "packages/sdk/src/database.types.ts:2003,3229,1370 \u2014 types include file_request_uploads (5302430), network_diagrams and device_profiles; no deleted_at remains"
+      ],
+      "impact": "SDK types track the migration corpus and CI blocks drift.",
+      "recommendation": "Keep the --check gate; add a spot-check test for exotic DDL if new syntax appears (e.g. rename column).",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: the generator handles CREATE TABLE/ADD COLUMN/DROP COLUMN and the --check gate is wired; types reflect the newest migrations and dropped columns. Node unavailable, so --check was reasoned from the generator + file contents, not executed.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Orphan cleanup reference query is unbounded in the object list",
+      "evidence": [
+        "apps/worker/src/tasks/orphan-cleanup.ts:26,169-184 \u2014 IN_CHUNK_SIZE=200; the documents/document_versions/file_request_uploads lookups are issued per chunk",
+        "apps/worker/src/__tests__/orphan-cleanup.test.ts:227-252 \u2014 'chunks the reference lookup for large buckets (DATA-P2-002)'",
+        "apps/worker/src/tasks/orphan-cleanup.ts:155-212 \u2014 a failed reference read still aborts the bucket (fail-closed preserved)"
+      ],
+      "impact": "Reference lookups no longer exceed PostgREST request limits, so the cleanup actually runs on large buckets without weakening fail-closed behaviour.",
+      "recommendation": "Keep chunking; no further action.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: chunked .in() with the fail-closed abort and a dedicated chunking test.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P3",
+      "title": "Pre-baseline policies created without a preceding `drop policy if exists`",
+      "evidence": [
+        "scripts/verify-rls.mjs:50,259-278 \u2014 rule 3 only enforces drop-pairing for migration prefixes >= 5302427",
+        "Python scan of pre-baseline migrations: 61 files create at least one policy with no same-file `drop policy if exists` (e.g. 5302032_webhook_endpoints.sql:11-13, 5302042_api_keys.sql:9-12, 5302034_ticket_comment_editing.sql:5-11)",
+        "Python scan of migrations > 5302427: every create policy is paired with an earlier drop (0 violations)"
+      ],
+      "impact": "Only re-application/partial-apply safety of historical files; new migrations are already enforced.",
+      "recommendation": "Backfill drop-pairing into the affected historical files or document the exemption in docs/migrations; keep the 5302427 baseline.",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still open (informational). The pre-baseline exemption is unchanged and post-baseline files are clean. Previously carried unverified from 20261002.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P3",
+      "title": "Migration version gaps undocumented; brief states 141 migrations, tree has 127",
+      "evidence": [
+        "AGENTS.md:149 \u2014 declares 134 SQL migrations, latest 5302436; supabase/migrations contains 134 .sql files (count verified)",
+        "scripts/check-docs-counts.mjs:262-288 \u2014 fails CI when the AGENTS.md migration count or latest version drifts from the tree",
+        "Version gaps still present and undocumented: 5302026\u21925302028, 5302038\u21925302041, 5302043\u21925302050, 5302083\u21925302085, 5302135\u21925302402, 5302428\u21925302430",
+        "grep for the gap versions (e.g. 5302084) in docs/: no rationale recorded"
+      ],
+      "impact": "Counts are now self-consistent and CI-guarded; the remaining gap is forensic/documentation only.",
+      "recommendation": "Add a migration-history table to docs/migrations listing retired/skipped versions and the reason.",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: the count/latest guard is fixed (134 = tree, CI-enforced), but the version gaps are still undocumented.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "`updated_at` is frozen on 69 module tables (no trigger; generic PATCH drops it)",
+      "evidence": [
+        "grep `create trigger` across supabase/migrations: 17 statements total, all on the bootstrap core tables plus webhook_endpoints (5302032:22)",
+        "Migration parse: 69 tables define `updated_at timestamptz not null default now()` with no trigger, e.g. supabase/migrations/5302069_security_ops.sql:22,45,70,94; supabase/migrations/5302071_governance.sql:21,46,69,93; supabase/migrations/5302061_asset_tracker.sql:38",
+        "apps/api/src/routes/security-ops.ts:29-37 (PROTECTED_UPDATE_FIELDS includes updated_at) and :106-122 (PATCH never sets it); the same crudRoute pattern is used by governance.ts, field-services.ts, batch.ts and security-suite.ts",
+        "apps/api/src/routes/assets.ts:231,281-288 \u2014 PATCH increments version but never updated_at, so assets.updated_at stays at insert time",
+        "apps/api/src/routes/device-profiles.ts:126 and apps/api/src/routes/network-diagrams.ts:119 set updated_at manually \u2014 showing the inconsistency"
+      ],
+      "impact": "Stale 'modified' timestamps silently break recently-updated sorting/filters, delta sync, cache invalidation and audit queries on most module tables.",
+      "recommendation": "Add one idempotent migration installing the existing public.set_updated_at() trigger on every public table with an updated_at column, or set updated_at centrally in the crudRoute factories; add a test asserting an update changes updated_at.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding this run; the previous audit only noted 'few NOT NULLs / audit fields' as a scorecard gap. Concrete examples: offboarding_checklists, retention_policies, assets.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P2",
+      "title": "Scheduled database dump and restore test target the dev environment only; production long-term backup is unproven",
+      "evidence": [
+        ".github/workflows/db-backup.yml:12-14 \u2014 'Backups target the dev database/buckets; the dev environment holds the SUPABASE_*/Spaces secrets these jobs resolve.' + `environment: dev`",
+        ".github/workflows/db-restore-test.yml:14 and .github/workflows/storage-backup.yml:30 \u2014 both also run in `environment: dev`",
+        "docs/RTO_RPO.md:10,18,24 \u2014 claims daily pg_dump to S3 with 30-day retention as the Postgres long-term recovery path",
+        "docs/ROLLBACK_PROCEDURES.md:114-118 \u2014 uses the S3 backup for data loss beyond the PITR window",
+        "grep infra/ for a production backup cron/job: none (only cloud-init/terraform, no backup unit)"
+      ],
+      "impact": "Production recovery beyond Supabase PITR's 7-day window depends on an out-of-repo operator backup; the documented 30-day S3 recovery path and its freshness assertion (RESTORE_MAX_DATA_AGE_DAYS) exercise the dev database, not prod.",
+      "recommendation": "Run the dump/restore-test against a prod-scoped environment (or a prod DB URL secret) with the same baseline assertions, or explicitly document that S3 dumps cover dev only and correct RTO_RPO.md / ROLLBACK_PROCEDURES.md.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding this run; overlaps the DR domain (DR-P1-003 covers encryption/offsite, not prod coverage). An operator-side schedule outside the repo cannot be ruled out from source.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P3",
+      "title": "Retention purge boundary behaviour is untested; the mock ignores the age cutoff and the PII purge has no tests",
+      "evidence": [
+        "apps/worker/src/__tests__/retention.test.ts:37-43 \u2014 `lt()` stores `api._cutoff` but `limit()` filters `(api._cutoff ? true : true)`, so fresh and expired rows are indistinguishable",
+        "apps/worker/src/__tests__/retention.test.ts:93-124 \u2014 tests assert batch counts and error propagation only; no fresh-vs-expired fixture",
+        "grep publicInteractionRetention|public-interaction-retention in apps/worker/src/__tests__/: no hits (the 90-day PII purge has no unit test)"
+      ],
+      "impact": "An inverted comparison or off-by-one that deletes fresh data (the prompt's latent P0-class defect) would pass CI unnoticed.",
+      "recommendation": "Make the mock honour `.lt(col, cutoff)` and seed mixed fresh/expired rows on both sides of the boundary; add tests for public-interaction-retention (90d) with the same mixed fixtures.",
+      "owner": "backend/data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding this run; complements the verified DATA-P1-002 fix.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P3",
+      "title": "Status-like text columns are not constrained by CHECK/enum, so app vocabulary is not enforced by the DB",
+      "evidence": [
+        "Migration parse: 88 free-text status-like columns across module tables, e.g. supabase/migrations/5302069_security_ops.sql:20 (`status text not null default 'in_progress'`), supabase/migrations/5302061_asset_tracker.sql:15 (`status text not null default 'active'`), supabase/migrations/5302071_governance.sql:65 (`status text not null default 'active'`)",
+        "Only 15 named CHECK constraints exist repo-wide: six bounded numerics in supabase/migrations/5302103_add_check_constraints.sql:10-66 and nine version>=1 checks in supabase/migrations/5302113_add_check_constraints.sql:40-146",
+        "supabase/migrations/5302116_grant_table_privileges.sql:23-38 granted authenticated DML on every table and RLS policies admit approved members, so direct PostgREST writes can store arbitrary status strings"
+      ],
+      "impact": "Values outside the app's Zod vocabulary can be persisted through the anon-key + JWT path, corrupting filters, reports and workflow state without a DB-level guard.",
+      "recommendation": "Add CHECK constraints or enum types per status vocabulary (or generate them from the Zod enums); prioritise the newest module tables and any status used for workflow routing.",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding this run; 'app assumptions not enforced by DB' special check. Impact is data integrity, not access control.",
+      "area": "DATA"
+    },
+    {
+      "severity": "P3",
+      "title": "No down-migrations and destructive migrations lack rollback notes despite the repo's own naming guide",
+      "evidence": [
+        "docs/migrations/naming-guide.md:63,74,168 \u2014 requires rollback instructions/comments in the SQL file and BEGIN/COMMIT wrapping",
+        "grep rollback|revers across supabase/migrations: only 5/134 files mention it; none of the destructive files (5302055, 5302110, 5302116, 5302406, 5302407) do",
+        "docs/ROLLBACK_PROCEDURES.md:73 \u2014 schema recovery relies on reverse migration, PITR or S3 restore, but no reverse DDL is committed for these files"
+      ],
+      "impact": "Incident recovery for schema changes is ad-hoc and reviewer-invisible; the repo's documented standard is not followed.",
+      "recommendation": "Add `-- Rollback:` blocks (re-create dropped tables/columns, re-grant) to destructive migrations and document the no-down-migration policy in docs/migrations.",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding this run; complements DATA-P2-002 (transaction wrapping).",
+      "area": "DATA"
+    },
+    {
+      "severity": "P3",
+      "title": "Generated DB types carry no commit/version binding",
+      "evidence": [
+        "packages/sdk/src/database.types.ts:1-2 \u2014 header records only the generator and source glob ('Auto-generated from supabase/migrations/*.sql'), no commit/hash",
+        "scripts/generate-db-types.js:570-588 \u2014 --check compares regenerated content byte-for-byte; nothing binds the artifact to the revision that produced it"
+      ],
+      "impact": "Low (CI enforces freshness) but consumers cannot tell which repository revision produced a shipped types file, contrary to the audit's artifact-binding rule.",
+      "recommendation": "Embed the migrations digest (or commit SHA) in the generated header and assert it in --check.",
+      "owner": "backend/data governance",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding this run; hygiene/binding, not correctness.",
+      "area": "DATA"
+    }
+  ],
+  "report": "# Data, Schema, Migration, and Runtime Validation Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive (full hardening)\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `MaineCyberTech/mainecybertech`\n- Branch: `main`\n- Commit SHA: `8d299b8d`\n- Generated at: 2026-10-11\n- Auditor: repo-deep-dive subagent (base profile), domain 07\n- Area code: DATA\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/07_data_schema_migration_runtime_validation.md`\n- Scope limitations: static review only; no database connection, no Supabase CLI and no `node` in the audit environment, so repo guards were reimplemented/read rather than executed. Live row counts, lock timings and hosted-project state are unknown.\n\n## Scope\n\nReviewed: `supabase/migrations/` (134 files), `supabase/seeds/`, `supabase/config.toml`, migration CI (`.github/workflows/supabase-migrations.yml`, `db-backup.yml`, `db-restore-test.yml`), migration tooling (`scripts/verify-rls.mjs`, `scripts/check-rls-predicate.mjs`, `scripts/generate-db-types.js`, `tools/migration_chain_check.sh`), DB-facing worker tasks (`retention.ts`, `orphan-cleanup.ts`, `public-interaction-retention.ts`), generated DB types, DB-facing API routes (org delete, generic crudRoute factories, optimistic locking, validators) and the rollback/backup docs.\n\nNot reviewed in depth: live RLS behaviour against a running Postgres, migration lock timings on production-sized tables, the OpenAPI contract surface (domain 08), infra/DR runbooks in full (domains 12/13), and operator-side configuration that is not in the repository.\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `supabase/migrations/` (134 files) | SQL | Schema + migration safety | Version gaps: `5302026\u21925302028`, `5302038\u21925302041`, `5302043\u21925302050`, `5302083\u21925302085`, `5302135\u21925302402`, `5302428\u21925302430` |\n| `supabase/migrations/5302055/5302406/5302407` | SQL | Destructive replacements | `drop table ... cascade` with no begin/commit |\n| `supabase/migrations/5302108` | SQL | Audit cascade | `audit_logs.organization_id` `on delete cascade` |\n| `supabase/migrations/5302432`, `5302434`, `5302435`, `5302436` | SQL | Latest fixes | Soft-delete removal, anon least privilege, RPC caller identity, admin-gate restore |\n| `scripts/verify-rls.mjs`, `scripts/check-rls-predicate.mjs` | JS | RLS + predicate gates | Baselines `5302427` / `5302430`; wired via `.github/actions/unit-tests/action.yml:51,59` |\n| `.github/workflows/supabase-migrations.yml` | CI | Apply + drift | Dry-run artifact; post-push `db diff` fails on DDL |\n| `.github/workflows/db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | CI | Backup/restore | All `environment: dev`; restore test asserts floors + freshness |\n| `apps/worker/src/tasks/retention.ts`, `orphan-cleanup.ts`, `public-interaction-retention.ts` | TS | Destructive helpers | Batching, recursion, PII purge |\n| `apps/api/src/routes/{organizations,assets,security-ops,governance,field-services,batch,security-suite,device-profiles,network-diagrams}.ts` | TS | DB-facing writes | Org delete, crudRoute PATCH, version preconditions, updated_at |\n| `packages/sdk/src/database.types.ts`, `scripts/generate-db-types.js` | Generated TS / JS | Type drift gate | Types current; no commit binding |\n| `docs/migrations/naming-guide.md`, `docs/ROLLBACK_PROCEDURES.md`, `docs/RTO_RPO.md` | Docs | Standards + recovery claims | BEGIN/COMMIT + rollback-comment standard; prod/dev backup mismatch |\n\n## Verification Performed\n\nCommands run (read-only) and observed results:\n\n| Command | Observed result |\n|---|---|\n| `git log --oneline -3` / `git rev-parse 8d299b8d` | Target confirmed at `8d299b8d`; `9c0b88c` is its ancestor; `supabase/` unchanged between the two commits |\n| `grep -c \"begin;\"` + per-file loop over `supabase/migrations/*.sql` | 47 files contain `begin;`; destructive files `5302055`, `5302406`, `5302407` do not |\n| Python scan: `drop table` / `drop column` / `delete from` per file | `5302055` (9 drops), `5302406` (1), `5302407` (1), `5302432` (6 drop-column, wrapped) |\n| Python scan: unpaired `create policy` per file | 61 pre-baseline files unpaired; 0 files newer than `5302427` unpaired |\n| Python scan: `alter table ... enable row level security` vs created tables | 134/134 live tables enable RLS; only `mfa_recovery_codes` has no policy and it is marked `-- rls: deny-all` |\n| Python reimplementation of `check-rls-predicate.mjs` over migrations > `5302430` | 0 violations; live raw predicate remains only in `notifications_insert_system_or_admin` (5302057) |\n| Python scan: `create trigger` across migrations | 17 triggers total (bootstrap core + `webhook_endpoints`); 69 tables have `updated_at` with no trigger |\n| Python scan: `organization_id uuid ... references organizations(id) on delete ...` | 95 cascade, 2 set-null (`audit_logs`, `impersonation_log`), 1 no-action (`profiles.default_organization_id`, seeds-only writes) |\n| Python scan: `.update(` / `.delete()` chains without filters in `apps/api|worker/src` | none on the DB (matches were crypto `.update()` calls) |\n| `grep -rn \"deleted_at|deleted_by\"` across apps/packages/supabase | no live references; `5302432` drop is effective |\n| `grep -rn \"archive\" apps/api/src apps/worker/src` | no audit archive sink |\n| `grep -rn \"publicInteractionRetention\" apps/worker/src/__tests__` | no hits \u2014 PII purge untested |\n| `grep \"environment:\" .github/workflows/*.yml` | backup/restore/storage-backup all `environment: dev` |\n| `node scripts/*.mjs` | not run \u2014 `node` is not installed in the audit environment (recorded as `not reproducible` here) |\n\n## Executive Summary\n\nThe data domain has improved materially since the 20261004 run. All four headline fixes are present and effective at `8d299b8d`: orphan cleanup is folder-aware, paginated, chunked and fail-closed (`orphan-cleanup.ts`, tests at `orphan-cleanup.test.ts:369-445`); the retention task is batched, bounded and honest about failures (`retention.ts:23,31,58-84,156-165`); the dead soft-delete columns were dropped in `5302432` with the product decision documented; and the blanket `anon` DML grant was replaced by an explicit allowlist in `5302434`. RLS coverage is 134/134 live tables, the only policy-less table is explicitly deny-all, and the membership-predicate guard is wired into CI and clean for every migration after `5302430`.\n\nThe remaining risks are quieter. Destructive table replacements (`5302406`, `5302407`) and the nine-table cleanup (`5302055`) are still not transaction-wrapped \u2014 and `5302110` documents the real collateral damage a cascade drop already caused. `audit_logs` still cascades on org delete and is purged after 365 days with no archive. Only three of 118 timestamped tables have a retention purge. A newly found schema/runtime gap makes `updated_at` unreliable on 69 module tables: no trigger exists, and the generic PATCH factories explicitly strip `updated_at` without setting it. The scheduled database dump (and its restore test) run against the **dev** environment while `RTO_RPO.md` advertises 30-day S3 recovery, and production long-term dump coverage cannot be evidenced from the repo. Finally, the retention tests never exercise the age boundary \u2014 the mock ignores the cutoff \u2014 so a too-greedy purge would pass CI.\n\nRecommended next actions: (1) wrap every `drop table`/`drop column` migration in `begin;\u2026commit;` and archive before dropping; (2) install the existing `set_updated_at()` trigger on all 69 tables (or set it in the shared crudRoute factories); (3) settle the audit retention/archive decision (cascade vs set-null + cold storage); (4) extend the retention inventory to the listed PII/audit-adjacent stores; (5) fix the retention test mock to honour `.lt(col, cutoff)` and add mixed fresh/expired fixtures; (6) prove or document production backup coverage.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Migrations | `supabase/migrations/` (134) | Schema evolution | Ordered, applied by CI | Medium | Destructive files unwrapped; gaps undocumented |\n| RLS | all migrations | Tenant isolation | 134/134 enable RLS; CI-gated | Low | One residual raw predicate (`notifications` insert) |\n| Predicate guard | `scripts/check-rls-predicate.mjs` | Block raw membership predicates | Baseline `5302430`; wired in CI | Low | 0 post-baseline violations |\n| Soft delete | `5302109` \u2192 `5302432` | Tombstones | Removed; hard delete documented | Low | Verified fixed |\n| Optimistic locking | `5302051`/`5302053`/`5302409` + middleware | Concurrent-edit safety | 11 route files; DB `.eq(\"version\")` | Low | `notification_preferences`/`billing_customers` version columns unused |\n| Audit logs | `audit_logs` + `5302108` + `retention.ts` | Compliance trail | Org cascade; 365-day purge | Medium | No archive sink |\n| Retention | `retention.ts`, `public-interaction-retention.ts`, `5302117` | Purge jobs | 3 stores purged | Medium | 118 timestamped tables total; `retention_policies` not consulted |\n| Orphan cleanup | `orphan-cleanup.ts` | Storage GC | Recursive/paginated/chunked | Low | Verified fixed |\n| Seeds | `supabase/seeds/` (9) | Local/E2E data | All registered; demo gated by `app.seed_demo` | Low | Exercised by `supabase db reset` in e2e.yml:94 |\n| Generated types | `packages/sdk/src/database.types.ts` | SDK types | Generated + CI `--check` | Low | No commit binding |\n| Migration CI | `supabase-migrations.yml` | Apply + drift | Post-push diff fails on DDL | Low | Pinned CLI 2.107.0; serialized |\n| Backup/restore | `db-backup.yml`, `db-restore-test.yml` | Recovery | Assertive restore test | Medium | Targets `environment: dev` only |\n| updated_at | 69 module tables | Audit field | Frozen at insert | Medium | New finding this run |\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Database schema | 4 | 134 migrations, generated types, deny-all marker | Free-text status columns unconstrained | Add CHECK/enum constraints |\n| Migrations | 3 | CI apply + post-push drift gate | Destructive files unwrapped; no rollback notes | Wrap + document rollback |\n| Constraints | 3 | 6 bounded numerics + 9 version checks | 88 status-like columns unconstrained | Constrain status vocabularies |\n| Indexes | 4 | FK-index backfills `5302056/5302419` | Duplicate index names silently no-op (e.g. `idx_audit_logs_entity`) | De-duplicate names |\n| Foreign keys/cascades | 3 | 96 org cascades (incl. audit_logs); 1 set-null | Org delete destroys audit history | SET NULL or archive |\n| RLS | 4 | 134/134 enabled; two CI gates | Residual `notifications` insert predicate | Rewrite with `user_has_role` |\n| Tenant columns | 4 | `organization_id` on tenant tables; platform-only tables documented | Child tables scoped via parent (by design) | Keep inventory |\n| Soft deletes | 4 | Hard delete decided + documented | \u2014 | Keep docs aligned |\n| Audit fields | 2 | `set_updated_at()` exists | 69 tables never update `updated_at` | Install trigger |\n| Retention | 2 | 3 purges; `retention_policies` table | Most stores unpurged; thresholds hardcoded | Inventory + wire policies |\n| Seeds/fixtures | 4 | 9/9 registered; demo opt-in | Schema drift only caught at reset | Keep E2E reset gate |\n| Generated DB types | 4 | `--check` gate; drop-column aware | No commit/version binding | Embed digest |\n\n## Detailed Review\n\n### Item: Migration safety (destructive DDL)\n\n- Evidence: `5302406:3-7`, `5302407:8-15`, `5302055:4-12`, `docs/migrations/naming-guide.md:168`, `tools/migration_chain_check.sh:102`, `5302110:1-10`.\n- What it does: replaces `device_profiles`/`network_diagrams` with `drop table ... cascade; create table` and drops nine \"dead\" tables; each file is a sequence of autocommitted statements when applied by `psql -f`.\n- Missing controls: no `begin;/commit;`, no data archive, no static check that fails destructive DDL outside a transaction; the comments claim the files are \"safe to re-run\" although re-running drops live rows.\n- Risks: partial-apply data loss; cascade collateral (already materialised once in `5302110`).\n- Recommended improvement: wrap + archive + add a lint rule; correct the comments.\n\n### Item: Audit-log lifecycle\n\n- Evidence: `5302108:2-7` (cascade), `retention.ts:9-12,129-132` (365-day purge), `organizations.ts:397-419` (hard org delete), no archive code.\n- What it does: destroys audit rows on org teardown and after one year.\n- Missing controls: cold-storage archive or `on delete set null`; no operator-facing archive runbook.\n- Risks: compliance evidence loss during offboarding and for aged incidents.\n\n### Item: Retention framework\n\n- Evidence: `retention.ts`, `public-interaction-retention.ts`, `5302117`, `5302071:54-75`.\n- What it does: purges `audit_logs` (365d), `notifications` (90d) and `public_interactions` (90d, scheduled in `main.ts:71-79`).\n- Missing controls: no purge for `impersonation_log`, `satisfaction_pulses`, `webhook_deliveries`, `webhook_dead_letters`, `document_shares`, `business_os_snapshots`; thresholds hardcoded rather than read from `retention_policies`.\n- Risks: unbounded PII/audit-adjacent growth with no disposal owner.\n\n### Item: updated_at audit field\n\n- Evidence: 17 `create trigger` statements; 69 tables with `updated_at` and no trigger; `security-ops.ts:29-37,106-122`; `assets.ts:231,281-288`.\n- What it does: new tables default `updated_at` to `now()` at insert; generic PATCH factories block client-supplied `updated_at` and never set it.\n- Risks: stale modification timestamps for sorting, sync, cache invalidation and audit queries.\n\n### Item: DB-facing runtime writes\n\n- Evidence: 11 route files with `requireIfMatch`; 16 `.eq(\"version\")` preconditions; no unfiltered `.update()`/`.delete()`; `parsePartialUpdate` mass-assignment guard (`lib/validators.ts:14-21`).\n- Strengths: optimistic locking is enforced at the DB with version preconditions; mass assignment is closed for generic factories.\n- Gaps: `notification_preferences`/`billing_customers` version columns are never used; status vocabularies not enforced at the DB.\n\n### Item: Backup / rollback / drift\n\n- Evidence: `supabase-migrations.yml:90-125` (drift fails), `db-restore-test.yml:135-210` (floors + freshness + RLS canary), `db-backup.yml:12-14` (dev), `RTO_RPO.md:10,18,24`.\n- Strengths: drift gate, dry-run artifact, assertive restore test, encrypted/offsite-capable dump script.\n- Gap: the scheduled dump and freshness assertion exercise the dev database; production long-term dump coverage is unproven in-repo.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| DATA-001 | Database schema | migrations + types | Generated types + CI check | Unconstrained status strings | P3 | Add CHECK/enums |\n| DATA-002 | Migrations | 134 files | CI apply, drift gate | Unwrapped destructive DDL | P2 | begin/commit + archive |\n| DATA-003 | Constraints | 15 named CHECKs | version>=1, bounded numerics | 88 status-like free text | P3 | Constrain vocabularies |\n| DATA-004 | Indexes | `5302056/5302419` | FK index backfill | Duplicate names no-op | P3 | Rename/dedupe |\n| DATA-005 | Foreign keys/cascades | 95 org cascades | Cascade deletes | audit_logs history loss | P2 | SET NULL/archive |\n| DATA-006 | RLS | 134/134 enabled | verify-rls + predicate guard | notifications insert residual | P1/P3 | Rewrite with helper |\n| DATA-007 | Tenant columns | org FKs | org-scoped policies | child tables via parent | \u2014 | Keep inventory |\n| DATA-008 | Soft deletes | 5302432 | Hard delete documented | \u2014 | \u2014 | Keep docs |\n| DATA-009 | Audit fields | triggers | Core tables only | 69 frozen updated_at | P2 | Install trigger |\n| DATA-010 | Retention | 3 purges | Bounded batch purge | Most stores unpurged | P2 | Inventory + framework |\n| DATA-011 | Seeds/fixtures | 9/9 registered | demo opt-in gate | reset-only validation | \u2014 | Keep |\n| DATA-012 | Generated DB types | `--check` gate | Byte-exact check | No commit binding | P3 | Embed digest |\n| DATA-013 | Migration CI | supabase-migrations.yml | Post-push drift fails | \u2014 | \u2014 | Keep |\n| DATA-014 | Rollback/drift/backup | docs + workflows | Restore test asserts | prod dump unproven | P2 | Prod-scoped backup |\n| DATA-015 | Destructive helpers boundary | retention tests | Batch/count tests | cutoff ignored by mock | P3 | Mixed fixtures |\n\n## Findings\n\nFull finding blocks (severity, evidence, impact, fix, status) are in the companion JSON (`07_data_schema_migration_runtime_validation.json`). Titles and verification outcomes:\n\n1. **DATA-P0-001 \u2014 Orphan cleanup can recursively delete a bucket's contents** \u2014 `verified-fixed` (folder-aware recursion + unsafe-path abort + tests).\n2. **DATA-P1-001 \u2014 Approved-membership RLS predicate reintroduced six times** \u2014 `partially-fixed` (guard present, 0 post-baseline violations; residual raw `notifications_insert_system_or_admin`).\n3. **DATA-P1-002 \u2014 `retention` task unbounded deletes / false success** \u2014 `verified-fixed` (batched, bounded, honest errors, tests).\n4. **DATA-P1-003 \u2014 Soft-delete columns dead schema** \u2014 `verified-fixed` (columns dropped in `5302432`, no refs, hard delete documented).\n5. **DATA-P2-001 \u2014 Blanket `anon` DML grant** \u2014 `verified-fixed` (`5302434` revokes defaults + allowlist).\n6. **DATA-P2-002 \u2014 Destructive table replacements not transaction-wrapped** \u2014 `still-open` (`5302055`, `5302406`, `5302407`; psql autocommit; prior cascade incident).\n7. **DATA-P2-003 \u2014 orphan-cleanup truncated listing** \u2014 `verified-fixed` (pagination + MAX_LISTED abort).\n8. **DATA-P2-004 \u2014 Migration CI dry-run non-blocking** \u2014 `verified-fixed` (post-push drift gate fails on DDL).\n9. **DATA-P2-005 \u2014 `audit_logs` cascade + purge with no archive** \u2014 `still-open`.\n10. **DATA-P2-006 \u2014 Several stores lack a retention policy and owner** \u2014 `still-open` (118 timestamped tables, 3 purges; `retention_policies` unused by worker).\n11. **DATA-P2-007 \u2014 Generated DB types can drift** \u2014 `verified-fixed` (`--check` gate; drop-column aware; types current).\n12. **DATA-P2-008 \u2014 Orphan cleanup reference query unbounded** \u2014 `verified-fixed` (200-key chunks, fail-closed).\n13. **DATA-P3-001 \u2014 Pre-baseline policies without `drop policy if exists`** \u2014 `still-open` (informational; 61 files, baseline `5302427`).\n14. **DATA-P3-002 \u2014 Migration version gaps undocumented** \u2014 `partially-fixed` (count 134 = tree and CI-guarded; gaps still undocumented).\n15. **`updated_at` frozen on 69 module tables** \u2014 `open` (new; no trigger + generic PATCH strips it).\n16. **Scheduled DB dump/restore test target dev only; prod long-term backup unproven** \u2014 `open` (new; docs claim 30-day S3 recovery).\n17. **Retention purge boundary untested; PII purge untested** \u2014 `open` (new; mock ignores cutoff).\n18. **Status-like text columns unconstrained by CHECK/enum** \u2014 `open` (new).\n19. **No down-migrations / destructive migrations lack rollback notes** \u2014 `open` (new).\n20. **Generated DB types carry no commit binding** \u2014 `open` (new).\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Partial-apply data loss on destructive migration failure | P2 | Low | Lost module data + broken schema | `5302406:5`, `5302407:13`, `5302055:4-12`, chain-check psql | begin/commit + archive |\n| Audit evidence erased on org delete / after 365 days | P2 | Medium | Compliance exposure | `5302108`, `retention.ts:131`, `organizations.ts:397-419` | SET NULL/archive |\n| PII/audit-adjacent stores grow forever | P2 | Medium | Cost + privacy | no purge for 6 listed stores; 118 timestamped tables | Retention inventory |\n| Stale `updated_at` breaks sorting/sync/audit | P2 | High | Silent data-quality errors | 69 tables, `security-ops.ts:29-37`, `assets.ts:231,281-288` | Trigger or factory |\n| Prod recovery beyond PITR depends on out-of-repo backups | P2 | Medium | Data loss beyond 7 days | `db-backup.yml:12-14`, `RTO_RPO.md:18` | Prod-scoped dump |\n| Residual raw predicate on notifications insert | P3 | Low | Notification injection by pending admin | `5302057:39-55` | `user_has_role` rewrite |\n| Too-greedy purge undetected by tests | P3 | Low | Fresh-data deletion | `retention.test.ts:37-43` | Mixed fixtures |\n| Unconstrained status values written directly | P3 | Medium | Filter/report corruption | 88 status columns, 15 checks | CHECK/enums |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\nNone. All P0/P1 items from the previous register are fixed or have a documented residual.\n\n### This Week\n\n1. Wrap `5302055`, `5302406`, `5302407` (or a follow-up migration policy) in `begin;\u2026commit;`, archive before drop, and correct the \"safe to re-run\" comments (DATA-P2-002).\n2. Rewrite `notifications_insert_system_or_admin` with `public.user_has_role(organization_id, array['super_admin','admin'])` (DATA-P1-001 residual).\n3. Decide audit retention: `on delete set null` or archive-before-delete for org teardown and the 365-day purge (DATA-P2-005).\n\n### This Month\n\n4. Install the existing `set_updated_at()` trigger on the 69 tables lacking one (new finding).\n5. Fix the retention test mock to honour `.lt(col, cutoff)`; add mixed fresh/expired fixtures for `retention` and `public-interaction-retention` (new finding).\n6. Publish a retention inventory and extend purges to the listed PII/audit-adjacent stores; wire or explicitly waive `retention_policies` (DATA-P2-006).\n7. Run the dump + restore test against a prod-scoped environment or correct the RTO/RPO docs (new finding).\n\n### Later / Platform Evolution\n\n8. Add CHECK/enum constraints for status vocabularies (new finding).\n9. Backfill drop-pairing in pre-baseline migrations or document the exemption (DATA-P3-001).\n10. Add rollback blocks to destructive migrations and document the no-down-migration policy (new finding).\n11. Embed a migrations digest in `database.types.ts` and assert it in `--check` (new finding).\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Wrap the three destructive files | Atomic schema change | `5302055`, `5302406`, `5302407` | inject failure \u2192 rollback |\n| `user_has_role` rewrite of the notifications policy | Closes the last raw predicate | new migration | predicate guard + RLS test |\n| `set_updated_at` trigger loop | Fixes 69 tables at once | new migration | update row \u2192 timestamp changes |\n| Mock honours the cutoff | Catches too-greedy purges | `retention.test.ts:37-43` | fresh row survives |\n| Correct RTO/RPO wording (if dev-only is intentional) | Removes false assurance | `docs/RTO_RPO.md`, `docs/ROLLBACK_PROCEDURES.md` | doc review |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Transactional + archived destructive migrations | P2 | backend/data | S\u2013M | archive target |\n| Audit archive / SET NULL decision | P2 | platform lead | M | governance decision |\n| Retention inventory + framework extension | P2 | platform lead | M | product decision |\n| updated_at trigger migration | P2 | backend/data | S | none |\n| Prod-scoped backup/restore-test | P2 | platform/ops | S\u2013M | prod secrets |\n| Retention boundary tests | P3 | backend/data | S | none |\n| Status CHECK/enums | P3 | backend/data | M | vocabulary freeze |\n| Rollback notes + docs | P3 | backend/data | S | none |\n| Types digest binding | P3 | backend/data | S | none |\n\n## Suggested Tests\n\n- Storage integration fixture: nested objects + folder entries + one true orphan; assert `remove()` receives only concrete keys and referenced files survive.\n- Retention boundary: seed rows just before/after the cutoff for `audit_logs`, `notifications` and `public_interactions`; assert fresh rows are never deleted and expired rows are.\n- `updated_at`: PATCH a module row (e.g. `assets`, `offboarding_checklists`) and assert `updated_at` advances.\n- RLS matrix: authenticated approved member vs pending/suspended member on `notifications` insert; assert the pending member is rejected after the fix.\n- Migration lint: static check failing `drop table`/`drop column` outside `begin;\u2026commit;`.\n- Restore test extension: run the same assertions against a prod-scoped backup once provisioned.\n\n## Suggested Documentation Updates\n\n- `docs/migrations/naming-guide.md` \u2014 add the destructive-migration policy (transaction + archive + rollback block) and record the version gaps.\n- `docs/RTO_RPO.md` / `docs/ROLLBACK_PROCEDURES.md` \u2014 state exactly which environment the S3 dumps cover.\n- A retention inventory doc (table \u2192 policy \u2192 owner \u2192 last exercised) covering the 118 timestamped tables.\n- `docs/migrations/` \u2014 note the pre-`5302427` policy drop-pairing exemption.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Does any operator-side schedule dump the production database? | Determines whether prod has long-term recovery | Hosted/prod cron or external scheduler config |\n| Is `retention_policies` intended to drive the worker purge, or is it a customer-facing register only? | Data-governance design decision | Product/governance decision record |\n| Are the pre-baseline unpaired `create policy` statements ever re-applied outside the ledger? | Determines DATA-P3-001 real risk | Incident/partial-apply runbook |\n| Do module tables need `updated_at` semantics at all? | Some may never display it | Product/UI usage check |\n| Does Supabase CLI 2.107.0 wrap each migration file in a transaction? | Reduces (not removes) DATA-P2-002 risk for `db push` | CLI docs/source; chain check uses plain psql |\n\n## Appendix\n\n- Table parse (static): 145 `create table` statements, 12 dropped, 134 live; 134/134 enable RLS; 1 policy-less table (`mfa_recovery_codes`, `-- rls: deny-all`).\n- FK actions to `organizations` (current state): 96 cascade (95 as created + `audit_logs` after `5302108`), 1 set-null (`impersonation_log`), 1 no-action (`profiles.default_organization_id`, seeds-only writes).\n- Timestamps: 118 tables with a created/captured timestamp; 3 purge targets.\n- Triggers: 17 `create trigger` statements; 69 tables with `updated_at` and no trigger.\n- Duplicate index names (later `IF NOT EXISTS` silently no-ops): `idx_audit_logs_entity`, `idx_notifications_user`, `idx_ticket_comments_ticket_id`, `idx_document_shares_document`, `idx_sop_library_org` (low impact; definitions are equal or superseded).\n- Unused version columns: `notification_preferences`, `billing_customers` (no route reads/increments `version`).\n- Command outputs are summarised in \"Verification Performed\"; no secret values were printed during this audit.\n"
+}

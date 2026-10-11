@@ -1,0 +1,414 @@
+{
+  "domain": "33_incident_tabletop_exercise",
+  "file": "33_incident_tabletop_exercise.md",
+  "area": "IR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:51Z",
+  "findings": [
+    {
+      "severity": "P0",
+      "title": "No platform-level incident response plan, roles, or postmortem process",
+      "evidence": [
+        "docs/INCIDENT_RESPONSE.md:1-136 \u2014 platform IR plan now committed: severity model (Sev-1..Sev-3, :14-22), roles (IC/comms/ops/scribe/security, :27-38), response phases incl. containment (:48-87), communication table (:89-99), postmortem requirement (:80-87)",
+        "docs/PLATFORM_FAILURE_RUNBOOKS.md:1-118 \u2014 operator runbooks for single-host loss, Redis, Supabase, failed deploy, webhook backlog",
+        "docs/runbooks/README.md:11 \u2014 points platform incident/recovery runbooks at INCIDENT_RESPONSE.md and PLATFORM_FAILURE_RUNBOOKS.md"
+      ],
+      "impact": "The absence of a plan is closed: operators have a named plan with severity, roles, containment, comms and postmortem. Residual readiness gaps (unassigned rota, broken template links, stale alerting text) are tracked as separate findings below.",
+      "recommendation": "Keep the plan current: fill the rota, fix the referenced template paths, and re-review after every exercise (see new IR findings).",
+      "owner": "platform lead / security reviewer",
+      "target": "immediate (same day)",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: docs/INCIDENT_RESPONSE.md is committed and covers roles/severity/containment/communication/postmortem; unchanged from the 9c0b88c verification (commit 94df6cbd, ancestor of both).",
+      "area": "IR"
+    },
+    {
+      "severity": "P0",
+      "title": "No data breach response / notification process",
+      "evidence": [
+        "docs/DATA_BREACH_RESPONSE.md:1-459 \u2014 breach plan committed: breach definitions (:61-78), breach types (:79-153), detection sources (:127-153), breach severity matrix (:154-168), containment playbooks (:169-234), assessment/data-category map (:235-274), notification decision + template (:275-346), evidence handling (:347-368), breach register schema (:369-403)",
+        "docs/DATA_BREACH_RESPONSE.md:340 \u2014 'no external notification ... is sent without Legal's explicit decision'; CONFIRM WITH COUNSEL markers throughout"
+      ],
+      "impact": "A tenant-data breach now has a documented detection-to-notification process with a register schema and counsel gates.",
+      "recommendation": "Exercise the plan once (breach tabletop) and record the after-action; keep the 'Known detection gap' paragraph in sync with the deployed alerting path.",
+      "owner": "security reviewer / legal liaison",
+      "target": "immediate (same day)",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: docs/DATA_BREACH_RESPONSE.md committed (94df6cbd, ancestor of 9c0b88c and 8d299b8d); unchanged. Stale alerting text inside it is a new finding.",
+      "area": "IR"
+    },
+    {
+      "severity": "P0",
+      "title": "Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver",
+      "evidence": [
+        "infra/digitalocean/alertmanager.tmpl.yml:86-100,144-152 \u2014 Watchdog alert routed to a dedicated `watchdog` receiver (repeat_interval 5m), documented as an external heartbeat URL",
+        "infra/digitalocean/docker-compose.yml:239-307 \u2014 alertmanager service renders the template at start and pings the watchdog receiver; unset URLs fall back to a no-op loopback (docker-compose.yml:256-258)",
+        "infra/digitalocean/prometheus.yml:11-17 \u2014 Prometheus forwards firing alerts to alertmanager:9093; prometheus.rules.yml:33-40 Watchdog expr: vector(1)",
+        ".github/workflows/deploy-do.yml:739-747 \u2014 prod deploy fails closed when ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty; :746 warns (non-fatal) for dev",
+        "docs/MONITORING_AND_ALERTING.md:331,339-352 \u2014 documents that the switch is only real when the URL points off-box and gives the stop-alertmanager test; no recorded exercise exists",
+        "docs/RELEASE_GATE.md:6-8,34 \u2014 repo states there is 'no production environment yet' and lists 'alertmanager wired to a receiver and a synthetic alert delivered' as a release-gate exit criterion"
+      ],
+      "impact": "The receiver mechanism and fail-closed guard are in place, but with ALERTMANAGER_WATCHDOG_WEBHOOK_URL unset (per this run's operator context; not repo-verifiable) the Watchdog pings the loopback no-op, so a total loss of the droplet is still silent. Because the guard is fail-closed, a prod deploy also cannot complete until the URL is set. The path has never been exercised.",
+      "recommendation": "Provision the external heartbeat (healthchecks.io-style) secret for the prod environment, deploy once, then perform and record the documented exercise: stop alertmanager, confirm the external service pages within its grace period, and store the artifact.",
+      "owner": "platform lead / security reviewer",
+      "target": "immediate (same day)",
+      "confidence": "medium",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: routing + fail-closed guard present (alertmanager.tmpl.yml:86-100,144-152; deploy-do.yml:739-747) but the external receiver URL is not provisioned per run context (watchdog URL still unset) and no exercise artifact exists \u2014 configured, not exercised. Previous 9c0b88c row claimed verified-fixed on the guard alone; corrected here. Cross-ref NOTIF-domain finding on critical-receiver delivery assurance.",
+      "area": "IR"
+    },
+    {
+      "severity": "P1",
+      "title": "Rollback documentation contradicts itself on SHA-targeted rollback",
+      "evidence": [
+        "docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:157-176 \u2014 rollback section now states builds are skipped when rollback_sha is set and the SHA tag must already exist in GHCR, matching the workflow",
+        "docs/ROLLBACK_PROCEDURES.md:1-27 \u2014 same contract (builds gated on rollback_sha == ''; images must exist)",
+        ".github/workflows/deploy-do.yml:31-38,251-270 \u2014 rollback_sha input validated as hex and build jobs gated on it"
+      ],
+      "impact": "The two authoritative operator documents now agree with the workflow, removing a documented source of rollback error under incident pressure.",
+      "recommendation": "None beyond keeping both docs edited together when the rollback flow changes.",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: Handbook \u00a7Rollback matches ROLLBACK_PROCEDURES \u00a71 and deploy-do.yml; unchanged since the 9c0b88c verification.",
+      "area": "IR"
+    },
+    {
+      "severity": "P1",
+      "title": "Bad-migration recovery is manual-only with no automated reverse or staging proof",
+      "evidence": [
+        "docs/ROLLBACK_PROCEDURES.md:75-115 \u2014 recovery options remain manual: hand-written reverse migration (Option A), Supabase dashboard PITR (Option B), manual SQL (Option C); no automated reverse",
+        ".github/workflows/supabase-migrations.yml:67-83 \u2014 pre-push `db push --dry-run` is captured and uploaded as the migration-dry-run artifact (IR-P2-006 fixed)",
+        ".github/workflows/supabase-migrations.yml:90-125 \u2014 fail-closed post-push schema-drift check (no longer `|| true`); allow_drift=1 escape hatch requires explicit dispatch",
+        "docs/RTO_RPO.md:41-45 \u2014 'The 5-minute PITR RPO is not yet proven by an automated drill; a dated PITR exercise must be recorded'"
+      ],
+      "impact": "Schema drift is now caught after apply, but undoing a bad migration still depends on an operator writing reverse SQL or a dashboard PITR action that has never been drilled; the documented 5-minute RPO remains unproven.",
+      "recommendation": "Record one dated reverse-migration or PITR drill on a Supabase branch (time-to-restore + data comparison) and link it from ROLLBACK_PROCEDURES \u00a73 and RTO_RPO.",
+      "owner": "backend/platform engineer",
+      "target": "this week",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: drift check is fail-closed (supabase-migrations.yml:90-125) but reverse migration remains manual and no staging/PITR drill artifact exists. Same residual as the 9c0b88c row.",
+      "area": "IR"
+    },
+    {
+      "severity": "P1",
+      "title": "Worker health failure during deploy is non-fatal",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:905-922 \u2014 worker health check over SSH now exits 1 when the worker stays unhealthy (fatal), after 12 attempts",
+        "infra/digitalocean/docker-compose.yml:170-184 \u2014 worker healthcheck on 127.0.0.1:3001/health with start_period, so the deploy gate can observe worker state"
+      ],
+      "impact": "A deploy can no longer report green while the worker is unable to process jobs; background webhook/notification/reconciliation work is protected by the gate.",
+      "recommendation": "None; optionally add a Prometheus alert on worker_task_queue_depth for post-deploy detection.",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: worker health failure is fatal in deploy-do.yml:915-922; unchanged since the 9c0b88c verification.",
+      "area": "IR"
+    },
+    {
+      "severity": "P1",
+      "title": "Backups are not verified deeply enough to prove the documented RPO/RTO",
+      "evidence": [
+        ".github/workflows/db-restore-test.yml:135-224 \u2014 restore drill now asserts table-count floor, migration-count floor, critical-table existence, total-row floor, newest audit_logs row freshness (RPO canary), organization_id presence, and RLS-enabled floor, each with ::error",
+        ".github/restore-test-baseline.env \u2014 committed floors used by the drill",
+        "docs/ROLLBACK_PROCEDURES.md:145-166 \u2014 documents the same post-restore checklist ('A successful psql exit is not verification')"
+      ],
+      "impact": "A structurally truncated or stale backup now fails the weekly drill instead of showing green; the dump-path RPO canary is machine-checked.",
+      "recommendation": "Record one dated green restore-test run URL and, separately, one PITR drill to prove the 5-minute RPO (see IR-P1-002 residual).",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: deep integrity assertions present in db-restore-test.yml:135-224; unchanged since the 9c0b88c verification.",
+      "area": "IR"
+    },
+    {
+      "severity": "P1",
+      "title": "Backup bucket configuration is inconsistent between the script, the backup workflow, and the restore test",
+      "evidence": [
+        ".github/workflows/db-backup.yml:30-35 \u2014 S3_BUCKET = vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups'; S3_PREFIX default 'database-backups'",
+        ".github/workflows/db-restore-test.yml:34-39,53-68 \u2014 same contract, normalises a legacy s3:// prefix and builds s3://<bucket>/<prefix>/",
+        "scripts/backup-database.sh:8-11,23-24,103 \u2014 documents and uses the same bucket-name + prefix contract",
+        ".github/workflows/storage-backup.yml:49-50 \u2014 storage backup shares the same variables"
+      ],
+      "impact": "Backup and restore now read the same bucket/prefix contract, so the restore test verifies the object the backup wrote.",
+      "recommendation": "None; keep the contract documented in one place if it changes.",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: shared S3_BUCKET/S3_PREFIX contract in db-backup.yml, db-restore-test.yml, storage-backup.yml and scripts/backup-database.sh; unchanged since the 9c0b88c verification.",
+      "area": "IR"
+    },
+    {
+      "severity": "P1",
+      "title": "No runtime detection or alerting for tenant-isolation (RLS) regressions",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:163-196 \u2014 portal_rls_bypass_total (module, kind, org_resolved) and portal_rls_enforced_total counters",
+        "apps/api/src/services/supabase.ts:217,224 \u2014 getScopedClient records enforced selections and every service-role fallback with org-resolution state",
+        "infra/digitalocean/prometheus.rules.yml:94-112 \u2014 MCTTenantScopeRegression: a module serving >=50% of RLS-bypassing traffic with no org scope for 15m fires warning",
+        "infra/digitalocean/prometheus.rules.yml:120-142 \u2014 MCTRlsEnforcedShareCollapsed: a module that drops out of the RLS allow-list fires",
+        "infra/digitalocean/prometheus.rules.test.yml:1-18 \u2014 promtool unit tests covering fire/no-fire cases (written because two earlier rule versions could never fire)",
+        "apps/api/src/__tests__/rls-boundary-metrics.test.ts, apps/api/src/__tests__/get-scoped-client.test.ts \u2014 metric/client wiring tests"
+      ],
+      "impact": "A tenant-isolation regression now produces an automated signal (and a warning alert routed through Alertmanager) instead of relying on log reading.",
+      "recommendation": "Run the promtool rule tests in CI (new finding) and keep the alert's 'confirm genuine platform-level read' annotation in the on-call runbook.",
+      "owner": "platform lead / security reviewer",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: metrics + rules + tests present (commit 6de167d3/ed534479, ancestors of 9c0b88c too \u2014 the previous register note looked for the rule in alertmanager.tmpl.yml and missed prometheus.rules.yml). Correcting the 9c0b88c 'still open' status.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "Several Prometheus metrics are declared but not wired, limiting incident diagnosis",
+      "evidence": [
+        "apps/api/src/routes/organizations.ts:331, projects.ts:288, tickets.ts:221, documents.ts:305, search.ts:213 \u2014 creation/search counters now incremented",
+        "apps/api/src/lib/idempotency.ts:110,124 \u2014 idempotencyKeyHits recorded; apps/api/src/routes/admin.ts:46 and users.ts:98 set active-org/user gauges",
+        "apps/api/src/services/supabase.ts:59 \u2014 portal_db_query_duration_seconds observed on Supabase REST calls",
+        "apps/api/src/lib/metrics.ts:202-263 \u2014 record/set helpers for all previously 'defined, not wired' metrics"
+      ],
+      "impact": "The metrics needed to diagnose DB latency, auth anomalies and tenant activity are now emitted and scrapeable.",
+      "recommendation": "Update the docs/MONITORING_AND_ALERTING.md \u00a74 table, which still labels these metrics 'defined, not wired' (new finding).",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: every previously unwired metric has a live caller (PR #147 lineage, present on main); unchanged since the 9c0b88c reconciliation.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "No alerting on audit-trail gaps or privileged (impersonation/admin) abuse",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:125-130 \u2014 portal_impersonation_events_total counter; apps/api/src/services/impersonation.ts:46 increments it on every impersonation_log write",
+        "infra/digitalocean/prometheus.rules.yml:48-56 \u2014 MCTImpersonationBurst fires when cross-tenant events exceed 0.5/s over 10m",
+        "apps/api/src/services/audit.ts:60-65 \u2014 audit insert failure after 3 retries still only logs 'audit trail gap'; no metric and no alert rule references audit writes",
+        "infra/digitalocean/prometheus.rules.yml:1-143 \u2014 no rule matches an audit-gap signal"
+      ],
+      "impact": "Privileged cross-tenant abuse now has a runtime alert; an audit-trail gap (the evidence trail for any breach) can still occur silently.",
+      "recommendation": "Emit a counter on the final audit-insert failure (and/or a metric from audit_logs continuity) and add a warning rule; then update the breach plan's detection table.",
+      "owner": "security/platform engineer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: impersonation half fixed (metric + MCTImpersonationBurst rule); audit-gap half still log-only (audit.ts:61-63). Previous row carried as open without re-verification.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "No alerting when webhook dead-letters accumulate or payment reconciliation drifts",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:136-145 \u2014 portal_webhook_dead_letters_total counter + recordWebhookDeadLetter(); apps/worker/src/metrics.ts:66-76 \u2014 worker_webhook_dead_letters_total",
+        "apps/api/src/lib/webhook-dispatcher.ts:124 and apps/worker/src/tasks/webhook-dispatcher.ts:128 \u2014 dead letters are counted on both dispatch paths",
+        "infra/digitalocean/prometheus.rules.yml:1-143 \u2014 no rule consumes either dead-letter counter",
+        "apps/worker/src/tasks/stripe-reconcile.ts:96-150 \u2014 reconcile returns counts (reconciled/suspended/errors) but emits no metric; no alert rule exists",
+        "docs/SLO.md:15 \u2014 webhook SLO points at the 'webhook backlog runbook', not a Prometheus alert"
+      ],
+      "impact": "Customer-facing webhook deliveries and billing reconciliation can still fail silently; the enabling counters exist but nothing watches them.",
+      "recommendation": "Add rules on increase(portal_webhook_dead_letters_total[1h]) and a reconciliation error/suspension metric + rule; record one forced-failure exercise.",
+      "owner": "backend engineer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: dead-letter counters now emitted (progress enabling a rule) but no alert rule and no reconciliation metric; the same title is carried by the WH domain. Previous row carried as open.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "Secrets rotation is documented but has no exercised evidence",
+      "evidence": [
+        ".github/workflows/secret-rotation-reminder.yml:1-45 \u2014 quarterly reminder workflow now committed (creates a deduplicated review issue)",
+        "docs/SECRETS_ROTATION.md:222-226 \u2014 Rotation Log still contains only the '(Initial deployment)' row; no dated rotation entry",
+        "docs/SECRETS_ROTATION.md:181,201 \u2014 procedure requires logging every rotation in the table"
+      ],
+      "impact": "The reminder automation half is fixed; the emergency rotation procedure itself remains unexercised, so its behavior under a real key leak is still unproven.",
+      "recommendation": "Perform and log one low-risk rotation drill in dev (e.g. JWT or Stripe test key) with the Actions run URL, or record why it is deferred.",
+      "owner": "platform/security engineer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: reminder workflow exists (7dfb8650) but the rotation log has no exercised row; previous row carried as open without re-verification.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "No platform status/communication surface for MCT's own outages",
+      "evidence": [
+        "docs/features/public-status-page.md:1-30 \u2014 status page is a per-tenant product feature (components/incidents keyed to a client org), not an MCT platform status page",
+        "docs/PLATFORM_FAILURE_RUNBOOKS.md:77 \u2014 instructs the operator to 'Post a status-page update (docs/features/public-status-page.md)' during a Supabase outage, i.e. to use the tenant-facing product doc as the platform channel",
+        "docs/INCIDENT_RESPONSE.md:89-99 \u2014 communication table references 'Status page / email' for affected tenants but no MCT-owned status page exists in docs/",
+        "docs/audits/repo-deep-dive/20261002-0344-develop-6286137/incident_tabletop_scenarios.md:41 \u2014 readiness inventory still lists 'Status page (platform) Absent'"
+      ],
+      "impact": "During an MCT platform outage there is still no canonical external status surface; the runbook points operators at a product feature that tenants administer for their own clients.",
+      "recommendation": "Stand up an MCT-owned status page (or an internal-only instance of the product) and add status-update templates to the incident plan; fix the runbook reference.",
+      "owner": "platform lead",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: no MCT platform status doc/page found; PLATFORM_FAILURE_RUNBOOKS.md:77 still references the per-tenant feature. Previous row carried as open.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "Migration dry-run result is discarded in CI",
+      "evidence": [
+        ".github/workflows/supabase-migrations.yml:67-83 \u2014 `supabase db push --include-all --dry-run` output is teed to migration-dry-run.txt and uploaded as an artifact before the real push",
+        ".github/workflows/supabase-migrations.yml:90-125 \u2014 post-push drift check fails the job on unexpected schema divergence (allow_drift=1 documented escape hatch)"
+      ],
+      "impact": "The pre-apply plan is preserved and the post-apply schema state is asserted, closing the swallowed-signal path.",
+      "recommendation": "None.",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: dry-run artifact + fail-closed drift check (PR #139 lineage); unchanged since the 9c0b88c reconciliation.",
+      "area": "IR"
+    },
+    {
+      "severity": "P3",
+      "title": "Terraform state restore guidance lacks a tested procedure",
+      "evidence": [
+        "docs/ROLLBACK_PROCEDURES.md:214-226 \u2014 'Restore previous Terraform state (emergency)' remains a comment block ('Restore from a prior version via DO Spaces UI or CLI') with no exact aws/doctl commands and no dry-run",
+        "docs/RTO_RPO.md:24-25 \u2014 infrastructure recovery points at Terraform state in DO Spaces but records no state-restore drill"
+      ],
+      "impact": "State corruption remains a rare-but-catastrophic path whose recovery is still undocumented in executable detail.",
+      "recommendation": "Add exact versioned-state restore commands (aws s3api / doctl), a plan-only verification step, and a scratch-backend drill result.",
+      "owner": "platform lead / security reviewer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: ROLLBACK_PROCEDURES.md:214-226 unchanged in substance; no drill recorded. Previous row carried as open.",
+      "area": "IR"
+    },
+    {
+      "severity": "P3",
+      "title": "Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts",
+      "evidence": [
+        "docs/MONITORING_AND_ALERTING.md:60-64,66-79 \u2014 documents GET /health returning 200 with checks{} and 503 'if any check fails'",
+        "apps/api/src/routes/health.ts:131-141 \u2014 public /health now returns only {service,status,uptime}; the checks moved to /health/detail (:146-161), gated by METRICS_TOKEN (404 without it)",
+        "apps/api/src/routes/health.ts:118-123 \u2014 Redis is reported but never degrades health; the doc's \u00a73 table still shows the old `redis-cli -a $REDIS_PASSWORD ping` healthcheck while docker-compose.yml:58 uses REDISCLI_AUTH",
+        "docs/MONITORING_AND_ALERTING.md:107 vs infra/digitalocean/docker-compose.yml:58 \u2014 healthcheck command drift"
+      ],
+      "impact": "On-call operators reading the doc will expect dependency detail from the public endpoint that it no longer exposes, and will misread Redis semantics and the Redis probe.",
+      "recommendation": "Update \u00a72/\u00a73 to document the public-vs-/health/detail split, the non-degrading Redis rule, and the current redis healthcheck command.",
+      "owner": "docs maintainer",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: divergence persists and widened with the SEC-P2-003 /health split; previous row carried as open.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "Platform IR and breach plans are stale on the deployed alerting path and reference template files that do not exist in docs/",
+      "evidence": [
+        "docs/INCIDENT_RESPONSE.md:124-128 \u2014 'Known gap (audit IR-P0-003): there is no independent dead-man's switch. Alertmanager ... not deployed' \u2014 contradicts infra/digitalocean/docker-compose.yml:239-307 and MONITORING_AND_ALERTING.md \u00a79; also downgrades the P0 to 'a P1'",
+        "docs/DATA_BREACH_RESPONSE.md:143-146,444-455 \u2014 same stale 'Alertmanager is not deployed' detection gap repeated in the breach plan",
+        "docs/INCIDENT_RESPONSE.md:67,107,114,115,133,135 and docs/DATA_BREACH_RESPONSE.md:429 \u2014 reference `secret_rotation_runbook.md`, `backup_restore_drill_plan.md`, `incident_tabletop_scenarios.md` by bare name; these files exist only under docs/audits/repo-deep-dive/20261002-0344-develop-6286137/ and docs/templates/ does not exist",
+        "docs/INDEX.md:142 \u2014 only the tenant product module (modules/incident-response.md) is indexed; the platform IR and breach plans are not linked from docs/INDEX.md"
+      ],
+      "impact": "An operator in a monitoring or breach incident is told the alerting path is missing when it exists (and the dead-man's switch caveat is real but stated for the wrong reason), and cannot open the referenced templates from the plan.",
+      "recommendation": "Refresh both plans' alerting sections to the deployed state (Alertmanager + ntfy; watchdog unset until provisioned), move the postmortem/comms/rotation/drill templates into docs/templates/ (or fix the references to the audit path), and index both plans in docs/INDEX.md.",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Docs last reviewed 2026-10-02; PLATFORM_FAILURE_RUNBOOKS.md (2026-10-03) is already accurate, showing the plans were not re-reviewed after the alerting fix.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "On-call rota and escalation contacts are unassigned, so the incident plan is not operational",
+      "evidence": [
+        "docs/INCIDENT_RESPONSE.md:120-123 \u2014 'Rota: to be filled by the Engineering lead \u2014 the plan is not operational until names and escalation contacts are recorded here'",
+        "docs/PLATFORM_FAILURE_RUNBOOKS.md:106-110 \u2014 drills are 'only real once exercised'; all drill rows :112-118 are _pending_/_unassigned_",
+        "docs/DATA_BREACH_RESPONSE.md:452-455 \u2014 escalation contacts for the breach plan are 'not yet named'"
+      ],
+      "impact": "Severity declaration, containment decisions and external comms have named roles but no named people; a real incident cannot follow the plan's escalation path, and the plan itself declares it non-operational.",
+      "recommendation": "Record a minimal rota (names + contact channel + backup) for each role in INCIDENT_RESPONSE.md \u00a78 and the breach plan, even if one person holds several roles.",
+      "owner": "platform lead",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "No tabletop exercise has been run and the scenario catalog is stale",
+      "evidence": [
+        "docs/INCIDENT_RESPONSE.md:130-136 \u2014 commits to exercising one scenario per quarter and recording participants/gaps/actions; no after-action artifact exists in docs/",
+        "docs/PLATFORM_FAILURE_RUNBOOKS.md:104-118 \u2014 verification drill table is entirely _pending_/_unassigned_",
+        "docs/audits/repo-deep-dive/20261002-0344-develop-6286137/incident_tabletop_scenarios.md:20-42 \u2014 readiness inventory still says platform IR plan Absent, Alertmanager not deployed, no receiver; :194-205 Scenario 11 (monitoring-path loss) describes a state superseded by the deployed Alertmanager",
+        "docs/audits/repo-deep-dive/20261002-0344-develop-6286137/incident_tabletop_scenarios.md:7 \u2014 catalog is bound to develop@62861370 and has not been refreshed for 9c0b88c/8d299b8d"
+      ],
+      "impact": "The extended tabletop requirement (exercise the total-monitoring-loss scenario; verify previous fixes stuck) has no executed evidence, and the only scenario catalog is a stale audit artifact whose monitoring scenario no longer matches the system.",
+      "recommendation": "Move the catalog under docs/ (e.g. docs/INCIDENT_TABLETOP_SCENARIOS.md), refresh the 12 scenarios against 8d299b8d, run and record one exercise (start with Scenario 11), and store the after-action report.",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. This run's body includes a refreshed 12-scenario catalog (>=8 required, incl. total monitoring loss) that can seed the committed doc.",
+      "area": "IR"
+    },
+    {
+      "severity": "P2",
+      "title": "Prometheus alert-rule unit tests are not wired into CI",
+      "evidence": [
+        "infra/digitalocean/prometheus.rules.test.yml:1-18 \u2014 promtool unit tests exist precisely because 'promtool check rules only validates SYNTAX' and two earlier versions of MCTTenantScopeRegression could never fire; run instructions are manual docker commands",
+        "grep of .github/workflows/*.yml \u2014 no workflow invokes promtool or references prometheus.rules.test.yml (deploy-do.yml:800 only copies prometheus.rules.yml to the droplet)"
+      ],
+      "impact": "A future edit can silently turn an alert rule into a dead rule again (the failure the tests were written to prevent); the guard only runs if a human remembers the manual command.",
+      "recommendation": "Add a CI job that runs promtool check rules + test rules against infra/digitalocean/prometheus.rules*.yml (pin the prom/prometheus image already used in compose).",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d.",
+      "area": "IR"
+    },
+    {
+      "severity": "P3",
+      "title": "Monitoring doc still reports wired metrics as 'defined, not wired' and omits the alert rules added for impersonation and RLS",
+      "evidence": [
+        "docs/MONITORING_AND_ALERTING.md:130-134 \u2014 table still lists portal_db_query_duration_seconds, creation counters, search queries, active org/user gauges and idempotency hits as 'defined, not wired' although all are recorded (metrics.ts callers; IR-P2-001 fixed)",
+        "docs/MONITORING_AND_ALERTING.md:119-146 \u2014 table omits the newer portal_impersonation_events_total, portal_rls_bypass_total/enforced_total, dead-letter and notification-delivery metrics",
+        "docs/MONITORING_AND_ALERTING.md:199-236 \u2014 alert-trigger table omits MCTImpersonationBurst, MCTTenantScopeRegression, MCTRlsEnforcedShareCollapsed",
+        "infra/digitalocean/prometheus.rules.yml:1-4 \u2014 header still says Alertmanager is required for delivery and that Watchdog 'fires once per day', contradicting the deployed Alertmanager and the 5-minute repeat interval (alertmanager.tmpl.yml:99)"
+      ],
+      "impact": "Operators cannot use the monitoring doc to know what is alertable, and the doc's stale status column undermines trust in the alerting sections that are accurate.",
+      "recommendation": "Refresh the \u00a74 metric table, \u00a77 alert table and the rules-file header comment in one pass; add a doc-consistency check note to the alerting review checklist.",
+      "owner": "docs maintainer / platform",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; distinct from IR-P3-002 (health-endpoint semantics).",
+      "area": "IR"
+    },
+    {
+      "severity": "P3",
+      "title": "Alerting secrets are not documented in the secrets matrix or environment-variable reference",
+      "evidence": [
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:55,93 \u2014 lists SENTRY_DSN and SLACK_WEBHOOK_URL but no ALERTMANAGER_* or NTFY_ALERTS_* entries",
+        "docs/ENVIRONMENT_VARIABLES.md \u2014 no ALERTMANAGER_* or NTFY_ALERTS_* entries",
+        ".github/workflows/deploy-do.yml:622-631 \u2014 the deploy requires ALERTMANAGER_WATCHDOG_WEBHOOK_URL, CRITICAL/DEFAULT_WEBHOOK_URL, SLACK_API_URL/CHANNEL, WEBHOOK_USER/PASS",
+        ".github/workflows/db-backup.yml:51-53, storage-backup.yml:61-63, db-restore-test.yml:244-246 \u2014 backup/restore notifications require NTFY_ALERTS_URL/USER/PASS"
+      ],
+      "impact": "An operator provisioning or rotating the alerting path has no canonical list of the required secret names and which are mandatory; this is the same class of gap that left the watchdog URL unset.",
+      "recommendation": "Add the alerting/notification secrets to the matrix (mark the watchdog URL as required-for-prod) and to ENVIRONMENT_VARIABLES.md.",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. The watchdog variable is documented only in docs/MONITORING_AND_ALERTING.md:331.",
+      "area": "IR"
+    }
+  ],
+  "report": "# Incident Tabletop Exercise\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: MaineCyberTech portal monorepo (`/tmp/opencode/mct-audit-target`, read-only)\n- Branch: `main`\n- Commit SHA: `8d299b8d` (`8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd`, 2026-10-11)\n- Generated at: 2026-10-11 (run clock)\n- Auditor: repo-deep-dive subagent (prompt 33, area IR)\n- Output path: `docs/audits/{name}/{run}/33_incident_tabletop_exercise.md` (this run stores outputs under the run folder)\n- Companion artifact: the committed catalog at `docs/audits/repo-deep-dive/20261002-0344-develop-6286137/incident_tabletop_scenarios.md` is stale; a refreshed 12-scenario catalog is included in this body and should be promoted to `docs/INCIDENT_TABLETOP_SCENARIOS.md`\n- Scope limitations:\n  - Audit-only. No live system, droplet, GitHub environment, Sentry org, ntfy topic, or Supabase project was contacted; GitHub Actions run history and secret values are not repo-visible.\n  - `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` being unset is taken from this run's operator context; it is **not** repo-verifiable and is marked as such.\n  - This is a documented-procedure exercise; no tabletop was actually facilitated.\n\n## Scope\n\nReviewed at `8d299b8d`:\n\n- Incident docs: `docs/INCIDENT_RESPONSE.md`, `docs/PLATFORM_FAILURE_RUNBOOKS.md`, the stale companion `incident_tabletop_scenarios.md`, `docs/runbooks/security-incident-response.md` (tenant product runbook \u2014 distinguished).\n- Monitoring/alerting: `infra/digitalocean/prometheus.rules.yml`, `prometheus.rules.test.yml`, `prometheus.yml`, `alertmanager.tmpl.yml`, `docker-compose.yml`, `apps/api/src/lib/metrics.ts`, `apps/worker/src/metrics.ts`, `apps/api/src/routes/health.ts`, `docs/MONITORING_AND_ALERTING.md`.\n- Rollback: `docs/ROLLBACK_PROCEDURES.md`, `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` \u00a7Rollback, `deploy-do.yml` rollback input, `docs/RTO_RPO.md`.\n- Security docs: `SECURITY.md`, `docs/SECRETS_ROTATION.md`, `docs/JWT_ROTATION.md`, `docs/DATA_BREACH_RESPONSE.md`.\n- Deployment docs: handbook, `docs/RELEASING.md`, `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, `docs/ENVIRONMENT_VARIABLES.md`, `.github/workflows/deploy-do.yml`.\n- Operator docs: `docs/TROUBLESHOOTING.md`, `docs/FINAL_OPERATOR_MAP.md`, 61 module runbooks under `docs/runbooks/`, `docs/SLO.md`.\n- Data breach process: `docs/DATA_BREACH_RESPONSE.md` (459 lines).\n- Backups: `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml`, `scripts/backup-database.sh`, `.github/restore-test-baseline.env`.\n- Audit logs / admin abuse: `apps/api/src/services/audit.ts`, `apps/api/src/services/impersonation.ts`, `apps/api/src/routes/audit.ts`, rules in `prometheus.rules.yml` (`MCTImpersonationBurst`).\n- Observability: metrics wiring, Sentry, pino logging, `docs/SLO.md`, dashboards-as-code.\n- CI/CD failures: `deploy-do.yml` (health gate, auto-revert, watchdog guard), `supabase-migrations.yml`.\n- Tenant isolation: RLS metrics/rules/tests (`rls-boundary-metrics.test.ts`, `get-scoped-client.test.ts`, `store-tenant-isolation.test.ts`).\n- Webhook/payment/notification failures: `webhook-dispatcher.ts` (api/worker), `webhook-retry.ts`, `stripe-reconcile.ts`, dead-letter counters.\n\nNot reviewed: live incident history, customer contracts, the 61 product-module runbooks except where they define platform recovery.\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `docs/INCIDENT_RESPONSE.md` | Doc | Platform IR plan (roles/severity/containment/comms/postmortem) | Accurate except \u00a78 stale alerting text (:124-128) |\n| `docs/DATA_BREACH_RESPONSE.md` | Doc | Breach detection \u2192 notification \u2192 register | 459 lines; stale alerting paragraph (:143-146) |\n| `docs/PLATFORM_FAILURE_RUNBOOKS.md` | Doc | Operator runbooks + drill table | Drill table all `_pending_` (:112-118) |\n| `infra/digitalocean/alertmanager.tmpl.yml` | Config | Routing incl. Watchdog receiver | Watchdog route :86-100; receiver :144-152 |\n| `infra/digitalocean/prometheus.rules.yml` | Config | 7 alert rules | Availability, impersonation, RLS \u00d72, Watchdog |\n| `infra/digitalocean/prometheus.rules.test.yml` | Test | promtool unit tests (fire/no-fire) | Not run in CI |\n| `infra/digitalocean/prometheus.yml` | Config | Scrapes api (METRICS_TOKEN) + worker; forwards to Alertmanager | :11-17, :20-39 |\n| `infra/digitalocean/docker-compose.yml` | Config | alertmanager service + noop defaults | :239-307 |\n| `.github/workflows/deploy-do.yml` | CI | Watchdog fail-closed guard; worker health fatal | :739-747, :905-922 |\n| `.github/workflows/supabase-migrations.yml` | CI | Dry-run artifact + post-push drift check | :67-83, :90-125 |\n| `.github/workflows/db-restore-test.yml` | CI | Deep restore assertions | :135-224 |\n| `.github/workflows/secret-rotation-reminder.yml` | CI | Quarterly rotation reminder | Committed (7dfb8650) |\n| `apps/api/src/lib/metrics.ts` | Code | Metric definitions + record helpers | All previously unwired metrics now recorded |\n| `apps/api/src/services/audit.ts` | Code | Audit write with retry | Final failure only logs (:61-63) |\n| `apps/worker/src/tasks/stripe-reconcile.ts` | Code | Reconciliation task | Returns counts; no metric |\n| `docs/RELEASE_GATE.md` | Doc | Pre-go-live blockers | 'No production environment yet' (:8); alert delivery exit criterion (:34) |\n\n## Verification Performed\n\nCommands run (read-only, all from `/tmp/opencode/mct-audit-target`):\n\n```text\ngit log -1 --format='%H %ci %s'                          # 8d299b8dc271... \"Merge PR #168 ...\"\ngit rev-list --count 9c0b88c..8d299b8d                    # 113 commits since previous run\ngit merge-base --is-ancestor 6de167d3 9c0b88c             # RLS observability predates the previous run\ngrep -n \"WATCHDOG\\|watchdog\" .github/workflows/deploy-do.yml\ngrep -rn \"watchdog\" infra/ docs/ --include=*.md --include=*.yml\ngrep -n \"MCTTenantScopeRegression\\|MCTImpersonationBurst\\|MCTRlsEnforcedShareCollapsed\" infra/digitalocean/prometheus.rules.yml\ngit show 9c0b88c:infra/digitalocean/prometheus.rules.yml | grep -n \"MCTTenantScopeRegression\"   # already present at 9c0b88c\ngrep -rn \"recordRlsBypass\\|recordImpersonationEvent\\|recordWebhookDeadLetter\\|recordSearchQuery...\" apps --include=*.ts\ngrep -rn \"promtool\\|prometheus.rules.test\" .github/workflows/*.yml    # no hits\ngrep -rn \"ALERTMANAGER\\|NTFY\" docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md docs/ENVIRONMENT_VARIABLES.md  # no hits\ngrep -rn \"secret_rotation_runbook\\|backup_restore_drill_plan\\|incident_tabletop_scenarios\" docs/INCIDENT_RESPONSE.md docs/DATA_BREACH_RESPONSE.md\nfind . -name \"POSTMORTEM.md\" -o -name \"INCIDENT_COMMS.md\"    # none; docs/templates/ does not exist\n```\n\nOutcome summary: the incident plan and breach plan are committed and substantive; the alerting path is fully wired from rules \u2192 Alertmanager \u2192 ntfy for critical/default; the dead-man's switch receiver is still not provisioned and has never been exercised; every previous IR row was re-verified individually (below); no tabletop or drill artifact exists.\n\n## Executive Summary\n\nMCT's incident readiness is materially better than at the 20261004 run. The platform now has a real IR plan with roles, a three-level severity model, containment phases, a communication table and a postmortem requirement (`docs/INCIDENT_RESPONSE.md`), plus a 459-line breach plan with detection sources, containment playbooks, an assessment map, a notification decision record and a breach register schema (`docs/DATA_BREACH_RESPONSE.md`). Operator runbooks cover the top failure modes (`docs/PLATFORM_FAILURE_RUNBOOKS.md`), rollback docs now agree with the workflow, the worker health check is fatal, the restore drill asserts structure, freshness and RLS, and the previously unwired metrics plus the RLS/impersonation alerts are live with promtool unit tests.\n\nThe remaining risk is concentrated in **operationalization**, not documentation:\n\n1. **The dead-man's switch is not provisioned.** Routing and the fail-closed prod guard exist, but with `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` unset the Watchdog pings a loopback no-op \u2014 a total loss of the droplet is still silent, and prod deploys are blocked by the same guard until it is set. Nothing about the path has been exercised.\n2. **Nobody is on the rota.** The plan says it is not operational until names and escalation contacts are recorded; they are not.\n3. **No exercise has been run and the only scenario catalog is stale.** The committed catalog (20261002) still says the IR plan is absent and Alertmanager is not deployed; its monitoring-loss scenario no longer matches the system.\n4. **The plans were not refreshed after the alerting fix.** Both the IR plan and the breach plan still tell operators \"Alertmanager is not deployed\" and point at template files that only exist inside an old audit run folder.\n5. **Two detection gaps remain:** audit-trail gaps are still log-only, and webhook dead-letters / reconciliation drift have counters but no alert rules. Alert-rule unit tests are not run in CI.\n\nRecommended next actions: provision the watchdog heartbeat and record the documented stop-Alertmanager exercise; fill the rota; promote a refreshed scenario catalog into `docs/` and run Scenario 11 (monitoring-path loss) as the first recorded tabletop; refresh the two plans' alerting sections and template links; add the audit-gap and dead-letter rules.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Platform IR plan | `docs/INCIDENT_RESPONSE.md` | Roles/severity/containment/comms/postmortem | Present, substantive | Medium | Stale \u00a78 alerting text; rota unfilled |\n| Breach plan | `docs/DATA_BREACH_RESPONSE.md` | Detection\u2192notification\u2192register | Present, substantive | Medium | Stale alerting paragraph |\n| Operator runbooks | `docs/PLATFORM_FAILURE_RUNBOOKS.md` | Top failure-mode recovery | Present | Medium | All drills `_pending_` |\n| Scenario catalog | `docs/audits/.../20261002-0344.../incident_tabletop_scenarios.md` | 12 scenarios + templates | Stale (bound to 62861370) | High | Not under `docs/`; referenced by bare name |\n| Alertmanager | `infra/digitalocean/alertmanager.tmpl.yml` + compose | Delivery + watchdog | Deployed path; watchdog receiver unset | High | Fail-closed prod guard |\n| Alert rules | `infra/digitalocean/prometheus.rules.yml` | 7 rules | Present | Medium | No audit-gap / dead-letter rules |\n| Rule unit tests | `infra/digitalocean/prometheus.rules.test.yml` | promtool fire/no-fire | Present, manual only | Medium | Not in CI |\n| Metrics | `apps/api/src/lib/metrics.ts`, worker | Diagnosis + alert inputs | Wired | Low | Doc table stale |\n| Health endpoint | `apps/api/src/routes/health.ts` | Liveness/readiness | Public minimal; `/health/detail` gated | Low | Doc \u00a72 stale |\n| Docker rollback | `deploy-do.yml` + `ROLLBACK_PROCEDURES.md` | SHA rollback | Consistent | Low | Precondition: images exist |\n| Migration recovery | `ROLLBACK_PROCEDURES.md` \u00a73; `supabase-migrations.yml` | Reverse/PITR/drift | Drift fail-closed; reverse manual | High | No PITR drill |\n| Restore drill | `db-restore-test.yml` | Backup verification | Deep assertions | Low | PITR RPO unproven |\n| Secret rotation | `SECRETS_ROTATION.md` + reminder workflow | Rotation policy | Reminder committed; log unexercised | Medium | Single log row |\n| Status surface | (none for MCT) | External comms | Absent | Medium | Runbook points at product feature |\n| Audit-gap alert | `apps/api/src/services/audit.ts` | Gap detection | Log-only | Medium | No metric/rule |\n| Dead-letter/reconcile alerts | counters + `stripe-reconcile.ts` | Webhook/billing failure | Counters emitted; no rules | Medium | Reconcile has no metric |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Incident docs | 4 | `INCIDENT_RESPONSE.md` roles/severity/phases/comms/postmortem | Rota unfilled; stale alerting text; broken template links | Fill rota; refresh \u00a78; move templates to `docs/templates/` |\n| Monitoring/alerting | 3 | Alertmanager + ntfy wired; 7 rules; promtool tests | Watchdog receiver unset; rule tests not in CI; no audit-gap/dead-letter rules | Provision + exercise watchdog; wire promtool CI; add rules |\n| Rollback | 4 | Auto-revert; SHA rollback docs consistent; drift check | DB reverse/PITR manual and undrilled | Record one PITR/reverse drill |\n| Security docs | 4 | `SECURITY.md`, rotation, JWT, RLS, breach plan | Rotation unexercised; alerting secrets undocumented | Rotation drill; secrets matrix update |\n| Deployment docs | 4 | Handbook, `RELEASING.md`, `CI.md`, secrets matrix | Matrix missing alerting secrets | Add `ALERTMANAGER_*`/`NTFY_ALERTS_*` rows |\n| Operator docs | 4 | `PLATFORM_FAILURE_RUNBOOKS.md`, `TROUBLESHOOTING.md`, 61 runbooks | Drills pending; status-page pointer wrong | Exercise runbooks; fix status reference |\n| Data breach process | 4 | 459-line plan + register + templates | Never exercised; stale detection gap text | Run breach tabletop; refresh \u00a73 |\n| Backups | 4 | Deep restore assertions; shared bucket contract | PITR RPO unproven | Record dated PITR exercise |\n| Audit logs | 3 | Retry + PII redaction; impersonation alert | Gap remains silent; no tamper-evidence check | Emit audit-gap metric + rule |\n| Observability | 4 | Metrics wired; SLO doc; dashboards-as-code | Doc table stale; dead-letter/reconcile unalerted | Doc refresh; add rules |\n| CI/CD failures | 4 | Health gates, auto-revert, migration gates | Alert-rule tests not in CI | Add promtool CI job |\n| Admin abuse | 4 | Impersonation metric + burst alert + tests | Audit-gap half silent | Audit-gap alert |\n\n## Detailed Review\n\n### Item: Platform IR plan and postmortem process\n\n- Evidence: `docs/INCIDENT_RESPONSE.md:14-38` (severity + roles), `:40-87` (declare/contain/eradicate/postmortem), `:89-99` (comms), `:101-107` (evidence handling), `:120-128` (rota + known gaps).\n- What it does: gives a single platform plan with named roles, a 3-level severity model, containment rules (\"revoke first\"), a 5-business-day postmortem requirement and a \"no doc/config change = not closed\" rule.\n- Missing controls: no names in the rota; \u00a78 alerting text contradicts the deployed stack; template references unresolved.\n- Risks: during a real incident the IC role is unassigned and the plan's alerting assumptions are wrong.\n\n### Item: Breach response\n\n- Evidence: `docs/DATA_BREACH_RESPONSE.md:61-153` (definitions + breach types incl. RLS regression, service-role key, phishing_targets), `:127-153` (detection sources), `:169-234` (containment playbooks), `:275-346` (notification decision + template), `:369-403` (register).\n- What it does: decision-oriented breach process with explicit counsel gates and a processor/controller framing.\n- Missing controls: never exercised; \u00a73/\u00a711 repeat the stale Alertmanager claim; register lives outside the repo (by design).\n- Risks: delayed breach detection (RLS/audit signals partly unalerted); stale detection guidance.\n\n### Item: Monitoring, alerting and the dead-man's switch\n\n- Evidence: `alertmanager.tmpl.yml:63-100` (routes), `:144-152` (watchdog receiver), `docker-compose.yml:239-307`, `prometheus.yml:11-17`, `deploy-do.yml:739-747` (fail-closed), `MONITORING_AND_ALERTING.md:271-352` (\u00a79 model + test), `RELEASE_GATE.md:34`.\n- What it does: Prometheus \u2192 Alertmanager \u2192 ntfy (critical/default) with a separate always-firing Watchdog heartbeat to an external receiver.\n- Missing controls: receiver URL unset (per run context); no exercise artifact; `MCTServiceDown`/warning delivery assurance is tracked in the NOTIF domain; rule unit tests not in CI.\n- Risks: total monitoring loss remains undetected until the URL is provisioned and tested; prod deploy is blocked by the guard meanwhile.\n\n### Item: Rollback and migration recovery\n\n- Evidence: `ROLLBACK_PROCEDURES.md:1-27` (\u00a71 automated), `:75-115` (\u00a73 manual options), `FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md:157-176`; `supabase-migrations.yml:67-125`.\n- What it does: consistent SHA rollback docs; fail-closed drift check; dry-run artifact.\n- Missing controls: no automated reverse migration; no PITR drill; `ROLLBACK_PROCEDURES.md:214-226` state-restore still a comment block.\n- Risks: bad migration recovery time unproven; Terraform state corruption untested.\n\n### Item: Backups\n\n- Evidence: `db-restore-test.yml:135-224`, `.github/restore-test-baseline.env`, `db-backup.yml:30-35`, `scripts/backup-database.sh:8-24`, `RTO_RPO.md:41-45`.\n- What it does: daily encrypted dump; weekly restore with structural/freshness/RLS floors.\n- Missing controls: PITR 5-minute RPO unproven; encryption/offsite activation is an operator action (`RTO_RPO.md:37-40`).\n- Risks: a real incident may discover the 5-minute RPO claim is aspirational.\n\n### Item: Audit logs and admin abuse\n\n- Evidence: `audit.ts:47-66`, `impersonation.ts:46`, `metrics.ts:125-130`, `prometheus.rules.yml:48-56`.\n- What it does: retried audit writes with PII redaction; impersonation events metered and alerted on bursts.\n- Missing controls: audit-gap has no metric/rule; no tamper-evidence assertion.\n- Risks: an evidence trail for a breach can silently have holes.\n\n### Item: Webhook / payment / notification failures\n\n- Evidence: `metrics.ts:136-145`, `worker/src/metrics.ts:66-76`, `webhook-dispatcher.ts:124` (api) and `:128` (worker), `stripe-reconcile.ts:96-150`, `SLO.md:15`.\n- What it does: retries with backoff; dead-letter counters; reconciliation task returns counts.\n- Missing controls: no alert rule on dead-letter growth; no reconciliation metric.\n- Risks: silent customer-facing delivery and billing drift.\n\n## Scenario / Control Matrix\n\nRefreshed catalog for `8d299b8d` (12 scenarios; the stale committed catalog lives at `docs/audits/repo-deep-dive/20261002-0344-develop-6286137/incident_tabletop_scenarios.md`). Each scenario is rated on whether the repo would enable detection \u2192 triage \u2192 recovery within `docs/RTO_RPO.md` targets.\n\n| ID | Scenario | Detection (0-5) | Triage | Recovery | Overall | Weakest link / change since 20261002 |\n|---|---|---:|---:|---:|---:|---|\n| IR-001 | Total database loss / restore | 4 | 3 | 3 | 3.3 | Deep restore assertions added; PITR still undrilled |\n| IR-002 | Secret/key compromise | 2 | 3 | 3 | 2.7 | No compromise-detection alert; rotation undrilled |\n| IR-003 | Bad migration | 3 | 3 | 2 | 2.7 | Drift check now fail-closed; reverse still manual |\n| IR-004 | Failed deploy / rollback | 4 | 4 | 4 | 4.0 | Worker health now fatal |\n| IR-005 | Supabase outage | 3 | 3 | 3 | 3.0 | ntfy delivery wired; status surface still absent |\n| IR-006 | Dependency / supply-chain compromise | 4 | 3 | 3 | 3.3 | Unchanged |\n| IR-007 | CI/CD compromise | 2 | 3 | 3 | 2.7 | Unchanged; no out-of-band CI alert |\n| IR-008 | RLS regression / tenant exposure | 4 | 3 | 3 | 3.3 | RLS metrics + alert rules + tests now present |\n| IR-009 | Webhook / payment / notification failure | 3 | 3 | 4 | 3.3 | Counters emitted; still unalerted |\n| IR-010 | Admin abuse / insider action | 3 | 3 | 3 | 3.0 | Impersonation burst alert added; audit gap silent |\n| IR-011 | **Total loss of the monitoring/alerting path** | 2 | 2 | 3 | 2.3 | Routing + fail-closed guard exist; watchdog receiver unset and unexercised \u2192 still undetected |\n| IR-012 | Recurring incident / fix durability | 3 | 3 | 2 | 2.7 | No postmortem registry; fixes not always re-bound to docs (this run found stale plans) |\n\nCommunication templates: the stale catalog's \u00a75 (declaration, status-update, resolution, postmortem) is still usable but must be moved under `docs/` and re-dated; the breach plan already carries a notification-content template (`DATA_BREACH_RESPONSE.md:316-346`). No `docs/templates/POSTMORTEM.md` or `INCIDENT_COMMS.md` exists.\n\n## Findings\n\nFinding IDs are assigned by the aggregator; this run's JSON carries the same titles. Summary:\n\n| Severity | Title | Status |\n|---|---|---|\n| P0 | No platform-level incident response plan, roles, or postmortem process | verified-fixed |\n| P0 | No data breach response / notification process | verified-fixed |\n| P0 | Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver | partially-fixed |\n| P1 | Rollback documentation contradicts itself on SHA-targeted rollback | verified-fixed |\n| P1 | Bad-migration recovery is manual-only with no automated reverse or staging proof | partially-fixed |\n| P1 | Worker health failure during deploy is non-fatal | verified-fixed |\n| P1 | Backups are not verified deeply enough to prove the documented RPO/RTO | verified-fixed |\n| P1 | Backup bucket configuration is inconsistent between the script, the backup workflow, and the restore test | verified-fixed |\n| P1 | No runtime detection or alerting for tenant-isolation (RLS) regressions | verified-fixed |\n| P2 | Several Prometheus metrics are declared but not wired, limiting incident diagnosis | verified-fixed |\n| P2 | No alerting on audit-trail gaps or privileged (impersonation/admin) abuse | partially-fixed |\n| P2 | No alerting when webhook dead-letters accumulate or payment reconciliation drifts | still-open |\n| P2 | Secrets rotation is documented but has no exercised evidence | partially-fixed |\n| P2 | No platform status/communication surface for MCT's own outages | still-open |\n| P2 | Migration dry-run result is discarded in CI | verified-fixed |\n| P3 | Terraform state restore guidance lacks a tested procedure | still-open |\n| P3 | Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts | still-open |\n| P2 | Platform IR and breach plans are stale on the deployed alerting path and reference template files that do not exist in docs/ | open (new) |\n| P2 | On-call rota and escalation contacts are unassigned, so the incident plan is not operational | open (new) |\n| P2 | No tabletop exercise has been run and the scenario catalog is stale | open (new) |\n| P2 | Prometheus alert-rule unit tests are not wired into CI | open (new) |\n| P3 | Monitoring doc still reports wired metrics as 'defined, not wired' and omits the alert rules added for impersonation and RLS | open (new) |\n| P3 | Alerting secrets are not documented in the secrets matrix or environment-variable reference | open (new) |\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Total monitoring loss stays silent (watchdog receiver unset) | P0 | Medium | High | `docker-compose.yml:256-258`; run context | IR-P0-003: provision + exercise |\n| Prod deploy blocked by the fail-closed watchdog guard | P1 | High (while unset) | Medium | `deploy-do.yml:739-747` | Set the secret before the next prod deploy |\n| Incident response stalls because nobody is on the rota | P1 | High | Medium-High | `INCIDENT_RESPONSE.md:120-123` | Fill rota/escalation |\n| Operators act on stale alerting assumptions in the plans | P2 | Medium | Medium | `INCIDENT_RESPONSE.md:124-128`; `DATA_BREACH_RESPONSE.md:143-146` | Refresh plans |\n| Tabletop never run \u2192 scenario catalog rots | P2 | High | Medium | Drill table `_pending_`; stale catalog | Run + record Scenario 11 |\n| Dead-rule regression returns (tests not in CI) | P2 | Medium | Medium | `prometheus.rules.test.yml` unreferenced | Add promtool CI job |\n| Silent audit-trail gaps during a breach | P2 | Low-Med | Medium-High | `audit.ts:61-63` | Add metric + rule |\n| Silent webhook/billing failure | P2 | Medium | Medium | counters without rules | Add dead-letter/reconcile rules |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\n1. **IR-P0-003** \u2014 Provision the external watchdog heartbeat secret for prod and record the documented exercise (stop `alertmanager`, confirm the external service pages within its grace period). Until then no prod deploy completes and total monitoring loss is undetectable.\n2. Fill the rota/escalation block in `docs/INCIDENT_RESPONSE.md` \u00a78 and the breach-plan contacts; the plans declare themselves non-operational without it.\n\n### This Week\n\n3. Refresh the alerting sections and template links in `docs/INCIDENT_RESPONSE.md` and `docs/DATA_BREACH_RESPONSE.md`; move the postmortem/comms/rotation/drill templates into `docs/templates/` and index both plans in `docs/INDEX.md`.\n4. Promote the refreshed 12-scenario catalog into `docs/INCIDENT_TABLETOP_SCENARIOS.md` and run Scenario IR-011 (monitoring-path loss) as the first recorded exercise.\n\n### This Month\n\n5. Add the audit-gap metric + rule and the dead-letter/reconciliation rules (IR-P2-002/IR-P2-003 residuals).\n6. Add a CI job running `promtool check rules` + `test rules` on `infra/digitalocean/prometheus.rules*.yml`.\n7. Add the alerting/notification secrets to the secrets matrix and env reference.\n8. Perform one rotation drill and one PITR/reverse-migration drill; record both with artifacts.\n\n### Later / Platform Evolution\n\n9. Stand up an MCT-owned status surface (or an internal instance of the product) and wire the runbook to it (IR-P2-005).\n10. Operationalize Terraform state restore with exact commands and a scratch-backend drill (IR-P3-001).\n11. Institutionalize quarterly tabletops with after-action reports stored in-repo.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Set `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` + run the stop-alertmanager test | Makes the only off-box detector real | GitHub prod env secret; `MONITORING_AND_ALERTING.md` \u00a79 | External service reports missed heartbeat; artifact recorded |\n| Fill the rota table | Makes the plan operational | `docs/INCIDENT_RESPONSE.md` \u00a78 | Names present; escalation test |\n| Fix template references | Operators can open the referenced templates | `docs/INCIDENT_RESPONSE.md`, `docs/DATA_BREACH_RESPONSE.md` | All referenced paths resolve |\n| Wire promtool tests into CI | Prevents dead-rule regressions | `.github/workflows/*`, `prometheus.rules.test.yml` | CI fails on a mutated rule |\n| Update the \u00a74 metric table | Doc matches emitted metrics | `docs/MONITORING_AND_ALERTING.md` | Table matches `metrics.ts` |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Watchdog receiver provisioning + exercise (IR-P0-003) | P0 | Platform | S | External heartbeat account |\n| Rota/escalation assignment | P1 | Platform lead | S | \u2014 |\n| Refresh IR + breach plans; template move | P2 | Security/platform | S-M | \u2014 |\n| Refreshed tabletop catalog + first exercise | P2 | Platform lead | M | Rota |\n| Audit-gap metric + rule (IR-P2-002 residual) | P2 | Security/platform | M | \u2014 |\n| Dead-letter + reconcile rules (IR-P2-003) | P2 | Backend | S-M | \u2014 |\n| promtool CI job | P2 | Platform/infra | S | \u2014 |\n| Alerting secrets docs | P3 | Platform/infra | S | \u2014 |\n| Monitoring doc refresh (metrics + rules header) | P3 | Docs maintainer | S | \u2014 |\n| Status surface (IR-P2-005) | P2 | Platform lead | M | \u2014 |\n| Terraform state restore drill (IR-P3-001) | P3 | Platform | S | DO Spaces scratch |\n\n## Suggested Tests\n\n- **CI**: promtool `check rules` + `test rules` on every change under `infra/digitalocean/prometheus*.yml`.\n- **CI**: assert every secret name required by `deploy-do.yml` env forwarding appears in the secrets matrix (docs-consistency check).\n- **Integration**: force an audit-insert failure and assert the new audit-gap metric increments and its rule fires.\n- **Integration**: force repeated webhook failures; assert dead-letter counter increase triggers the new rule.\n- **Manual (tabletop)**: run all 12 scenarios with only repo docs available; record detection time, time-to-triage and time-to-recovery vs `RTO_RPO.md`; start with IR-011.\n- **Manual (watchdog)**: `docker compose stop alertmanager`; assert the external service pages within its grace period; store the artifact.\n- **Manual (rotation)**: complete one dev rotation and update `SECRETS_ROTATION.md` Rotation Log.\n\n## Suggested Documentation Updates\n\n- `docs/INCIDENT_RESPONSE.md` \u2014 refresh \u00a78 (Alertmanager deployed; watchdog pending), fix template links, fill rota.\n- `docs/DATA_BREACH_RESPONSE.md` \u2014 refresh \u00a73/\u00a711 detection gap text; link templates.\n- `docs/INCIDENT_TABLETOP_SCENARIOS.md` \u2014 new, refreshed from this body.\n- `docs/templates/POSTMORTEM.md`, `docs/templates/INCIDENT_COMMS.md` \u2014 create from the catalog \u00a75.\n- `docs/MONITORING_AND_ALERTING.md` \u2014 \u00a72/\u00a73 health semantics, \u00a74 metric statuses, \u00a77 alert table, \u00a79 watchdog exercise record.\n- `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, `docs/ENVIRONMENT_VARIABLES.md` \u2014 alerting/notification secrets.\n- `docs/PLATFORM_FAILURE_RUNBOOKS.md` \u2014 replace the product status-page pointer with the real channel once it exists; record drills.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Is `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` set in any environment, and what service backs it? | Determines whether IR-P0-003 is real | GitHub environment secret inventory (names only) |\n| Has any critical alert actually reached ntfy? | Delivery assurance (NOTIF-domain finding) | ntfy topic history / run artifact |\n| Will the `prod` environment/rota ever be staffed for a small team? | Determines whether the plan is operational | Rota decision |\n| Is the audit-log insert failure observable anywhere today? | Gap detection | Sentry/log alert or metric |\n| Has a Supabase PITR restore ever been performed? | Proves the 5-minute RPO claim | Supabase dashboard history |\n| Has any tabletop/drill been run outside the repo? | The domain's central question | After-action artifact |\n\n## Appendix\n\n### A. Previous-run IR rows re-verified at 8d299b8d\n\n| Previous ID | Status now | Note |\n|---|---|---|\n| IR-P0-001 | verified-fixed | Plan committed; unchanged |\n| IR-P0-002 | verified-fixed | Breach plan committed; unchanged |\n| IR-P0-003 | partially-fixed | Mechanism + guard present; receiver unset and unexercised (corrects the 9c0b88c verified-fixed claim) |\n| IR-P1-001 | verified-fixed | Handbook matches workflow/docs |\n| IR-P1-002 | partially-fixed | Drift check fail-closed; reverse/PITR still manual |\n| IR-P1-003 | verified-fixed | Worker health fatal |\n| IR-P1-004 | verified-fixed | Deep restore assertions |\n| IR-P1-005 | verified-fixed | Shared bucket contract |\n| IR-P1-006 | verified-fixed | Rules existed at 9c0b88c too (previous note looked in the wrong file) |\n| IR-P2-001 | verified-fixed | All metrics wired |\n| IR-P2-002 | partially-fixed | Impersonation alerted; audit gap silent |\n| IR-P2-003 | still-open | Counters emitted; no rules; no reconcile metric |\n| IR-P2-004 | partially-fixed | Reminder workflow committed; log unexercised |\n| IR-P2-005 | still-open | No platform status surface |\n| IR-P2-006 | verified-fixed | Dry-run artifact + drift gate |\n| IR-P3-001 | still-open | No executable state-restore procedure |\n| IR-P3-002 | still-open | Doc/health divergence widened by the /health split |\n\nOut-of-area rows touching this domain but owned elsewhere: `INFRA-P2-003` (alert rules delivery path) and `OBS-P2-001` (rules not routed) were reconciled as verified-fixed; re-verified here that routing exists (`prometheus.yml:11-17`, `alertmanager.tmpl.yml:63-100`). The critical-receiver delivery-assurance residual is tracked in the NOTIF domain.\n\n### B. Scenario catalog provenance\n\nThe refreshed matrix above is grounded in this commit's code and docs. The stale catalog was bound to `develop@62861370`; its readiness inventory still lists the IR plan as Absent and Alertmanager as not deployed, and its Scenario 11 says the Watchdog has no receiver \u2014 all superseded. It remains the only source of the communication/postmortem templates, which is why finding \"No tabletop exercise has been run and the scenario catalog is stale\" recommends promoting a refreshed copy into `docs/`.\n\n### C. Secrets handling\n\nNo secret values were read or printed. Only secret *names* and code paths are referenced. Redactions: `ALERTMANAGER_WEBHOOK_PASS`, `ALERTMANAGER_*_WEBHOOK_URL`, `NTFY_ALERTS_PASS` values are not shown.\n"
+}

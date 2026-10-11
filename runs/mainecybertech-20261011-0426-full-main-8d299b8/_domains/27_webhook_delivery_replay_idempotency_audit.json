@@ -1,0 +1,443 @@
+{
+  "domain": "27_webhook_delivery_replay_idempotency_audit",
+  "file": "27_webhook_delivery_replay_idempotency_audit.md",
+  "area": "WH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:50Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Outbound webhook idempotency is non-atomic in the API and absent in the worker dispatcher",
+      "evidence": [
+        "apps/api/src/lib/webhook-dispatcher.ts:178-180 \u2014 per-endpoint key `${idempotencyBaseKey}:${endpoint.id}` claimed atomically via claimIdempotencyKey (Redis SET NX EX) before delivery",
+        "apps/api/src/lib/webhook-dispatcher.ts:182-186 \u2014 sends Idempotency-Key header and persists idempotency_key on the delivery row (line 219)",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:80-92 \u2014 worker dispatcher makes the same atomic per-endpoint claim and skips duplicates",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:98-100,124,179 \u2014 worker sends and persists the same Idempotency-Key",
+        "apps/api/src/lib/idempotency.ts:99-136 \u2014 claimIdempotencyKey is an atomic SET NX EX with in-memory mutex fallback",
+        "apps/api/src/__tests__/webhook-dispatcher-idempotency.test.ts:116-150 \u2014 3 concurrent dispatches collapse to 1 fetch and 1 delivery row; claim released on failure",
+        "apps/worker/src/__tests__/webhook-dispatcher.test.ts:120-137 \u2014 duplicate worker job collapses to a single delivery"
+      ],
+      "impact": "Duplicate outbound events can no longer double-deliver under concurrency; consumers also receive a stable Idempotency-Key for their own dedup.",
+      "recommendation": "Keep the atomic claim as the single idempotency authority; add a regression test that asserts the claim is per-endpoint (fan-out to N endpoints yields N deliveries, 1 per endpoint).",
+      "owner": "integrations/backend",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: both dispatchers claim atomically and carry Idempotency-Key; delivery rows store idempotency_key; tests cover concurrent-duplicate collapse \u2014 mainecybertech#129/d5e0d5b7 lineage now on main.",
+      "area": "WH"
+    },
+    {
+      "severity": "P1",
+      "title": "M365 webhook auth depends on `M365_CLIENT_STATE` which the deploy pipeline does not write, while `M365_WEBHOOK_SECRET` is dead config",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:597 \u2014 M365_CLIENT_STATE sourced from GitHub secrets",
+        ".github/workflows/deploy-do.yml:647,689 \u2014 M365_CLIENT_STATE is in the envs list and the printf .env writer",
+        "infra/digitalocean/docker-compose.yml:90 \u2014 M365_CLIENT_STATE passed into the api container",
+        "apps/api/src/config/env.ts:56-59 \u2014 schema declares only M365_CLIENT_STATE; comment states there is intentionally no M365_WEBHOOK_SECRET",
+        "apps/api/.env.example:33-34 \u2014 documents the same (no M365_WEBHOOK_SECRET)",
+        "apps/api/src/routes/webhooks.ts:576-604 \u2014 M365 auth gate uses getEnv().M365_CLIENT_STATE with constant-time compare and fails closed (501 unset / 401 mismatch)",
+        "docs/SECRETS_ROTATION.md:54 \u2014 M365_CLIENT_STATE now in the 90-day rotation inventory"
+      ],
+      "impact": "The M365 webhook is authenticated in production (clientState deployed) and the misleading dead secret no longer exists in the schema/example/compose.",
+      "recommendation": "No further code action; confirm the GitHub secret M365_CLIENT_STATE is set in the prod environment (deploy fails closed to 501 if unset).",
+      "owner": "integrations/backend",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: M365_CLIENT_STATE is written by deploy-do.yml (envs + printf) and compose; the dead M365_WEBHOOK_SECRET was removed from env.ts/.env.example/compose (env.ts:58 comment). Cross-area: SECRET-P1-001's residual (dead key) is now resolved \u2014 owning secrets domain should close it.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "M365 inbound notifications have no enforced timestamp/replay window",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:27 \u2014 M365_REPLAY_WINDOW_SECONDS = 7 days",
+        "apps/api/src/routes/webhooks.ts:622-632 \u2014 deterministic digest of the full notification is atomically claimed with the 7-day TTL (dedupWebhook(m365Key, M365_REPLAY_WINDOW_SECONDS))",
+        "apps/api/src/routes/webhooks.ts:29-51,641 \u2014 after processing, logWebhookDelivery calls storeIdempotencyKey(idempotencyKey, \"done\")",
+        "apps/api/src/lib/idempotency.ts:50,138-164 \u2014 storeIdempotencyKey hardcodes IDEMPOTENCY_TTL_SECONDS = 24h (redis SETEX / in-memory entry), overwriting the 7-day claim",
+        "apps/api/src/__tests__/webhooks.test.ts:592-613 \u2014 test asserts only the claim TTL (7d), not the post-processing store TTL, so the 24h reset is untested"
+      ],
+      "impact": "The enforced M365 replay window is effectively 24 hours, not the documented 7 days: a captured/retransmitted notification (clientState included) is accepted again after 24h. Provider retries (~4h) are still covered, so the practical risk is a stale replay re-running audit/delivery logging, not state mutation.",
+      "recommendation": "Preserve the claim TTL when marking the key done \u2014 e.g. storeIdempotencyKey(key, \"done\", ttlSeconds) with the same M365 window (or use claimIdempotencyKey's value update), and extend the test to assert the final TTL after a successful M365 request.",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: the 7-day atomic claim on the notification digest exists (mainecybertech#122), but logWebhookDelivery:47 storeIdempotencyKey resets the same key to the 24h default (idempotency.ts:50,144), so the effective window is 24h \u2014 residual documented.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Inline dispatcher records a fixed `retry_count` and duplicates the worker's retry logic",
+      "evidence": [
+        "apps/api/src/lib/webhook-dispatcher.ts:216-218 \u2014 delivery row records retry_count: result.attempts (actual attempts) and dead_letter: failed",
+        "apps/api/src/lib/webhook-dispatcher.ts:226-238 \u2014 failed inline rows are dead-lettered via enqueueDeadLetter so the worker retry task does not double-retry them (single retry owner)",
+        "apps/api/src/lib/webhook-dispatcher.ts:36-38,49-98 \u2014 attempts are counted per outcome (1 for terminal 4xx, up to MAX_ATTEMPTS=3 for 5xx/network)",
+        "apps/api/src/__tests__/webhook-dispatcher-idempotency.test.ts:152-175 \u2014 asserts retry_count 1 for a terminal 4xx, dead_letter true, DLQ attempt_count 1"
+      ],
+      "impact": "The inline fallback no longer misreports attempts and no longer conflicts with the worker retry task; delivery logs are truthful.",
+      "recommendation": "No action; keep the single-retry-owner rule when changing retry semantics.",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: actual attempt count and dead_letter marking present, single retry owner enforced \u2014 mainecybertech#129 (68fd8d12) now on main.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Outbound and DLQ delivery outcomes are not metered; only inbound success increments the counter",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:30-35,132-134 \u2014 portal_webhook_deliveries_total {status,event}",
+        "apps/api/src/lib/metrics.ts:136-145 \u2014 portal_webhook_dead_letters_total {event} + recordWebhookDeadLetter",
+        "apps/api/src/lib/webhook-dispatcher.ts:124,224 \u2014 inline path meters DLQ and outbound success/failure",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:127-128,183 \u2014 worker path meters blocked-URL failures, DLQ and success/failure",
+        "apps/worker/src/tasks/webhook-retry.ts:149,175,208 \u2014 retry task meters retry success and dead-letters",
+        "infra/digitalocean/prometheus.rules.yml (grep 'webhook' = 0 matches) \u2014 no alert rule consumes these counters (see IR-P2-003 row)"
+      ],
+      "impact": "Delivery outcomes are observable; alerting on DLQ growth is still absent (tracked separately).",
+      "recommendation": "Add a Prometheus rule on portal_webhook_dead_letters_total / failed-rate once alert thresholds are agreed.",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: outbound success/failure + DLQ counters wired on API and worker paths (mainecybertech#129; metric registration IR-P2-001 at 36e5f723). Residual alerting is IR-P2-003.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Inbound Jira/JSM signature falls back to re-serialized JSON when `req.rawBody` is absent",
+      "evidence": [
+        "apps/api/src/lib/webhook-signature.ts:32-36 \u2014 rawBodyBuffer returns null for absent/non-string/non-Buffer values (fail closed)",
+        "apps/api/src/routes/webhooks.ts:377-382,479-484 \u2014 Jira and JSM reject with 401 when the captured raw body is unavailable, before HMAC verification",
+        "apps/api/src/routes/webhooks.ts:383,485 \u2014 verifyWebhookSignature runs over the exact captured bytes",
+        "apps/api/src/__tests__/webhook-signature.test.ts:44-61 \u2014 rawBodyBuffer unit cases including null for absent bodies",
+        "apps/api/src/__tests__/webhooks.test.ts:422-425,464-467 \u2014 route tests force rawBodyBuffer \u2192 null and assert rejection"
+      ],
+      "impact": "Signature verification can no longer produce an unpredictable verdict from re-serialized JSON; malformed content types fail closed.",
+      "recommendation": "No action; keep the fail-closed contract if the body parser is refactored.",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: Jira/JSM require the captured raw body and fail closed (adea562c / mainecybertech#122, now on main).",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "`webhook_dead_letters` has no DELETE policy while the API deletes via the RLS client",
+      "evidence": [
+        "supabase/migrations/5302050_webhook_retry_dlq.sql:27-62 \u2014 only SELECT/INSERT/UPDATE policies for webhook_dead_letters; no DELETE policy (no later migration adds one; grep 'dead_letters' across supabase/migrations finds no delete policy)",
+        "apps/api/src/routes/webhook-management.ts:198-205 \u2014 POST /dead-letters/:id/retry deletes the DLQ row via getScopedClient(req, 'webhook-management', 'write')",
+        "apps/api/src/routes/webhook-management.ts:235-240 \u2014 DELETE /dead-letters/:id deletes via the same scoped client",
+        "apps/api/src/services/supabase.ts:198-226 \u2014 getScopedClient returns the service-role client unless the module is in RLS_WRITES_ENABLED (default empty), so the delete works today but silently fails once webhook-management is allow-listed",
+        ".github/workflows/deploy-do.yml:616,708 \u2014 RLS_WRITES_ENABLED is deploy-wired (value unknown from the repo)"
+      ],
+      "impact": "Latent false-success: after the module is added to the RLS allow-list, org admins' DLQ dismiss/retry deletes affect zero rows while the route still returns ok (RLS-P2-002 is the sibling row for the same gap).",
+      "recommendation": "Add a DELETE policy mirroring the insert/update policy (webhooks:manage or admin-role scoped) in a new migration, and add an RLS-client test asserting the delete removes one row for a non-super-admin org admin.",
+      "owner": "integrations/backend + DB/platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still no DELETE policy for webhook_dead_letters (5302050 has select/insert/update only; 5302101/5302129 cover webhook_deliveries but not dead letters). Currently masked by the service-role default; breaks when webhook-management is added to RLS_WRITES_ENABLED. Sibling RLS-P2-002 \u2014 one fix closes both.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "No per-provider payload schema or size cap on webhook ingress (global 10mb JSON limit)",
+      "evidence": [
+        "apps/api/src/app.ts:110-120 \u2014 express.json({ limit: '10mb', type: [application/json, application/csp-report, application/reports+json] }) applies to every route, including /api/v1/webhooks/*",
+        "apps/api/src/app.ts:138-143 \u2014 rate limiter skips req.path.startsWith('/api/v1/webhooks/'), so the 10mb parse is unauthenticated and unthrottled",
+        "apps/api/src/routes/webhooks.ts:351-358,453-461,570-588 \u2014 inbound handlers consume req.body directly (optional chaining) with no Zod/JSON-schema validation; only signature/clientState gating",
+        "apps/api/src/routes/webhook-management.ts:37-51 \u2014 CRUD uses Zod, but inbound provider bodies do not",
+        "apps/api/src/routes/webhooks.ts:590-604,612-627 \u2014 M365 iterates the value array before dedup, so a large batch is parsed/iterated in full"
+      ],
+      "impact": "Any unauthenticated client can force a 10mb JSON parse (memory/CPU amplification) on webhook routes; malformed provider payloads are accepted into logging/processing instead of a clean 400/413.",
+      "recommendation": "Mount a tighter per-route JSON limit for /api/v1/webhooks/* (e.g. 256kb-1mb) and add per-provider Zod schemas that reject unknown/oversized payloads before side effects; consider a modest IP rate limit on inbound webhook paths.",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still one global 10mb parser, no inbound schema validation, and webhook routes remain rate-limit exempt. No migration/route change since 9c0b88c.",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "Test endpoint generates a random idempotency key and never dedups",
+      "evidence": [
+        "apps/api/src/routes/webhook-management.ts:485 \u2014 idempotencyKey = `test-${webhook.id}-${Date.now()}-${Math.random()...}` (unique per click, no claim/check)",
+        "apps/api/src/routes/webhook-management.ts:487-501 \u2014 inserts a delivery row with that key but never claims it; a failed test row has no dead_letter/next_retry_at set, so the worker retry task will pick it up (request_body includes data)",
+        "apps/web/e2e/admin/webhooks.spec.ts:1-24 \u2014 e2e covers page rendering only, not test-delivery semantics"
+      ],
+      "impact": "The admin test path does not exercise the same idempotency semantics as real delivery and can mislead operators; low impact because it is a debug affordance.",
+      "recommendation": "Route the test ping through the shared dispatcher (or a deterministic test key) so the test exercises the real signing/idempotency/retry path; label test rows in the UI.",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: webhook-management.ts:485 still generates a random per-click key with no dedup claim.",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "No committed event catalog or webhook documentation for consumers",
+      "evidence": [
+        "docs/modules/webhooks.md:1-45 \u2014 inbound module doc exists, but no outbound event catalog/envelope; line 8/16/39 claim M365 uses HMAC/x-hub-signature, which is false (M365 uses clientState only; env.ts:58)",
+        "docs/modules/webhook-management.md:20-39 \u2014 endpoint CRUD/delivery listing documented; no event list, retry schedule, Idempotency-Key or DLQ semantics",
+        "apps/api/src/lib/webhook-dispatcher.ts:19-30,166 \u2014 outbound envelope { event, timestamp, data } and stable idempotency key defined inline in code",
+        "apps/api/src/routes/projects.ts:522, apps/api/src/routes/tickets.ts:183, apps/api/src/routes/store/quotes.ts:536 \u2014 only two event names are ever emitted (project.created, ticket.created); no catalog artifact lists them",
+        "grep 'event catalog' docs/ (excluding audit reports) \u2014 no committed catalog file"
+      ],
+      "impact": "Integrators must read source to learn event names, envelope, signature header, retry schedule and dedup semantics; the committed M365 signature claims are factually wrong and could cause a broken integration.",
+      "recommendation": "Publish docs/WEBHOOKS.md (event catalog, {event,timestamp,data} envelope, X-Webhook-Signature: sha256=<hmac>, Idempotency-Key, 5x exponential retry, DLQ semantics) and fix docs/modules/webhooks.md:16,39 to state M365 is clientState-authenticated and unsigned; add a doc-lint that every dispatchWebhook('...') literal appears in the catalog.",
+      "owner": "integrations/backend + docs",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: module docs exist (docs/modules/webhooks.md, webhook-management.md, committed f9a6dc5e) but there is still no event catalog and the M365 signature statements are inaccurate \u2014 residual documented.",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "Worker queued webhook dispatcher inserts deliveries without an idempotency key",
+      "evidence": [
+        "apps/worker/src/tasks/webhook-dispatcher.ts:23-34,38-40 \u2014 derives the same stable base key as the API when the payload omits one",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:124,179 \u2014 delivery rows now persist idempotency_key (blocked-URL and normal paths)",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:98-100 \u2014 Idempotency-Key header sent on every delivery",
+        "apps/worker/src/__tests__/webhook-dispatcher.test.ts:96-118 \u2014 asserts the header and the persisted key"
+      ],
+      "impact": "Worker-dispatched deliveries are deduplicated and consumers can dedupe retries.",
+      "recommendation": "No action.",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: worker dispatcher always computes/carries an idempotency key and persists it (WH-P1-001 remediation; test covers it).",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "Webhook raw body typed as `string` but consumed as `Buffer`",
+      "evidence": [
+        "apps/api/src/app.ts:116-117 \u2014 verify hook declares req.rawBody?: string and assigns buf.toString() (bytes \u2192 UTF-8 string)",
+        "apps/api/src/routes/webhooks.ts:152-153 \u2014 Stripe constructEvent receives (req as { rawBody?: Buffer }).rawBody as Buffer, a type-level lie (runtime value is a string)",
+        "apps/api/src/lib/webhook-signature.ts:32-36 \u2014 rawBodyBuffer tolerates both string and Buffer, so the HMAC paths are safe",
+        "apps/api/src/__tests__/helpers.ts:86-88 \u2014 test app mirrors the same string assignment"
+      ],
+      "impact": "Runtime behavior is correct (Stripe and rawBodyBuffer accept strings), but the mismatched type contract can hide a real bug if a future consumer assumes Buffer (e.g. byte-exact HMAC on non-UTF-8 input).",
+      "recommendation": "Store the raw bytes: req.rawBody = buf (Buffer), declare rawBody?: Buffer on the request type, and drop the `as Buffer` cast at webhooks.ts:153.",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: app.ts:117 still stores a string and webhooks.ts:153 still casts it to Buffer.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook endpoint and delivery reads are available to any org member (not manage-gated)",
+      "evidence": [
+        "apps/api/src/routes/webhook-management.ts:20-21 \u2014 router-wide requireAuth + requireOrgAccess only",
+        "apps/api/src/routes/webhook-management.ts:53-70,260-273,399-428 \u2014 GET list / GET :id / GET :id/deliveries have no requirePermission('webhooks', ...) guard",
+        "apps/api/src/routes/webhook-management.ts:75-134 \u2014 GET /dead-letters (including request_body payloads) also unguarded",
+        "supabase/migrations/5302028_seed_permissions.sql:45-47 \u2014 a webhooks:view permission exists, so the read gate is available but unused",
+        "apps/api/src/routes/webhook-management.ts:29-35 \u2014 secrets are masked on read, but delivery request_body/response_body (full outbound payloads for worker-dispatched rows) are returned unmasked"
+      ],
+      "impact": "Any approved org member \u2014 not just admins with webhooks:view \u2014 can enumerate endpoints, read delivery history and DLQ payloads (which can contain ticket/project data).",
+      "recommendation": "Add requirePermission('webhooks', 'view') to the read routes (list, get, deliveries, dead-letters) and cover it in the route tests; consider redacting request_body/response_body for view-only callers.",
+      "owner": "API platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d (ACM-P2-005): reads still only require auth + org access while the webhooks:view permission exists; no requirePermission on any GET route.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook signing secrets are stored plaintext with no rotation or expiry",
+      "evidence": [
+        "supabase/migrations/5302032_webhook_endpoints.sql:8 \u2014 secret text (plaintext, no encryption/expiry/last_rotated_at columns)",
+        "apps/api/src/routes/webhook-management.ts:37-51,341 \u2014 create/update accept a secret of any value up to 500 chars; PATCH is the only way to change it (manual rotation, no history/expiry)",
+        "apps/api/src/lib/webhook-dispatcher.ts:188-191, apps/worker/src/tasks/webhook-dispatcher.ts:102-105, apps/worker/src/tasks/webhook-retry.ts:111-115 \u2014 the secret is the outbound HMAC key",
+        "docs/SECRETS_ROTATION.md:16,52-54 \u2014 covers env-level provider secrets but has no row for per-endpoint outbound webhook signing secrets"
+      ],
+      "impact": "A DB read (or a leaked backup) exposes every endpoint's signing key; there is no rotation cadence/expiry and no operator guidance for outbound endpoint secrets.",
+      "recommendation": "Document outbound endpoint secrets in SECRETS_ROTATION.md (90-day cadence, rotate via PATCH), add last_rotated_at + optional expiry and a rotation reminder, and consider encrypting the column at rest with FIELD_ENCRYPTION_KEY.",
+      "owner": "API platform + security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d (ACM-P2-007): secret is still plaintext text with no rotation/expiry metadata and no rotation inventory entry.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook SSRF guard has a DNS-rebinding TOCTOU window",
+      "evidence": [
+        "apps/api/src/lib/pinned-fetch.ts:22-65,83-90 \u2014 resolves DNS once, validates every answer, then pins the connection's lookup to the validated IP (TLS SNI/Host preserved, redirects not followed)",
+        "apps/api/src/lib/webhook-dispatcher.ts:58 \u2014 API inline dispatcher uses pinnedFetch",
+        "apps/api/src/routes/webhook-management.ts:469 \u2014 admin test delivery uses pinnedFetch",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:150 \u2014 worker dispatcher uses pinnedFetch",
+        "apps/worker/src/tasks/webhook-retry.ts:122 \u2014 retry task uses pinnedFetch",
+        "apps/worker/src/lib/pinned-fetch.ts:22-35 \u2014 worker copy documents the SEC-P2-002 partial-fix rationale"
+      ],
+      "impact": "The guard-then-fetch rebinding window is closed on every outbound path (API and worker), including retries and admin tests.",
+      "recommendation": "No action; add a regression test that a hostname re-resolving to 127.0.0.1 between guard and connect is still blocked.",
+      "owner": "@owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: pinnedFetch is used on all four outbound call sites (API dispatcher/test, worker dispatcher/retry); API pinned in #81, worker in 49646db7.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "No alerting when webhook dead-letters accumulate or payment reconciliation drifts",
+      "evidence": [
+        "infra/digitalocean/prometheus.rules.yml \u2014 alert groups are mct-service-availability, mct-admin-abuse and RLS-share rules; grep 'webhook' returns 0 matches",
+        "apps/api/src/lib/metrics.ts:136-145 \u2014 portal_webhook_dead_letters_total exists but is not referenced by any rule",
+        "apps/api/src/routes/webhook-management.ts:75-134 \u2014 DLQ is visible in the admin UI/API, so accumulation is discoverable only by manual inspection",
+        "apps/worker/src/main.ts:81-89 \u2014 webhook-retry runs every 5 minutes with no alert on its failures"
+      ],
+      "impact": "DLQ growth is silent to operators until someone opens the admin page; repeated delivery failures can go unnoticed for long periods.",
+      "recommendation": "Add Prometheus rules: portal_webhook_dead_letters_total increase over 15-30m > 0 (warning) and sustained failure ratio > 50% (critical), routed via the existing Alertmanager receivers.",
+      "owner": "platform lead / security reviewer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d for the webhook half of IR-P2-003: no alert rule consumes the DLQ/delivery counters. Payment-reconciliation half not assessed in this domain.",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "Admin dead-letter retry of inline-dispatched failures no-ops and deletes the DLQ row",
+      "evidence": [
+        "apps/api/src/lib/webhook-dispatcher.ts:208-220 \u2014 inline failures persist a PII-safe summary request_body {event, receivedAt} (no `data`) and dead_letter: true",
+        "apps/api/src/lib/webhook-dispatcher.ts:109-116 \u2014 the matching DLQ row also stores request_body {event, receivedAt}",
+        "apps/api/src/routes/webhook-management.ts:185-205 \u2014 POST /dead-letters/:id/retry recreates a due-now delivery from deadLetter.request_body and deletes the DLQ row",
+        "apps/worker/src/tasks/webhook-retry.ts:69-77 \u2014 rows whose request_body has no `data` are marked dead_letter: true and skipped WITHOUT re-inserting a DLQ row",
+        "apps/web/app/(admin)/admin/webhooks/dead-letters/DeadLetterActions.tsx:20-23 \u2014 the UI reports success ('re-queued for delivery') on the route's ok response"
+      ],
+      "impact": "For failures produced by the API inline fallback (queue/Redis unavailable), an operator's Retry removes the dead-letter record, attempts no HTTP delivery, and shows a success toast \u2014 silent loss of the failure record and a false success.",
+      "recommendation": "Make retry truthful: keep the DLQ row until the retry task reports an actual attempt, and have webhook-retry re-insert a DLQ row (with a reason) when it skips a no-data row; alternatively have the inline dispatcher persist the replayable payload (or mark such rows as non-replayable and disable Retry in the UI).",
+      "owner": "integrations/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d: code-traced, no test covers the no-data retry branch (worker webhook-retry.test.ts:69-85 only covers empty/failed query).",
+      "area": "WH"
+    },
+    {
+      "severity": "P2",
+      "title": "`webhook-retry` has no row claim: concurrent retry runs can double-send deliveries",
+      "evidence": [
+        "apps/worker/src/tasks/webhook-retry.ts:16-30 \u2014 selects up to 20 failed rows (status failed, dead_letter false, retry_count < 5, due) with no claim/FOR UPDATE SKIP LOCKED",
+        "apps/worker/src/tasks/webhook-retry.ts:47-220 \u2014 sends and then updates retry_count/next_retry_at; two overlapping runs both read and POST the same rows",
+        "apps/api/src/routes/webhook-management.ts:196 \u2014 admin retry enqueues 'webhook-retry' directly, bypassing the scheduler lock",
+        "apps/worker/src/main.ts:81-89 \u2014 scheduled every 5 minutes; apps/worker/src/lib/scan-lock.ts:26-73 only serializes the scheduled enqueue per replica",
+        "apps/worker/src/consumer-bullmq.ts:15,31 and apps/worker/src/env.ts:9 \u2014 BullMQ concurrency defaults to 10, so a scheduled and an admin-triggered job run concurrently",
+        "apps/worker/src/tasks/webhook-retry.ts:85-87 \u2014 retries preserve the Idempotency-Key header, which mitigates consumers that dedupe"
+      ],
+      "impact": "Duplicate outbound deliveries and racy retry_count/dead-letter transitions under overlapping retry runs; consumers without idempotent handlers can double-process (e.g. duplicate ticket creation).",
+      "recommendation": "Claim each row atomically before sending (UPDATE ... SET next_retry_at = now() + lease WHERE id = ? AND retry_count = ? / SELECT ... FOR UPDATE SKIP LOCKED), or claim the delivery idempotency key in the retry path; add a concurrency test with two overlapping webhookRetry calls.",
+      "owner": "platform/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d: worker retry task has no claim/lock; webhook-retry.test.ts:69-85 does not exercise concurrency.",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "Retried deliveries replay a body without the envelope `timestamp` (payload drift)",
+      "evidence": [
+        "apps/worker/src/tasks/webhook-dispatcher.ts:65 \u2014 original delivery body is {event, timestamp, data}",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:170 \u2014 the stored request_body is {event, data} (timestamp not persisted)",
+        "apps/worker/src/tasks/webhook-retry.ts:79 \u2014 retry body = JSON.stringify(delivery.request_body), so the retried payload omits timestamp",
+        "apps/worker/src/tasks/webhook-retry.ts:111-115 \u2014 a fresh HMAC is computed over the changed body, so signature verification passes but the payload differs from the first attempt"
+      ],
+      "impact": "Consumers that validate the documented envelope (timestamp present/fresh) will reject or mis-handle retries; the retried payload is not byte-identical to the original delivery.",
+      "recommendation": "Persist the full original body (including timestamp) in request_body and replay it verbatim, or document that retries carry {event,data} only; add a test asserting the retry body equals the first-attempt body.",
+      "owner": "platform/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d: request_body omits the envelope timestamp and retry replays the stored object as-is.",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "Delivery inserts ignore unique-key conflicts, losing the successful-attempt record",
+      "evidence": [
+        "supabase/migrations/5302053_webhook_idempotency.sql:12-23 \u2014 webhook_deliveries_idempotency_unique unique (idempotency_key)",
+        "apps/api/src/lib/webhook-dispatcher.ts:226-230 \u2014 the claim is deleted on failure so a later dispatch can reprocess the same key",
+        "apps/api/src/lib/webhook-dispatcher.ts:208-220 \u2014 the later dispatch inserts the same idempotency_key with no error check on the insert result",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:166-180 \u2014 same unchecked insert pattern",
+        "apps/api/src/__tests__/webhook-dispatcher-idempotency.test.ts:52-70 \u2014 the supabase mock always returns {error: null}, so conflicts are untestable today"
+      ],
+      "impact": "After a failed delivery is re-dispatched successfully, the success row is rejected by the unique constraint and silently dropped: the admin delivery log keeps showing the failure while the endpoint's last_success_at says success.",
+      "recommendation": "Check the insert result and update/upsert the existing row on conflict (or log the conflict); add a test that a re-dispatch after failure records the successful attempt.",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d: code-traced conflict path; not reproduced against a live DB (mock returns no error).",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "Outbound webhook response bodies are read without a size cap",
+      "evidence": [
+        "apps/api/src/lib/pinned-fetch.ts:91-99 \u2014 accumulates every response chunk in memory (chunks.push) and concatenates without a maximum size",
+        "apps/worker/src/lib/pinned-fetch.ts (same implementation) \u2014 used by dispatcher and retry",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:158 and apps/api/src/routes/webhook-management.ts:477 \u2014 res.text() reads the entire response body",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:172, apps/api/src/routes/webhook-management.ts:497 \u2014 the full body is stored in webhook_deliveries.response_body"
+      ],
+      "impact": "A configured (or compromised) endpoint returning an unbounded body can exhaust API/worker memory; the 10s abort does not bound bytes received.",
+      "recommendation": "Cap the response read (e.g. 64kb) in pinnedFetch and truncate/omit response_body beyond the cap; add a test with an oversized response.",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d: no max-size guard in either pinned-fetch copy or at the call sites.",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "M365 handler processes only the first notification in a batch (value[0])",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:583-588 \u2014 value array is accepted and required non-empty",
+        "apps/api/src/routes/webhooks.ts:590-604 \u2014 clientState is validated for every notification in the batch",
+        "apps/api/src/routes/webhooks.ts:612-613,627 \u2014 processing and the dedup digest use only value[0] (const notification = value[0])",
+        "apps/api/src/routes/webhooks.ts:634-642 \u2014 audit/delivery logging and the metric cover only the first notification, while metadata records notificationCount: value.length"
+      ],
+      "impact": "If Graph batches multiple change notifications into one request, all but the first are silently dropped from logging/audit and are not covered by the replay digest (a later batch containing the first notification again would be deduped while its new members are ignored).",
+      "recommendation": "Iterate all notifications (per-notification dedup key and audit/delivery record), or explicitly document and log that only value[0] is processed; add a multi-notification batch test.",
+      "owner": "integrations/backend",
+      "target": "this quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d: code-evident value[0] handling; provider batching behavior not reproduced from the repo.",
+      "area": "WH"
+    },
+    {
+      "severity": "P3",
+      "title": "No retention/cleanup for webhook_deliveries and webhook_dead_letters",
+      "evidence": [
+        "apps/worker/src/tasks/retention.ts:123-135 \u2014 the retention task purges only audit_logs and notifications",
+        "grep 'webhook' apps/worker/src/tasks/retention.ts \u2014 no webhook table appears in the purge config",
+        "supabase/migrations/5302032_webhook_endpoints.sql:47-61 and 5302050_webhook_retry_dlq.sql:11-23 \u2014 delivery/DLQ rows have created_at but no TTL/cleanup job",
+        "apps/api/src/routes/webhook-management.ts:75-134 \u2014 DLQ rows accumulate with no bulk-archive/export path"
+      ],
+      "impact": "Delivery history and dead letters grow without bound; stale DLQ rows (including the non-replayable inline rows above) are never cleared, increasing storage and operator noise.",
+      "recommendation": "Add webhook_deliveries/webhook_dead_letters to the retention task with documented windows (e.g. 90d deliveries, 180d DLQ) and bounded batch deletes; alert on DLQ depth first.",
+      "owner": "platform/backend",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d: retention task covers audit_logs/notifications only.",
+      "area": "WH"
+    }
+  ],
+  "report": "# Webhook Delivery, Replay, and Idempotency Audit\n\n## Audit Metadata\n\n- Audit name: `repo-deep-dive`\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `mainecybertech` (target worktree `/tmp/opencode/mct-audit-target`, read-only)\n- Branch: `main`\n- Commit SHA: `8d299b8d`\n- Generated at: 2026-10-11\n- Auditor: domain subagent (area WH, prompt `27_webhook_delivery_replay_idempotency_audit.md`)\n- Area code: WH\n- Output paths: `_domains/27_webhook_delivery_replay_idempotency_audit.json`, `_domains/27_webhook_delivery_replay_idempotency_audit_body.md`\n- Scope limitations: repository-only review (no running API/worker/Redis/Supabase, no provider traffic). Every claim is from source/config/migrations/tests at `8d299b8d`. No lab access used (not required for this domain).\n\n## Scope\n\nReviewed at `8d299b8d`:\n\n- Inbound receivers: `apps/api/src/routes/webhooks.ts` (Stripe, Jira, JSM, M365), raw-body capture in `apps/api/src/app.ts`, signature/timestamp helpers in `apps/api/src/lib/webhook-signature.ts`, dedup/claim library in `apps/api/src/lib/idempotency.ts`.\n- Outbound delivery: `apps/api/src/lib/webhook-dispatcher.ts` (inline fallback), `apps/worker/src/tasks/webhook-dispatcher.ts`, `apps/worker/src/tasks/webhook-retry.ts`, queue producers/consumers, scheduler (`apps/worker/src/main.ts`, `scan-lock.ts`).\n- Admin management + DLQ: `apps/api/src/routes/webhook-management.ts`, SDK `packages/sdk/src/webhooks.ts`, web UI `apps/web/app/(admin)/admin/webhooks/**`, tests, docs.\n- Data model/RLS: migrations `5302032`, `5302050`, `5302053`, `5302101`, `5302129`, `5302410`.\n- Observability: `apps/api/src/lib/metrics.ts`, `infra/digitalocean/prometheus.rules.yml`.\n- Secrets: `apps/api/src/config/env.ts`, `.env.example`, `infra/digitalocean/docker-compose.yml`, `.github/workflows/deploy-do.yml`, `docs/SECRETS_ROTATION.md`.\n\nNot reviewed here (owned by other domains): payment reconciliation logic (BILL), Alertmanager plumbing (IR), RLS policy catalog breadth (RLS), overall tenant-isolation model (MT).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `apps/api/src/routes/webhooks.ts` (655 lines) | Source | All four inbound receivers | Signature, timestamp, dedup, logging |\n| `apps/api/src/lib/webhook-signature.ts` | Source | HMAC + timestamp + raw-body helper | 5-min tolerance; fail-closed helper |\n| `apps/api/src/lib/idempotency.ts` | Source | Atomic claims / store / delete | Redis SET NX EX; 24h default TTL |\n| `apps/api/src/lib/webhook-dispatcher.ts` | Source | Outbound inline dispatcher | Claims, HMAC, retries, DLQ, metrics |\n| `apps/worker/src/tasks/webhook-dispatcher.ts` | Source | Queued outbound dispatcher | Per-endpoint claim, SSRF pinning |\n| `apps/worker/src/tasks/webhook-retry.ts` | Source | Retry/DLQ worker task | 5 retries, 1m\u00d72^n backoff, batch 20 |\n| `apps/api/src/routes/webhook-management.ts` | Source | Admin CRUD, DLQ, test ping | Authz, masking, optimistic locking |\n| `apps/api/src/app.ts:110-151` | Source | JSON parser, rate limit, timeout | 10mb global; webhook rate-limit skip |\n| `apps/api/src/lib/pinned-fetch.ts`, `ssrf-guard.ts` (+ worker copies) | Source | SSRF defense | DNS pinning closes rebinding |\n| `supabase/migrations/5302032/5302050/5302053/5302101/5302129/5302410` | Migrations | Tables, RLS, unique key | DLQ has no DELETE policy |\n| `apps/api/src/__tests__/webhook-*.test.ts`, `apps/worker/src/__tests__/webhook-*.test.ts` | Tests | Coverage of claims/DLQ/signature | Gaps in retry semantics |\n| `docs/modules/webhooks.md`, `docs/modules/webhook-management.md` | Docs | Consumer/admin docs | Stale M365 claims; no catalog |\n| `docs/SECRETS_ROTATION.md` | Docs | Rotation inventory | Env secrets covered; endpoint secrets not |\n| `infra/digitalocean/prometheus.rules.yml` | Config | Alert rules | No webhook/DLQ rule |\n\n## Verification Performed\n\nFresh commands at `8d299b8d` (all read-only; target worktree):\n\n| Command | Observed result |\n|---|---|\n| `git log --oneline -3` | `8d299b8d Merge PR #168\u2026`; worktree clean |\n| `grep -n \"claimIdempotencyKey\\|Idempotency-Key\\|idempotency_key:\" apps/api/src/lib/webhook-dispatcher.ts apps/worker/src/tasks/webhook-dispatcher.ts` | Claims at API:179 and worker:84; header API:185/worker:99; persisted key API:219/worker:124,179 |\n| `grep -rn \"M365_CLIENT_STATE\" deploy-do.yml docker-compose.yml env.ts` | `deploy-do.yml:597,647,689`, `docker-compose.yml:90`, `env.ts:59` \u2014 wired |\n| `grep -rn \"M365_WEBHOOK_SECRET\" apps infra .github` | Only explanatory comments (`env.ts:58`, `.env.example:33`) \u2014 declaration removed |\n| `grep -n \"M365_REPLAY_WINDOW_SECONDS\\|storeIdempotencyKey\\|IDEMPOTENCY_TTL_SECONDS\" webhooks.ts idempotency.ts` | Claim TTL 7d at `webhooks.ts:27,629`; `storeIdempotencyKey` at `:47` resets to `idempotency.ts:50` 24h |\n| `grep -n \"retry_count: result.attempts\\|dead_letter: failed\\|recordWebhook.*\" dispatchers/retry` | API:217-218 truthful attempts; counters at API:124,224, worker:127-128,183, retry:149,175,208 |\n| `grep -n \"rawBodyBuffer\\|raw body unavailable\" webhooks.ts` | Jira:377-379, JSM:479-481 fail closed |\n| `grep -n \"create policy\" 5302050_webhook_retry_dlq.sql` | select/insert/update only \u2014 no DELETE policy |\n| `grep -n 'limit: \"10mb\"\\|webhooks/' app.ts` | `:112` 10mb global; `:142` webhook rate-limit skip |\n| `grep -rn \"dead_letters\" supabase/migrations` | No DELETE policy in any migration (5302050, 5302055, 5302120 only) |\n| `grep -rn \"webhook_deliveries\" migrations | policy` | insert/update/delete exist (5302101:85-115, 5302129:1975-1987) |\n| `grep -n \"webhook\" prometheus.rules.yml` | 0 matches \u2014 no DLQ/delivery alert |\n| `grep -rn \"pinnedFetch(\" apps --include=*.ts` | API dispatcher:58, test:469, worker dispatcher:150, retry:122 |\n| `sed -n '185,193p' webhook-management.ts; '69,77p' webhook-retry.ts; '210,213p' webhook-dispatcher.ts` | DLQ retry recreates `{event,receivedAt}` row, worker skips no-data rows, DLQ row deleted \u2192 no-op path confirmed |\n| `grep -n \"claim\\|lock\" webhook-retry.ts` | No claim/lock in retry task |\n| `git merge-base --is-ancestor` checks | `8d299b8d` descends from `9c0b88c`; fix commits `adea562c` (raw body + M365 window) and `68fd8d12` (retry accounting + metering) are between them |\n\n### Verification duty (previous register rows, area WH + clearly in-domain)\n\n| Previous row | Status at 8d299b8d | Basis |\n|---|---|---|\n| WH-P1-001 \u2014 non-atomic/absent outbound idempotency | `verified-fixed` | Atomic claims in both dispatchers + tests |\n| WH-P1-002 \u2014 M365 auth/secret/deploy gap | `verified-fixed` | `M365_CLIENT_STATE` deploy-wired; dead `M365_WEBHOOK_SECRET` removed |\n| WH-P2-001 \u2014 M365 no replay window | `partially-fixed` | 7-day claim present, but post-processing store resets TTL to 24h |\n| WH-P2-002 \u2014 fixed retry_count / duplicated retry logic | `verified-fixed` | Actual attempts + dead-lettered inline rows |\n| WH-P2-003 \u2014 outbound/DLQ unmetered | `verified-fixed` | Counters on API + worker + retry paths |\n| WH-P2-004 \u2014 Jira/JSM signature fallback | `verified-fixed` | `rawBodyBuffer` fail-closed + tests |\n| WH-P2-005 \u2014 DLQ no DELETE policy | `still-open` | No DELETE policy in any migration; masked today by service-role default |\n| WH-P2-006 \u2014 no per-provider schema/size cap | `still-open` | Global 10mb, no Zod, rate-limit exempt |\n| WH-P3-001 \u2014 random test idempotency key | `still-open` | `webhook-management.ts:485` unchanged |\n| WH-P3-002 \u2014 no event catalog/docs | `partially-fixed` | Module docs exist; no catalog; stale M365 signature claims |\n| RES-P3-002 \u2014 worker inserts deliveries without key | `verified-fixed` | Worker derives/persists `idempotency_key` |\n| BILL-P3-001 \u2014 raw body string vs Buffer | `still-open` | `app.ts:117` string; `webhooks.ts:153` cast |\n| SEC-P2-002 \u2014 SSRF DNS-rebinding TOCTOU | `verified-fixed` | `pinnedFetch` on all four outbound paths |\n| ACM-P2-005 \u2014 webhook reads not manage-gated | `still-open` | GET routes lack `requirePermission('webhooks','view')` |\n| ACM-P2-007 \u2014 signing secrets plaintext, no rotation | `still-open` | `secret text`; no expiry/rotation metadata; not in rotation doc |\n| IR-P2-003 \u2014 no alerting on DLQ accumulation | `still-open` (webhook half) | No rule consumes `portal_webhook_dead_letters_total` |\n| RLS-P2-002 \u2014 sibling of WH-P2-005 | covered by WH-P2-005 row | Same gap; one fix closes both |\n| SECRET-P1-001 \u2014 dead M365 secret | residual resolved (out of area) | Dead key removed; owning secrets domain should close it |\n\n## Executive Summary\n\nThe webhook surface is materially stronger than the previous full run. Both outbound dispatchers now claim a per-endpoint idempotency key atomically (Redis `SET NX EX`), send it as `Idempotency-Key`, and persist it on the delivery row; inbound Jira/JSM signatures fail closed unless the captured raw body exists; M365 uses a constant-time `clientState` gate with a 7-day replay claim; outbound delivery is SSRF-pinned on all four paths; DLQ/delivery counters exist; and the admin UI/API exposes dead letters with retry/dismiss and audit logging. The previous WH-P1 findings and four of the WH-P2 findings are verified fixed on main.\n\nRemaining risks are concentrated in the retry/DLQ lifecycle and hardening edges:\n\n1. The M365 \"7-day\" replay window is effectively 24 hours because the post-processing `storeIdempotencyKey` resets the TTL (WH-P2-001 residual).\n2. The admin dead-letter Retry action silently discards inline-dispatched dead letters without attempting delivery (new P2).\n3. `webhook-retry` has no row claim, so overlapping runs can double-send (new P2).\n4. Inbound webhook routes still share the global 10mb JSON parser, have no per-provider schema, and are exempt from rate limiting (WH-P2-006).\n5. `webhook_dead_letters` still has no DELETE policy, and reads are not gated by the existing `webhooks:view` permission; per-endpoint signing secrets remain plaintext with no rotation.\n\nRecommended next actions: fix the TTL reset, make DLQ retry truthful, claim retry rows, add per-route body limits + schemas, add the DLQ DELETE policy and read permission, and add a DLQ alert rule.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Stripe receiver | `webhooks.ts:131-349` | Billing events | Implemented | Low | `constructEvent` + `stripe-<event.id>` claim |\n| Jira receiver | `webhooks.ts:351-451` | Issue status sync | Implemented | Low | raw-body HMAC + 5-min timestamp + body-hash dedup |\n| JSM receiver | `webhooks.ts:453-558` | Ticket status sync | Implemented | Low | same controls |\n| M365 receiver | `webhooks.ts:560-653` | Change-notification logging | Implemented | Med | clientState only; 7d claim resets to 24h; value[0] only |\n| Signature helper | `lib/webhook-signature.ts` | HMAC/timestamp/raw body | Implemented | Low | timing-safe; fail-closed helper |\n| Claim library | `lib/idempotency.ts` | Atomic dedup claims | Implemented | Low-Med | 24h default; in-memory fallback per process |\n| API inline dispatcher | `lib/webhook-dispatcher.ts` | Queue fallback delivery | Implemented | Med | 3 attempts; summary-only payloads |\n| Worker dispatcher | `worker/tasks/webhook-dispatcher.ts` | Queued delivery | Implemented | Med | claim + HMAC + pinned fetch; full payload stored |\n| Worker retry | `worker/tasks/webhook-retry.ts` | Retry + DLQ | Implemented | High | no row claim; skips no-data rows silently |\n| DLQ admin | `routes/webhook-management.ts:75-258` | List/retry/dismiss | Implemented | Med | retry no-op for inline rows; no DELETE policy |\n| Test ping | `routes/webhook-management.ts:430-542` | Admin test | Implemented | Low | random key; not through dispatcher |\n| Web UI | `apps/web/app/(admin)/admin/webhooks/**` | Admin console | Implemented | Low | dead-letters page + actions |\n| SDK | `packages/sdk/src/webhooks.ts` | Client | Implemented | Low | endpoints + DLQ methods |\n| Metrics | `lib/metrics.ts:30-145` | Counters | Implemented | Low | no alert rules |\n| Docs | `docs/modules/webhooks.md`, `webhook-management.md` | Module docs | Partial | Low | stale M365 claims; no event catalog |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Inbound endpoints | 3 | 4 receivers, fail-closed secrets, dedup | No schema/size cap; rate-limit exempt; M365 value[0] | WH-P2-006, M365 batch finding |\n| Outbound delivery | 3 | Atomic claim + HMAC + pinned SSRF on both paths | Retry fidelity/concurrency | Claim retry rows; persist full body |\n| Event models | 2 | Inline `{event,timestamp,data}`; 2 event names | No catalog/versioning; retry body drifts | Publish `docs/WEBHOOKS.md` |\n| Signature verification | 4 | HMAC-SHA256 timing-safe over raw bytes; fail closed; Stripe SDK | M365 has no signature by provider design | Keep; document M365 clientState |\n| Timestamp tolerance | 3 | 5-min window; Jira/JSM require timestamp; Stripe SDK default | M365 window effectively 24h | Fix TTL reset |\n| Replay nonce | 3 | Atomic digest claim (M365 7d intent); body-hash keys | TTL overwrite; in-memory fallback | Fix TTL; make Redis required |\n| Idempotency keys | 4 | Atomic claims both dispatchers; header; DB unique key | Retry task doesn't claim; insert conflicts ignored | Retry claim; handle conflicts |\n| Retry backoff | 3 | Worker 1m\u00d72^n \u00d75; inline 200ms\u00d72 \u00d73; DLQ | Concurrent double-send; payload drift | Row claim + verbatim replay |\n| Dead-letter queues | 3 | Table, admin list/retry/dismiss, worker dead-lettering | Retry no-op; no DELETE policy; no retention/alert | Truthful retry; policy; retention; alert |\n| Secrets | 2 | Masking; env secrets in rotation doc | Endpoint secrets plaintext, no rotation/expiry | Rotation policy + optional encryption |\n| Tenant scoping | 3 | Dispatch scoped by org; DLQ scoped via endpoint join | Reads not permission-gated | `webhooks:view` on GET routes |\n| Payload schema/size | 2 | Global JSON parser only | 10mb unauthenticated parse; no schemas | Per-route limit + Zod |\n| Delivery logs | 3 | `webhook_deliveries` + admin views | Unchecked inserts; no retention | Conflict handling; retention |\n| Admin management | 3 | CRUD, optimistic locking, audit, UI, SDK | Read authz gap | Permission gate |\n| Secret rotation | 2 | Provider secrets inventoried | Outbound endpoint secrets absent | Add rotation row/runbook |\n| Timeouts | 4 | 10s outbound abort; 30s request timeout | Response read unbounded | Cap response size |\n| Tests/docs | 3 | Strong signature/idempotency/DLQ tests; module docs | Retry semantics untested; no catalog | Add tests below; publish catalog |\n\n## Detailed Review\n\n### Item: Inbound receivers and signature verification\n\n- Evidence: `webhooks.ts:131-653`; `webhook-signature.ts:3-73`; `app.ts:110-120`.\n- What it does: Stripe uses `stripe.webhooks.constructEvent` over `req.rawBody`; Jira/JSM require `x-hub-signature` and the captured raw body and reject 401 when it is missing, then enforce a 5-minute timestamp window with `requireTimestamp: true`; M365 authenticates every notification by constant-time `clientState` and fails closed (501 unset / 401 mismatch).\n- Current controls: HMAC-SHA256 timing-safe compare; per-event dedup keys (`stripe-<id>`, body-hash Jira/JSM keys, M365 notification digest); audit + delivery logging; claim released on handler failure so provider retries reprocess.\n- Missing controls: per-provider schemas, per-route body cap, inbound rate limiting; M365 processes only `value[0]`; the M365 replay claim TTL is reset to 24h after processing.\n- Risks: WH-P2-001 residual, WH-P2-006, M365 batch handling.\n- Suggested tests: oversized body \u2192 413; malformed provider payload \u2192 400; multi-notification M365 batch; final TTL assertion after processing.\n\n### Item: Outbound dispatchers (API inline + worker queue)\n\n- Evidence: `lib/webhook-dispatcher.ts:134-262`; `worker/tasks/webhook-dispatcher.ts:36-219`; `lib/task-producer.ts:76-105`.\n- What it does: The API prefers the queue; the inline fallback fans out per endpoint with an atomic per-endpoint claim, HMAC signing, 3 attempts (200ms/400ms backoff), truthful `retry_count`, dead-letter on failure and release of the claim; the worker does the same with a 10s timeout, pinned fetch, blocked-URL dead-lettering and `next_retry_at` scheduling.\n- Current controls: Idempotency-Key header + persisted key; DB unique constraint; org-scoped endpoint lookup; PII-safe summaries on the inline path (full payload on the worker path).\n- Missing controls: retry-task row claim; conflict handling on delivery inserts; bounded response reads.\n- Risks: new findings on retry concurrency, payload drift, silent insert conflicts, unbounded response bodies.\n\n### Item: Worker retry + dead-letter lifecycle\n\n- Evidence: `worker/tasks/webhook-retry.ts:12-230`; `worker/main.ts:81-89`; `lib/scan-lock.ts:26-73`; `routes/webhook-management.ts:75-258`.\n- What it does: Every 5 minutes (one replica via scan lock) the task selects up to 20 due failed rows, retries with the preserved Idempotency-Key and re-signed HMAC, updates `retry_count`/`next_retry_at` with 1m\u00d72^n backoff, and dead-letters after 5 attempts. Admins can list/retry/dismiss DLQ rows; retry recreates a due-now delivery and deletes the DLQ row.\n- Current controls: SSRF guard + pinned fetch; attempt counting; audit events; UI confirm dialog for dismiss.\n- Missing controls: row claim/lock; truthful retry for non-replayable rows; DLQ DELETE policy; retention; alerting.\n- Risks: the retry no-op (P2), concurrent double-send (P2), WH-P2-005, IR-P2-003.\n\n### Item: Secrets and admin management\n\n- Evidence: `5302032:8`; `webhook-management.ts:20-51,168-397,430-542`; `env.ts:54-59`; `SECRETS_ROTATION.md:52-54`.\n- What it does: Endpoint secrets are masked on GET, audit metadata keys containing \"secret\" are redacted (`services/audit.ts:34-45`), provider secrets are deploy-wired and in the rotation inventory, and CRUD mutations require `webhooks:manage` with optimistic locking and audit logs.\n- Missing controls: GET routes are not permission-gated; endpoint secrets have no expiry/rotation metadata and are absent from the rotation doc; POST/PATCH responses return the secret unmasked to the caller.\n- Risks: ACM-P2-005, ACM-P2-007.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| WH-001 | Inbound endpoints | `webhooks.ts:131-653` | Signature/clientState + dedup | No schema/size cap, rate-limit exempt | P2 | Per-route limit + Zod |\n| WH-002 | Outbound delivery | both dispatchers | Atomic claim, HMAC, pinned SSRF | Retry concurrency/fidelity | P2 | Claim retry rows; verbatim body |\n| WH-003 | Event models | `lib/webhook-dispatcher.ts:166` | Inline envelope | No catalog/versioning | P3 | Publish catalog |\n| WH-004 | Signature verification | `webhook-signature.ts:3-21` | Timing-safe HMAC over raw bytes | \u2014 | \u2014 | Keep; M365 unsigned by design |\n| WH-005 | Timestamp tolerance | `webhook-signature.ts:23,62-73` | 5-min window; require for Jira/JSM | M365 effective window 24h | P2 | Fix TTL reset |\n| WH-006 | Replay nonce | `webhooks.ts:622-632`; `idempotency.ts:99-136` | Atomic claim TTL | TTL overwrite; per-process fallback | P2 | Preserve TTL; require Redis |\n| WH-007 | Idempotency keys | API:178-186,219; worker:80-100,179 | Atomic per-endpoint claim + header + DB unique | Retry task unclaimed; conflicts ignored | P2/P3 | Claim in retry; handle conflicts |\n| WH-008 | Retry backoff | `webhook-retry.ts:8-10,130-186` | 5\u00d7 exponential (1m base); inline 3\u00d7 | No claim; no jitter | P2 | Row claim; consider jitter |\n| WH-009 | Dead-letter queues | `5302050`; `webhook-management.ts:75-258` | Table + admin retry/dismiss | Retry no-op; no DELETE policy/retention/alert | P2 | Truthful retry; policy; alert |\n| WH-010 | Secrets | `5302032:8`; `env.ts:56-59` | Masking + deploy wiring | Endpoint secrets plaintext/no rotation | P2 | Rotation policy; optional encryption |\n| WH-011 | Tenant scoping | `webhook-management.ts:84-104,162-163`; dispatcher org filter | Org-scoped queries + explicit DLQ org check | GET authz not permission-gated | P2 | `webhooks:view` gate |\n| WH-012 | Payload schema/size | `app.ts:110-120,138-143` | Global parser | 10mb unauth parse; no schemas | P2 | Per-route limit + Zod |\n| WH-013 | Timeouts | dispatcher:53-54; `app.ts:151` | 10s outbound; 30s request | Response bytes unbounded | P3 | Cap response read |\n| WH-014 | Delivery logs | `webhook_deliveries` + admin views | Full audit of attempts | Insert conflicts ignored; no retention | P3 | Conflict handling; retention |\n| WH-015 | Admin management | `webhook-management.ts`; web UI | CRUD + locking + audit + DLQ UI | Read authz | P2 | Permission gate |\n\n## Findings\n\n23 findings (2 P1, 12 P2, 9 P3; statuses: 7 verified-fixed, 2 partially-fixed, 7 still-open, 7 open). Titles below; full evidence/impact/recommendation in the JSON.\n\n**Verified fixed (this run):** Outbound webhook idempotency is non-atomic in the API and absent in the worker dispatcher; M365 webhook auth depends on `M365_CLIENT_STATE`\u2026; Inline dispatcher records a fixed `retry_count`\u2026; Outbound and DLQ delivery outcomes are not metered\u2026; Inbound Jira/JSM signature falls back to re-serialized JSON\u2026; Worker queued webhook dispatcher inserts deliveries without an idempotency key; Webhook SSRF guard has a DNS-rebinding TOCTOU window.\n\n**Partially fixed:** M365 inbound notifications have no enforced timestamp/replay window (7-day claim reset to 24h); No committed event catalog or webhook documentation for consumers (module docs exist; no catalog; stale M365 claims).\n\n**Still open:** `webhook_dead_letters` has no DELETE policy\u2026; No per-provider payload schema or size cap\u2026; Test endpoint generates a random idempotency key\u2026; Webhook raw body typed as `string` but consumed as `Buffer`; Webhook endpoint and delivery reads are available to any org member\u2026; Webhook signing secrets are stored plaintext with no rotation or expiry; No alerting when webhook dead-letters accumulate\u2026 (webhook half).\n\n**New:** Admin dead-letter retry of inline-dispatched failures no-ops and deletes the DLQ row (P2); `webhook-retry` has no row claim: concurrent retry runs can double-send deliveries (P2); Retried deliveries replay a body without the envelope `timestamp` (P3); Delivery inserts ignore unique-key conflicts\u2026 (P3); Outbound webhook response bodies are read without a size cap (P3); M365 handler processes only the first notification in a batch (P3); No retention/cleanup for `webhook_deliveries` and `webhook_dead_letters` (P3).\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Inline dead letters lost on admin retry (false success) | P2 | Med (Redis/queue outage) | Med | `webhook-management.ts:185-205`; `webhook-retry.ts:69-77`; dispatcher:210-213 | Truthful retry / non-replayable flag |\n| Duplicate retries under concurrency | P2 | Med | Med-High | `webhook-retry.ts:16-30`; `consumer-bullmq.ts:15,31` | Row claim/SKIP LOCKED |\n| M365 replay window 24h not 7d | P2 | Low | Low-Med | `webhooks.ts:47,629`; `idempotency.ts:50,144` | Preserve TTL on store |\n| Unauthenticated 10mb parse / no schemas | P2 | Low | Med | `app.ts:112,142` | Per-route limit + Zod |\n| DLQ dismiss fails under RLS allow-list | P2 | Low today | Med | `5302050:27-62`; `services/supabase.ts:198-226` | DELETE policy |\n| Endpoint secret disclosure/retention | P2 | Low | Med | `5302032:8` | Rotation/encryption |\n| Silent delivery-log gaps on re-dispatch | P3 | Low | Low | `5302053:19-21`; dispatcher:208 | Conflict handling |\n| Memory pressure from hostile endpoint | P3 | Low | Med | `pinned-fetch.ts:91-99` | Response cap |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\n1. Fix the M365 replay TTL reset (`storeIdempotencyKey` must not shorten the 7-day claim) and add a test asserting the post-processing TTL.\n2. Make DLQ retry truthful: do not delete the DLQ row until a delivery attempt happens; re-insert a DLQ row when the retry task skips a non-replayable row, or disable Retry for those rows in the UI.\n\n### This Week\n\n3. Add a row claim/lease to `webhook-retry` (or `FOR UPDATE SKIP LOCKED`) and a concurrency test.\n4. Add a tighter per-route JSON limit for `/api/v1/webhooks/*` plus per-provider Zod schemas.\n5. Add the `webhook_dead_letters` DELETE policy and gate webhook read routes with `requirePermission('webhooks','view')`.\n6. Add a Prometheus rule on `portal_webhook_dead_letters_total` growth and the outbound failure ratio.\n\n### This Month\n\n7. Persist/replay the full outbound body (including `timestamp`) on retries.\n8. Handle unique-key conflicts on delivery inserts (update/upsert or log).\n9. Document outbound endpoint secret rotation and add `last_rotated_at`/expiry guidance.\n10. Publish the event catalog and correct the M365 statements in `docs/modules/webhooks.md`.\n\n### Later / Platform Evolution\n\n11. Cap outbound response reads and truncate stored `response_body`.\n12. Process all M365 notifications in a batch (or explicitly document value[0]).\n13. Add retention/cleanup for `webhook_deliveries`/`webhook_dead_letters`.\n14. Consider making Redis mandatory for webhook dedup (fail closed vs per-process fallback) and adding jitter to retry backoff.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Pass the M365 TTL into `storeIdempotencyKey` | Restores the documented replay window | `webhooks.ts`, `idempotency.ts` | Unit test on final TTL |\n| Keep DLQ row until retry attempt | Removes false success | `webhook-management.ts`, `webhook-retry.ts` | Route + task test |\n| `requirePermission('webhooks','view')` on GET routes | Closes ACM-P2-005 | `webhook-management.ts` | 403 test for view-less member |\n| DLQ DELETE policy migration | Closes WH-P2-005/RLS-P2-002 | new migration | RLS-client delete test |\n| Webhook/DLQ alert rule | Operator visibility | `prometheus.rules.yml` | `promtool test rules` |\n| Correct M365 lines in module docs | Prevents broken integrations | `docs/modules/webhooks.md` | doc review |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Row-claim/lease in webhook-retry | P2 | platform/backend | S | none |\n| Truthful DLQ retry semantics | P2 | integrations/backend | S | none |\n| Per-route body limit + provider schemas | P2 | integrations/backend | M | none |\n| DLQ DELETE policy + RLS test | P2 | DB/platform | S | RLS rollout |\n| Read-permission gate for webhook routes | P2 | API platform | S | none |\n| DLQ/delivery alert rules | P2 | platform ops | S | metrics (done) |\n| Full-body retry replay | P3 | platform/backend | S | none |\n| Delivery-insert conflict handling | P3 | integrations/backend | S | none |\n| Response size cap | P3 | integrations/backend | S | none |\n| M365 multi-notification handling | P3 | integrations/backend | S | provider behavior check |\n| Retention for webhook tables | P3 | platform/backend | S | none |\n| Event catalog + doc-lint | P3 | docs/API | S | none |\n\n## Suggested Tests\n\n- Unit: `storeIdempotencyKey` preserves a caller-provided TTL (M365 7d) and does not shorten it.\n- Unit/route: DLQ retry on a no-`data` dead letter leaves the DLQ row intact and returns a non-success or \"non-replayable\" state.\n- Worker: `webhookRetry` concurrency \u2014 two overlapping invocations against the same due row must produce one HTTP attempt (row claim).\n- Worker: retry body fidelity \u2014 the retried body equals the first-attempt body (including `timestamp`) and the HMAC verifies.\n- API: re-dispatch after a failed delivery records the successful attempt despite the unique idempotency key.\n- API: inbound >limit body \u2192 413; malformed Jira/JSM/Stripe/M365 payload \u2192 400 before side effects.\n- API: GET webhook routes \u2192 403 for an org member without `webhooks:view`; 200 for a member with it.\n- RLS: non-super-admin org admin deletes a DLQ row under the user-scoped client and one row is removed.\n- Security: hostname re-resolving to a private IP between guard and connect is still blocked (pinned fetch).\n- E2E: admin retry/dismiss flows show accurate success/failure states (extend `apps/web/e2e/admin/webhooks.spec.ts`).\n- CI/ops: `promtool test rules` for the new DLQ alert thresholds.\n\n## Suggested Documentation Updates\n\n- `docs/WEBHOOKS.md` (new): event catalog (`project.created`, `ticket.created`), envelope `{event,timestamp,data}`, `X-Webhook-Signature: sha256=<hmac>`, `Idempotency-Key`, retry schedule (5\u00d7 exponential, 1m base), DLQ semantics and admin replay, inbound signature/timestamp expectations per provider, explicit \"M365 is clientState-authenticated and unsigned\".\n- `docs/modules/webhooks.md`: fix lines 8/16/39 (M365 HMAC/x-hub-signature claims are wrong), add replay-window and rate-limit notes.\n- `docs/modules/webhook-management.md`: document DLQ list/retry/dismiss, non-replayable inline rows, and the read permission.\n- `docs/SECRETS_ROTATION.md`: add per-endpoint outbound webhook signing secrets (90-day cadence, rotation via PATCH).\n- `docs/RLS-rollout.md` (or equivalent): note the required `webhook_dead_letters` DELETE policy before allow-listing `webhook-management`.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Is `webhook-management` (or any webhook module) currently in `RLS_READS_ENABLED`/`RLS_WRITES_ENABLED` in prod? | Determines whether WH-P2-005 is latent or already breaking dismiss/retry | Redacted prod env inspection |\n| Is `TASK_QUEUE_ENABLED=true` in prod (is the inline fallback ever used)? | Scope of the DLQ retry no-op finding | Redacted prod env inspection |\n| Does the M365 subscription actually deliver batched `value` arrays? | Confirms impact of the value[0] finding | Graph notification samples/logs |\n| Which consumers implement `Idempotency-Key` dedup? | Bounds the duplicate-retry impact | Consumer inventory/interviews |\n| Is Redis HA/single-instance, and what happens on failover? | Dedup durability | Infra review |\n\n## Appendix\n\n- Commit lineage: `8d299b8d` descends from `9c0b88c`; the webhook fixes between them are `adea562c` (fail-closed raw-body signatures + M365 replay window, WH-P2-001/004) and `68fd8d12` (retry accounting + outcome metering, WH-P2-002/003); `49646db7`/`ae07bd22` (SEC-P2-002) predate `9c0b88c`.\n- Data path (outbound): `dispatchWebhook` \u2192 `enqueueTask('webhook-dispatcher')` \u2192 worker claim `idempotency:<base>:<endpoint>` \u2192 HMAC \u2192 `pinnedFetch` \u2192 `webhook_deliveries` row \u2192 (failure) `webhook-retry` \u2192 DLQ `webhook_dead_letters` \u2192 admin retry/dismiss.\n- Data path (inbound): provider \u2192 `express.json` rawBody capture \u2192 signature/timestamp \u2192 `claimIdempotencyKey` \u2192 handler side effects \u2192 `logWebhookDelivery` (summary) \u2192 `storeIdempotencyKey('done')` (TTL reset \u2014 see WH-P2-001 residual).\n- No secrets were printed during this audit; secret values were not accessed.\n"
+}

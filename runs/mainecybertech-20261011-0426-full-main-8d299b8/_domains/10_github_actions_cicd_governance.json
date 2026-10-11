@@ -1,0 +1,445 @@
+{
+  "domain": "10_github_actions_cicd_governance",
+  "file": "10_github_actions_cicd_governance.md",
+  "area": "CI",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:47Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Production application deploys have no working manual-approval gate",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:565-571 \u2014 the prod deploy job attaches `environment: prod-approval`, with a comment stating the approval itself is a GitHub repository setting that cannot be enforced from the file",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:16-19 \u2014 `prod-approval` section: 'Required reviewers (1+) must be configured in GitHub ... none are configured yet, so the approval gate is not yet in force'",
+        "docs/RELEASING.md:96-105 \u2014 Approval gate section: until reviewers are added the prod job 'still runs ... without pausing and there is no working manual-approval gate'",
+        ".github/workflows/supabase-migrations.yml:28-34 \u2014 prod migrations run `supabase db push` under the `prod` environment, which also needs 1+ required reviewers per the matrix (CI-004), not under `prod-approval`"
+      ],
+      "impact": "A merge-capable (or admin) account that lands a commit on `main` reaches production (deploy + prod DB migrations) with no second human gate. Branch protection is the only control, and migrations run under an environment whose protection rules are also unset.",
+      "recommendation": "Operator: configure 1+ required reviewers on `prod-approval` and `prod` in GitHub Settings -> Environments, then dispatch deploy-do deploy_target=prod and confirm it pauses at 'Waiting for approval'; alternatively migrate supabase-migrations to `prod-approval` after moving its environment-scoped values. Record the verification in docs/RELEASING.md.",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: deploy-do.yml:571 still attaches prod-approval and both docs still state reviewers are not configured \u2014 code side is done, operator side unchanged. Residual added at this commit: prod migrations depend on reviewers on `prod` (supabase-migrations.yml:34), so both environments need the setting.",
+      "area": "CI"
+    },
+    {
+      "severity": "P1",
+      "title": "Branch-protection-as-code has a likely-mismatched required check and permits admin bypass",
+      "evidence": [
+        ".github/branch-protection/main.json:4-10 \u2014 contexts are the emitted check-run names: 'Test / test (20.x)', 'Lint / lint (20.x)', 'TypeCheck / typecheck', 'E2E / e2e (20.x)', 'Dependency Review / review'",
+        ".github/branch-protection/main.json:12-17 and develop.json:10-14 \u2014 `enforce_admins: true`, `require_code_owner_reviews: true`, `required_approving_review_count: 1`, `dismiss_stale_reviews: true`",
+        ".github/workflows/validate.yml:33-39 \u2014 every deploy gate runs `node scripts/check-required-checks.mjs`, which fails when a required context is not emitted by any workflow job",
+        "scripts/check-required-checks.mjs:29-37,101-118 \u2014 derives emitted check-run names from workflow name + job id + matrix value and compares them to the committed JSON",
+        "manual parity walk at 8d299b8d: test.yml (job `test`, matrix 20.x), lint.yml (job `lint`, matrix 20.x), typecheck.yml (job `typecheck`), e2e.yml (job `e2e`, matrix 20.x), dependency-review.yml (job `review`) all match the five contexts"
+      ],
+      "impact": "The committed protection payload now resolves to real check-runs, so PRs are not stuck on 'Expected', and admins cannot bypass the checks once the JSON is applied. Residual risk is that the committed JSON is not automatically applied or drift-checked against live GitHub settings.",
+      "recommendation": "Keep the check-required-checks guard. Add a scheduled read-only drift check comparing live branch protection (gh api) to the committed JSON, and document the repo-admin apply step in docs/CI.md. (Live application itself is tracked by the branch-protection domain.)",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: static walk of all five contexts against workflow name/job/matrix matches; check-required-checks.mjs is wired into validate.yml:33-39. Node is not installed in the audit container, so the script itself was not executed \u2014 parity was re-derived by reading the parser and workflows. Live GitHub application remains a repo-admin action.",
+      "area": "CI"
+    },
+    {
+      "severity": "P1",
+      "title": "Production deploy path cannot run; prod environment lacks secrets and protection rules",
+      "evidence": [
+        "docs/RELEASING.md:140-147 \u2014 'the prod environment has no `SUPABASE_*`/`JWT_SECRET` secrets or vars, so the prod deploy path cannot succeed as configured'",
+        ".github/workflows/deploy-do.yml:577-637 \u2014 the deploy step consumes ~50 secrets (SUPABASE_*, JWT_SECRET, STRIPE_*, JSM/M365, ALERTMANAGER_*) resolved from the job's environment",
+        ".github/workflows/deploy-do.yml:109 \u2014 resolve-ip also runs under the environment `${{ needs.setup.outputs.name }}` (`prod` on main) and consumes DO_API_TOKEN / Spaces keys",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:142-151 \u2014 operator checklist marks the `prod` and `prod-approval` reviewer/secret provisioning as 'must be configured' and not yet done"
+      ],
+      "impact": "The documented promotion path (merge develop -> main) fails closed on the deploy gate rather than shipping broken config, but production deploys and prod migrations cannot succeed until the prod/prod-approval environments are provisioned.",
+      "recommendation": "Operator: provision the prod/prod-approval environment secrets and variables per the matrix and RELEASING.md exit criteria, then run one dispatch deploy to prod and record the result.",
+      "owner": "@owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: docs and workflow still describe the same operator provisioning gap; no repo-side change possible (secrets are environment-scoped, not in the tree).",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "World-open DigitalOcean firewall mutation with no approval and unvalidated udp_port",
+      "evidence": [
+        "`.github/workflows/` contains 20 files and none matches wireguard/firewall (ls .github/workflows)",
+        "git history: 52304944 'chore(ci): remove one-time DO firewall workflow' deleted .github/workflows/wireguard-endpoint.yml",
+        "no `DO_API_TOKEN`-driven firewall mutation path remains in any workflow (grep over .github/workflows)"
+      ],
+      "impact": "Resolved: the unapproved, world-open firewall mutation path no longer exists.",
+      "recommendation": "No code change required. Residual documentation drift is tracked in the workflow-docs finding.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: workflow absent from the tree and removal commit present in history. Residual: README.md:326 / AGENTS.md:300 / review.md:306 / docs/CI.md:28 still document it (new finding).",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Deploy-gate secret scan is a no-op on pushes to main",
+      "evidence": [
+        ".github/actions/secret-scan/action.yml:15-27 \u2014 on push events the base is `github.event.before` with an all-zeros -> HEAD~1 fallback (CI-003 comment), instead of the old `git merge-base HEAD origin/main`",
+        ".github/workflows/validate.yml:57-70 \u2014 the deploy gate runs the secret-scan composite with fetch-depth: 0",
+        ".github/workflows/test.yml:54-65 \u2014 the same composite runs on PRs against `github.event.pull_request.base.sha`"
+      ],
+      "impact": "Resolved: a leaked credential introduced by a direct push to main is now diffed against the pushed commit's parent and fails the deploy gate.",
+      "recommendation": "No code change required. Keep the composite as the single definition for both gates.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: push path uses event.before + zero-SHA fallback; matches the fix merged as mainecybertech#75.",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Production approval environment documented as having no required reviewers",
+      "evidence": [
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:16-19 \u2014 now states explicitly that `prod-approval` has no required reviewers configured and the gate is not yet in force",
+        "docs/RELEASING.md:96-105 \u2014 documents the approval mechanics, the exact GitHub setting, and the secret prerequisites, without claiming the gate works",
+        "docs/RELEASING.md:140-147 \u2014 Before promoting to prod lists the unresolved operator items"
+      ],
+      "impact": "Resolved for the documentation side: the docs no longer claim a working approval gate; the operational gap is tracked under the two P1 operator findings.",
+      "recommendation": "No further doc change; close when CI-P1-001/CI-P1-003 are provisioned.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: docs match the as-built workflow (deploy-do.yml:571 attaches prod-approval; reviewers still operator-gated).",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "DB restore test reports success without asserting restore integrity",
+      "evidence": [
+        ".github/workflows/db-restore-test.yml:135-232 \u2014 'Verify database integrity' asserts table count, migration-ledger rows, critical-table rows, audit_logs freshness (RPO canary), tenant-scoping column, and RLS-enabled floor; sets fail=1 and exits 1",
+        ".github/workflows/db-restore-test.yml:20-29,141-155 \u2014 floors come from .github/restore-test-baseline.env with RESTORE_* repo-variable overrides",
+        ".github/restore-test-baseline.env:1-23 \u2014 committed baseline: 120 tables, 1 row, 1 migration, 2-day freshness, 0 tables without RLS"
+      ],
+      "impact": "Resolved: a truncated, empty, stale or policy-stripped restore now fails the scheduled job instead of reporting success.",
+      "recommendation": "No code change required; keep the baseline in sync with migrations (the file documents this).",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: assertion step present and fail-closed (DR-P0-002 / IR-P1-004 fixes).",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Infrastructure changes are no longer gated in CI (terraform-do is manual-dispatch only)",
+      "evidence": [
+        ".github/workflows/terraform-do.yml:3-21 \u2014 triggers are `schedule` + `workflow_dispatch` only; `apply` input defaults false; header says push/PR triggers were removed pending token rotation and environment protection",
+        ".github/workflows/terraform-do.yml:14-15,36-38 \u2014 weekly plan-only schedule exists but the plan job is skipped unless `vars.TF_DRIFT_PLAN_ENABLED == 'true'`",
+        ".github/workflows/terraform-do.yml:99-110 \u2014 world-open SSH allowlist rejected; :176-196 validate/e2e/migration gates; :198-236 prod apply behind `prod-approval`",
+        "docs/CI.md:99-107 \u2014 documents the dormant weekly drift plan and the operator prerequisites (rotate DO_API_TOKEN, set TF_DRIFT_PLAN_ENABLED)"
+      ],
+      "impact": "Infrastructure drift is not detected automatically by default and PRs cannot run plan on infra changes; re-enabling PR/push triggers is operator-gated on the DO token and environment protection. The apply path itself is gated and validated when run manually.",
+      "recommendation": "Operator: rotate DO_API_TOKEN, set TF_DRIFT_PLAN_ENABLED=true, then re-enable a PR/push plan trigger (plan-only; apply stays input-gated) so infra changes get a reviewable plan.",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: manual+drift-only design is deliberate and documented; drift run remains dormant behind the repo variable. Residual is operator-gated, unchanged.",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Chromatic visual-regression job is permanently non-blocking",
+      "evidence": [
+        ".github/workflows/chromatic.yml:20-28 \u2014 job-level `continue-on-error: true` with a comment that the Storybook webpack build fails with SB_BUILDER-WEBPACK5_0002",
+        ".github/workflows/chromatic.yml:56-63 \u2014 Chromatic runs with exitZeroOnChanges/exitOnceUploaded; not referenced by any required check in .github/branch-protection/*.json",
+        "docs/CI.md:114-116 \u2014 documents Chromatic as best-effort; AGENTS.md:635 claims 'Chromatic no longer `continue-on-error`' which contradicts chromatic.yml:28"
+      ],
+      "impact": "Visual regressions in packages/ui can never block a merge or deploy, and the failure is buried in a green pipeline. The docs disagree about whether this is intentional, so reviewers may trust a control that is not in force.",
+      "recommendation": "Fix the Storybook build (SB_BUILDER-WEBPACK5_0002), then remove continue-on-error and add Chromatic (or a Storybook build job) to the required checks; until then align AGENTS.md:635 with the config.",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: continue-on-error: true still present (chromatic.yml:28); not re-checked previously (was carried open from run 20261002).",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Branch protection permits admin bypass and ignores CODEOWNERS",
+      "evidence": [
+        ".github/branch-protection/main.json:12-17 \u2014 `enforce_admins: true`, `require_code_owner_reviews: true`, 1 approving review, dismiss_stale_reviews",
+        ".github/branch-protection/develop.json:10-14 \u2014 same settings on develop",
+        ".github/branch-protection/main.json:20-21 and develop.json:18-19 \u2014 `allow_force_pushes: false`, `allow_deletions: false`, `required_conversation_resolution: true`",
+        ".github/CODEOWNERS:1-44 \u2014 teams defined for api/web/worker/packages/infra/.github/supabase/docs"
+      ],
+      "impact": "Resolved in the committed payload: admins are bound by the checks and CODEOWNERS is enforced for reviews once the JSON is applied.",
+      "recommendation": "No change to the payload; apply it (repo-admin) and add the live-vs-committed drift check recommended in the related finding.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: enforce_admins/code-owner reviews present in both JSONs; live application is a repo-admin action.",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Terraform apply is manual and drift detection is not automated",
+      "evidence": [
+        ".github/workflows/terraform-do.yml:14-15 \u2014 weekly `schedule` for the drift plan",
+        ".github/workflows/terraform-do.yml:36-38 \u2014 `terraform-plan` is skipped on schedule unless `vars.TF_DRIFT_PLAN_ENABLED == 'true'`",
+        ".github/workflows/terraform-do.yml:161-172 \u2014 when the scheduled plan runs, a non-empty plan fails the run (drift alert)",
+        "docs/CI.md:104-107 \u2014 'stays dormant (`terraform-plan` is skipped) until the operator sets the repository variable TF_DRIFT_PLAN_ENABLED=true'"
+      ],
+      "impact": "The drift-detection code is implemented but inactive by default: without the operator variable, scheduled runs do nothing and drift is not detected. This is the same operator prerequisite as the terraform gating finding.",
+      "recommendation": "Operator: rotate DO_API_TOKEN and set TF_DRIFT_PLAN_ENABLED=true (and provision ADMIN_IP_RANGES) so the weekly drift plan actually runs and alerts; then keep the schedule.",
+      "owner": "@owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: drift plan + fail-on-drift step exist but are dormant behind TF_DRIFT_PLAN_ENABLED (terraform-do.yml:38). Status downgraded from the register's verified-fixed because the automated drift check does not run by default; enablement is operator-gated.",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "actionlint/shellcheck workflow lint issues (SC2086/SC2129/SC2002/SC2015)",
+      "evidence": [
+        ".github/actionlint.yaml:1-18 \u2014 actionlint config committed (self-hosted runner labels)",
+        "14 unquoted `>> $GITHUB_OUTPUT` writes remain: .github/workflows/deploy-do.yml:91-99,181 and .github/workflows/terraform-do.yml:58,60,236,276 (SC2086/SC2129 class)",
+        "no workflow runs actionlint or shellcheck (grep over .github/workflows finds no actionlint/shellcheck step)"
+      ],
+      "impact": "The reported lint findings are only partly resolved and, more importantly, there is still no workflow-lint gate, so future workflow YAML/shell errors are not caught in CI.",
+      "recommendation": "Quote the remaining GITHUB_OUTPUT appends (or write with printf), and add an actionlint (+ optionally zizmor) job to validate.yml/test.yml pinned by SHA.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: actionlint config exists and some writes are quoted, but 14 unquoted appends and no actionlint CI job remain (register claimed verified-fixed; residual documented).",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "Over-broad workflow token permissions (unused write scopes)",
+      "evidence": [
+        "grep for `actions: write` across .github returns only the explanatory comment in backup-dispatch.yml:14",
+        ".github/workflows/e2e.yml:30-31 and a11y-breadth.yml:14-15 \u2014 `contents: read` only",
+        ".github/workflows/deploy-do.yml:31-35 \u2014 contents/packages/id-token/attestations write, all consumed by build/attestation steps; verify-attestations job re-scopes to read (deploy-do.yml:399-406)"
+      ],
+      "impact": "Resolved for the specific `actions: write` over-grants; remaining unused scopes are tracked under the separate unused-permissions finding.",
+      "recommendation": "No change; continue scoping writes per job.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: no `actions: write` grant remains (fix #85). Residual pull-requests: write tracked in the unused-permissions finding.",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "StrictHostKeyChecking=no in the deploy health check",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:883-891 \u2014 CI-P3-003 comment; known_hosts built from `secrets.DO_SSH_HOST_KEY` and `ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS`",
+        ".github/workflows/deploy-do.yml:642,761 \u2014 appleboy/ssh-action steps pass `fingerprint: ${{ secrets.DO_SSH_HOST_FINGERPRINT }}`"
+      ],
+      "impact": "Resolved: the health check verifies the droplet host key instead of accepting any key.",
+      "recommendation": "No change; refresh DO_SSH_HOST_KEY when the droplet is rebuilt (already documented in the step comment).",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: StrictHostKeyChecking=yes + pinned known_hosts in place (fix #94/#95 ported to main #98).",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "`main` is far behind `develop`; scheduled jobs fire only from the default branch",
+      "evidence": [
+        "git: develop tip 031186ad is an ancestor of main 8d299b8d (`git merge-base --is-ancestor 031186ad 8d299b8d` -> true) \u2014 main now carries all develop work",
+        ".github/workflows/db-backup.yml, db-restore-test.yml, storage-backup.yml and backup-dispatch.yml are all present on main at 8d299b8d",
+        "backup-dispatch.yml:3-9 \u2014 the dispatcher exists precisely because scheduled workflows only fire from the default branch"
+      ],
+      "impact": "Resolved: main is no longer stale and the scheduled backup/restore workflows are reachable from the default branch. New residual: the dispatcher now duplicates their schedules (separate finding).",
+      "recommendation": "Retire the dispatcher (or the duplicate schedule blocks) \u2014 see the backup-dispatcher finding; docs/RELEASING.md:149 still says main is behind develop and should be updated.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: develop tip merged into main; scheduled workflow files present on the default branch. The stale RELEASING.md line is tracked in the docs-drift finding.",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "Secret scanner misses the platform's own token formats and scans diffs only",
+      "evidence": [
+        ".github/workflows/secret-history-scan.yml:5-12,27-47 \u2014 weekly/manual full-history gitleaks scan (v8.30.1 pinned + SHA-256 verified), `--redact --exit-code 1`, JSON report artifact",
+        ".github/workflows/secret-history-scan.yml:49-51 \u2014 scripts/ci/verify-gitleaks-config.sh proves the allowlist still catches a synthetic key",
+        ".gitleaks.toml:1-10 \u2014 default ruleset extended with value/line-scoped allowlists only",
+        ".github/actions/secret-scan/action.yml:14 \u2014 the PR/push diff scanner still uses the fixed provider list (AKIA/ghp_/sk_/xox/JWT/PEM); no platform-specific token formats"
+      ],
+      "impact": "Half resolved: full history is now scanned weekly with a pinned gitleaks, but the per-PR/push scanner is still a fixed provider list and the history scan is not per-commit, so a platform-specific token introduced and removed between weekly runs would be caught only by the diff scanner (if the format is in its list).",
+      "recommendation": "Extend the diff scanner patterns (or run gitleaks on the diff with the default ruleset) and document the coverage in docs/CI.md.",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: gitleaks full-history scan + scoped allowlist added since the carry-forward; diff-scanner format gap remains.",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "Unused permission grants across deploy/test workflows",
+      "evidence": [
+        ".github/workflows/test.yml:16-18 \u2014 `security-events: write` but no step uploads SARIF to code scanning; the Trivy SARIF is only uploaded as an artifact (.github/actions/dependency-audit/action.yml:44-65)",
+        ".github/workflows/terraform-do.yml:23-26 \u2014 `pull-requests: write` while the only PR-comment step (:138-152) is guarded by `if: github.event_name == 'pull_request'` and the workflow no longer has a pull_request trigger (:3-21)"
+      ],
+      "impact": "Two write scopes no step can consume remain on every run, increasing token blast radius if a step or third-party action is compromised.",
+      "recommendation": "Drop `security-events: write` from test.yml (or actually upload the SARIF to code scanning) and drop `pull-requests: write` from terraform-do.yml (or delete the unreachable step).",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: both grants still present (was carried open from run 20261002).",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "DB restore test uses an unpinned `postgres:16-alpine` image",
+      "evidence": [
+        ".github/workflows/db-restore-test.yml:110-117 \u2014 `docker run ... postgres:16-alpine` (tag only, no digest)",
+        ".github/dependabot.yml:51-92 \u2014 Dependabot docker entries cover apps/api, apps/web, apps/worker and infra/digitalocean, but not this throwaway CI image"
+      ],
+      "impact": "The restore test's database binary can change under the workflow between runs (tag drift), so a future failure may not reproduce and a compromised/updated tag is not review-gated.",
+      "recommendation": "Pin the image by digest (and add a Dependabot docker entry or a scheduled digest-refresh comment) or install a pinned postgres package.",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still tag-pinned only (was carried open from run 20261002).",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "No release/tagging workflow and no post-merge release artifact",
+      "evidence": [
+        ".github/workflows/ contains 20 workflows and none is a release/tag workflow (ls .github/workflows)",
+        "docs/RELEASING.md:47-53 \u2014 'There is no git tag requirement \u2014 the commit SHA is authoritative'; releases are GHCR images tagged with the deploy SHA",
+        "REL-P1-001 (follow-up register) \u2014 partially-fixed: SBOM binds the commit but no annotated tags / release workflow exist"
+      ],
+      "impact": "There is no repository artifact that marks a production release, so release notes, rollback targets and audit evidence rely on remembering the deploy SHA; GitHub Releases/tags are absent.",
+      "recommendation": "Add a small release workflow (on prod promotion: create an annotated tag from VERSION+date, attach the SBOM and a release-notes body from templates/RELEASE_NOTES_TEMPLATE.md) or record the owner decision to stay SHA-only.",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: no release/tag workflow; RELEASING.md still documents SHA-as-release (was carried open from run 20261002).",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "e2e is required on `main` but the documented flakiness makes it an unstable hard gate",
+      "evidence": [
+        ".github/branch-protection/main.json:8 \u2014 'E2E / e2e (20.x)' is a required check on main",
+        "AGENTS.md:93 \u2014 'E2E has known run-to-run flakiness: data-dependent tests ... fail intermittently due to CI API/Supabase contention'",
+        "docs/RELEASING.md:148-150 \u2014 'E2E has known run-to-run flakiness ... re-run before treating a failure as a product regression'",
+        ".github/workflows/e2e.yml:75-88,163-169 \u2014 local Supabase + seeded data dependency; retries around infra steps only"
+      ],
+      "impact": "A required gate that is known to fail spuriously trains reviewers to re-run rather than investigate, and can block merges to main for non-product reasons. The path-filter problem (separate finding) compounds it.",
+      "recommendation": "Quarantine or retry the flaky specs, then keep E2E required; document the triage path in docs/CI.md.",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: E2E still required on main and the flakiness note is still in AGENTS.md/RELEASING.md (was carried open from run 20261002).",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "Missing per-job timeouts and minor workflow hygiene gaps",
+      "evidence": [
+        "9 workflows have zero `timeout-minutes` anywhere: a11y-breadth.yml, backup-dispatch.yml, chromatic.yml, db-backup.yml, dependency-review.yml, lint.yml, supabase-migrations.yml, terraform-do.yml, typecheck.yml (grep -c)",
+        ".github/workflows/validate.yml:10-11,72-73,83-84,94-95 \u2014 audit/lint/typecheck/prompt-provenance jobs have no timeout (test and secrets-scan do)",
+        ".github/workflows/terraform-do.yml:35-43,198-236 \u2014 plan/apply jobs have no timeout (a hung terraform apply holds the concurrency lock indefinitely)"
+      ],
+      "impact": "A hung job (network stall, interactive prompt, stuck registry pull) can occupy a runner and, for terraform/migrations, hold the per-branch concurrency lock, delaying every later run on that ref.",
+      "recommendation": "Add explicit timeout-minutes to every job (5-15 for lint/typecheck/audit, 30-60 for terraform/migrations); keep command_timeout on the SSH steps as the inner bound.",
+      "owner": "platform/CI owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: timeout coverage unchanged (was carried open from run 20261002).",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "E2E is a required check on main but path-filtered, so PRs that miss its paths can never satisfy branch protection",
+      "evidence": [
+        ".github/branch-protection/main.json:4-10 \u2014 'E2E / e2e (20.x)' is a required context on main",
+        ".github/workflows/e2e.yml:12-22 \u2014 pull_request `paths:` limited to apps/web/e2e/**, apps/web/playwright.config.ts, apps/web/app/**, apps/web/components/**, packages/**, supabase/seeds/**, supabase/migrations/**, .github/workflows/e2e.yml",
+        ".github/workflows/test.yml:10-12 \u2014 comment records the exact BP-P2-004 class: 'a path-filtered workflow never reports on docs-only PRs \u2014 leaving them blocked or unguarded'; test/lint/typecheck were fixed this way, e2e was not",
+        "a PR touching only docs/**, scripts/**, infra/**, apps/api/** or any other workflow file triggers no E2E run, so the required check stays 'Expected \u2014 Waiting for status to be reported'"
+      ],
+      "impact": "Docs-only or API-only PRs to main cannot merge without touching an E2E-matched path (or an admin bypass, which branch protection now forbids). This is a merge-blocking drift class the check-required-checks guard does not detect because the check-run name matches.",
+      "recommendation": "Remove the `paths:` filter from e2e.yml's pull_request trigger (keep it for push/workflow_call if desired), or make E2E non-required on main and rely on the deploy gate, or add a companion 'e2e skipped' job that reports success on non-matching PRs. Extend scripts/check-required-checks.mjs (or a new check) to flag path-filtered required workflows.",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new at 8d299b8d: found by enumerating required contexts against workflow triggers (extended verification check). This is the concrete residual of BP-P2-004 (branch-protection domain row) for e2e.yml specifically. Config evidence is high; whether live branch protection exactly matches the committed JSON is unverifiable from the repo (repo-admin action).",
+      "area": "CI"
+    },
+    {
+      "severity": "P2",
+      "title": "Backup dispatcher duplicates the backup workflows now that they exist on the default branch",
+      "evidence": [
+        ".github/workflows/backup-dispatch.yml:21-25 \u2014 schedules at 04:00 daily, 05:00 daily, Mon 06:00; :85-93 dispatches db-backup.yml / db-restore-test.yml / storage-backup.yml with `--ref develop`",
+        ".github/workflows/db-backup.yml:3-4, storage-backup.yml:19-20, db-restore-test.yml:3-4 \u2014 the same schedules exist in the workflows themselves, and all three files are present on main at 8d299b8d",
+        ".github/workflows/backup-dispatch.yml:3-9 \u2014 header says it exists because those workflows were added on develop and 'never ran' from main; the DR-P0-001 fix (PR #93) promoted them to main",
+        ".github/workflows/backup-dispatch.yml:60-67 \u2014 the job fails loudly when SCHEDULE_DISPATCH_TOKEN is unset, so an unprovisioned token produces a daily red run while the real backup can still succeed"
+      ],
+      "impact": "The default branch now runs each scheduled backup/mirror/restore test twice (once natively on main, once dispatched onto develop): duplicate dumps/mirrors, duplicate runner and DB load, and two independent failure signals for one DR path. The two copies can also drift apart in later PRs.",
+      "recommendation": "Keep one trigger source: either delete backup-dispatch.yml now that the workflows are on main, or remove the schedule blocks from the three workflows if dispatching to develop is preferred. Record the choice in docs/CI.md; if the dispatcher stays, gate it so it does not double-run.",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new at 8d299b8d: consequence of promoting develop to main (DR-P0-001 fix) without retiring the dispatcher. Config-level evidence is high; live Actions run history is not visible from the repo, hence medium confidence on the duplicate runs actually occurring.",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "Workflow documentation drift: docs list a removed workflow, omit a live one, and misstate gate behavior",
+      "evidence": [
+        "README.md:326, AGENTS.md:300, review.md:306 and docs/CI.md:28 document `wireguard-endpoint.yml`, which does not exist (removed in 52304944; 20 files in .github/workflows)",
+        "docs/CI.md workflow table omits .github/workflows/secret-history-scan.yml (live weekly gitleaks full-history scan)",
+        "docs/CI.md:117 says A11y breadth is `continue-on-error: true`, but a11y-breadth.yml:18-22 has no continue-on-error (it calls e2e.yml)",
+        "docs/RELEASING.md:149 still says 'main is far behind develop' although main now contains the develop tip (031186ad ancestor of 8d299b8d)",
+        "AGENTS.md:635 says 'Chromatic no longer `continue-on-error`' while chromatic.yml:28 sets it"
+      ],
+      "impact": "Operators and AI agents following the docs will look for a workflow that can mutate the DO firewall, miss the secret-history scan, and misjudge which jobs can fail the pipeline.",
+      "recommendation": "Regenerate the workflow tables in docs/CI.md, README.md, AGENTS.md and review.md from the current 20-file inventory; add a doc check that cross-references .github/workflows filenames (extend scripts/check-docs-links.mjs or add a small script to validate.yml).",
+      "owner": "platform/CI owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new at 8d299b8d: docs-vs-tree drift class from the extended verification checks (status artifacts vs sources).",
+      "area": "CI"
+    },
+    {
+      "severity": "P3",
+      "title": "Badge/report generation is a stub and is not wired into CI",
+      "evidence": [
+        "scripts/ci/generate_badges.py:1-8 \u2014 reads dashboards/data/sample_data.json and writes placeholder `<svg><text>key:value</text></svg>` files; the dashboards/ directory does not exist in the tree",
+        "no workflow references generate_badges.py or scripts/ci/history_logger.py (grep over .github/)",
+        "README.md:12-16 \u2014 the status badges are static shields.io images, not generated from CI state"
+      ],
+      "impact": "There is no badge/report generation pipeline; the committed scripts cannot run as-is, so CI health/coverage reporting is manual.",
+      "recommendation": "Either delete the stub scripts or implement a real report step (e.g., coverage summary and test counts) wired into validate.yml with an uploaded artifact; document it in docs/CI.md.",
+      "owner": "platform/CI owner",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new at 8d299b8d: badge/report generation assessed as part of the domain checklist; the only generator is a demo stub.",
+      "area": "CI"
+    }
+  ],
+  "report": "# GitHub Actions, CI/CD, and Governance Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: MaineCyberTech/mainecybertech (read-only clone at `/tmp/opencode/mct-audit-target`)\n- Branch: `main`\n- Commit SHA: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd` (Merge PR #168: promote develop to main)\n- Generated at: 2026-10-11\n- Auditor: domain subagent `10_github_actions_cicd_governance` (area `CI`)\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/10_github_actions_cicd_governance.md`\n- Scope limitations: read-only; no `gh` API access, so live branch-protection settings, environment protection rules, secrets, and Actions run history are **not** verifiable from the repo. No node/npm/actionlint/shellcheck/gitleaks binaries in the audit container, so guards that need execution were re-derived by reading the parser/scripts (recorded below). The target repo was never modified.\n\n## Scope\n\nReviewed: all 20 files in `.github/workflows/`, all 4 composite actions in `.github/actions/`, `.github/branch-protection/{main,develop}.json`, `.github/CODEOWNERS`, `.github/dependabot.yml`, `.github/actionlint.yaml`, `.github/restore-test-baseline.env`, `.gitleaks.toml`, `scripts/check-required-checks.mjs`, `scripts/scan-secrets.sh`, `scripts/ci/verify-gitleaks-config.sh`, `scripts/ci/generate_badges.py`, and the CI/release docs (`docs/CI.md`, `docs/RELEASING.md`, `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`, plus README/AGENTS/review workflow tables).\n\nNot reviewed: live GitHub state (branch protection as applied, environment reviewers/secrets, run history, Dependabot PR queue), GHCR image contents, and the workflows' runtime results.\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `.github/workflows/*.yml` (20 files, 3,086 lines) | Workflows | Full trigger/permission/gate inventory | All read in full |\n| `.github/actions/*/action.yml` (setup-pnpm, unit-tests, dependency-audit, secret-scan) | Composite actions | Shared PR/deploy gate steps | test.yml and validate.yml share them |\n| `.github/branch-protection/main.json`, `develop.json` | Governance config | Required checks, reviews, bypass settings | Committed payload; live application unverifiable |\n| `scripts/check-required-checks.mjs` | Guard | Name parity between required checks and emitted check-runs | Wired in `validate.yml:33-39` |\n| `.github/CODEOWNERS` | Governance config | Code-owner reviews enforced by branch protection | Teams must exist live |\n| `.github/dependabot.yml` | Supply chain | npm/github-actions/docker/terraform update coverage | target-branch develop |\n| `.github/actionlint.yaml` | Lint config | actionlint runner labels | Config exists; no CI job runs it |\n| `.gitleaks.toml`, `scripts/ci/verify-gitleaks-config.sh`, `secret-history-scan.yml` | Secrets | Full-history scan + allowlist proof | Weekly schedule |\n| `docs/CI.md`, `docs/RELEASING.md`, `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md` | Docs | Claims to verify against config | Several drift points found |\n\n## Verification Performed\n\n| Evidence / command (read-only) | Type | Why relevant | Observed result |\n|---|---|---|---|\n| `git log -1` / `git merge-base --is-ancestor 031186ad 8d299b8d` | Git | Main vs develop state (CI-P3-004) | develop tip is ancestor of main \u2192 main carries develop work |\n| `git log --diff-filter=D -- .github/workflows/wireguard-endpoint.yml` | Git | Firewall workflow removal (CI-P2-001) | `52304944 chore(ci): remove one-time DO firewall workflow` |\n| `grep -rn 'pull_request_target\\|workflow_run' .github/` | Static | Dangerous trigger check | No matches |\n| `grep -rn 'uses:.*@(v[0-9]\\|main\\|master\\|latest)' .github/` | Static | Unpinned action check | No matches \u2014 all `uses:` are 40-char SHAs (plus local composites) |\n| `grep -c 'timeout-minutes' .github/workflows/*.yml` | Static | Timeout hygiene (CI-P3-010) | 9 workflows have zero; validate.yml's audit/lint/typecheck/prompt-provenance jobs lack one |\n| `grep -rn '>> $GITHUB_OUTPUT' .github/workflows` | Static | SC2086 residual (CI-P3-001) | 14 unquoted appends remain (deploy-do.yml:91-99,181; terraform-do.yml:58,60,236,276) |\n| `grep -rn 'actions: write' .github/` | Static | Over-broad scope (CI-P3-002) | Only a comment remains |\n| `grep -rn 'security-events\\|upload-sarif' .github/` | Static | Unused scope (CI-P3-006) | test.yml:18 grants it; Trivy SARIF is artifact-only |\n| Manual parity walk of `main.json` contexts vs workflow name/job/matrix | Static | check-required-checks without node | All 5 contexts match emitted names; node not installed so the script was not executed |\n| Read `.github/workflows/e2e.yml` triggers vs `main.json` required contexts | Static | Path-filtered required check (new) | E2E required on main but `pull_request` is path-filtered |\n| Read `backup-dispatch.yml` + backup workflows triggers vs default branch | Static | Duplicate schedules (new) | Dispatcher and the workflows themselves both scheduled on main |\n| Read docs tables vs `ls .github/workflows` | Static | Docs-vs-tree drift (new) | Docs list removed `wireguard-endpoint.yml`; omit `secret-history-scan.yml` |\n\n## Executive Summary\n\nThe CI/CD estate at `8d299b8d` is well above the baseline for a repo of this size: 20 workflows, every external action pinned to a commit SHA, least-privilege `permissions` on every workflow, per-ref concurrency groups (deploys never cancelled mid-flight), composite actions shared between the PR gate and the deploy gate, provenance/SBOM attestations verified fail-closed before deploy, a pre-push migration dry-run plan uploaded as an artifact, and a restore test that asserts integrity floors rather than printing numbers. The branch-protection payload was corrected and is guarded by `check-required-checks.mjs`, which closes the previous P1 class.\n\nThe remaining risks are mostly *operator-gated settings* and *drift classes the guards do not cover*:\n\n1. **The prod approval gate is still not in force** (CI-P1-001): the workflow attaches `prod-approval`, but the docs themselves state no reviewers are configured; prod migrations additionally depend on reviewers on `prod`. Combined with the unprovisioned prod secrets (CI-P1-003), production is effectively not deployable by design \u2014 safe, but not releasable.\n2. **E2E is required on `main` but path-filtered** (new, P2): a docs-only or API-only PR can never satisfy the required check. test/lint/typecheck were fixed for exactly this (BP-P2-004); e2e was missed.\n3. **The backup dispatcher now duplicates schedules** (new, P2): the DR-P0-001 fix promoted the backup workflows to main, but `backup-dispatch.yml` still dispatches copies onto develop.\n4. **Two smaller verification rows changed state on re-check**: the terraform drift plan is dormant behind `TF_DRIFT_PLAN_ENABLED` (partially-fixed, not fixed), and the actionlint lint fixes are incomplete with no workflow-lint gate (partially-fixed).\n\nRecommended next actions: configure `prod-approval`/`prod` reviewers and prod secrets (operator); remove the e2e `paths:` filter on `pull_request`; retire the backup dispatcher; enable the terraform drift variable after token rotation; and wire a real workflow-lint job.\n\n## Inventory\n\n| Workflow | Triggers | Gate role | Notable controls |\n|---|---|---|---|\n| `test.yml` | PR main/develop, dispatch | Blocking on PR (required) | unit-tests + guards, dependency audit, license gate, Trivy fs, diff secret scan |\n| `lint.yml` / `typecheck.yml` | PR main/develop, dispatch | Blocking on PR (required) | pnpm lint / typecheck; no `paths:` (BP-P2-004) |\n| `e2e.yml` | PR main/develop (path-filtered), `workflow_call`, dispatch | Required on main; prod deploy gate | Playwright + axe, local Supabase; **path-filtered on PR** |\n| `validate.yml` | `workflow_call` only | Shared deploy gate | audit, tests+guards, secrets-scan, lint, typecheck, prompt provenance, required-check parity |\n| `deploy-do.yml` | push main/develop (path-filtered), dispatch | Deploy | 3 image builds + Trivy image scans + SBOM/provenance attestations, `verify-attestations` fail-closed, prod-only e2e/migrate gates, `prod-approval` env, health gate + auto-rollback |\n| `supabase-migrations.yml` | push main/develop (`supabase/**`), `workflow_call`, dispatch | Migrate gate (prod) | pre-push dry-run plan artifact, post-push drift gate, `prod`/`dev` env, serialized |\n| `terraform-do.yml` | schedule (dormant), dispatch | Manual | plan\u2192apply input, world-open SSH rejection, `prod-approval` apply, fail-on-drift step (gated) |\n| `build-push.yml` | dispatch only | Manual | same image scan/SBOM/provenance pipeline |\n| `codeql.yml` | push+PR main/develop, weekly, dispatch | SAST | security-and-quality, `security-events: write` |\n| `dependency-review.yml` | PR main/develop | Required on main | high severity + license deny list |\n| `sbom.yml` | push+PR, weekly, dispatch | Artifact-only | lockfile CycloneDX, commit-bound, validated |\n| `chromatic.yml` | push+PR (`packages/ui/**`) | Best-effort | **`continue-on-error: true`** |\n| `a11y-breadth.yml` | weekly, dispatch | Triage | calls e2e with `a11y_full` |\n| `db-backup.yml` / `storage-backup.yml` / `db-restore-test.yml` | schedules, dispatch | Scheduled DR | encrypted backups, restore integrity floors, ntfy/Slack alerts |\n| `backup-dispatch.yml` | 3 schedules, dispatch | Scheduled dispatcher | dispatches backups `--ref develop`; **now duplicates** |\n| `secret-history-scan.yml` | weekly, dispatch | Scheduled security | gitleaks full history, pinned+checksummed, allowlist fixture |\n| `secret-rotation-reminder.yml` | quarterly, dispatch | Governance | deduplicated rotation issue |\n\nComposite actions: `setup-pnpm` (node+corepack+cache+install), `unit-tests` (coverage + 8 guards), `dependency-audit` (audit+license+untracked-artifact guard+Trivy fs), `secret-scan` (diff + tracked-secret-file guard).\n\nOther governance files: 2 branch-protection JSONs (5 required checks on main, 3 on develop; enforce_admins, code-owner reviews), CODEOWNERS with 7 teams, Dependabot (npm + github-actions + docker\u00d75 + terraform, target develop), `.gitleaks.toml`, restore-test baseline, actionlint config.\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| .github/workflows | 4 | 20 workflows, SHA-pinned actions, per-workflow permissions, concurrency, composites | No workflow-lint job; 9 workflows lack timeouts | Add actionlint job; add timeouts |\n| PR validation | 4 | Required checks on both branches; shared composites; no paths filter on test/lint/typecheck | E2E path-filtered while required on main | Remove e2e paths filter on `pull_request` |\n| Lint/typecheck/test/build | 4 | `pnpm lint`/`typecheck`/`test:coverage` + 8 schema/docs guards in both gates | Guards not run for workflow YAML/shell | actionlint + shellcheck job |\n| Deploy workflows | 4 | Fail-closed gate, attestation verification, health gate + auto-rollback, queued concurrency | Prod approval + secrets not provisioned (operator) | Operator provisioning; verify with a dispatch |\n| Migration workflows | 4 | Dry-run plan artifact, post-push drift gate, serialized, pinned CLI | Prod runs under `prod` env without reviewers | Add reviewers or move to `prod-approval` |\n| Docker build/push | 4 | Trivy image scan CRITICAL/HIGH, digest-bound SBOM + provenance, verified pre-deploy | `postgres:16-alpine` in restore test unpinned | Pin by digest |\n| Releases | 2 | SHA-as-release documented; SBOM commit binding | No tag/release workflow or artifact | Add release workflow or record decision |\n| Badge/report generation | 1 | `generate_badges.py` stub only; README badges static | Not wired; stub cannot run (no `dashboards/`) | Delete stub or implement real report step |\n| Secrets | 4 | diff scan with event.before, full-history gitleaks weekly, tracked-file guard, rotation reminder | Diff scanner lacks platform token formats; history scan weekly | Extend patterns; document coverage |\n| permissions blocks | 4 | Workflow-level least privilege; job-level re-scope in verify-attestations | `security-events: write` (test), `pull-requests: write` (terraform-do) unused | Drop unused scopes |\n| OIDC | 3 | `id-token: write` used for attestations; no cloud OIDC trust configured | Cloud auth still long-lived DO/CF tokens | Consider OIDC for cloud providers (later) |\n| Environment protection | 3 | `prod-approval` on deploy + terraform apply; `prod`/`dev` env separation; fail-closed deploy | Reviewers/secrets not configured (operator); no drift check | Configure environments; add live drift check |\n\n## Detailed Review\n\n### Item: Required-check gate map (what each check executes)\n\n- Evidence: `.github/branch-protection/main.json:4-10`, `develop.json:4-8`; `test.yml:26-65`; `lint.yml:21-37`; `typecheck.yml:21-32`; `e2e.yml:39-182`; `dependency-review.yml:10-30`; `.github/actions/unit-tests/action.yml:21-63`.\n- What it does: `Test / test (20.x)` runs the coverage suite plus OpenAPI validation/audit, docs counts/links, DB-type freshness, RLS hygiene, membership-predicate lint and review.md mirror, plus audit/license/Trivy/secrets jobs. `Lint` and `TypeCheck` run the workspace commands. `E2E / e2e (20.x)` boots local Supabase + API + web and runs Playwright/axe. `Dependency Review / review` blocks high-severity and denied licenses on the PR diff.\n- Drift classes the required checks do **not** cover: path-filtered workflows that never report (E2E \u2014 new finding); committed-vs-live branch protection drift (BP-P2-003, owned by the branch-protection domain); workflow YAML/shell lint (no actionlint job); docs-vs-tree drift (new finding).\n- Bypass analysis: `enforce_admins: true`, `allow_force_pushes: false`, `allow_deletions: false`, `required_conversation_resolution: true` in both JSONs. There is no `pull_request_target`/`workflow_run` anywhere, and `[skip ci]` on a PR leaves required checks pending (blocks, not bypasses). The remaining bypass vector is repo-admin mutation of the protection payload itself, which has no in-repo audit (BP-P2-002/003 domain).\n\n### Item: Deploy flow (deployment flow)\n\n- Evidence: `deploy-do.yml:16-43` (push to main/develop + dispatch), `:101-182` (resolve-ip from DO API \u2192 TF state \u2192 var), `:184-380` (3 builds + Trivy image scan + digest-bound SBOM + provenance attestation), `:391-515` (`verify-attestations` fail-closed incl. reviewed legacy rollback allow-list), `:517-535` (validate always; e2e+migrate prod-only), `:537-571` (fail-closed `needs` expression, `prod-approval`), `:575-935` (SSH deploy, `.env` via printf, health gate, auto-rollback, host-key-pinned health check).\n- Deployment flow: push/merge to `main` (or dispatch `deploy_target=prod`) \u2192 setup \u2192 resolve-ip (`prod` env) \u2192 build\u00d73 \u2225 validate \u2192 e2e+migrate (prod only) \u2192 verify attestations \u2192 deploy (`prod-approval`, health-gated, auto-rollback). Dev (`develop`) skips e2e/migrate and uses the `dev` environment.\n- Missing controls: the approval pause itself depends on GitHub environment settings (CI-P1-001); prod secrets are unprovisioned (CI-P1-003).\n\n### Item: Migration flow\n\n- Evidence: `supabase-migrations.yml:21-25` (serialized per ref), `:30-34` (`prod` env on main), `:57-60` (CLI pinned 2.107.0), `:67-83` (pre-push `db push --dry-run` teed + artifact before the real push), `:90-127` (post-push `db diff` gate, ANSI-stripped, `allow_drift=1` only on reviewed dispatch).\n- Assessment: this is a strong flow (IR-P2-006/IR-P1-002/DATA-P2-004 fixes verified). Residual: approval depends on reviewers configured on the `prod` environment, which the matrix says are not set.\n\n### Item: Secrets handling\n\n- Evidence: `secret-scan/action.yml:14` (provider pattern list), `:15-27` (event.before on push, base.sha on PR), `:43-62` (tracked local-secret-file guard); `secret-history-scan.yml:27-51` (gitleaks 8.30.1 pinned + SHA-256 verified, full history, redacted, allowlist negative test); `.gitleaks.toml` (scoped allowlists only); `secret-rotation-reminder.yml` (quarterly issue); deploy secrets forwarded via `envs:`/`printf` and never interpolated into remote shell text (`deploy-do.yml:644-716`).\n- Residual: diff-scanner formats are a fixed provider list; full-history scan is weekly, not per-commit.\n\n### Item: Permissions, OIDC, concurrency, caching, artifacts\n\n- Permissions: least-privilege at workflow level; `verify-attestations` re-scopes to read (`deploy-do.yml:399-406`). Unused `security-events: write` (test.yml:18) and `pull-requests: write` (terraform-do.yml:26) remain.\n- OIDC: `id-token: write` only for attestations (`deploy-do.yml:34`, `build-push.yml:15`); no cloud OIDC trust (DO/CF still token-based).\n- Concurrency: per-ref groups everywhere it matters; deploys (`cancel-in-progress: false`) and migrations/terraform are serialized; PR runs cancel superseded (`test/lint/typecheck/e2e/sbom/chromatic/codeql`).\n- Caching: pnpm store keyed on lockfile (`setup-pnpm/action.yml:38-47`), Playwright browser cache (`e2e.yml:55-62`), buildx `type=gha` caches.\n- Artifacts: dry-run plan before push, Trivy SARIF (7d), SBOMs (30d), Playwright reports on failure (7d), tfplan (1d); retention set on all.\n\n### Item: Branch protection, CODEOWNERS, Dependabot\n\n- Evidence: `main.json`/`develop.json` (above); `check-required-checks.mjs` wired into `validate.yml:33-39`; `CODEOWNERS:1-44`; `dependabot.yml:1-102` (npm/github-actions/docker\u00d75/terraform, weekly, target develop).\n- Recommendations: apply the JSON (repo-admin) and add a scheduled live-vs-committed drift check; consider `github-actions` grouped updates to keep SHA pins fresh.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| CI-001 | Workflow inventory/triggers | 20 workflows; `pull_request_target`/`workflow_run` absent | SHA-pinned, least privilege | No workflow-lint gate | P3 | actionlint job |\n| CI-002 | PR validation / required checks | `branch-protection/*.json`, `check-required-checks.mjs` | 5 contexts on main, 3 on develop; parity guard | E2E path-filtered (new) | P2 | Remove e2e paths filter |\n| CI-003 | Lint/typecheck/test/build | `test.yml`, `validate.yml`, composites | Shared gates, 8 repo guards | No YAML/shell lint; timeouts missing | P3 | Add actionlint + timeouts |\n| CI-004 | Deploy workflows | `deploy-do.yml` | Fail-closed, attestation-verified, auto-rollback | Approval/reviewers unset | P1 | Configure `prod-approval` |\n| CI-005 | Migration workflows | `supabase-migrations.yml` | Dry-run artifact + drift gate | `prod` env reviewers unset | P1 | Configure `prod` |\n| CI-006 | Docker build/push | `deploy-do.yml`, `build-push.yml` | Trivy + SBOM + provenance | Restore-test image unpinned | P3 | Pin digest |\n| CI-007 | Releases | 20 workflows, none release/tag | SHA-as-release documented | No tag/release artifact | P3 | Add release workflow or record decision |\n| CI-008 | Badge/report generation | `generate_badges.py` stub | None (static badges) | Not wired; stub broken | P3 | Delete or implement |\n| CI-009 | Secrets | `secret-scan`, `secret-history-scan` | diff scan + weekly full history | Formats gap; weekly cadence | P3 | Extend patterns |\n| CI-010 | Permissions blocks | grep results | Workflow-level least privilege | 2 unused write scopes | P3 | Drop unused scopes |\n| CI-011 | OIDC | `id-token: write` for attestations | Attestation signing | No cloud OIDC trust | P3 | Evaluate later |\n| CI-012 | Environment protection | `deploy-do.yml:571`, `terraform-do.yml:202` | `prod-approval` attached | Reviewers unset (operator) | P1 | Configure reviewers |\n| CI-013 | Backup scheduling | `backup-dispatch.yml` + backup workflows | Dispatcher + native schedules | Duplicate runs (new) | P2 | Keep one trigger source |\n\n## Findings\n\nStatuses: 25 findings \u2014 3 P1 (1 verified-fixed, 2 still-open), 10 P2 (5 verified-fixed, 2 partially-fixed, 1 still-open, 2 new/open), 12 P3 (3 verified-fixed, 2 partially-fixed, 5 still-open, 2 new/open). Full evidence, impact and recommendation text for every row is in `10_github_actions_cicd_governance.json`; the blocks below summarize the P1/P2 rows and the new findings, then tabulate the P3 verification rows.\n\n### CI-P1-001 (carried) \u2014 Production application deploys have no working manual-approval gate\n\n- Severity: P1 \u00b7 Confidence: high \u00b7 Status: still-open \u00b7 Owner: platform/CI owner \u00b7 Target: this week\n- Evidence: `deploy-do.yml:565-571` attaches `prod-approval`; `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:16-19` \"none are configured yet\"; `docs/RELEASING.md:96-105` \"no working manual-approval gate\"; `supabase-migrations.yml:28-34` prod migrations depend on reviewers on `prod`.\n- Why it matters: without the environment reviewers, a merge to main reaches production (and prod migrations) with no human pause.\n- Recommended fix: operator configures 1+ reviewers on `prod-approval` and `prod`, then dispatches a prod deploy and confirms the pause.\n\n### CI-P1-002 (carried) \u2014 Branch-protection-as-code has a likely-mismatched required check and permits admin bypass\n\n- Severity: P1 \u00b7 Confidence: high \u00b7 Status: verified-fixed \u00b7 Owner: platform/CI owner \u00b7 Target: this week\n- Evidence: `main.json:4-17`, `develop.json:4-19`; `validate.yml:33-39` runs `scripts/check-required-checks.mjs`; manual walk confirms all 5 contexts match emitted check-runs; `enforce_admins: true`.\n- Residual: live application is a repo-admin action; no live drift check (owned by the branch-protection domain).\n\n### CI-P1-003 (carried) \u2014 Production deploy path cannot run; prod environment lacks secrets and protection rules\n\n- Severity: P1 \u00b7 Confidence: high \u00b7 Status: still-open \u00b7 Owner: @owner \u00b7 Target: this week\n- Evidence: `docs/RELEASING.md:140-147`; `deploy-do.yml:577-637` consumes ~50 environment secrets; matrix checklist `:142-151`.\n- Why it matters: production is intentionally not deployable until the operator provisions environments; safe but release-blocking.\n\n### CI-P2-001 (carried) \u2014 World-open DigitalOcean firewall mutation with no approval and unvalidated udp_port\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: verified-fixed\n- Evidence: no wireguard/firewall workflow in the 20-file workflow dir; removal commit `52304944`. Residual doc drift is the new docs finding.\n\n### CI-P2-002 (carried) \u2014 Deploy-gate secret scan is a no-op on pushes to main\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: verified-fixed\n- Evidence: `secret-scan/action.yml:15-27` now diffs `github.event.before` with a zero-SHA fallback; used by both `validate.yml:57-70` and `test.yml:54-65`.\n\n### CI-P2-003 (carried) \u2014 Production approval environment documented as having no required reviewers\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: verified-fixed\n- Evidence: matrix `:16-19` and `RELEASING.md:96-105` now state the truth; the operational gap is tracked under the two P1s.\n\n### CI-P2-004 (carried) \u2014 DB restore test reports success without asserting restore integrity\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: verified-fixed\n- Evidence: `db-restore-test.yml:135-232` fails on table/migration/row/freshness/RLS floors; baseline committed at `.github/restore-test-baseline.env`.\n\n### CI-P2-005 (carried) \u2014 Infrastructure changes are no longer gated in CI (terraform-do is manual-dispatch only)\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: partially-fixed\n- Evidence: `terraform-do.yml:3-21` manual-only; `:99-110` rejects world-open SSH; `:198-236` prod apply behind `prod-approval`. Residual: PR/push plan triggers remain off pending DO token rotation + environment protection.\n\n### CI-P2-006 (carried) \u2014 Chromatic visual-regression job is permanently non-blocking\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: still-open\n- Evidence: `chromatic.yml:20-28` job-level `continue-on-error: true`; not in any required-check list; `AGENTS.md:635` falsely claims the opposite.\n\n### CI-P2-007 (carried) \u2014 Branch protection permits admin bypass and ignores CODEOWNERS\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: verified-fixed\n- Evidence: both JSONs set `enforce_admins: true`, `require_code_owner_reviews: true`, `allow_force_pushes/deletions: false`.\n\n### CI-P2-008 (carried) \u2014 Terraform apply is manual and drift detection is not automated\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: partially-fixed (downgraded from the register's verified-fixed)\n- Evidence: `terraform-do.yml:36-38` skips the scheduled plan unless `vars.TF_DRIFT_PLAN_ENABLED == 'true'`; `:161-172` fails on a non-empty plan when it does run; `docs/CI.md:104-107` confirms dormancy. Residual: enable the variable after token rotation.\n\n### NEW \u2014 E2E is a required check on main but path-filtered, so PRs that miss its paths can never satisfy branch protection\n\n- Severity: P2 \u00b7 Confidence: medium \u00b7 Status: open \u00b7 Owner: platform/CI owner \u00b7 Target: this month\n- Evidence: `main.json:8` requires `E2E / e2e (20.x)`; `e2e.yml:12-22` path-filters `pull_request`; `test.yml:10-12` records the same class (BP-P2-004) fixed for test/lint/typecheck only \u2014 this is the concrete residual for e2e.yml (BP-P2-004 is also tracked by the branch-protection domain).\n- Why it matters: docs-only or API-only PRs to main stay blocked on a check that will never report.\n- Recommended fix: drop the `paths:` filter on `pull_request` (or make E2E non-required / add a reporting companion job); extend the required-check guard to flag path-filtered required workflows.\n\n### NEW \u2014 Backup dispatcher duplicates the backup workflows now that they exist on the default branch\n\n- Severity: P2 \u00b7 Confidence: medium \u00b7 Status: open \u00b7 Owner: platform/CI owner \u00b7 Target: this month\n- Evidence: `backup-dispatch.yml:21-25,85-93` schedules + dispatches `--ref develop`; `db-backup.yml:3-4`, `storage-backup.yml:19-20`, `db-restore-test.yml:3-4` have the same schedules and are all on main; the dispatcher header (`:3-9`) explains it predates the promotion (DR-P0-001, PR #93).\n- Why it matters: each DR job now runs twice (main + dispatched develop), duplicating dumps/mirrors/restore tests; an unset `SCHEDULE_DISPATCH_TOKEN` produces daily red runs while the real backup may succeed.\n- Recommended fix: keep one trigger source \u2014 delete the dispatcher or the three schedule blocks; document the choice.\n\n### P3 verification rows (tabulated)\n\n| Previous row | Title | Status at 8d299b8d | Key evidence / residual |\n|---|---|---|---|\n| CI-P3-001 | actionlint/shellcheck workflow lint issues | partially-fixed | `actionlint.yaml` exists; 14 unquoted `>> $GITHUB_OUTPUT` remain; no actionlint job in CI |\n| CI-P3-002 | Over-broad workflow token permissions (unused write scopes) | verified-fixed | no `actions: write` remains; residual scopes tracked in CI-P3-006 |\n| CI-P3-003 | StrictHostKeyChecking=no in the deploy health check | verified-fixed | `deploy-do.yml:883-891` uses `StrictHostKeyChecking=yes` + pinned known_hosts |\n| CI-P3-004 | `main` far behind `develop`; schedules only from default branch | verified-fixed | develop tip is ancestor of main; backup workflows present on main; new dispatcher duplication finding |\n| CI-P3-005 | Secret scanner misses platform formats; diffs only | partially-fixed | weekly full-history gitleaks added; diff scanner provider list unchanged |\n| CI-P3-006 | Unused permission grants across deploy/test workflows | still-open | `test.yml:18` `security-events: write`; `terraform-do.yml:26` `pull-requests: write` + unreachable PR-comment step |\n| CI-P3-007 | DB restore test uses unpinned `postgres:16-alpine` | still-open | `db-restore-test.yml:116` |\n| CI-P3-008 | No release/tagging workflow and no post-merge release artifact | still-open | 20 workflows, none release/tag; `RELEASING.md:47-53` SHA-as-release |\n| CI-P3-009 | e2e required on main but flaky | still-open | `main.json:8`; `AGENTS.md:93`; `RELEASING.md:148-150` |\n| CI-P3-010 | Missing per-job timeouts and minor hygiene gaps | still-open | 9 workflows with zero timeouts; validate.yml's audit/lint/typecheck/prompt-provenance lack one |\n| NEW | Workflow documentation drift (removed/omitted/misstated workflows) | open | README/AGENTS/review/docs/CI list `wireguard-endpoint.yml`; `secret-history-scan.yml` omitted; a11y/Chromatic claims wrong |\n| NEW | Badge/report generation is a stub and not wired into CI | open | `scripts/ci/generate_badges.py:1-8`; no `dashboards/`; no workflow reference |\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Unattended prod change (no reviewer gate) | P1 | Medium (requires merge-capable account) | Prod deploy/migrations without human pause | `deploy-do.yml:571`, matrix:16-19 | Configure `prod-approval` + `prod` reviewers |\n| Prod release blocked on unprovisioned secrets | P1 | High | Cannot release | `RELEASING.md:140-147` | Provision environments |\n| Docs-only PR to main blocked forever | P2 | High | Merge friction, possible unsafe workarounds | `e2e.yml:12-22`, `main.json:8` | Remove e2e paths filter |\n| Duplicate DR jobs / false failure signal | P2 | Medium | Wasted runs; alert fatigue on backup path | `backup-dispatch.yml` + backups | Retire one trigger source |\n| Visual regressions never gate | P2 | Medium | UI regressions ship | `chromatic.yml:28` | Fix Storybook, then require |\n| Drift undetected (infra, branch protection) | P2 | Medium | Silent divergence from as-code | `terraform-do.yml:38`; no live BP check | Enable drift var; add live BP check |\n| Workflow YAML/shell errors unguarded | P3 | Low | Broken workflow lands on default branch | no actionlint job | Add workflow-lint job |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\n- Configure 1+ required reviewers on `prod-approval` **and** `prod`, then verify a prod deploy pauses (CI-P1-001).\n- Provision prod/prod-approval secrets per the matrix so the documented promotion path can run (CI-P1-003).\n\n### This Week\n\n- Remove the `paths:` filter from `e2e.yml`'s `pull_request` trigger (or add a reporting companion job) so the required check always reports.\n- Decide the backup trigger source and retire `backup-dispatch.yml` or the duplicate schedule blocks.\n- Rotate `DO_API_TOKEN`, set `TF_DRIFT_PLAN_ENABLED=true`, set `ADMIN_IP_RANGES`, then re-enable plan-only PR runs for terraform.\n\n### This Month\n\n- Add an actionlint (+ shellcheck) job and quote the remaining 14 `GITHUB_OUTPUT` appends.\n- Drop `security-events: write` from `test.yml` and `pull-requests: write` from `terraform-do.yml` (or make them real).\n- Update the workflow tables in docs/CI.md, README.md, AGENTS.md and review.md; add a docs-vs-tree workflow check.\n- Pin `postgres:16-alpine` by digest in `db-restore-test.yml`.\n- Add explicit `timeout-minutes` to the 9 workflows/jobs lacking them.\n\n### Later / Platform Evolution\n\n- Release/tag workflow (annotated tag + SBOM + release-notes body) or a recorded owner decision for SHA-only releases.\n- Extend the diff secret scanner to platform token formats or run gitleaks on the diff.\n- Evaluate cloud OIDC (DigitalOcean/Cloudflare) to retire long-lived tokens.\n- Replace or delete the badge/report stub.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Remove e2e PR paths filter | Unblocks required check for all PRs | `e2e.yml:12-22` | Open a docs-only PR; check E2E reports |\n| Delete `security-events: write` | Least privilege | `test.yml:16-18` | actionlint/review; Trivy artifact still uploads |\n| Delete unreachable terraform PR-comment step + scope | Removes dead code and unused grant | `terraform-do.yml:23-26,138-152` | actionlint |\n| Quote GITHUB_OUTPUT appends | Clears SC2086 residual | `deploy-do.yml:91-99,181`; `terraform-do.yml:58,60,236,276` | shellcheck |\n| Update stale doc rows | Operators stop chasing removed workflow | `docs/CI.md`, `README.md:326`, `AGENTS.md:300,635`, `review.md:306`, `RELEASING.md:149` | Docs review |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Enable required reviewers on `prod-approval`/`prod` and verify pause | P1 | platform/CI owner | S | GitHub admin |\n| Provision prod environment secrets | P1 | @owner | M | Operator access |\n| Remove e2e paths filter | P2 | platform/CI owner | S | None |\n| Retire backup dispatcher or duplicate schedules | P2 | platform/CI owner | S | Confirm preferred trigger source |\n| Enable terraform drift plan + rotate token | P2 | platform/CI owner | S/M | DO token rotation |\n| actionlint/shellcheck CI job | P3 | platform/CI owner | S | None |\n| Drop unused permission scopes | P3 | platform/CI owner | S | None |\n| Pin restore-test postgres digest | P3 | platform/CI owner | S | None |\n| Per-job timeouts | P3 | platform/CI owner | S | None |\n| Release/tag workflow | P3 | platform/CI owner | M | Owner decision |\n| Live branch-protection drift check | P3 | repo admin | M | Admin token |\n| Badge/report step or deletion | P3 | platform/CI owner | S/M | None |\n\n## Suggested Tests\n\n- **CI/regression:** a synthetic PR that touches only `docs/**` must still produce the `E2E / e2e (20.x)` check-run (proves the paths fix).\n- **CI/regression:** run `node scripts/check-required-checks.mjs` in validate (already) and extend it with a test fixture containing a path-filtered workflow + required context, expecting failure.\n- **CI/security:** a synthetic secret pushed directly to a scratch branch must fail the deploy-gate secret scan; a platform-format token (e.g. `mct_`-style) must fail the diff scanner.\n- **CI/supply chain:** `gh attestation verify` on each built digest must fail for an image built by a different workflow (negative test of the signer-workflow pin).\n- **CI/DR:** assert the backup dispatcher does not create a second run for a workflow already scheduled on the default branch (or remove the dispatcher and assert single-run cadence from run history).\n- **CI/hygiene:** actionlint + shellcheck over `.github/` with zero findings; assert every job declares `timeout-minutes` via a small script.\n\n## Suggested Documentation Updates\n\n- `docs/CI.md`: regenerate the workflow table (remove `wireguard-endpoint.yml`, add `secret-history-scan.yml`); correct the a11y `continue-on-error` claim; document the e2e path-filter decision and the backup trigger decision.\n- `README.md:326`, `AGENTS.md:300,635`, `review.md:306`: remove the removed workflow and fix the Chromatic claim.\n- `docs/RELEASING.md:149`: drop the stale \"main is far behind develop\" line; add the backup-trigger and drift-var decisions when made.\n- `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`: add a \"last verified\" date column for the environment reviewer/secret checklist.\n- New: `docs/CI_GATE_MAP.md` (or a section in `docs/CI.md`) mapping each required check to the exact steps it executes and the drift classes it does not cover.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Is the live branch protection identical to the committed JSON (enforce_admins, contexts, code-owner reviews)? | The repo only proves the intended payload | `gh api repos/.../branches/main/protection` output |\n| Are `prod`/`prod-approval` required reviewers and prod secrets configured? | Decides whether prod deploys can run/pause | GitHub Environments settings screenshot/API |\n| Is `SCHEDULE_DISPATCH_TOKEN` set, and which backup runs actually fire on main vs develop? | Confirms/denies duplicate DR runs | Actions run history for the 3 backup workflows |\n| Is the default branch really `main` (docs claim it; origin HEAD says main)? | Scheduled-trigger semantics depend on it | Repo settings |\n| Was the e2e path filter on `pull_request` intentional? | Determines fix (remove filter vs companion job) | PR/commit discussion |\n| Does `@mainecybertech/*` team membership still satisfy code-owner reviews? | CODEOWNERS is only advisory if teams are empty | Org team membership |\n\n## Appendix\n\n### A. Command log (read-only)\n\n```\ngit log -1 --format='%H %ci %s'                     # 8d299b8d ... Merge PR #168\ngit merge-base --is-ancestor 031186ad 8d299b8d      # true (develop tip in main)\ngit log --oneline --diff-filter=D --all -- .github/workflows/wireguard-endpoint.yml\n                                                    # 52304944 chore(ci): remove one-time DO firewall workflow\ngrep -rn 'pull_request_target|workflow_run' .github/            # no matches\ngrep -rn 'uses:.*@(v[0-9]|main|master|latest)' .github/         # no matches (all SHA-pinned)\ngrep -rn '>> \\$GITHUB_OUTPUT' .github/workflows                 # 14 unquoted appends\ngrep -rn 'actions: write' .github/                              # comment only\ngrep -rn 'security-events|upload-sarif|sarif' .github/          # test.yml:18 grant; artifact-only SARIF\ngrep -c 'timeout-minutes' .github/workflows/*.yml               # 9 workflows with 0\nls .github/workflows/                                           # 20 workflows, no release/tag, no firewall\nnode scripts/check-required-checks.mjs                          # not run: node not installed (EXIT 127)\n```\n\n### B. Required-check \u2192 execution map (main)\n\n| Required context | Workflow | Steps executed | Path-filtered? |\n|---|---|---|---|\n| `Test / test (20.x)` | `test.yml` | unit-tests composite (coverage + 8 guards) | No |\n| `Lint / lint (20.x)` | `lint.yml` | `pnpm lint` | No |\n| `TypeCheck / typecheck` | `typecheck.yml` | `pnpm typecheck` | No |\n| `E2E / e2e (20.x)` | `e2e.yml` | Supabase + API + web + Playwright/axe | **Yes (PR)** |\n| `Dependency Review / review` | `dependency-review.yml` | high-severity + license deny list | No |\n\n### C. Note on verification duty\n\nAll 21 previous CI rows were re-checked at `8d299b8d`; 4 statuses changed from the previous register: CI-P2-008 verified-fixed\u2192partially-fixed, CI-P3-001 verified-fixed\u2192partially-fixed, CI-P3-005 open\u2192partially-fixed, CI-P3-004 partially-fixed\u2192verified-fixed. Four new findings were added from the extended verification checks (path-filtered required check, dispatcher duplication, docs drift, badge stub).\n"
+}

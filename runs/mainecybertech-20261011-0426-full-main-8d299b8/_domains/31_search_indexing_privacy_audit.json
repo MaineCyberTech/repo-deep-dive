@@ -1,0 +1,288 @@
+{
+  "domain": "31_search_indexing_privacy_audit",
+  "file": "31_search_indexing_privacy_audit.md",
+  "area": "SEARCH",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:50Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "`sanitizeSearchTerm` does not strip PostgREST `.` operator separators",
+      "evidence": [
+        "apps/api/src/lib/search.ts:22 \u2014 MAX_SEARCH_TERM_LENGTH = 100",
+        "apps/api/src/lib/search.ts:29 \u2014 `.replace(/[,().\"\\\\%*]/g, \" \")` strips comma, parens, dot, quotes, backslash, `%` and `*`",
+        "apps/api/src/lib/search.ts:33 \u2014 term truncated to 100 chars",
+        "apps/api/src/__tests__/sanitize-search.test.ts:32-53 \u2014 regression suite asserts no `.`/`*`/`,`/`(`/`)`/quote/`%`/`\\` survives (a.eq.b \u2192 'a eq b')",
+        "apps/api/src/__tests__/sanitize-search.test.ts:55-64 \u2014 documented tradeoff (dots flattened) and 100-char cap asserted",
+        "apps/api/src/routes/search.ts:20,104,116,128,140,156 \u2014 sanitized term interpolated into `.or(\"col.ilike.<term>\")` filters"
+      ],
+      "impact": "The filter-injection hardening gap is closed: dotted terms can no longer reshape the PostgREST `.or()` grammar, and term length is bounded.",
+      "recommendation": "No action required; keep the regression tests and the documented dot tradeoff.",
+      "owner": "search/backend",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: strip set now includes `.` and `*`, length capped at 100, regression tests cover a.eq.b / a*b / injection strings (fix from d48d2196). Residual: literal dots are intentionally unsearchable (documented in lib/search.ts:13-19).",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P1",
+      "title": "Admin global search exposes profile PII and never tenant-scopes the organizations query",
+      "evidence": [
+        "apps/api/src/routes/search.ts:38-70 \u2014 caller's approved memberships + roles resolved; `canSeeAllTenants` requires the super_admin profile flag AND a cross-tenant role key",
+        "apps/api/src/routes/search.ts:84-86 \u2014 `email, phone` projection only on the all-tenants (super admin) path; others get `id, full_name, title`",
+        "apps/api/src/routes/search.ts:91-99 \u2014 non-super callers are limited to approved members of their own orgs and never fall back to all (empty list \u2192 `__none__`)",
+        "apps/api/src/routes/search.ts:153-163 \u2014 organizations query now `.in(\"id\", scopedOrgIds)` unless the caller is a true platform admin",
+        "apps/api/src/routes/search.ts:200-202 \u2014 the all-tenants path is recorded in the audit event (`allTenants`)",
+        "apps/api/src/__tests__/search.test.ts:173-203 \u2014 tests assert organizations scoped to ORG_A and the reduced projection for a tenant admin",
+        "apps/api/src/__tests__/search-tenant-scope.test.ts:136-225 \u2014 fail-closed empty scope, explicit-org narrowing, audited all-tenants path"
+      ],
+      "impact": "Tenant admins can no longer enumerate other tenants' organizations and no longer receive email/phone from admin search; the previous cross-tenant/PII exposure is closed.",
+      "recommendation": "No action required for the filed finding; optionally stop matching on `email` for non-super callers (see residual).",
+      "owner": "search/backend",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: organizations are org-scoped and PII is gated to super_admin (fix from d48d2196, tightened by ab783ed7). Residual: `search.ts:104` still uses `email.ilike.%q%` as a predicate for non-super callers, so a tenant admin retains a boolean oracle over staff emails they cannot read; low impact, consider dropping the email branch for non-super callers.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Raw search terms persisted in plaintext `audit_logs.metadata`",
+      "evidence": [
+        "apps/api/src/routes/search.ts:191 \u2014 `crypto.createHash(\"sha256\").update(q).digest(\"hex\").slice(0, 16)` (truncated fingerprint)",
+        "apps/api/src/routes/search.ts:193-211 \u2014 audit metadata stores `queryHash`, `queryLength`, `allTenants`, `resultCounts`; the raw term is never written",
+        "apps/api/src/__tests__/search.test.ts:205-221 \u2014 test asserts `metadata` has no `query` and does not contain `customer@example.com`",
+        "apps/api/src/services/audit.ts:34-45 \u2014 key-name redaction retained; no value-level scrubbing needed for this path",
+        "apps/worker/src/tasks/retention.ts:13,131 \u2014 audit_logs purge window is 365 days (now only a hash is retained for that window)"
+      ],
+      "impact": "Search terms (possible PII/keywords) are no longer durably stored in plaintext for a year; only a truncated hash plus length is retained.",
+      "recommendation": "No action required; document the fingerprint scheme and retention in the search module doc.",
+      "owner": "search/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: raw term removed from audit metadata and regression-tested (fix from d48d2196).",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Portal search omits documents despite SDK and documentation contract",
+      "evidence": [
+        "apps/api/src/routes/search-portal.ts:54-59 \u2014 response is `{ tickets, projects }` only",
+        "packages/sdk/src/search.ts:11-15 \u2014 `PortalSearchResult` declares `documents`",
+        "docs/API_ENDPOINT_INVENTORY.md:164 \u2014 claims org-scoped portal search returns 'tickets + projects + documents'",
+        "apps/web/components/portal/PortalGlobalSearch.tsx:7-10 \u2014 portal UI type expects only tickets/projects",
+        "apps/api/src/__tests__/search-portal.test.ts:60,83 \u2014 tests assert `{ tickets: [], projects: [] }` (no documents)"
+      ],
+      "impact": "SDK consumers and docs promise a documents array the route never returns; portal users cannot search documents; the three artifacts remain unsynchronized.",
+      "recommendation": "Either add a visibility-respecting documents query to search-portal.ts + portal UI, or remove `documents` from the SDK type and correct API_ENDPOINT_INVENTORY.md; add a contract test.",
+      "owner": "search/backend + SDK",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: portal route unchanged (tickets/projects only), SDK and inventory doc still declare documents.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Admin search UI silently discards the documents result set",
+      "evidence": [
+        "apps/api/src/routes/search.ts:221 \u2014 API response includes `documents`",
+        "apps/web/components/admin/AdminGlobalSearch.tsx:7-12 \u2014 `SearchResult` type has no `documents`",
+        "apps/web/components/admin/AdminGlobalSearch.tsx:62-70 \u2014 `resultCount()` sums users/organizations/tickets/projects only",
+        "apps/web/components/admin/AdminGlobalSearch.tsx:118-203 \u2014 dropdown renders users/organizations/tickets/projects; no documents block",
+        "grep 'documents' apps/web/components/admin/AdminGlobalSearch.tsx \u2014 no matches"
+      ],
+      "impact": "The backend computes and transmits document matches (including the new `counts.documents`) that the admin UI never renders, so the documents-in-admin-search improvement is still not delivered end-to-end.",
+      "recommendation": "Add `documents` to the UI type, count and render a Documents group (and surface `counts`/`limit` while there); add an E2E assertion.",
+      "owner": "web team",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: UI unchanged; it also ignores the new `counts`/`limit` response fields.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "No search pagination or result counts; hard 5-result ceiling",
+      "evidence": [
+        "apps/api/src/routes/search.ts:28 \u2014 `limit = Math.min(25, Math.max(1, queryInt(req.query.limit, 5)))`",
+        "apps/api/src/routes/search.ts:103,115,127,139,155 \u2014 each entity query selects with `{ count: \"exact\" }`",
+        "apps/api/src/routes/search.ts:222-231 \u2014 response gains additive `counts` (per entity) and `limit`",
+        "apps/api/src/__tests__/search.test.ts:106-127 \u2014 asserts `?limit=10` applied and counts returned",
+        "apps/api/src/routes/search-portal.ts:42,48 \u2014 portal search still hard `.limit(5)` with no counts",
+        "apps/api/src/openapi/spec.ts:976-987 \u2014 both search routes still document only the `q` parameter",
+        "apps/web/components/admin/AdminGlobalSearch.tsx:47 \u2014 UI calls `search.admin(query)` without a limit and ignores counts",
+        "packages/sdk/src/search.ts:20-21 \u2014 SDK admin call sends no `limit`"
+      ],
+      "impact": "Admin search now has a bounded page size and totals, but portal search, both UIs, the SDK and OpenAPI were not updated: users still see 5 results with no 'show more', and no offset/cursor exists.",
+      "recommendation": "Extend `?limit`/counts to search-portal.ts, document `limit` in OpenAPI, add an optional limit argument + counts to the SDK, and surface a 'show more' affordance; consider an offset/cursor and note that `count: 'exact'` on five parallel queries costs extra DB work at volume.",
+      "owner": "search/backend + web + SDK",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: `?limit` (default 5, hard cap 25) + per-entity exact counts implemented for the admin route (a499e03a, mainecybertech#133). Residual: portal route, UIs, SDK and OpenAPI unchanged; no offset/cursor; exact-count cost not measured.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Search query analytics metric is dead and the analytics summary RPC is missing",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:68-72 \u2014 `portal_search_queries_total` counter defined",
+        "apps/api/src/lib/metrics.ts:218-220 \u2014 `recordSearchQuery()` increments it",
+        "apps/api/src/routes/search.ts:213 \u2014 admin search now calls `recordSearchQuery()`",
+        "apps/api/src/routes/search-portal.ts \u2014 no metric or audit call anywhere in the portal route",
+        "apps/api/src/routes/analytics.ts:84 \u2014 `supabase.rpc(\"get_analytics_summary\")`; grep supabase/ for `get_analytics_summary` \u2192 NO MATCHES (RPC still undefined, will 500)",
+        "docs/MONITORING_AND_ALERTING.md:132 \u2014 still documents `portal_search_queries_total` as 'defined, not wired'",
+        "apps/api/src/__tests__/search.test.ts:99-103 \u2014 test asserts the metric is wired for admin search"
+      ],
+      "impact": "Admin search volume is now observable, but portal search still emits nothing (no metric, no audit), the counter name says 'portal' while only admin increments it, and the admin analytics summary endpoint still calls a non-existent database function.",
+      "recommendation": "Call the metric (and consider a hashed-term audit) in search-portal.ts, rename or relabel the counter to cover both routes, implement or replace `get_analytics_summary` (see SEC-P2-004), and refresh docs/MONITORING_AND_ALERTING.md.",
+      "owner": "search/backend + SRE",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: admin route wired to the counter (36e5f723, IR-P2-001); RPC still absent and portal route still uninstrumented/unlogged; monitoring doc still says 'not wired'.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Prefix/wildcard mismatch: no btree on prefix columns and no full-text (`tsvector`) search",
+      "evidence": [
+        "apps/api/src/routes/search.ts:29-30 \u2014 prefix term `q%` for full_name/organization name/slug and `%q%` elsewhere",
+        "apps/api/src/routes/search.ts:140 \u2014 documents searched on `name` and `mime_type` (no index on either column)",
+        "apps/api/src/routes/search.ts:156 \u2014 organizations searched on `slug` (no index on slug)",
+        "supabase/migrations/5302102_add_performance_indexes.sql:10-16 \u2014 7 GIN trigram indexes (profiles.full_name/email, organizations.name, tickets.title/description, projects.name/description)",
+        "grep supabase/ + apps/api/src for `tsvector` \u2192 NO MATCHES",
+        "grep supabase/migrations for an index on organizations.slug \u2192 only idx_organizations_name_trgm exists"
+      ],
+      "impact": "At volume, slug and document-name searches scan unindexed columns, prefix columns get trigram rather than btree plans, and there is still no ranked full-text search.",
+      "recommendation": "Add indexes for organizations.slug and documents.name, evaluate btree indexes for the prefix-only columns, and a `to_tsvector('english', ...)` generated column + GIN for ticket/project descriptions; validate with EXPLAIN on seeded volume.",
+      "owner": "data/platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: index migration unchanged since 9c0b88c; documents.name/mime_type and organizations.slug are searched but unindexed; no tsvector anywhere.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Typeahead calls full search endpoints without rate limiting or a dedicated autocomplete surface",
+      "evidence": [
+        "apps/api/src/app.ts:125-146 \u2014 global IP limiter (300/15 min) and `rateLimitByUser` (600/15 min) apply to every route",
+        "apps/api/src/middleware/rate-limit.ts:27-40 \u2014 per-user limiter keys on a SHA-256 of the bearer token",
+        "apps/web/components/admin/AdminGlobalSearch.tsx:38-60 \u2014 300 ms debounce then `search.admin(query)`",
+        "apps/web/components/portal/PortalGlobalSearch.tsx:36-58 \u2014 300 ms debounce then `search.portal(query, \"\")`",
+        "apps/api/src/routes/search.ts:165-177 \u2014 each admin keystroke issues five parallel queries, now with `count: 'exact'` on each",
+        "grep 'autocomplete|typeahead|suggest' apps/api/src \u2014 no dedicated autocomplete endpoint; no search-specific limiter or response cache on either search route"
+      ],
+      "impact": "Platform-wide limiters bound abuse (600 requests/15 min/user), but typeahead still fans out five exact-count queries per debounced keystroke with no dedicated lightweight endpoint or search-route throttle; amplification is bounded but not optimized.",
+      "recommendation": "Add a dedicated single-column autocomplete endpoint or a search-specific limiter/short-TTL cache, and increase debounce/min-length for typeahead; consider dropping `count: 'exact'` for the typeahead path.",
+      "owner": "search/backend + web",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: global per-IP/per-user rate limiters exist (present since before 9c0b88c), but no search-specific limit, no caching and no dedicated autocomplete endpoint; each admin call now also computes exact counts.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P3",
+      "title": "Soft-delete columns are defined but never used by queries or deletes",
+      "evidence": [
+        "supabase/migrations/5302432_drop_unused_soft_delete_columns.sql:17-31 \u2014 drops `deleted_at`/`deleted_by` from tickets/projects/documents and their indexes",
+        "supabase/migrations/5302432_drop_unused_soft_delete_columns.sql:9-13 \u2014 documents the product decision: HARD DELETE, recovery via backups/PITR",
+        "grep 'deleted_at' apps/api/src \u2192 NO MATCHES (no runtime reads/writes)",
+        "supabase/migrations/5302109_soft_delete.sql \u2014 historical add of the now-dropped columns"
+      ],
+      "impact": "The latent 'deleted data becomes searchable if soft-delete is wired later' risk is removed by deleting the inert columns; hard deletes keep deleted rows out of search.",
+      "recommendation": "No action required; optionally clean up the dead defensive `deleted_at` fallbacks in the web components.",
+      "owner": "data/platform",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: 5302432 removes the columns (DATA-P1-003 product decision = hard delete); no API reads remain. Residual: apps/web components still probe `ticket.deleted_at` defensively (e.g. apps/web/app/(admin)/admin/tickets/[ticketId]/page.tsx:47,84) \u2014 dead code that can never be true.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P3",
+      "title": "Search module documentation is stale relative to the code",
+      "evidence": [
+        "docs/modules/search.md:9,14,27 \u2014 lists users/organizations/tickets/projects only and says 'read-only across all'",
+        "docs/modules/search.md:31 \u2014 'Admin: can search across all organizations and entities' (no longer true for tenant admins)",
+        "docs/modules/search-portal.md:4 \u2014 attributes the route to `search.ts` instead of `search-portal.ts`",
+        "docs/API_ENDPOINT_INVENTORY.md:163-164 \u2014 `/admin` auth omits `requireAdmin`; `/portal` auth wrongly lists `requireOrgAccess`; portal entity list wrongly includes documents",
+        "docs/MONITORING_AND_ALERTING.md:132 \u2014 search metric still marked 'defined, not wired'",
+        "The docs do not mention documents in admin search, the PII projection rule, `?limit`/`counts`, or the hashed search audit"
+      ],
+      "impact": "Operators and future agents reason from contracts that contradict the implementation, including the tenant-scoping and PII rules that matter for isolation.",
+      "recommendation": "Rewrite docs/modules/search.md and search-portal.md against the current routes; fix API_ENDPOINT_INVENTORY.md and MONITORING_AND_ALERTING.md; document the `?limit`/counts shape.",
+      "owner": "docs + search/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: all cited doc lines unchanged; drift has grown (documents, org scoping, PII gating, limit/counts, metric wiring all undocumented).",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Admin global search returns private/internal documents without applying the `can_read_document` visibility filter",
+      "evidence": [
+        "apps/api/src/routes/search.ts:26 \u2014 admin search always uses `getSupabaseAdmin()` (service role; RLS bypassed)",
+        "apps/api/src/routes/search.ts:137-147 \u2014 documents query scoped by `organization_id` only; selects `id, name, mime_type, visibility, organization_id` with no visibility/permission predicate",
+        "apps/api/src/routes/search.ts:16 \u2014 route gate is `requireAuth, requireAdmin, requireOrgAccess`; no `requirePermission(\"documents\", ...)`",
+        "supabase/migrations/5302110_restore_document_permissions.sql:39-90 \u2014 `can_read_document()`: `private` requires uploader or an explicit `document_permissions.can_view` row; `internal` requires manage/admin/technician",
+        "supabase/migrations/5302110_restore_document_permissions.sql:99-107 \u2014 `documents_select_visibility_aligned` enforces `can_read_document(id)` for authenticated reads",
+        "apps/api/src/routes/documents.ts:207 \u2014 the documents list uses `getScopedClient(req, \"documents\", \"read\")`, i.e. it can enforce visibility via RLS; search cannot"
+      ],
+      "impact": "Any tenant `admin` (even without `documents:manage` or an explicit per-document grant) can discover the names, MIME types and visibility of private/internal documents in their org by searching, bypassing the visibility model enforced everywhere else. This is exactly the 'private sensitive data must not remain searchable' control gap.",
+      "recommendation": "Restrict the admin-search documents query to documents the caller may read (e.g. add a `can_read_document`-equivalent predicate or an RPC, or require `documents:manage` and still filter `private`), and add a regression test asserting a private document is not returned to a non-granted admin.",
+      "owner": "search/backend + security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "newly identified at 8d299b8d (not filed in the previous register); applies to the admin route only \u2014 portal search does not search documents. Severity could rise to P1 if private documents routinely hold HR/contract data; product/security should confirm the intended visibility of search results.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P2",
+      "title": "Search router bypasses the org-pinned admin check, so a tenant admin can read another tenant's search results",
+      "evidence": [
+        "apps/api/src/routes/search.ts:16 \u2014 `router.use(requireAuth, requireAdmin, requireOrgAccess)` (admin gate runs before the org scope is resolved)",
+        "apps/api/src/middleware/admin.ts:46-58 \u2014 the org pin only fires when `req.orgScope?.explicit === true && req.orgId`, i.e. after an upstream `requireOrgAccess`",
+        "apps/api/src/middleware/org-access.ts:43-60 \u2014 a cross-tenant role key (`admin`/`super_admin`, lib/roles.ts:27) in ANY approved membership grants access to any requested org and logs an impersonation event",
+        "apps/api/src/routes/audit.ts:22 \u2014 comparison routers use `requireAuth, requireOrgAccess, requireAdmin`, so the pin does apply there and the same request is 403",
+        "apps/api/src/routes/search.ts:55-57,77-79 \u2014 search's own comment claims a plain tenant `admin` is scoped to their own orgs, and the route honors `req.orgScope.orgId` when `explicit`",
+        "apps/api/src/__tests__/search-tenant-scope.test.ts:71-77 \u2014 tests stub `requireOrgAccess`, so the cross-tenant grant path is never exercised"
+      ],
+      "impact": "A tenant admin of Org A can call `GET /api/v1/search?q=...&organization_id=<Org B>` and receive Org B's tickets, projects, documents and user names/titles, while the equivalent audit/bulk routes deny the same pattern. The access is impersonation-audited, but it contradicts search's stated per-tenant scoping and ADMIN-P1-001's pin semantics.",
+      "recommendation": "Decide the trust model and make it consistent: either mount `requireOrgAccess` before `requireAdmin` on /search (or replicate the pin inside the handler) so a non-super admin cannot widen scope, or explicitly document `admin` as a cross-tenant MSP role and align audit/bulk. Add an integration test for tenant-admin + foreign organization_id.",
+      "owner": "API platform + security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "newly identified at 8d299b8d; requires an owner decision because lib/roles.ts classifies `admin` as cross-tenant while middleware/admin.ts pins it as per-tenant. The recent ?limit/counts change did not alter this path.",
+      "area": "SEARCH"
+    },
+    {
+      "severity": "P3",
+      "title": "Search SDK and OpenAPI contracts do not cover the implemented response (documents, counts, limit)",
+      "evidence": [
+        "packages/sdk/src/search.ts:4-9 \u2014 admin `SearchResult` has no `documents`, `counts` or `limit` fields",
+        "packages/sdk/src/search.ts:20-21 \u2014 `admin(query)` sends no `limit` argument",
+        "apps/api/src/routes/search.ts:215-231 \u2014 the implemented admin response includes `documents`, `counts` and `limit`",
+        "apps/api/src/openapi/spec.ts:976-987 \u2014 both search routes document only the `q` query parameter",
+        "packages/sdk/src/__tests__/sdk-expanded.test.ts:826-833 \u2014 SDK tests mock the old shapes, so drift is not detected"
+      ],
+      "impact": "SDK consumers cannot type or consume the documents/counts/limit the API now returns, and OpenAPI consumers cannot discover `?limit`; the contract test surface does not catch either drift.",
+      "recommendation": "Update the SDK types and `admin(query, options?)`, add `queryParam(\"limit\")` to the OpenAPI search routes, and add a contract test comparing the SDK/OpenAPI shape with the route response.",
+      "owner": "SDK + API platform",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "newly identified at 8d299b8d; overlaps SEARCH-P2-002 (portal `documents` declaration) but covers the admin-side SDK/OpenAPI drift introduced by the pagination change.",
+      "area": "SEARCH"
+    }
+  ],
+  "report": "# Search, Indexing, and Privacy Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `MaineCyberTech/mainecybertech` (portal monorepo, target worktree `/tmp/opencode/mct-audit-target`)\n- Branch: `main` (detached at `HEAD`)\n- Commit SHA: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd` (`8d299b8d`)\n- Generated at: 2026-10-11\n- Auditor: subagent, prompt 31\n- Area code: SEARCH\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/31_search_indexing_privacy_audit.md`\n- Scope limitations:\n  - Static, read-only review of the working tree at 8d299b8d. No database, hosted Supabase, or production access; RLS/PostgREST behavior is inferred from SQL/TypeScript.\n  - `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` runtime values are not committed; allow-lists are assumed empty unless stated (services/supabase.ts:203-209).\n  - No external search provider, indexing job, or reindexing scheduler exists, so those scope rows are `not applicable` rather than unknown.\n  - Frontend behavior (React components) was read, not executed; no browser session was used.\n\n## Scope\n\nReviewed:\n\n- Search API: `apps/api/src/routes/search.ts` (admin global), `apps/api/src/routes/search-portal.ts` (portal), `apps/api/src/lib/search.ts` (`sanitizeSearchTerm`), `apps/api/src/lib/query.ts`.\n- Authorization chain: `apps/api/src/middleware/auth.ts`, `admin.ts`, `org-access.ts`, `permissions.ts`, `apps/api/src/lib/roles.ts`, `apps/api/src/services/supabase.ts` (`getScopedClient`), `apps/api/src/services/audit.ts`.\n- Search surfaces/UI: `apps/web/components/admin/AdminGlobalSearch.tsx`, `apps/web/components/portal/PortalGlobalSearch.tsx`, `apps/web/components/admin/AdminListPageSearch.tsx`, `apps/web/e2e/admin/search.spec.ts`.\n- SDK/contracts: `packages/sdk/src/search.ts`, `apps/api/src/openapi/spec.ts` (Search tag), `docs/API_ENDPOINT_INVENTORY.md`.\n- Indexes/data: `supabase/migrations/5302102_add_performance_indexes.sql`, `5302432_drop_unused_soft_delete_columns.sql`, `5302110_restore_document_permissions.sql`, `5302118_permission_matrix_full_catalog.sql`.\n- Logs/analytics/retention: `apps/api/src/lib/metrics.ts`, `apps/api/src/routes/analytics.ts`, `apps/worker/src/tasks/retention.ts`, `docs/MONITORING_AND_ALERTING.md`.\n- Tests: `apps/api/src/__tests__/search.test.ts`, `search-tenant-scope.test.ts`, `search-portal.test.ts`, `sanitize-search.test.ts`, `packages/sdk/src/__tests__/sdk-expanded.test.ts`.\n- Adjacent `ilike` list filters that do NOT use the shared sanitizer: `assets.ts`, `proposals.ts`, `findings.ts`, `staging.ts`, `device-profiles.ts`, `domain-monitors.ts`, `network-diagrams.ts`, `vendors.ts`, `approvals.ts`.\n\nNot reviewed / not applicable:\n\n- Live EXPLAIN plans, index selectivity, and PostgREST parser behavior (no DB).\n- External index providers (none exist), indexing/reindex jobs (none exist), vector/RAG retrieval (none).\n- The full audit-log reader UI and retention of non-search stores (owned by prompts 06/18/37).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `apps/api/src/routes/search.ts:16` | Source | Admin search auth chain | `requireAuth, requireAdmin, requireOrgAccess` |\n| `apps/api/src/routes/search.ts:28` | Source | Pagination | `?limit` default 5, hard cap 25 |\n| `apps/api/src/routes/search.ts:38-70` | Source | Tenant/PII scoping | memberships + `is_super_admin`; all-tenants requires both |\n| `apps/api/src/routes/search.ts:84-99` | Source | PII projection + user scope | email/phone only for all-tenants; `__none__` fail-closed |\n| `apps/api/src/routes/search.ts:137-147` | Source | Document search | org filter only; no visibility filter |\n| `apps/api/src/routes/search.ts:153-163` | Source | Organizations scope | `.in(\"id\", scopedOrgIds)` unless all-tenants |\n| `apps/api/src/routes/search.ts:191-213` | Source | Search audit + metric | SHA-256 fingerprint; `recordSearchQuery()` |\n| `apps/api/src/routes/search.ts:215-231` | Source | Response shape | arrays + `counts` + `limit` |\n| `apps/api/src/routes/search-portal.ts:9-59` | Source | Portal search | `requireAuth` only; tickets/projects; `.limit(5)` |\n| `apps/api/src/lib/search.ts:22-33` | Source | Sanitizer | strips `,().\"\\%*`; 100-char cap |\n| `apps/api/src/middleware/admin.ts:46-58` | Source | Org-pinned admin check | needs `req.orgScope` set by upstream middleware |\n| `apps/api/src/middleware/org-access.ts:43-60` | Source | Cross-tenant grant | `admin` key grants any org, logs impersonation |\n| `supabase/migrations/5302110_restore_document_permissions.sql:39-107` | Migration | Document visibility | `can_read_document` + select policy |\n| `supabase/migrations/5302432_drop_unused_soft_delete_columns.sql:17-31` | Migration | Deleted-data removal | drops `deleted_at`/`deleted_by` |\n| `supabase/migrations/5302102_add_performance_indexes.sql:10-16` | Migration | Search indexes | 7 GIN trigram indexes; slug/documents.name unindexed |\n| `apps/api/src/lib/metrics.ts:68-72,218-220` | Source | Search metric | `portal_search_queries_total` + recorder |\n| `apps/api/src/routes/analytics.ts:84` | Source | Analytics RPC | `get_analytics_summary` (undefined in SQL) |\n| `apps/web/components/admin/AdminGlobalSearch.tsx:7-70` | Source | Admin UI | no `documents`, no counts |\n| `packages/sdk/src/search.ts:4-26` | SDK | Client contract | admin type lacks documents/counts/limit |\n| `apps/api/src/openapi/spec.ts:976-987` | Contract | OpenAPI | only `q` documented |\n\n## Verification Performed\n\n| Command (at `/tmp/opencode/mct-audit-target`) | Observed result |\n|---|---|\n| `git rev-parse HEAD` | `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd` (matches run manifest) |\n| `grep -rn \"recordSearchQuery\" apps/api/src` | Definition at `metrics.ts:218`; only call site `search.ts:213` (plus a test mock) \u2014 portal route unwired |\n| `grep -rn \"get_analytics_summary\" supabase/` | `NO MATCHES` \u2014 the RPC called by `analytics.ts:84` is still undefined |\n| `grep -rn \"deleted_at\" apps/api/src` | `NO MATCHES` \u2014 no runtime reads/writes of soft-delete columns |\n| `grep -n \"limit\" apps/api/src/routes/search.ts apps/api/src/routes/search-portal.ts` | Admin: `:28` clamp + `.limit(limit)` at 5 sites; portal: `.limit(5)` at `:42,48` |\n| `grep -rn \"tsvector\" supabase/ apps/api/src` | `NO MATCHES` \u2014 no full-text search |\n| `grep -rin \"meilisearch\\|algolia\\|elasticsearch\\|typesense\" apps packages supabase` | `NO MATCHES` \u2014 no external search provider |\n| `grep -rn \"organizations.*slug\\|idx_organizations\" supabase/migrations/*.sql` (filtered to index lines) | Only `idx_organizations_name_trgm`; no index on `organizations.slug` |\n| `grep -n \"documents\" apps/web/components/admin/AdminGlobalSearch.tsx` | `NO documents IN ADMIN UI` \u2014 API array discarded |\n| `sed -n '16p' apps/api/src/routes/search.ts` vs `sed -n '22p' apps/api/src/routes/audit.ts` | `requireAuth, requireAdmin, requireOrgAccess` vs `requireAuth, requireOrgAccess, requireAdmin` \u2014 ordering differs |\n| `grep -n \"replace(/\\|MAX_SEARCH_TERM\" apps/api/src/lib/search.ts` | Strip set `/[,().\"\\\\%*]/g`; cap 100 |\n| `grep -rn \"get_analytics_summary\\|search\" docs/MONITORING_AND_ALERTING.md` | `:132` still marks `portal_search_queries_total` 'defined, not wired' |\n\nReproduction notes: all headline claims above were reproduced from source at 8d299b8d; no claim relies on the previous run. Live PostgREST/RLS behavior remains `not reproducible` in this read-only environment.\n\n## Executive Summary\n\nSearch is a Postgres-native, real-time implementation: two authenticated REST endpoints (`GET /api/v1/search`, `GET /api/v1/search/portal`) issue `ilike`/`.or()` filters against Supabase, accelerated by GIN trigram indexes. There is no external index, indexing job, reindexing scheduler, `tsvector` column, or dedicated autocomplete endpoint, so stale-index and index-deletion problems do not exist by construction; the privacy questions are what is queried, returned, logged, and retained.\n\nStrengths verified at this commit:\n\n1. The sanitizer now strips every PostgREST grammar token (`.`, `,`, `()`, quotes, `\\`, `%`, `*`) and caps length at 100 with regression tests (`lib/search.ts:22-33`, `sanitize-search.test.ts:32-64`).\n2. Admin search scopes organizations to the caller's orgs, gates `email`/`phone` to a true platform admin, fails closed on an empty scope, and audits the all-tenants path (`search.ts:38-99,153-163`; tests `search.test.ts:173-203`, `search-tenant-scope.test.ts:136-225`).\n3. Search terms are no longer persisted in plaintext: only a truncated SHA-256 fingerprint and length reach `audit_logs` (`search.ts:191-211`).\n4. Admin search gained `?limit` (default 5, cap 25) and per-entity exact counts (`search.ts:28,103-155,222-231`), and the search counter is now incremented (`search.ts:213`).\n5. Soft-delete columns were dropped, so deleted rows cannot silently become searchable later (`5302432`).\n\nMaterial gaps at this commit:\n\n1. **Private documents remain searchable** \u2014 the admin documents query filters only by organization and runs on the service-role client, so any tenant `admin` can discover `private`/`internal` document names that `can_read_document` would hide elsewhere. New finding.\n2. **Cross-tenant search via explicit org** \u2014 because `requireAdmin` runs before `requireOrgAccess`, the org-pin never applies; a tenant admin can request another tenant's `organization_id` and read its search results (impersonation-audited), while `audit`/`bulk` deny the same pattern. New finding.\n3. **Pagination fix is API-only** \u2014 portal search, both UIs, the SDK, and OpenAPI still assume 5 results with no counts; the `count: 'exact'` cost was not measured.\n4. **Portal search remains the weakest surface** \u2014 no documents (SDK/doc contract still promises them), no metric, no audit, hard `.limit(5)`.\n5. **Docs and contracts are stale** \u2014 module docs still say \"across all organizations\", attribute the portal route to the wrong file, and mark the search metric dead.\n\nRecommended next actions: (a) filter admin-search documents by the visibility model; (b) align the search router's middleware order with `audit.ts` or document `admin` as cross-tenant; (c) finish the pagination rollout (portal + UI + SDK/OpenAPI); (d) add indexes for `organizations.slug` and `documents.name`; (e) refresh the search docs. None of the new items is a P0.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Admin global search route | `apps/api/src/routes/search.ts` `GET /api/v1/search` | Cross-entity admin search | Implemented | High | users/orgs/tickets/projects/documents; `?limit`+counts |\n| Portal search route | `apps/api/src/routes/search-portal.ts` `GET /api/v1/search/portal` | Org-scoped search | Implemented | Medium | tickets/projects only; no counts |\n| Search sanitizer | `apps/api/src/lib/search.ts` `sanitizeSearchTerm` | PostgREST filter safety | Implemented | Low | strips `.`/`*`; 100-char cap |\n| Admin search UI | `apps/web/components/admin/AdminGlobalSearch.tsx` | Typeahead UI | Implemented | Medium | drops `documents`, ignores counts |\n| Portal search UI | `apps/web/components/portal/PortalGlobalSearch.tsx` | Typeahead UI | Implemented | Low | 300 ms debounce |\n| SDK search API | `packages/sdk/src/search.ts` | Client contract | Stale | Medium | no documents/counts/limit on admin type |\n| GIN trigram indexes | `supabase/migrations/5302102_add_performance_indexes.sql:10-16` | Fuzzy text search perf | Implemented | Medium | slug, documents.name/mime_type missing |\n| Soft-delete columns | `5302109` (add) / `5302432` (drop) | Tombstoning | Removed | Low | product decision = hard delete |\n| Encrypted PII mirror | `supabase/migrations/5302135_profiles_encrypted_pii.sql` | PII at rest | Implemented | Medium | plaintext columns remain the search source |\n| Search metric | `apps/api/src/lib/metrics.ts:68-72` | Search volume | Partially wired | Low | only admin route increments it |\n| Analytics summary RPC | `apps/api/src/routes/analytics.ts:84` | Admin analytics | Missing RPC | Medium | `get_analytics_summary` undefined in SQL |\n| Audit retention | `apps/worker/src/tasks/retention.ts:13,131` | Purge audit/notifications | Implemented | Low | 365 d / 90 d; search audit rows included |\n| External index / indexing job / reindex | \u2014 | \u2014 | Absent | \u2014 | Not applicable (document the decision) |\n| Autocomplete endpoint | \u2014 | \u2014 | Absent | Medium | debounced full search used instead |\n| `search.view` permission | `supabase/migrations/5302118:339` | Catalog entry | Unused | Low | route relies on `requireAdmin` only |\n\n### Indexed data inventory (owner / retention / cleanup)\n\n| Table / index | Owner | Retention / cleanup | Notes |\n|---|---|---|---|\n| `profiles` (`idx_profiles_full_name_trgm`, `idx_profiles_email_trgm`) | platform/data | No table retention; PII mirror `5302135` | Searchable columns are plaintext |\n| `organizations` (`idx_organizations_name_trgm`) | platform/data | No retention | `slug` searched, unindexed |\n| `tickets` (`idx_tickets_title_trgm`, `idx_tickets_description_trgm`) | platform/data | Hard delete on DELETE | No tombstone after `5302432` |\n| `projects` (`idx_projects_name_trgm`, `idx_projects_description_trgm`) | platform/data | Hard delete | \u2014 |\n| `documents` (no trigram on `name`) | platform/data | Hard delete + storage object removal | `name`/`mime_type` searched, unindexed |\n| `audit_logs` (`idx_audit_logs_org_created`, `idx_audit_logs_entity`) | platform/security | 365-day purge (`retention.ts:13,131`) | Search audit rows land here (hash only) |\n| `document_permissions` (`idx_document_permissions_user_id/_role_id`) | platform/security | Cascade with document | Backs `can_read_document` |\n\nLeftovers without a documented retention policy (tickets/projects/documents/profiles) are tracked by DATA-P2-006 and not duplicated here.\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Search routes/UI | 3 | `search.ts`, `search-portal.ts`, both `*GlobalSearch.tsx` | Admin UI drops documents/counts; portal unchanged | Render documents; surface counts |\n| Indexes | 2 | `5302102:10-16` | `organizations.slug`, `documents.name` unindexed; no btree/tsvector | Add indexes; measure |\n| Indexing jobs | N/A | No worker/external index found | None | Document the real-time decision |\n| Indexed fields | 2 | route `.select()` lists | Private docs searchable; email predicate for non-super callers | Visibility-aware filtering |\n| Tenant filters | 3 | `search.ts:77-99,153-163`; `search-portal.ts:23-40` | Explicit-org path bypasses the admin pin | Fix middleware order or document model |\n| Permission filters | 2 | `requireAdmin` only; `search.view` unused | No field-level or per-role projection beyond PII | Consider `requirePermission` |\n| Document/ticket/project/message search | 2 | `search.ts:113-147`; `search-portal.ts:36-49` | Portal misses documents; no message search | Add docs to portal; state message scope |\n| Admin/global search | 3 | `search.ts` | Private-doc exposure; cross-tenant explicit-org path | See new findings |\n| Autocomplete | 2 | debounced full endpoints | No dedicated endpoint; no search-specific limit/cache | Add lightweight endpoint or limiter |\n| Search logs | 3 | `search.ts:191-211` | Portal search unlogged; audit rows lack org id | Log portal (hashed); set org |\n| Query analytics | 2 | `metrics.ts`, `search.ts:213`, `analytics.ts:84` | Portal unwired; RPC missing; docs stale | Wire + implement RPC |\n| Deleted data removal | 4 | `5302432`; hard deletes | Dead UI fallbacks | Clean up fallbacks |\n\n## Detailed Review\n\n### Item: Admin global search (`GET /api/v1/search`)\n\n- Evidence: `search.ts:16-231`; tests `search.test.ts`, `search-tenant-scope.test.ts`.\n- What it does: authenticated admin search over profiles, organizations, tickets, projects, documents; min 2 chars; `?limit` (default 5, cap 25) + per-entity exact counts.\n- Current controls: role gate; membership-derived org scope with `__no_match__` fail-closed; PII gated to super admins; hashed audit; metric.\n- Missing controls: document-visibility filtering; consistent org-pin semantics; SDK/OpenAPI/UI alignment.\n- Risks: private-document discovery (new finding), cross-tenant explicit-org reads (new finding), dead-end pagination payload.\n\n### Item: Portal search (`GET /api/v1/search/portal`)\n\n- Evidence: `search-portal.ts:9-59`; tests `search-portal.test.ts:51-115`.\n- What it does: membership-derived org filter over tickets/projects; hard `.limit(5)`; no counts; no audit/metric.\n- Current controls: `requireAuth`; app-level `.in(\"organization_id\", orgIds)`; empty membership short-circuits.\n- Missing controls: documents, pagination, audit/metric, RLS by default (`getScopedClient` falls back to service role unless `search-portal` is allow-listed; bypass is now recorded via `recordRlsBypass`).\n- Risks: contract drift; weakest observability of the two endpoints.\n\n### Item: Query sanitizer\n\n- Evidence: `lib/search.ts:22-33`; tests `sanitize-search.test.ts:3-69`.\n- What it does: replaces `,().\"\\%*` with spaces, collapses whitespace, caps 100 chars; dots are intentionally unsearchable.\n- Controls: unit-tested injection strings; used by search, search-portal, knowledge-base, edu-automation.\n- Residual: other list routes (`assets`, `proposals`, `findings`, \u2026) use raw `.ilike()` values without the sanitizer; those values are passed as method arguments (not interpolated into `.or()`), so no grammar injection, but `%`/`_` wildcards pass through and results are still org-scoped.\n\n### Item: Indexes and query performance\n\n- Evidence: `5302102:10-16`; `search.ts:29-30,140,156`.\n- Gap: no index for `organizations.slug` or `documents.name`/`mime_type`; prefix columns use trigram; no `tsvector`; `count: 'exact'` on five parallel queries adds cost.\n\n### Item: Deleted data and retention\n\n- Evidence: `5302432:17-31`; `retention.ts:13,131`.\n- State: hard deletes; soft-delete columns removed; search audit rows (hash only) purge after 365 days.\n- Residual: dead `deleted_at` probes in web components.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| SEARCH-001 | Search routes/UI | `search.ts`, `search-portal.ts`, UIs | Auth(+admin) gates | UI drops documents/counts | P2 | Finish UI rollout |\n| SEARCH-002 | Indexes | `5302102` | GIN trigram | slug/documents.name unindexed; no tsvector | P2 | Add indexes |\n| SEARCH-003 | Indexing jobs | none found | N/A (real-time) | Decision undocumented | P3 | Document |\n| SEARCH-004 | Indexed fields | route selects | PII gated to super admin | Private docs searchable; email predicate | P2 | Visibility-aware filter |\n| SEARCH-005 | Tenant filters | `search.ts:77-163` | Membership-derived, fail closed | Explicit-org path bypasses admin pin | P2 | Middleware order/pin |\n| SEARCH-006 | Permission filters | `search.ts:16`; `5302118:339` | `requireAdmin` | `search.view` unused | P3 | Optional `requirePermission` |\n| SEARCH-007 | Document/ticket/project/message search | `search.ts`, `search-portal.ts` | Docs in admin only | Portal docs; no message search | P2 | Add docs or fix contract |\n| SEARCH-008 | Admin/global search | `search.ts` | Scoped + audited | New P2 findings | P2 | See findings |\n| SEARCH-009 | Autocomplete | UI components | Global limiters | No dedicated endpoint/cache | P2 | Lightweight endpoint |\n| SEARCH-010 | Search logs | `search.ts:191-211` | Hashed admin audit | Portal unlogged; no org id | P2 | Log portal |\n| SEARCH-011 | Query analytics | `metrics.ts`, `analytics.ts:84` | Admin counter wired | Portal unwired; RPC missing | P2 | Wire + RPC |\n| SEARCH-012 | Deleted data removal | `5302432` | Hard delete | Dead UI fallbacks | P3 | Cleanup |\n\n## Findings\n\nTitles only; IDs/areas are assigned by the aggregator. Full evidence and status live in `_domains/31_search_indexing_privacy_audit.json`.\n\nVerification rows (re-checked at 8d299b8d):\n\n- `sanitizeSearchTerm` does not strip PostgREST `.` operator separators \u2014 **verified-fixed**.\n- Admin global search exposes profile PII and never tenant-scopes the organizations query \u2014 **verified-fixed** (residual: email predicate remains for non-super callers).\n- Raw search terms persisted in plaintext `audit_logs.metadata` \u2014 **verified-fixed**.\n- Portal search omits documents despite SDK and documentation contract \u2014 **still-open**.\n- Admin search UI silently discards the documents result set \u2014 **still-open**.\n- No search pagination or result counts; hard 5-result ceiling \u2014 **partially-fixed** (admin API only).\n- Search query analytics metric is dead and the analytics summary RPC is missing \u2014 **partially-fixed** (admin metric wired; RPC and portal still missing).\n- Prefix/wildcard mismatch: no btree on prefix columns and no full-text (`tsvector`) search \u2014 **still-open**.\n- Typeahead calls full search endpoints without rate limiting or a dedicated autocomplete surface \u2014 **partially-fixed** (global limiters only).\n- Soft-delete columns are defined but never used by queries or deletes \u2014 **verified-fixed** (columns dropped).\n- Search module documentation is stale relative to the code \u2014 **still-open**.\n\nNew findings (open at 8d299b8d):\n\n- Admin global search returns private/internal documents without applying the `can_read_document` visibility filter \u2014 **P2**.\n- Search router bypasses the org-pinned admin check, so a tenant admin can read another tenant's search results \u2014 **P2**.\n- Search SDK and OpenAPI contracts do not cover the implemented response (documents, counts, limit) \u2014 **P3**.\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Private/internal document names discoverable via admin search | P2 | Medium | Within-tenant metadata disclosure; breaks visibility model | `search.ts:26,137-147`; `5302110:39-107` | Visibility-aware filter |\n| Tenant admin reads another tenant's search results via `?organization_id` | P2 | Medium | Cross-tenant read (audited) inconsistent with audit/bulk | `search.ts:16`; `admin.ts:46-58`; `org-access.ts:43-60` | Fix ordering/pin or document model |\n| Search latency grows with unindexed slug/name scans and exact counts | P2 | Medium | Slower search as data grows | `5302102`; `search.ts:140,156` | Add indexes; measure |\n| Contract drift misleads SDK consumers/agents | P3 | High | Wasted integration effort; false assumptions | `sdk/search.ts`; `openapi/spec.ts:976-987`; docs | Sync contracts |\n| Typeahead amplification under abuse | P3 | Low | DB load spikes (bounded by global limiters) | `app.ts:125-146`; UI debounce | Search-specific limit/cache |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\nNone. No P0 and no P1-remains-open in this domain.\n\n### This Week\n\n1. Fix the admin-search documents query to respect the visibility model (or require `documents:manage` plus a `private` filter); add a regression test.\n2. Align the search router's middleware order with `audit.ts`/`bulk.ts` (or explicitly document `admin` as cross-tenant); add a tenant-admin/foreign-org test.\n\n### This Month\n\n3. Extend `?limit`/counts to `search-portal.ts`; document `limit` in OpenAPI; add an optional limit to the SDK.\n4. Wire the portal search metric and a hashed audit event; implement or replace `get_analytics_summary` (SEC-P2-004).\n5. Add indexes for `organizations.slug` and `documents.name`; measure `count: 'exact'` cost at volume.\n\n### Later / Platform Evolution\n\n6. Decide the documents contract (portal + UI + SDK + docs) once, then add a contract test.\n7. Evaluate a dedicated autocomplete endpoint and a `tsvector`-based ranked search; document the \"no external index\" decision.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Render `documents` + counts in admin UI | Delivers existing API work end-to-end | `AdminGlobalSearch.tsx` | Unit/E2E assertion |\n| Fix module docs | Removes agent/operator misinformation | `docs/modules/search.md`, `search-portal.md`, `API_ENDPOINT_INVENTORY.md` | Doc review |\n| Mark search metric 'live (admin)' | Stops stale monitoring guidance | `docs/MONITORING_AND_ALERTING.md:132` | Doc review |\n| Add `queryParam(\"limit\")` to OpenAPI | Cheap contract fix | `openapi/spec.ts:976-987` | Spec build |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Visibility-aware document search | P2 | search/backend + security | S | Product visibility decision |\n| Org-pin/middleware-order alignment | P2 | API platform | S | CHAIN-P1-001 model decision |\n| Portal pagination + counts | P2 | search/backend | S | none |\n| Portal search audit + metric | P2 | search/backend + SRE | S | none |\n| Index `organizations.slug`, `documents.name` | P2 | data/platform | S | migration review |\n| SDK/OpenAPI contract sync + tests | P3 | SDK + API platform | S\u2013M | SEARCH-P2-002 decision |\n| Dedicated autocomplete endpoint | P3 | search/backend + web | M | none |\n\n## Suggested Tests\n\n- Unit: keep the sanitizer injection suite; add a case asserting the term never contains `.`/`,`/`*` before interpolation.\n- Integration: tenant-admin search with a foreign `organization_id` returns 403 or empty (new finding); private document not returned to a non-granted admin (new finding).\n- Integration: `?limit` bounded (0/negative/999) and counts match seeded totals; portal `?limit` once implemented.\n- Contract: SDK/OpenAPI response-shape test against the route payload (documents/counts/limit).\n- Security/regression: search audit metadata contains no raw term (exists); portal search emits a metric/audit once wired.\n- Manual: with `RLS_READS_ENABLED=search-portal`, confirm a member of Org A cannot match Org B tickets.\n\n## Suggested Documentation Updates\n\n- `docs/modules/search.md` \u2014 documents, org scoping, PII gating, `?limit`/counts, hashed audit.\n- `docs/modules/search-portal.md` \u2014 correct route file, documents contract decision, metric/audit status.\n- `docs/API_ENDPOINT_INVENTORY.md:163-164` \u2014 correct auth gates and entity lists.\n- `docs/MONITORING_AND_ALERTING.md:132` \u2014 mark the search metric wired (admin) and note the RPC status.\n- New: a short \"search data map\" (searchable columns, visibility model, retention) for operators/agents.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Should `admin` be cross-tenant for search reads? | Determines whether the explicit-org path is a bug or the model | Owner decision (CHAIN-P1-001/ADMIN-P1-001) |\n| Should admin search return private documents to any tenant admin? | Visibility model consistency | Product/security decision |\n| Are exact per-entity counts acceptable at production volume? | Query cost on 5 parallel queries | EXPLAIN/load measurement |\n| Is portal documents search in scope for the product? | Drives SDK/doc vs implementation alignment | Product decision |\n| Is `RLS_READS_ENABLED` configured for `search-portal` in prod? | Defense-in-depth for tenant isolation | Droplet `.env` (operator) |\n\n## Appendix\n\nSearch surface inventory:\n\n| Surface | Method/route | Gate | Tenant filter | Notes |\n|---|---|---|---|---|\n| Admin global | `GET /api/v1/search` | `requireAuth, requireAdmin, requireOrgAccess` | memberships/orgScope; `__no_match__` fail-closed | documents unscoped by visibility |\n| Portal | `GET /api/v1/search/portal` | `requireAuth` | membership org ids; empty \u2192 empty result | no audit/metric |\n| KB list | `GET /api/v1/knowledge-base` | router auth | org query param | uses sanitizer |\n| EDU KB search | `GET /api/v1/edu-automation/kb/search` | router auth | scoped client | uses sanitizer |\n| List filters (9 routes) | e.g. `GET /api/v1/assets?search=` | router auth | route-specific org filter | raw `.ilike` values, no sanitizer |\n\nAuthorization review summary: all search filters are constructed server-side; no client-supplied scope is trusted (portal derives orgs from memberships; admin derives from `req.orgScope`/memberships). The two open scoping gaps are the document-visibility filter and the explicit-org admin pin.\n\nPrivacy tests (existing): sanitizer injection suite; admin scoping/PII projection tests; audit-metadata test asserting no raw term. Missing: document-visibility search test; cross-tenant explicit-org test; portal metric/audit test.\n"
+}
