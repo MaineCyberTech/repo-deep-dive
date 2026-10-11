@@ -380,8 +380,8 @@
       "line": 362,
       "owner": "@owner",
       "target": "DATA",
-      "status": "open",
-      "note": "",
+      "status": "partially-fixed",
+      "note": "Reviewed 2026-10-11 (alert review): the ~134 MiB purges are the spool's normal buffer recycling (rotations_total 27, 17 files purged, current fill 17%; the active file rotates every 10-14 h) - the original \"nothing consumes it\" premise is corrected. The rule now fires on bursts only (256 MiB/6 h = 2+ rotations) and the routine cadence is documented.",
       "area": "DATA",
       "detail": "falcon_edge_spool_purged_bytes_total grew from 1,743,575,365 B (2026-10-09T13:30Z) to 2,146,154,182 B now: four further full 128 MiB overwrites (134 MB each) at ~10-14 h intervals after the incident recovery. The spool state file lists per-day vector-YYYYMMDD.ndjson + .1 files from 2026-09-29 to 2026-10-11, all still present; falcon_edge_spool_removed_files_total=0, so no spool file has ever been observed consumed. Per edge_spool_metrics.sh semantics an overwrite is dropped data. The live alert rule falcon-edge-spool-purge-burst fires only above 256 MiB per 6 h (90-alerting.sh:611-613), which the observed ~134 MiB/10-14 h rate never reaches. The repository does not state whether the lab edge has a standing consumer outage or is intentionally write-only. Fix: determine the spool lifecycle (drain+delete on acknowledged delivery, or explicit bounded archive); fix the consumer or record the acceptance and tune the rule (e.g. any increase over 24h with a documented acceptance)."
     },
@@ -618,8 +618,8 @@
       "line": 326,
       "owner": "@owner",
       "target": "OBS",
-      "status": "open",
-      "note": "",
+      "status": "partially-fixed",
+      "note": "2026-10-11 alert review: the top noise source (the disk-guard root storm, 35 msgs) is fixed with the root-LV remediation; the two new rules that overshot were re-tuned (container memory 2->5 GiB, spool purge 64->256 MiB). Repeat-interval/grouping tuning remains open.",
       "area": "OBS",
       "detail": "Relay FIRING counts: Oct 9 = 152, Oct 10 = 69, Oct 11 00:00-04:30 = 11 (plus 8 RESOLVED). The top Oct 10-11 offender is 'Falcon disk guard: root still below threshold' (48 firings in 28 h) because automation/validation/disk_guard.sh:64-81 posts directly to the relay on every failing 15-minute run with no rate limit. Reboot artifacts: 'Suricata restart loop' fired 02:39:28Z -> RESOLVED 03:29:33Z after the planned 02:24-02:27 kernel reboot while falcon_suricata_restarts_total = 0 (the rule fires on the uptime reset). Other repeat offenders: Disk space low 7, Offsite backup retries exhausted 6, ISM deletion burst 5, Wazuh alert feed stale 4, Root disk projected full 3, Pipeline counters 2. The maintenance-window procedure (CAPACITY_AND_TELEMETRY.md:178-183) asks for planned work to be muted/annotated and documented; the reboot was not documented. Fix: rate-limit the disk-guard alert, make the Suricata rule reboot-aware (or annotate planned reboots), and re-run the documented 7-day noise accounting. Live note: the disk-guard condition self-cleared at 04:45Z (root_free 30.78 GiB; guard 'ok') after a concurrent session pruned the oldest snapshot at 04:40Z; the counts above are the pre-clear history."
     },
