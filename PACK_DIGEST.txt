@@ -2369,7 +2369,7 @@ da6a9b7eaa62a42e1cb8e2b76b692d513ad478b13ae5e3d1d0eff70ca335501d  ./tools/collec
 6305974602de8120d5d10f63d28ccc8c5138a8952b60df75d244139199caba88  ./tools/deterministic_checks.py
 a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
-bc19d7f2786276dbb52a34fd21c5579a78e23db90cfb524bb1b8a57a50495134  ./tools/full_domain.py
+443902e2f30ac679eefb009343f16f024c718734ed5ce18915b874f4e8b745cd  ./tools/full_domain.py
 e2b1a7d0fd9629448b182e5fd26ebb38d96a4682e7a6e806de25d8531640709f  ./tools/lab-vpn/deploy-lab-api.sh
 c9d0754bb2efab55123acb973dfbc303fe753befdc22f91e4716561d0dad591f  ./tools/lab-vpn/lab-api-install.sh
 910619b05ae719c5b39ebf6d8151188a32a98d84e3b328f16aa6e6920aca69e9  ./tools/lab-vpn/lab-audit-add-agent.sh
