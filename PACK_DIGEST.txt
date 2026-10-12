@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2433
+# files: 2441
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -1413,6 +1413,14 @@ ed4d997ba658a10a93cf871b54ee4aa61f8ddc5352cd04cd9723f8c17d2e4f12  ./runs/falcon-
 8eb4f5efadbb0f1e2b0d9e22fbce34e718c6a7c9e0415f901cd50a4fc7c9e6f9  ./runs/falcon-20261011-0416-full-f5cb7c9/risk_register.md
 82bbe63360ee1df3f8a0e28cd2d7bff73faa79fcd0b8bbab00f474c550026b32  ./runs/falcon-20261011-0416-full-f5cb7c9/roadmap.md
 3263b3c73c70742d644a05c0030044553f88fbfde0592f27b70da6ea94d073c7  ./runs/falcon-20261012-verify-main-3623d2e/00_verification_findings.md
+23d7d6a227e8d2fd8262eb1ed6065ad9ad43ceba974592c75abd6f024ce97ce3  ./runs/falcon-20261012-verify-main-3623d2e/90_verification_arch-feat-ctr-infra-res.md
+3e2fe1f15470b0e1da111879644e178b3f2fccdc613cfa94a85d7c636492620c  ./runs/falcon-20261012-verify-main-3623d2e/91_verification_ci-bp-sc-sbom-det.md
+584c9d6223fbd3ae35e640670116c8343cd75dd5018d6ec88a801484132ab9f9  ./runs/falcon-20261012-verify-main-3623d2e/92_verification_data-search-api-wh-dr.md
+44e5ee3ca0187afd89433a2acc57c9793454f4651576879f742acd76f9ded224  ./runs/falcon-20261012-verify-main-3623d2e/93_verification_hygiene-inv-ai-doc.md
+6d77558c19e315211980e9b2f6b8d1c865a9e08936f61fbc1a4751b0f514a414  ./runs/falcon-20261012-verify-main-3623d2e/94_verification_orch-chain-test.md
+c958067d29199705428885c5f772942e45ecffdd7c9b7972e986979be9512d36  ./runs/falcon-20261012-verify-main-3623d2e/95_verification_perf-obs-notif.md
+1825503df6b701548ca340af95c57e7eb21b6a55b2be10bfcf845cc50fe601cf  ./runs/falcon-20261012-verify-main-3623d2e/96_verification_priv-ir-rel-evol.md
+121d5176ca0ecc4cc19f7b190be16a3058f9426588024f60040ebad043d21f46  ./runs/falcon-20261012-verify-main-3623d2e/97_verification_sec-acm-admin-secret.md
 13daed826417eb321a3baaffe01a8d8c48786018aabb3c0acf39815a3559604f  ./runs/falcon-20261012-verify-main-3623d2e/EXECUTIVE_SUMMARY.md
 fdec91761235f8cccadb7452777ab6747929d53299ab8b41852f13a77c2f4a3e  ./runs/falcon-20261012-verify-main-3623d2e/INDEX.md
 577f1e567853071fdc7c64c1c4dcc7d17461508be3c96dc02990e2accd8f5ee2  ./runs/falcon-20261012-verify-main-3623d2e/RELEASE_GATE.md
