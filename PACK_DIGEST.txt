@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2411
+# files: 2441
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -358,7 +358,7 @@ fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/2026100
 6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
 a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
-307a81f340efa8d58b433b4d0169aa8f9d738fb8f304ae7e24c132d12eb65b51  ./runs/INDEX.md
+bd8923599668f2477f5dd09e2c9325d42fc49806c2cbc5a5813954acdedccc86  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 40bec1c6610fc37de257fae4eeade2dd0610d836da3cc5e171b76118c8f89064  ./runs/bench-test-20261007-1731-main-4ecee97/EXECUTIVE_SUMMARY.md
 c3ba715b06e74f994c6be4f7367ea7ab711c9584c93a1a61eeb2858d46d246f6  ./runs/bench-test-20261007-1731-main-4ecee97/INDEX.md
@@ -1412,6 +1412,36 @@ ed4d997ba658a10a93cf871b54ee4aa61f8ddc5352cd04cd9723f8c17d2e4f12  ./runs/falcon-
 50885dd51680e0d0bbe02e2325a7a4783cbc74dd0bd42ada822b2b414c9f59c7  ./runs/falcon-20261011-0416-full-f5cb7c9/patch_plan.md
 8eb4f5efadbb0f1e2b0d9e22fbce34e718c6a7c9e0415f901cd50a4fc7c9e6f9  ./runs/falcon-20261011-0416-full-f5cb7c9/risk_register.md
 82bbe63360ee1df3f8a0e28cd2d7bff73faa79fcd0b8bbab00f474c550026b32  ./runs/falcon-20261011-0416-full-f5cb7c9/roadmap.md
+3263b3c73c70742d644a05c0030044553f88fbfde0592f27b70da6ea94d073c7  ./runs/falcon-20261012-verify-main-3623d2e/00_verification_findings.md
+23d7d6a227e8d2fd8262eb1ed6065ad9ad43ceba974592c75abd6f024ce97ce3  ./runs/falcon-20261012-verify-main-3623d2e/90_verification_arch-feat-ctr-infra-res.md
+3e2fe1f15470b0e1da111879644e178b3f2fccdc613cfa94a85d7c636492620c  ./runs/falcon-20261012-verify-main-3623d2e/91_verification_ci-bp-sc-sbom-det.md
+584c9d6223fbd3ae35e640670116c8343cd75dd5018d6ec88a801484132ab9f9  ./runs/falcon-20261012-verify-main-3623d2e/92_verification_data-search-api-wh-dr.md
+44e5ee3ca0187afd89433a2acc57c9793454f4651576879f742acd76f9ded224  ./runs/falcon-20261012-verify-main-3623d2e/93_verification_hygiene-inv-ai-doc.md
+6d77558c19e315211980e9b2f6b8d1c865a9e08936f61fbc1a4751b0f514a414  ./runs/falcon-20261012-verify-main-3623d2e/94_verification_orch-chain-test.md
+c958067d29199705428885c5f772942e45ecffdd7c9b7972e986979be9512d36  ./runs/falcon-20261012-verify-main-3623d2e/95_verification_perf-obs-notif.md
+1825503df6b701548ca340af95c57e7eb21b6a55b2be10bfcf845cc50fe601cf  ./runs/falcon-20261012-verify-main-3623d2e/96_verification_priv-ir-rel-evol.md
+121d5176ca0ecc4cc19f7b190be16a3058f9426588024f60040ebad043d21f46  ./runs/falcon-20261012-verify-main-3623d2e/97_verification_sec-acm-admin-secret.md
+13daed826417eb321a3baaffe01a8d8c48786018aabb3c0acf39815a3559604f  ./runs/falcon-20261012-verify-main-3623d2e/EXECUTIVE_SUMMARY.md
+fdec91761235f8cccadb7452777ab6747929d53299ab8b41852f13a77c2f4a3e  ./runs/falcon-20261012-verify-main-3623d2e/INDEX.md
+577f1e567853071fdc7c64c1c4dcc7d17461508be3c96dc02990e2accd8f5ee2  ./runs/falcon-20261012-verify-main-3623d2e/RELEASE_GATE.md
+ec277bacbd52f47e14313ec591a2f79ed722073b88da6e88477c5a4b4a97a57d  ./runs/falcon-20261012-verify-main-3623d2e/_domains/deterministic.json
+a233f614f253502b14fb91d816193f8bcbfcfabf2f6feef61d04adb1765f7d3a  ./runs/falcon-20261012-verify-main-3623d2e/audit_manifest.json
+6bd55ac090eeb394b48d247330f44f4afb47da3aac58a934e6439ca87d18c9af  ./runs/falcon-20261012-verify-main-3623d2e/coverage.md
+bdd8a4fef7173f694918b16e4cd9d74471f21f2c2ae352ea2ea54d8ea1e92fb5  ./runs/falcon-20261012-verify-main-3623d2e/deterministic-findings.json
+6516b70da8a51a30759a54805e3b8fabbfb812bca3b54d91d57fee79e4894e24  ./runs/falcon-20261012-verify-main-3623d2e/findings.json
+299845ad3c92797bce57fe3e0d136aeedf02f17c02976162edc9b72568b209be  ./runs/falcon-20261012-verify-main-3623d2e/follow_up_register.md
+f34d0cb36e5d212ffe373c506ad54090c86e8259059a55afd004cfa8d2389d47  ./runs/falcon-20261012-verify-main-3623d2e/patch_plan.md
+2a27684e8610cd8da931b4d258b6c5102fc0158786ac5e29c795f2bd2b5478cb  ./runs/falcon-20261012-verify-main-3623d2e/risk_register.md
+da68d76b765c9ef9c48c0807455e0cc70e814ff905057f50455dacf110f486eb  ./runs/falcon-20261012-verify-main-3623d2e/roadmap.md
+23d7d6a227e8d2fd8262eb1ed6065ad9ad43ceba974592c75abd6f024ce97ce3  ./runs/falcon-20261012-verify-main-3623d2e/verification/arch-feat-ctr-infra-res.md
+3e2fe1f15470b0e1da111879644e178b3f2fccdc613cfa94a85d7c636492620c  ./runs/falcon-20261012-verify-main-3623d2e/verification/ci-bp-sc-sbom-det.md
+584c9d6223fbd3ae35e640670116c8343cd75dd5018d6ec88a801484132ab9f9  ./runs/falcon-20261012-verify-main-3623d2e/verification/data-search-api-wh-dr.md
+44e5ee3ca0187afd89433a2acc57c9793454f4651576879f742acd76f9ded224  ./runs/falcon-20261012-verify-main-3623d2e/verification/hygiene-inv-ai-doc.md
+6d77558c19e315211980e9b2f6b8d1c865a9e08936f61fbc1a4751b0f514a414  ./runs/falcon-20261012-verify-main-3623d2e/verification/orch-chain-test.md
+c958067d29199705428885c5f772942e45ecffdd7c9b7972e986979be9512d36  ./runs/falcon-20261012-verify-main-3623d2e/verification/perf-obs-notif.md
+1825503df6b701548ca340af95c57e7eb21b6a55b2be10bfcf845cc50fe601cf  ./runs/falcon-20261012-verify-main-3623d2e/verification/priv-ir-rel-evol.md
+121d5176ca0ecc4cc19f7b190be16a3058f9426588024f60040ebad043d21f46  ./runs/falcon-20261012-verify-main-3623d2e/verification/sec-acm-admin-secret.md
+3c901e3dc65c1699d8a50bc5f7d0ac8c557e76fa72a0607704701c82c38c4248  ./runs/falcon-20261012-verify-main-3623d2e/verification_log.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md
@@ -2367,10 +2397,10 @@ d512d0850051351678915e3ee0dc823a9fff8caf43cbc8b087e83fec74ea4c34  ./templates/ri
 5c0c4cfe71fc838086291f520592ae93d4cb6a8ef7fcf4b45effce0cadff4055  ./tools/apply_approvals.py
 191ae3b3962ec8a05d6931bcd819beaaf00043ba08b65e9f0e9f21dfebf885be  ./tools/check_run.sh
 da6a9b7eaa62a42e1cb8e2b76b692d513ad478b13ae5e3d1d0eff70ca335501d  ./tools/collect_findings.py
-6305974602de8120d5d10f63d28ccc8c5138a8952b60df75d244139199caba88  ./tools/deterministic_checks.py
+3268887ecfb8d69b5e30697e7c797bb0080b36b27e4cb780696ddd54bfe827ad  ./tools/deterministic_checks.py
 a551e0a460a2442f65afbf9cf104691bb64f8a37c08dde8e6285dee717844f6d  ./tools/diff_runs.py
 afd6b4232ad17e081b6d33d51f7eebbac43c28d48dbdb69401236958fa264b60  ./tools/findings_to_csv.py
-443902e2f30ac679eefb009343f16f024c718734ed5ce18915b874f4e8b745cd  ./tools/full_domain.py
+d8f4a28595bf5d6499e1e9bcfcc810bf3c56cd8516e46652246332c81f3af955  ./tools/full_domain.py
 e2b1a7d0fd9629448b182e5fd26ebb38d96a4682e7a6e806de25d8531640709f  ./tools/lab-vpn/deploy-lab-api.sh
 c9d0754bb2efab55123acb973dfbc303fe753befdc22f91e4716561d0dad591f  ./tools/lab-vpn/lab-api-install.sh
 910619b05ae719c5b39ebf6d8151188a32a98d84e3b328f16aa6e6920aca69e9  ./tools/lab-vpn/lab-audit-add-agent.sh
