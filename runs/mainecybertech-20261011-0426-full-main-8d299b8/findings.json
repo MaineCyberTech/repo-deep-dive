@@ -780,7 +780,7 @@
       "line": 480,
       "owner": "platform engineering / audit owner",
       "target": "this week",
-      "status": "open",
+      "status": "partially-fixed",
       "note": ""
     },
     {
@@ -2496,7 +2496,7 @@
       "line": 395,
       "owner": "audit owner / implementation lead",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
@@ -2507,7 +2507,7 @@
       "line": 396,
       "owner": "audit owner + release owner",
       "target": "this month",
-      "status": "open",
+      "status": "verified-fixed",
       "note": ""
     },
     {
