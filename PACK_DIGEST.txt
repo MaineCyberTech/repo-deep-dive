@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2442
+# files: 2461
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -358,7 +358,7 @@ fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/2026100
 6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
 a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
-bd8923599668f2477f5dd09e2c9325d42fc49806c2cbc5a5813954acdedccc86  ./runs/INDEX.md
+9cb605f84c7dddc8903608c42eeb37aaf8caaf48b7efe95071585b2842987f37  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 40bec1c6610fc37de257fae4eeade2dd0610d836da3cc5e171b76118c8f89064  ./runs/bench-test-20261007-1731-main-4ecee97/EXECUTIVE_SUMMARY.md
 c3ba715b06e74f994c6be4f7367ea7ab711c9584c93a1a61eeb2858d46d246f6  ./runs/bench-test-20261007-1731-main-4ecee97/INDEX.md
@@ -1929,6 +1929,25 @@ d30d9381ef75f6fedbf17f9fad37cd1e62285f8d647b12b5e730a54555a896d4  ./runs/mainecy
 9cbcfd9dcb6ae6504c44fb3a6f7092b139084a9678b4b2ffb22f870dfedf8ec3  ./runs/mainecybertech-20261011-0426-full-main-8d299b8/patch_plan.md
 373a7811833142cf4f65eaf8ff0df494fcd280606f67d3cb4d06b143429e939e  ./runs/mainecybertech-20261011-0426-full-main-8d299b8/risk_register.md
 6b5ff2c2f860fe35d6cc39907b96a604690d64364ba7bf07a52b346ab9a8b80a  ./runs/mainecybertech-20261011-0426-full-main-8d299b8/roadmap.md
+c2e291e0a57e86f4240a151ec3070f31bf25972b6e295581b54c247442f3e58a  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/06_security_authz_tenancy_audit.md
+766e4e8c7a0ab911daf257d2317a204a83a4ac097c28abf311eb9262d2dab5f6  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/10_github_actions_cicd_governance.md
+8c0588f1c472dd8b2fd7986cbfc91d3cfca0bf0a312137e693ad664e71cd0550  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/11_supply_chain_dependency_secrets.md
+b18aa31677d3ece11abedbcb60b23749a3af054118be9c4df626cf1d029f275e  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/EXECUTIVE_SUMMARY.md
+e26ec04fe220c4215ff9e96cab1ef9e94eda46541c399b809fb05b0f3f84c493  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/INDEX.md
+625e73653521b51490dc7896cedc4244fdbe04c7fbc8de2961c2827da7e090dd  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/RELEASE_GATE.md
+55504bd400fb91f8867fc72abd17a310211d5b61a4810394e5ce4976761d1132  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/_domains/06_security_authz_tenancy_audit.json
+c10e746ee5ef13ca8e5925da5107cd13863f8ba01bcb2e166075a217f0ce50f3  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/_domains/10_github_actions_cicd_governance.json
+60e583178afe48e4dc5cf535c7a47cea158d3eb22b589942a1dba8b7528fc7e6  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/_domains/11_supply_chain_dependency_secrets.json
+8552d09f73bf1c8a942249ca7d51e4d2db74d745fec5aa501ab4f81bce00662c  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/_domains/deterministic.json
+fe0762aca549413be636c4cf552aff143077d9dff8b7223d6e8a016ee3c30034  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/audit_manifest.json
+b88e9292b50a3bd47a06456608446f2c81e07a46ded4b3a57d9628f7f0ee0313  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/coverage.md
+1dbfb39ad2b0b29c35ecef000fd28cf0ea3ad772152478b37e635758ba87860f  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/deterministic-findings.json
+2e6693d8e1dd95a31f6a59418ccd2ed571b8549df0d4068952035d3ed16199b7  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/findings.json
+5fd82eb9ffc5e4793a2c4dd4d9e768816a1df46a3cc54489b0165688d677196e  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/follow_up_register.md
+d30d9381ef75f6fedbf17f9fad37cd1e62285f8d647b12b5e730a54555a896d4  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/lens_deterministic.md
+e753060df0977e4592df54ba6646e16e094e270ed55f934f4740d8f11dfa32fa  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/patch_plan.md
+5fd82eb9ffc5e4793a2c4dd4d9e768816a1df46a3cc54489b0165688d677196e  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/risk_register.md
+ffc833518e0d7cb2f524e3d121b1416f67dea618a537e2b276f88a138d210091  ./runs/mainecybertech-20261013-0126-fast-develop-905ed63/roadmap.md
 53ea972dba482a93f9b1e56a258fb34c93f3fb74029bbae4e5cb1c40690bc6e8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/01_repository_inventory.md
 0433784fa075d280e13110bc99e53ed64d69697556c0a2f75aeb803c01b9a5a2  ./runs/repo-deep-dive-20261003-0018-main-7bac320/02_architecture_runtime_topology.md
 16ff374ec50ad2e9e4c1ded7057baff426ba3e8d248d6901024bc57e8397d8a4  ./runs/repo-deep-dive-20261003-0018-main-7bac320/03_feature_implementation_map.md
