@@ -11,7 +11,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | ARCH-P1-001 | P1 | Single-host concentration: host loss is total pipeline loss | @owner | ARCH | owner-accepted | owner-accepted (owner-gated residual, no infra change): documented RTO/RPO acceptance; see OWNER_GATED_PROPOSALS.md |
 | BP-P1-001 | P1 | Branch protection and required checks are plan-gated and unenforceable server-side | @owner | BP | owner-accepted |  |
 | CI-P1-001 | P1 | Branch protection and required checks are not enforced server-side | @owner | CI | owner-accepted |  |
-| DATA-P1-001 | P1 | Wazuh and IRIS data have no retention (unbounded index growth) | @owner | DATA | owner-accepted | owner-accepted (owner-gated residual, no infra change): proposed Wazuh/IRIS retention; see OWNER_GATED_PROPOSALS.md |
+| DATA-P1-001 | P1 | Wazuh and IRIS data have no retention (unbounded index growth) | @owner | DATA | owner-accepted | owner-accepted (owner-gated residual, no infra change): proposed Wazuh/IRIS retention; see OWNER_GATED_PROPOSALS.md · Post-audit 2026-10-09: capacity work landed — C7 retirement executed (7 migrated volumes deleted; root 68%->49%) and the OpenSearch snapshot repo (~56 GiB) relocated off the data LV (87%->60%); the day's data-LV watermark incident was recovered and the watermarks re-secured (93/96/98 persistent). The retention decision itself remains owner-gated. Evidence: falcon PR #49 (ops/20261009-snapshot-repo-relocate-clean), falcon decision log 2026-10-09, REVIEW-FIX 20261009T191309Z + 20261009T200936Z. |
 | FINAL-P1-001 | P1 | Operational resilience remains incomplete across the backup lifecycle | @owner | FINAL | verified-fixed | merged falcon PR #48 commit 27ed41321ffb9bbfdfc76c257e0d3fc995e96211 (end-to-end restore assertion in the release gate) |
 | HYGIENE-P1-001 | P1 | Committed `review-package/` is a stale snapshot duplicate of the source tree | @owner | HYGIENE | verified-fixed | merged falcon PR #43 commit a2dded8f4df2148d5304d5023bbc742b94304c6c (review-package untracked) |
 | ADMIN-P2-001 | P2 | Admin/observability consoles are exposed through public routers without origin authentication | @owner | ADMIN | still-open |  |
@@ -26,7 +26,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | INV-P2-001 | P2 | Repository is majority generated/derived content with no in-repo regeneration or drift check | @owner | INV | partially-fixed |  |
 | NOTIF-P2-001 | P2 | Public ntfy routers lack origin authentication; `ntfy-auth` middleware is not wired | @owner | NOTIF | still-open |  |
 | SBOM-P2-001 | P2 | Release/SBOM artifacts are integrity-checked but unsigned; image/SBOM license gate not enforced | @owner | SBOM | open |  |
-| SEARCH-P2-001 | P2 | Search/index retention is enforced only for falcon-eve; Wazuh/IRIS indices grow unbounded | @owner | SEARCH | still-open |  |
+| SEARCH-P2-001 | P2 | Search/index retention is enforced only for falcon-eve; Wazuh/IRIS indices grow unbounded | @owner | SEARCH | still-open | Post-audit 2026-10-09: partial progress — the snapshot repo no longer shares the data LV (relocated to the root LV; data LV 87%->60%), reducing the reactive pressure on this row; Wazuh/IRIS index retention remains open (owner-gated proposal unchanged). Evidence: falcon PR #49. |
 | SEC-P2-001 | P2 | Public-facing routers have no origin authentication; `ntfy-auth` is dead config | @owner | SEC | still-open |  |
 | SECRET-P2-001 | P2 | Inherited credential estate is still pending rotation and 28 vendored scripts source credential files wholesale | @owner | SECRET | still-open |  |
 | ACM-P3-001 | P3 | No consolidated access-control matrix; authorization is per-service basic-auth / console accounts | @owner | ACM | open |  |
@@ -36,7 +36,7 @@ Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.
 | DET-P3-002 | P3 | [SUPPLY] 58 container image(s) without a digest pin | @owner | DET | open |  |
 | DET-P3-003 | P3 | [SUPPLY] hadolint not available on the check runner (Dockerfile lint skipped) | @owner | DET | open |  |
 | DET-P3-004 | P3 | [DEP] trivy not available on the check runner (dependency vuln scan skipped) | @owner | DET | open |  |
-| DR-P3-001 | P3 | Offsite/dead-man residuals remain owner-side; no scheduled restore assertion in CI | @owner | DR | still-open |  |
+| DR-P3-001 | P3 | Offsite/dead-man residuals remain owner-side; no scheduled restore assertion in CI | @owner | DR | still-open | Post-audit 2026-10-09: DO half restored — the DigitalOcean host-log TLS forwarder is live again over the VPN (rsyslog omfwd/TLS; verified end-to-end 20:23:25Z) and the offsite freshness catch-up completed (stamp 19:01Z). The scheduled restore assertion in CI and other owner-side residuals stay open. Evidence: falcon PR #49 commit 2; capacity runbook "DO host-log forwarding over the VPN" section. |
 | INV-P3-001 | P3 | Legacy host-absolute evidence paths require manual rewrite to resolve in a clone | @owner | INV | partially-fixed |  |
 | REL-P3-001 | P3 | No root CHANGELOG/release-notes generator; release notes live only in mct/ | @owner | REL | open |  |
 | WH-P3-001 | P3 | Webhook/relay delivery has no replay/idempotency evidence for Shuffle and ntfy paths | @owner | WH | open |  |

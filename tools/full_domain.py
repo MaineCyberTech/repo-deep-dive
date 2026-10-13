@@ -183,10 +183,10 @@ def pack_version():
 
 
 def default_run(repo, mode, branch, sha):
-    # Run ids must start with the UTC start time as `YYYYMMDD-HHMM-` so they
-    # satisfy the published-run lifecycle convention (`^[0-9]{8}-[0-9]{4}-`)
-    # enforced by consumer CI (e.g. falcon's audit_run_lifecycle.sh); the
-    # mode/branch/sha suffix follows the timestamp.
+    # Run ids carry the repo as a prefix and the UTC start time as `YYYYMMDD-HHMM-`
+    # (e.g. falcon-20261011-0416-full-main-abc1234). The lifecycle convention requires the
+    # timestamp as the first numeric group; the falcon consumer accepts the optional repo
+    # prefix (automation/validation/audit_run_lifecycle.sh, broadened 2026-10-11, ORCH-P3-001).
     return "%s-%s-%s-%s-%s" % (repo, datetime.now(timezone.utc).strftime("%Y%m%d-%H%M"),
                                mode, branch or "manual", (sha or "manual")[:7])
 
@@ -197,10 +197,10 @@ def run_dir_for(args, run):
     return pack_path("runs", run)
 
 
-def manifest_for(repo, branch, sha, run, mode, domains, repo_root):
+def manifest_for(repo, branch, sha, run, mode, domains, repo_root, profile="base"):
     return {
         "pack": "repo-deep-dive-full-hardening-audit-pack",
-        "profile": "base",
+        "profile": profile,
         "version": pack_version(),
         "promptCount": len([d for d in domains if d["kind"] == "prompt"]),
         "recommendedName": "repo-deep-dive",
@@ -216,7 +216,7 @@ def manifest_for(repo, branch, sha, run, mode, domains, repo_root):
             "branch": branch,
             "commit": sha,
             "shortCommit": (sha or "")[:7],
-            "profile": "base",
+            "profile": profile,
             "readOnly": True,
             "secretsRedacted": True,
             "generatedAt": now(),
@@ -237,7 +237,7 @@ def render_index(m, domains, coverage, counts):
         "- Name: %s" % m["scope"]["name"],
         "- Run: `%s`" % m["run"],
         "- Mode: %s" % m.get("mode", "full"),
-        "- Profile: base",
+        "- Profile: %s" % m.get("profile", "base"),
         "- Target repo: `%s`" % m["scope"].get("targetRepo", ""),
         "- Branch: `%s`" % m["scope"].get("branch", ""),
         "- Commit: `%s`" % m["scope"].get("shortCommit", ""),
@@ -418,8 +418,9 @@ def render_deterministic_report(d, rows):
 
 def register_md(run, m, findings):
     lines = ["# Follow-up register", "",
-             "Run: `%s` · Target: `%s` @ `%s` · Profile: base" % (
-                 run, m["scope"]["name"], m["scope"].get("shortCommit", "")), "",
+             "Run: `%s` · Target: `%s` @ `%s` · Profile: %s" % (
+                 run, m["scope"]["name"], m["scope"].get("shortCommit", ""),
+                 m.get("profile", "base")), "",
              "Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.", "",
              "| Finding | Severity | Title | Owner | Target | Status | Note |",
              "|---|---|---|---|---|---|---|"]
@@ -604,7 +605,7 @@ def cmd_init(a):
         die("refusing to touch non-empty directory: %s" % run_dir)
     os.makedirs(run_dir, exist_ok=True)
     os.makedirs(os.path.join(run_dir, "_domains"), exist_ok=True)
-    m = manifest_for(a.repo, a.branch, a.sha, run, mode, domains, a.repo_root)
+    m = manifest_for(a.repo, a.branch, a.sha, run, mode, domains, a.repo_root, a.profile)
     write_text(os.path.join(run_dir, "audit_manifest.json"), json.dumps(m, indent=2) + "\n")
     write_text(os.path.join(run_dir, "INDEX.md"),
                render_index(m, domains, {}, {"total": 0, "bySeverity": {}}))
@@ -714,6 +715,10 @@ def main(argv=None):
     p.add_argument("--mode", choices=("fast", "full"), default="fast")
     p.add_argument("--fast", dest="mode", action="store_const", const="fast")
     p.add_argument("--full", dest="mode", action="store_const", const="full")
+    # ORCH-P2-002 (2026-10-11): record the audit profile so heavier profile layouts (e.g.
+    # falcon-lab, 46 prompts + 5 lenses) are representable and distinguishable in the
+    # manifest; the domain set still comes from the pack's master runner.
+    p.add_argument("--profile", default="base", help="audit profile label (default: base)")
     p.set_defaults(fn=cmd_init)
 
     p = sub.add_parser("emit")

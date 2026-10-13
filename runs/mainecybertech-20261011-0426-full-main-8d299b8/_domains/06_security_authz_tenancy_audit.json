@@ -1,0 +1,704 @@
+{
+  "domain": "06_security_authz_tenancy_audit",
+  "file": "06_security_authz_tenancy_audit.md",
+  "area": "SEC",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:46Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "super_admin role can be granted through membership/onboarding/bulk-invite APIs without the /users/:id/role guard",
+      "evidence": [
+        "apps/api/src/routes/users.ts:406-420 \u2014 PATCH /users/:id/role explicitly refuses to assign the super_admin role unless the caller's profile has is_super_admin=true (the intended guard)",
+        "apps/api/src/validators/membership.ts:3-8 \u2014 updateMembershipSchema accepts any roleId uuid plus status, with no super_admin check",
+        "apps/api/src/routes/memberships.ts:95-104 \u2014 POST /memberships/invite inserts a membership with a caller-supplied roleId",
+        "apps/api/src/routes/memberships.ts:123-139 \u2014 PATCH /memberships/:id updates role_id/status for any membership in the caller's org scope (loadOwned checks the org, not the role)",
+        "apps/api/src/routes/bulk.ts:145-151 \u2014 bulk invite inserts memberships with a caller-supplied roleId under requireAdmin",
+        "apps/api/src/validators/organization.ts:42 + apps/api/src/routes/organizations.ts:77-125 \u2014 POST /organizations/onboard resolves an arbitrary adminRoleKey and inserts an approved membership with it",
+        "apps/api/src/lib/roles.ts:27,58-60 + apps/api/src/middleware/org-access.ts:37-60 \u2014 the super_admin role is the cross-tenant trust tier; middleware/admin.ts:49-58 only lets super_admin (not tenant admin) act while org-pinned",
+        "grep for triggers/guards on memberships role assignment in supabase/migrations \u2014 none found; service-role writes bypass RLS"
+      ],
+      "impact": "A user holding the delegable users:manage permission, or any tenant admin, can create or edit a membership with role_id = super_admin (self, a colleague, or a new invited account). That moves the account into the cross-tenant trust tier: requireOrgAccess then grants access to every tenant as a platform admin (audited impersonation), and requireAdmin's org pinning from ADMIN-P1-001 no longer applies. The escalation path exists on three separate APIs while only one of four role-write paths is guarded.",
+      "recommendation": "Centralize role-assignment authorization in one helper (reject role key super_admin unless the caller profile is_super_admin) and use it from memberships invite/PATCH, bulk invite, organizations/onboard, and users/:id/role. Add regression tests for each path. Consider a DB trigger rejecting super_admin membership inserts/updates unless performed by a service context that carries an explicit super-admin assertion.",
+      "owner": "API principal engineer / security",
+      "target": "this week",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. The /users/:id/role guard (users.ts:411-419) proves the intent; the membership and onboarding paths lack the same check.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Worker monitoring checks are guard-then-fetch (DNS-rebinding TOCTOU); webhook path is pinned but uptime/website checks and SSL probe are not",
+      "evidence": [
+        "apps/worker/src/tasks/module-tasks.ts:540,548-551 \u2014 uptime checks call assertSafeUrl() then plain fetch(check.url)",
+        "apps/worker/src/tasks/module-tasks.ts:590,602-605 \u2014 website monitors repeat the same guard-then-fetch pattern",
+        "apps/worker/src/tasks/module-tasks.ts:27-42 \u2014 fetchSslExpiry does a raw tls.connect({ host, port }) with no IP validation or pinning at all",
+        "apps/worker/src/tasks/webhook-dispatcher.ts:150 and apps/worker/src/tasks/webhook-retry.ts:122 \u2014 outbound webhooks already use pinnedFetch (the SEC-P2-002 fix), so the safe pattern exists in the same codebase",
+        "apps/worker/src/lib/ssrf-guard.ts:79-108 \u2014 the guard resolves DNS once; the subsequent fetch resolves again"
+      ],
+      "impact": "A tenant admin who can create an uptime or website monitor (normal product feature) can supply a hostname that answers with a public IP for assertSafeUrl and a loopback/private/link-local address for the connection. The worker runs on the production droplet, so this is SSRF into Redis, Prometheus/Alertmanager, Caddy internals, or the DigitalOcean metadata endpoint (169.254.169.254). The webhook delivery path is fixed; monitoring is a residual of the same defect class.",
+      "recommendation": "Route uptime/website checks through pinnedFetch (or an equivalent pinned dispatcher) and pin the TLS socket in fetchSslExpiry to the validated address. Share a single SSRF/pinned-fetch module between apps/api and apps/worker so the guard cannot drift per call site.",
+      "owner": "API/worker platform engineer",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; SEC-P2-002 (webhook SSRF TOCTOU) is verified-fixed for webhooks, this is the monitoring residual.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "PII field encryption is additive: plaintext profile columns remain the source of truth and are still returned",
+      "evidence": [
+        "supabase/migrations/5302135_profiles_encrypted_pii.sql:3-6,25-26 \u2014 the plaintext columns (full_name, email, phone, title) are intentionally kept as the source of truth for responses; encrypted_pii is a mirror",
+        "apps/api/src/routes/profiles.ts:159-175 \u2014 PATCH writes updateData.full_name/phone/title AND updateData.encrypted_pii",
+        "apps/api/src/routes/profiles.ts:61,108 \u2014 GET /profiles selects '*' so the raw encrypted_pii blob is returned to clients alongside the plaintext columns",
+        "apps/api/src/lib/field-encryption.ts:39-58 \u2014 encryptField fails closed in production (SEC-P1-001 fix), but nothing consumes decryptProfilePii on the read path (grep: only the lib and tests reference it)"
+      ],
+      "impact": "The at-rest encryption control does not protect the PII it targets: a database read (backup, replica, leaked service key, SQL injection) still yields plaintext values in the same row. The encrypted copy adds schema/complexity and can drift from the plaintext columns without detection.",
+      "recommendation": "Complete the cutover the migration scaffold describes: read through decryptProfilePii, run scripts/backfill-profile-pii.mjs, then drop or null the plaintext columns (or replace them with a keyed hash for lookup), and add tests proving plaintext is not persisted. If the cutover is deferred, document it as a dated plan and stop advertising field-level encryption as effective at rest.",
+      "owner": "API/backend + data governance",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d. SEC-P1-001 (fail-closed encryption) is verified-fixed; this is the coverage gap of the control itself.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Global role catalog is mutable by any org's roles:manage holder (roles are not org-scoped)",
+      "evidence": [
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:161-168 \u2014 public.roles has no organization_id column (single global catalog)",
+        "apps/api/src/routes/roles.ts:96,139,185,252 \u2014 POST/PATCH/DELETE /roles and PUT /roles/:id/permissions are gated only by requirePermission('roles','manage'), with no requireOrgAccess or platform-admin check",
+        "apps/api/src/routes/roles.ts:269-271 \u2014 only the super_admin role's permissions are protected; every other role (including system roles used by other tenants) can have permissions granted or revoked",
+        "apps/api/src/middleware/permissions.ts:63-88 \u2014 with no resolvable org the caller's permission set is unioned across all of their orgs, so roles:manage in one tenant satisfies the gate",
+        "supabase/migrations/5302424_manage_actions.sql:22-29 \u2014 roles:manage is granted to admin/super_admin today but is delegable to custom roles"
+      ],
+      "impact": "A delegated roles:manage holder (or any tenant admin, who bypasses the permission check) can rewrite the global authorization catalog for every tenant: grant themselves or a custom role extra permissions, or strip permissions from shared roles. Cross-tenant integrity of the RBAC model is not enforced at the API layer.",
+      "recommendation": "Gate global role/permission mutations on a platform-admin check (is_super_admin profile, matching resolveAdminTenantScope's allTenants rule) or make custom roles organization-scoped. Audit-log the actor's org context for every catalog mutation.",
+      "owner": "API platform / security",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "New finding at 8d299b8d; related to ACM-P2-004 (action mismatch) but a distinct cross-tenant integrity gap.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "API-key scopes are stored but never enforced; keys act with the creating user's full permissions and always bypass RLS",
+      "evidence": [
+        "apps/api/src/middleware/api-key.ts:75,99 \u2014 key permissions are loaded from api_keys.permissions and returned",
+        "apps/api/src/middleware/auth.ts:70-82 \u2014 they are attached to req.apiKey.permissions, but middleware/permissions.ts never reads req.apiKey (grep 'req.apiKey' finds only auth.ts)",
+        "apps/api/src/routes/api-keys.ts:17-21 \u2014 the create schema has no permissions field, so no key is ever scoped through the API; api_keys.permissions defaults to '[]' (supabase/migrations/5302042_api_keys.sql:8)",
+        "apps/api/src/services/supabase.ts:210 \u2014 getScopedClient only returns the user-scoped (RLS) client when req.userJwt is set; API-key requests never set it, so keys always run with the service-role client",
+        "apps/api/src/routes/api-keys.ts:34-53 \u2014 GET /api/v1/api-keys has no requirePermission, so any org member can list key prefixes/last-used metadata"
+      ],
+      "impact": "(a) Any key scoped directly in the database silently acts with the creator's full permission set instead of its stored scopes; (b) the RLS rollout (docs/RLS-rollout.md) never covers machine credentials, so key traffic remains service-role by design; (c) key metadata is readable by every org member although docs/modules/api-keys.md describes the surface as admin-managed.",
+      "recommendation": "Enforce req.apiKey.permissions in requirePermission (intersect with resolved permissions) or drop the column and document that keys inherit the creator's permissions. Add permissions to the create schema + admin UI if scoping is intended. Require a permission on GET /api-keys. Document the RLS-bypass for API keys.",
+      "owner": "API platform / security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; verified while re-checking FEAT-P2-001 (API keys authenticate) and ACM-P2-006 (expiry).",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "MFA enforcement is opt-in and the deployed default is false",
+      "evidence": [
+        "apps/api/src/lib/mfa.ts:28-30,84-95 \u2014 requiresSecondFactor returns false unless MFA_ENFORCEMENT_ENABLED === 'true'; the factor lookup fails open on a GoTrue error",
+        "apps/api/src/config/env.ts:64-67 \u2014 MFA_ENFORCEMENT_ENABLED is optional with no default",
+        ".github/workflows/deploy-do.yml:693 \u2014 the deploy writes ${MFA_ENFORCEMENT_ENABLED:-false}",
+        "infra/digitalocean/docker-compose.yml:89 \u2014 MFA_ENFORCEMENT_ENABLED: ${MFA_ENFORCEMENT_ENABLED:-false}",
+        "docs/MFA.md:48,63 \u2014 documented as opt-in and requiring an operator to set the flag"
+      ],
+      "impact": "Unless an operator flips a secret, admin/super_admin accounts can operate with a password-only (aal1) session. For an MSP security portal, the highest-privilege accounts are on a single factor by default; TOTP enrollment is available but not enforced.",
+      "recommendation": "Enforce aal2 for admin/super_admin roles specifically (a role-aware policy in lib/mfa.ts), or flip the production default to true and document the rollout in docs/MFA.md. Add an alert when an admin session is aal1.",
+      "owner": "API platform / security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; not present in the previous register. Explicit product decision required.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Sign-up confirmation redirect is built from the caller-controlled Host header and targets a non-existent API route",
+      "evidence": [
+        "apps/api/src/routes/auth.ts:182 \u2014 emailRedirectTo: `${req.protocol}://${req.get('host')}/auth/callback` (Host header is caller-controlled)",
+        "apps/api/src/routes/auth.ts:33-57 \u2014 forgot-password by contrast resolves a trusted origin via resolveTrustedRedirectOrigin (CHAIN-P1-002 fix)",
+        "apps/api/src/app.ts:174 \u2014 the API only serves POST /api/v1/auth/callback; there is no GET /auth/callback on the API origin",
+        "apps/web/app/auth/callback/route.ts:8 \u2014 the web callback lives at /auth/callback on the web origin",
+        "supabase/config.toml.production.example:29-34 \u2014 additional_redirect_urls allowlists only portal/auth callback URLs, so Supabase is expected to fall back to site_url"
+      ],
+      "impact": "A caller-controlled host is echoed into a Supabase confirmation email redirect. Supabase's redirect allowlist is the only thing preventing the link from pointing at an attacker host (phishing/redirect, and token/code delivery to a third party if the allowlist is loosened). The API-origin path is also wrong for the real web callback, so the flow depends entirely on Supabase's fallback.",
+      "recommendation": "Build emailRedirectTo from APP_BASE_URL (or resolveTrustedRedirectOrigin) plus the web callback path, mirroring the forgot-password fix; add a regression test asserting a spoofed Host cannot influence the redirect.",
+      "owner": "API team / security",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "New finding at 8d299b8d. Exploitability depends on the Supabase project's redirect allowlist (not verifiable from the repo).",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Analytics admin reads are not tenant-scoped and expose platform-wide event data including visitor IPs",
+      "evidence": [
+        "apps/api/src/routes/analytics.ts:64-91 \u2014 GET /api/v1/analytics and /api/v1/analytics/summary require only requireAuth + requireAdmin (no requireOrgAccess, no org predicate)",
+        "supabase/migrations/5302106_store_analytics.sql:1-15 \u2014 store_analytics_events has no organization_id; rows carry ip_address and user_agent",
+        "apps/api/src/lib/admin-scope.ts:55-57 \u2014 the hardened cross-tenant rule requires is_super_admin AND a cross-tenant role, but these routes do not use it"
+      ],
+      "impact": "Any tenant admin (admin in any single org) can read the platform-wide store analytics table, including visitor IP addresses and user agents. That is platform data exposed to a tenant-scoped role and a privacy exposure of third-party visitors.",
+      "recommendation": "Restrict platform-wide analytics reads to super_admin (or apply resolveAdminTenantScope/allTenants), or add organization scoping to the events table if per-tenant analytics are intended.",
+      "owner": "API platform / security",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d; also the surface for SEC-P2-006 (undefined RPC).",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Auth rate-limit key uses the raw email string without normalization",
+      "evidence": [
+        "apps/api/src/middleware/rate-limit.ts:48-53 \u2014 rateLimitAuth keyGenerator returns `email:${email}` using body.email verbatim (no trim/toLowerCase)",
+        "apps/api/src/middleware/rate-limit.ts:61-64 \u2014 rateLimitEmail normalizes with email.toLowerCase(), showing the intended form"
+      ],
+      "impact": "Per-account sign-in/reset throttling can be split across case variants of the same mailbox (e.g. User@x vs user@x), multiplying the effective attempts per account; only the global IP bucket (300/15 min) remains as the ceiling.",
+      "recommendation": "Normalize the email key (trim + toLowerCase) in rateLimitAuth, matching rateLimitEmail; add a unit test for case variants.",
+      "owner": "API platform engineer",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "New finding at 8d299b8d.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "PII field encryption silently degrades to reversible plaintext",
+      "evidence": [
+        "apps/api/src/config/env.ts:100-108 \u2014 assertProductionSecrets refuses boot in production unless FIELD_ENCRYPTION_KEY decodes to exactly 32 bytes",
+        "apps/api/src/lib/field-encryption.ts:39-52 \u2014 encryptField throws in production without a valid key instead of falling back to `plain:`",
+        "apps/api/src/lib/field-encryption.ts:60-70 \u2014 legacy `plain:` values are still readable but logged (pii_legacy_plaintext) and never silently rewritten",
+        "apps/api/src/routes/profiles.ts:175 \u2014 profile writes call encryptProfilePii into profiles.encrypted_pii"
+      ],
+      "impact": "The previous P1 (silent plaintext fallback) is closed: production cannot boot without a key and encryption fails closed. Residual coverage gap tracked as the new additive-encryption finding above.",
+      "recommendation": "Keep the fail-closed guards; complete the plaintext cutover (see the new additive-encryption finding).",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: env.ts:100-108 + field-encryption.ts:39-58 + profiles.ts:159-175 \u2014 fail-closed encryption is present and wired; source unchanged since 9c0b88c. Residual coverage gap recorded as a new finding.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Secret scanner echoes the matched secret value into CI logs",
+      "evidence": [
+        "scripts/scan-secrets.sh:27-32 \u2014 on a match the scanner prints only affected file names via awk ('SEC-001: report only the affected files, never the matched line')"
+      ],
+      "impact": "No secret value is echoed into terminal/CI logs by the pre-commit scanner.",
+      "recommendation": "None required; keep the awk-based filename-only output.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: scripts/scan-secrets.sh prints file names only (lines 27-32); the matched line is never emitted.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Webhook SSRF guard has a DNS-rebinding TOCTOU window",
+      "evidence": [
+        "apps/worker/src/tasks/webhook-dispatcher.ts:150 \u2014 outbound dispatch uses pinnedFetch (resolve once, validate all answers, pin the connection)",
+        "apps/worker/src/tasks/webhook-retry.ts:122 \u2014 retries use the same pinnedFetch",
+        "apps/api/src/routes/webhook-management.ts:462-474 \u2014 POST /webhook-endpoints/:id/test validates then uses pinnedFetch",
+        "apps/api/src/lib/pinned-fetch.ts:22-33,57-64 \u2014 validates every DNS answer and pins the first to the socket lookup"
+      ],
+      "impact": "The webhook path TOCTOU is closed. A residual of the same class remains in worker monitoring checks (new finding above).",
+      "recommendation": "Extend pinnedFetch to the monitoring paths; keep the shared guard.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: webhook dispatch/retry/test all use pinnedFetch (worker webhook-dispatcher.ts:150, webhook-retry.ts:122, api webhook-management.ts:469). Residual monitoring-path TOCTOU recorded as a new finding.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Client-onboarding mutations run without `requirePermission` (authorization outlier)",
+      "evidence": [
+        "apps/api/src/routes/client-onboarding-command-center.ts:20-21 \u2014 router.use(requireAuth, requireOrgAccess) retained",
+        "apps/api/src/routes/client-onboarding-command-center.ts:41,60,... \u2014 every route mounts requirePermission('client-onboarding-command-center', view/create/edit/delete)"
+      ],
+      "impact": "The authorization outlier is closed; mutations require the module permission in addition to org access.",
+      "recommendation": "None required.",
+      "owner": "API team / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: client-onboarding-command-center.ts applies requirePermission on view/create/edit/delete routes (router.use requireAuth+requireOrgAccess at lines 20-21). Same evidence as ACM-P1-001.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "MSP platform roles are cross-tenant for org access but not for permissions (inconsistent trust model)",
+      "evidence": [
+        "apps/api/src/lib/roles.ts:26-37 \u2014 CROSS_TENANT_KEYS = [super_admin, admin]; ELEVATED_TENANT_KEYS = dispatcher/engineer/security-analyst/project-manager/finance/onboarding-specialist",
+        "apps/api/src/middleware/org-access.ts:5,43-60 \u2014 cross-tenant bypass uses isCrossTenantKey only",
+        "apps/api/src/lib/permissions.ts:26 + apps/api/src/middleware/permissions.ts:30-32 \u2014 ADMIN_BYPASS_KEYS = [super_admin, admin] only; elevated MSP roles are governed by role_permissions",
+        "apps/api/src/middleware/entitlement.ts:55-57 \u2014 same bypass set"
+      ],
+      "impact": "The trust model is consistent: only admin/super_admin cross tenant boundaries, and the same set bypasses permission checks; MSP staff roles are pinned to orgs they belong to and rely on their catalog grants.",
+      "recommendation": "None required; keep the two sets distinct and documented.",
+      "owner": "API team / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: roles.ts splits the trust tiers; org-access.ts and permissions.ts/entitlement.ts consume the split sets consistently.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Forgot-password email redirect still uses attacker-controlled `Origin` header",
+      "evidence": [
+        "apps/api/src/routes/auth.ts:33-57 \u2014 resolveTrustedRedirectOrigin accepts only APP_BASE_URL or the CORS allowlist; CORS_ORIGIN='*' is explicitly not treated as a trusted redirect",
+        "apps/api/src/routes/auth.ts:327-330 \u2014 resetPasswordForEmail uses `${resolveTrustedRedirectOrigin(req.headers.origin)}/password-reset`",
+        "apps/api/src/__tests__/auth-redirect-origin.test.ts:50-57 \u2014 regression test 'REJECTS an attacker-controlled origin (the SEC-P2-003 defect)'"
+      ],
+      "impact": "A caller-supplied Origin can no longer redirect the reset token; the reset link always targets a trusted origin.",
+      "recommendation": "None required; extend the same resolver to sign-up (new P3 finding).",
+      "owner": "API team / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: auth.ts:327-330 uses resolveTrustedRedirectOrigin (auth.ts:33-57) with a dedicated regression test; the register's 'still-open' status was stale relative to CHAIN-P1-002.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "`GET /analytics/summary` calls a `get_analytics_summary` RPC that no migration defines",
+      "evidence": [
+        "apps/api/src/routes/analytics.ts:84 \u2014 supabase.rpc('get_analytics_summary')",
+        "repo-wide grep for get_analytics_summary in supabase/ (migrations, functions, seeds, policies) and apps/ \u2014 no definition found; only the caller exists"
+      ],
+      "impact": "The endpoint returns a 500 DB_ERROR for every call (functional defect), and the route has no org scoping (see new P3 finding).",
+      "recommendation": "Either add the missing SQL function (with an explicit platform-scope decision) or remove the endpoint and its OpenAPI entry; add a schema check that every RPC called by the API exists in migrations.",
+      "owner": "API team / security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: analytics.ts:84 still calls the undefined RPC; no migration/seed defines it.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "RLS is bypassed on API requests by default (service-role is the default client)",
+      "evidence": [
+        "apps/api/src/services/supabase.ts:198-226 \u2014 getScopedClient returns the user-scoped client only when the module is listed in RLS_READS_ENABLED/RLS_WRITES_ENABLED AND req.userJwt is set; otherwise the service-role client",
+        "apps/api/src/lib/rls-startup-check.ts:26-54 \u2014 production refuses to boot with an empty read allow-list; an empty write list only logs an error",
+        "infra/digitalocean/docker-compose.yml:105-109 \u2014 RLS_READS_ENABLED/RLS_WRITES_ENABLED default to empty in the deployed compose",
+        "docs/RLS-rollout.md:17-20 \u2014 claims repo-level GitHub secrets enable ~44 read and ~17 write modules; the values are external and not verifiable from the repo",
+        "apps/api/src/services/supabase.ts:210-219 \u2014 API-key requests (no req.userJwt) and platform admins always stay on the service-role client"
+      ],
+      "impact": "Tenant isolation still depends on application-layer scoping by default; RLS is an opt-in backstop. The production boot gate now prevents an empty read list, but write enforcement and the actual secret values are operator-gated and unverifiable from the repository.",
+      "recommendation": "Verify the deployed RLS_READS_ENABLED/RLS_WRITES_ENABLED secret values against the rollout doc, extend the startup check to fail closed for writes once the rollout completes, and document the API-key/platform-admin bypasses.",
+      "owner": "API team / security",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: enforcement plumbing + prod boot gate exist (rls-startup-check.ts:40-46); default remains service-role, writes only warn, and the deployed secret values are external/unverified.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "CAPTCHA/Turnstile is bypassed when the secret is unset",
+      "evidence": [
+        "apps/api/src/config/env.ts:85-93 \u2014 assertProductionTurnstile throws in production when TURNSTILE_SECRET_KEY is unset",
+        "apps/api/src/routes/public.ts:132-144 \u2014 /public/submit requires a captchaToken and a verified token whenever the secret is configured or NODE_ENV=production; verifyCaptcha fails closed without a secret",
+        "apps/api/src/routes/public.ts:26-45 \u2014 verifyCaptcha returns false when the secret is missing or the call fails/times out"
+      ],
+      "impact": "Production cannot boot with CAPTCHA disabled, and the submit route never treats a missing secret as verified.",
+      "recommendation": "None required.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: env.ts:85-93 + public.ts:132-144 fail closed; source unchanged since 9c0b88c.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "`/health` publicly discloses provider configuration and Redis errors",
+      "evidence": [
+        "apps/api/src/routes/health.ts:131-141 \u2014 GET /health returns only service, status, uptime",
+        "apps/api/src/routes/health.ts:143-161 \u2014 /health/detail requires authorizeInternalRequest with METRICS_TOKEN and 404s otherwise",
+        "apps/api/src/routes/health.ts:16-26 \u2014 constant-time token comparison; no token configured means the endpoint is unavailable"
+      ],
+      "impact": "Provider names, not_configured markers and raw dependency errors are no longer exposed to unauthenticated callers.",
+      "recommendation": "None required.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: health.ts public/detail split with fail-closed METRICS_TOKEN gate; source unchanged since 9c0b88c.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "gitleaks generic-api-key/jwt hits are false positives (no tracked secret)",
+      "evidence": [
+        ".gitleaks.toml:1-40 \u2014 scoped allowlists for the reviewed false positives (module identifiers, prompt manifest checksums, e2e throwaway JWT default)",
+        "scripts/ci/verify-gitleaks-config.sh \u2014 checksum-pinned gitleaks config verifier with a negative fixture",
+        ".github/workflows/secret-history-scan.yml \u2014 scheduled full-history gitleaks scan uploads a JSON artifact"
+      ],
+      "impact": "The reviewed hits are allowlisted narrowly (value/line scoped), and the config is verified fail-closed.",
+      "recommendation": "None required.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: .gitleaks.toml allowlists + scripts/ci/verify-gitleaks-config.sh + secret-history-scan.yml are present.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "`5302116` grants anon/authenticated full DML on every public table (RLS is the only gate)",
+      "evidence": [
+        "supabase/migrations/5302434_anon_privilege_least_privilege.sql:30-92 \u2014 revokes blanket anon DML/default privileges and re-grants only the declared public surface (insert on public_interactions/store_analytics_events/store_quotes; select on the store catalog)",
+        "supabase/migrations/5302434_anon_privilege_least_privilege.sql:1-27 \u2014 explains the original blanket sweep and the deny-by-default posture",
+        "grep for 'to anon' grants in migrations newer than 5302434 \u2014 none found"
+      ],
+      "impact": "Anon DML is deny-by-default; a future table must add both a policy and a grant explicitly.",
+      "recommendation": "None required; keep the allowlist reviewable.",
+      "owner": "API team / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: 5302434 revokes the blanket grants and re-grants the narrow public surface; no later migration re-grants anon DML.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "CORS reflects any origin with credentials when `CORS_ORIGIN=\"*\"`",
+      "evidence": [
+        "apps/api/src/app.ts:93-109 \u2014 when env.CORS_ORIGIN === '*', the origin callback reflects any origin with credentials: true",
+        ".github/workflows/deploy-do.yml:96 \u2014 the deploy computes cors_origin as https://APP_DOMAIN,https://WWW_DOMAIN (never '*')",
+        "infra/digitalocean/docker-compose.yml:15 \u2014 CORS_ORIGIN defaults to http://localhost:3000"
+      ],
+      "impact": "The code path remains: setting CORS_ORIGIN='*' in any environment reflects arbitrary origins with credentials, which weakens CSRF/read protections. The production pipeline pins an explicit allowlist, so the residual risk is operator misconfiguration.",
+      "recommendation": "Reject '*' at config validation when credentials are enabled (or when NODE_ENV=production), and document that allow-all CORS is not supported for the credentialed API.",
+      "owner": "API team / security",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: app.ts:101-106 unchanged; deploy-do.yml:96 pins the production allowlist, so the finding is now a fail-closed config-hardening item rather than a live prod exposure.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "`notification-preferences` PUT accepts a body `organizationId` without `assertOrgScopeMatches`",
+      "evidence": [
+        "apps/api/src/middleware/org-access.ts:162-175,228,249 \u2014 assertBodyOrgMatches rejects a body organizationId that differs from the resolved req.orgId (both requireOrgAccess branches), platform admins exempt",
+        "apps/api/src/routes/notification-preferences.ts:43-75 \u2014 PUT parses body organizationId and upserts with it; requireOrgAccess runs first and enforces the match"
+      ],
+      "impact": "A non-platform-admin can no longer write preferences for another org via the body organizationId; the guard is enforced centrally.",
+      "recommendation": "None required; optionally call assertOrgScopeMatches in the handler as defense in depth.",
+      "owner": "API team / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: assertBodyOrgMatches (org-access.ts:162-175) covers the body organizationId on both branches, including this route.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "`resolveEffectivePermissions` is uncached and fans out 4\u20136 queries per gated request",
+      "evidence": [
+        "apps/api/src/lib/permissions.ts:49-152 \u2014 resolveEffectivePermissions performs profile + memberships + role_permissions + overrides + permissions queries with no cache (grep finds no Map/cache in the file)",
+        "apps/api/src/middleware/permissions.ts:66 \u2014 called on every requirePermission request"
+      ],
+      "impact": "Unchanged: each gated request costs several Supabase round-trips, amplifying load and latency on the 1 vCPU deployment.",
+      "recommendation": "Add a short-TTL per-user/org cache (as lib/mfa.ts does for factors) with invalidation on membership/role/permission mutations; measure before/after.",
+      "owner": "API team / security",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: lib/permissions.ts still has no cache; middleware/permissions.ts calls it per request.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Deprecated header and broad API CSP style directive",
+      "evidence": [
+        "apps/api/src/middleware/security-headers.ts:7-8 \u2014 X-XSS-Protection is no longer set (comment explains the CSP is the supported control)",
+        "apps/api/src/middleware/security-headers.ts:31-37 \u2014 the non-Swagger surface drops 'unsafe-inline' from style-src"
+      ],
+      "impact": "The API header set no longer ships the deprecated filter and the JSON surface has a tight CSP.",
+      "recommendation": "None required for the API; optionally drop X-XSS-Protection from infra/digitalocean/Caddyfile.prod:12,35 for consistency.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: security-headers.ts drops X-XSS-Protection and tightens style-src. Cosmetic leftover: Caddyfile.prod still emits the deprecated header.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "M365 webhook `clientState` is compared non-constant-time",
+      "evidence": [
+        "apps/api/src/lib/timing-safe.ts:11-17 \u2014 timingSafeCompare wraps crypto.timingSafeEqual with length-mismatch handling",
+        "apps/api/src/routes/webhooks.ts:596 \u2014 M365 clientState is compared with timingSafeCompare and rejects a missing value",
+        "apps/api/src/routes/webhooks.ts:622-631 \u2014 replay is bounded by an atomic idempotency claim on a digest of the notification"
+      ],
+      "impact": "The shared M365 secret is no longer timing-observable and missing clientState is rejected.",
+      "recommendation": "None required.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: webhooks.ts:596 uses timingSafeCompare; missing clientState fails closed.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data",
+      "evidence": [
+        "apps/api/src/middleware/admin.ts:22-58 \u2014 an org-pinned request (req.orgScope.explicit && req.orgId) requires an admin role in that org; only super_admin is cross-tenant",
+        "apps/api/src/lib/admin-scope.ts:28-99 \u2014 resolveAdminTenantScope.allTenants requires is_super_admin AND a cross-tenant role; applyOrgScope/applyRequestedOrg enforce the org predicate",
+        "apps/api/src/routes/audit.ts:22-35,122-138 \u2014 audit list applies applyOrgScope; /impersonation requires allTenants",
+        "apps/api/src/routes/search.ts:70-79 \u2014 allTenants requires is_super_admin AND a cross-tenant role; requested org narrows scope"
+      ],
+      "impact": "A single-org admin can no longer read another tenant's audit/admin data through the hardened read routes; cross-tenant reads require the super-admin profile flag plus a cross-tenant role.",
+      "recommendation": "None required; keep new admin reads on resolveAdminTenantScope/applyOrgScope.",
+      "owner": "API platform / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: admin.ts org pinning + admin-scope.ts allTenants rule are present and consumed by audit/search/dashboard routes. Related new P1 (super_admin role assignment) could bypass the pinning and should be fixed.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Impersonation/cross-tenant access is logged but not reviewable or alerted",
+      "evidence": [
+        "apps/api/src/middleware/org-access.ts:48-60,194-204 \u2014 cross-tenant entries log via logImpersonation",
+        "apps/api/src/routes/audit.ts:107-191 \u2014 GET /audit/impersonation and /audit/impersonation/export are restricted to allTenants (super_admin profile + cross-tenant role) admins",
+        "apps/api/src/services/impersonation.ts \u2014 persists actor, role, org, reason, source, ip/user-agent"
+      ],
+      "impact": "Cross-tenant access is reviewable and exportable by genuine platform admins; single-org admins are deliberately denied.",
+      "recommendation": "None required; add alerting on unusual impersonation volume (observability backlog).",
+      "owner": "API platform / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: audit.ts:122-191 exposes impersonation review/export gated on scope.allTenants.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "Bulk invite creates pre-confirmed auth accounts (and org onboarding auto-approves admin)",
+      "evidence": [
+        "apps/api/src/routes/bulk.ts:108-116 \u2014 auth.admin.createUser with email_confirm: true and a random 16-char password that is never delivered",
+        "apps/api/src/routes/bulk.ts:145-151 \u2014 membership inserted as pending with the caller's roleId",
+        "apps/api/src/routes/organizations.ts:118-125 \u2014 POST /organizations/onboard inserts an approved membership with the caller-chosen adminRoleKey"
+      ],
+      "impact": "Unchanged: an admin can pre-create confirmed auth accounts for arbitrary addresses (account-squatting/pre-hijack surface), and org onboarding auto-approves the first admin. The role assignment path is also unguarded (new P1 finding).",
+      "recommendation": "Use invitation links (inviteUserByEmail) or mark accounts unconfirmed until the invitee accepts; validate adminRoleKey against an allowlist (reject super_admin) and require an approval step for the first admin.",
+      "owner": "API platform / security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: bulk.ts:108-116 still uses email_confirm: true; organizations.ts:118-125 still auto-approves the onboarding membership.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Active-org cookie setter performs no server-side authorization",
+      "evidence": [
+        "apps/web/lib/org-actions.ts:8-18 \u2014 setActiveOrg writes the mct_active_org cookie (httpOnly/secure/lax) with no membership check",
+        "apps/api/src/middleware/org-access.ts:85-126 \u2014 the API validates the cookie/active org against approved memberships (or cross-tenant role) on every request"
+      ],
+      "impact": "Unchanged but bounded: a user can set an arbitrary active-org cookie, yet the API rejects orgs they are not a member of, so the impact is a broken UX state rather than data access.",
+      "recommendation": "Validate the org against the caller's memberships in setActiveOrg (return an error for non-members) so the UI cannot enter an unauthorized org context.",
+      "owner": "API platform / security",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: org-actions.ts:8-18 still has no server-side check; the API-side membership validation at org-access.ts:91-126 remains the effective control.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Low-trust MSP role key composes into a cross-tenant read pivot",
+      "evidence": [
+        "apps/api/src/lib/roles.ts:26-37 \u2014 only super_admin/admin are cross-tenant; the six MSP staff roles are ELEVATED_TENANT_KEYS",
+        "apps/api/src/middleware/org-access.ts:43-60 \u2014 platformAdmin is only set for isCrossTenantKey memberships",
+        "apps/api/src/middleware/permissions.ts:30-32 \u2014 ADMIN_BYPASS_KEYS = [super_admin, admin]"
+      ],
+      "impact": "A low-trust MSP role (finance, dispatcher, etc.) no longer grants cross-tenant org access; the composition is closed.",
+      "recommendation": "None required.",
+      "owner": "CTO/security lead + API team",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: roles.ts split + org-access.ts consume isCrossTenantKey only.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Caller-controlled reset redirect composes into an account-takeover assist",
+      "evidence": [
+        "apps/api/src/routes/auth.ts:33-57 \u2014 resolveTrustedRedirectOrigin honours only APP_BASE_URL or the CORS allowlist",
+        "apps/api/src/routes/auth.ts:327-330 \u2014 the reset email redirect is built from the resolver, not the raw Origin",
+        "apps/api/src/__tests__/auth-redirect-origin.test.ts \u2014 regression tests cover evil origins and malformed values"
+      ],
+      "impact": "The reset-token redirect can no longer be pointed at an attacker origin; the chain is closed.",
+      "recommendation": "None required; extend the same resolver to sign-up (new P3 finding).",
+      "owner": "CTO/security lead + API team",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: auth.ts:327-330 + resolver + tests.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Client-onboarding mutations run without any `requirePermission` gate",
+      "evidence": [
+        "apps/api/src/routes/client-onboarding-command-center.ts:20-21 \u2014 requireAuth + requireOrgAccess",
+        "apps/api/src/routes/client-onboarding-command-center.ts:41-\u2026 \u2014 requirePermission('client-onboarding-command-center', view/create/edit/delete) on every route"
+      ],
+      "impact": "Mutations are permission-gated in addition to org scoping.",
+      "recommendation": "None required.",
+      "owner": "API platform",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: same evidence as SEC-P2-003 (ACM-P1-001 mirrors the same fix).",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "`PLATFORM_ADMIN_KEYS` (org traversal) and `ADMIN_BYPASS_KEYS` (permission bypass) are inconsistent trust sets",
+      "evidence": [
+        "apps/api/src/lib/roles.ts:26-52 \u2014 CROSS_TENANT_KEYS (org traversal) vs ELEVATED_TENANT_KEYS; PLATFORM_ADMIN_KEYS is deprecated for cross-tenant decisions",
+        "apps/api/src/lib/permissions.ts:26 \u2014 ADMIN_BYPASS_KEYS = [super_admin, admin]",
+        "apps/api/src/routes/tickets.ts:190-195,443-451 \u2014 isPlatformAdminKey remains only for in-org 'is MSP staff' checks, each with an organization_id predicate",
+        "apps/api/src/middleware/org-access.ts:43-47 \u2014 cross-tenant decisions use isCrossTenantKey"
+      ],
+      "impact": "The two sets now express different, documented questions and no longer diverge on cross-tenant traversal; the remaining PLATFORM_ADMIN_KEYS call sites are org-scoped.",
+      "recommendation": "None required; keep the deprecation note and audit new uses of isPlatformAdminKey.",
+      "owner": "API team / security",
+      "target": "@owner",
+      "confidence": "medium",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: the split and remaining org-scoped call sites match the documented intent (CHAIN-P1-001 fix).",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "API keys store `expires_at` but nothing enforces or prunes expiry",
+      "evidence": [
+        "apps/api/src/middleware/api-key.ts:82 \u2014 expired keys are rejected (Date.parse(expires_at) <= now => 401)",
+        "apps/api/src/routes/api-keys.ts:17-21,70 \u2014 creation accepts expiresAt and stores it",
+        "grep for api_keys in apps/worker/src \u2014 no prune/cleanup task exists"
+      ],
+      "impact": "Expiry is now enforced at authentication time, but expired rows remain in the table indefinitely (no pruning/notification), so the inventory drifts and revoked-looking keys linger.",
+      "recommendation": "Add a worker task (or DB job) that prunes/deactivates expired keys and surfaces them in the admin UI; add a test for the expiry rejection path.",
+      "owner": "API platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: enforcement added (api-key.ts:82) but no pruning exists in the worker; residual documented.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P2",
+      "title": "API keys cannot authenticate; the feature is dead",
+      "evidence": [
+        "apps/api/src/middleware/api-key.ts:68-101 \u2014 resolves mct_ keys by prefix + SHA-256 timing-safe compare, rejects inactive/expired",
+        "apps/api/src/middleware/auth.ts:67-88 \u2014 mct_* tokens are resolved before JWT/Supabase and pin the request to the key's org",
+        "supabase/migrations/5302042_api_keys.sql \u2014 api_keys table with key_hash/key_prefix/permissions",
+        "apps/api/src/__tests__/api-key-auth.test.ts \u2014 covers resolution, org pinning and expiry"
+      ],
+      "impact": "API keys authenticate; the feature is live. Residual scoping gap recorded as a new finding.",
+      "recommendation": "None required for authentication; enforce or drop the stored scopes.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: middleware/api-key.ts + auth.ts wiring + api-key-auth.test.ts.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "M365 webhook secret is dead config while the real M365 auth value is undocumented and undeployed",
+      "evidence": [
+        "apps/api/src/config/env.ts:56-59 \u2014 only M365_CLIENT_STATE is declared; the comment states there is intentionally no M365_WEBHOOK_SECRET",
+        "apps/api/.env.example:32-34 \u2014 documents M365_CLIENT_STATE and states there is no M365_WEBHOOK_SECRET",
+        ".github/workflows/deploy-do.yml:597,689 \u2014 M365_CLIENT_STATE is forwarded to the droplet and written to the API env file",
+        "grep for M365_WEBHOOK_SECRET across apps/.github/compose \u2014 only the two explanatory comments remain"
+      ],
+      "impact": "The dead key is removed and the actual M365 webhook credential is documented, deployed and validated (constant-time) at routes/webhooks.ts:596.",
+      "recommendation": "None required; cover M365_CLIENT_STATE in the rotation inventory (SECRET domain).",
+      "owner": "platform/security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: M365_WEBHOOK_SECRET is fully removed (env.ts:56-59, .env.example:32-34); M365_CLIENT_STATE is written by deploy-do.yml:597/689 \u2014 the previous residual is closed.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Deploy pipeline does not write several secret-class env vars the API schema and compose reference",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:647 \u2014 the forwarded envs list includes JIRA_WEBHOOK_SECRET, JSM_WEBHOOK_SECRET, M365_CLIENT_STATE, METRICS_TOKEN, MFA_ENFORCEMENT_ENABLED, FIELD_ENCRYPTION_KEY, TURNSTILE_SECRET_KEY",
+        ".github/workflows/deploy-do.yml:689-708 \u2014 printf writes those keys into the API env file (MFA_ENFORCEMENT_ENABLED defaults to false)"
+      ],
+      "impact": "The secret-class variables referenced by the schema/compose are deployed; webhook signature verification and metrics gating can be configured.",
+      "recommendation": "None required; keep the env list and printf in sync (add a guard if possible).",
+      "owner": "platform/security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: deploy-do.yml envs + printf cover the previously missing keys.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P1",
+      "title": "Public file-request upload authorizes with a permission unioned across all orgs",
+      "evidence": [
+        "apps/api/src/routes/file-requests.ts:109-159 \u2014 the public upload is token-authorized; the token row's organization_id drives every write (no requirePermission, no cross-org union)",
+        "apps/api/src/routes/file-requests.ts:156 \u2014 storage path is derived from data.organization_id, never caller input",
+        "apps/api/src/routes/file-requests.ts:184-237 \u2014 claim_file_request_slot is org-bound and rolls back the object/slot on failure"
+      ],
+      "impact": "Anonymous uploads are bound to the request's org; a permission union across orgs can no longer widen access.",
+      "recommendation": "None required.",
+      "owner": "API platform / security",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: file-requests.ts public upload is token/org-bound with the comment documenting the removed permission union.",
+      "area": "SEC"
+    },
+    {
+      "severity": "P3",
+      "title": "Web middleware gates routes on an unverified JWT `exp`",
+      "evidence": [
+        "apps/web/middleware.ts:5-16 \u2014 documented as a best-effort, non-authoritative UX gate; the cookie is client-presented",
+        "apps/web/middleware.ts:17-26,115,134-138 \u2014 isTokenExpired base64-decodes exp without signature verification and only redirects",
+        "apps/api/src/middleware/auth.ts:100-134 \u2014 the API verifies the JWT signature and MFA before any data access"
+      ],
+      "impact": "Unchanged by design: a forged-but-unexpired cookie reaches only the page shell; every server component re-checks via the API. Still partially fixed because the middleware remains a UX gate rather than an authorization control.",
+      "recommendation": "Keep the documentation; consider a signed/opaque session hint so the edge gate cannot be forged, or remove the exp pre-check entirely.",
+      "owner": "@owner",
+      "target": "@owner",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: middleware.ts:5-16 documents the non-authoritative intent and API verification remains the control; behavior intentionally unchanged.",
+      "area": "SEC"
+    }
+  ],
+  "report": "# Security, Authorization, and Tenancy Audit\n\n## Audit Metadata\n\n- Audit name: `repo-deep-dive`\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `mainecybertech` (monorepo: `apps/api`, `apps/web`, `apps/worker`, `supabase/`, `infra/`)\n- Branch: `main`\n- Commit SHA: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd`\n- Generated at: 2026-10-11\n- Auditor: domain subagent `06_security_authz_tenancy_audit` (area SEC)\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/06_security_authz_tenancy_audit.md`\n- Scope limitations: read-only static review at the audited commit. No runtime probing, no dependency installation, no database access. External state (GitHub secrets, Supabase project settings, live branch protection) is `unverified` and marked as such.\n\n## Scope\n\nReviewed at `8d299b8d`: auth middleware (`middleware/auth.ts`, `admin.ts`, `org-access.ts`, `permissions.ts`, `api-key.ts`, `csrf.ts`, `rate-limit.ts`, `security-headers.ts`, `entitlement.ts`), auth lifecycle (`routes/auth.ts`, `lib/mfa.ts`, `lib/mfa-recovery.ts`), tenant scoping (`lib/tenant.ts`, `lib/admin-scope.ts`, `lib/roles.ts`, `lib/permissions.ts`), PII handling (`lib/field-encryption.ts`, `lib/profile-pii.ts`), SSRF/file handling (`lib/ssrf-guard.ts`, `lib/pinned-fetch.ts`, `lib/upload-validation.ts`, `routes/documents.ts`, `routes/file-requests.ts`), webhooks (`routes/webhooks.ts`, `lib/webhook-signature.ts`), API keys (`middleware/api-key.ts`, `routes/api-keys.ts`), public/auth routes, RLS migrations and guards, deploy env wiring, and worker SSRF/monitoring paths.\n\nNot reviewed: UI rendering details (domain 05), payment reconciliation (domain 29), notification delivery (domain 30), and live infrastructure. Dependency-CVE review is domain 11 (supply chain).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `apps/api/src/middleware/auth.ts` | Source | JWT pinning, API-key resolution, Supabase fallback, MFA step-up | Signature pinned to HS256; MFA checked after verification |\n| `apps/api/src/middleware/{admin,org-access,permissions}.ts` | Source | Authz gates, tenant pinning, permission enforcement | Org pinning + `assertBodyOrgMatches` present |\n| `apps/api/src/middleware/api-key.ts`, `routes/api-keys.ts` | Source | Machine credentials | Hash + timing-safe compare; scopes not enforced (new finding) |\n| `apps/api/src/lib/{mfa,mfa-recovery,field-encryption,profile-pii}.ts` | Source | MFA, recovery codes, PII crypto | Fail-closed crypto; enforcement opt-in |\n| `apps/api/src/middleware/{csrf,rate-limit,security-headers}.ts` | Source | CSRF, throttling, headers | Double-submit; per-email buckets; CSP tightened |\n| `apps/api/src/routes/{auth,public,webhooks,health,audit,analytics,roles,memberships,users,bulk,organizations}.ts` | Source | Reachable authorization surfaces | Several verification rows and new findings |\n| `apps/api/src/lib/{ssrf-guard,pinned-fetch,upload-validation}.ts`, `apps/worker/src/{lib,tasks}` | Source | SSRF, upload sniffing, monitoring fetches | Webhooks pinned; monitoring TOCTOU remains |\n| `supabase/migrations/5302100, 5302112, 5302129, 5302135, 5302434, 5302436` + `scripts/check-rls-predicate.mjs` | Migration/guard | RLS approved predicate, anon grants, PII column | Guards wired into CI |\n| `.github/workflows/deploy-do.yml`, `infra/digitalocean/docker-compose.yml`, `Caddyfile.prod` | Config | Secret/env wiring, topology, headers | Caddy fronts API; no published API port |\n| `.gitleaks.toml`, `scripts/scan-secrets.sh`, `scripts/ci/verify-gitleaks-config.sh` | Config/guard | Secret scanning | Allowlists scoped; scanner no longer echoes values |\n| `apps/api/src/__tests__/{api-key-auth,auth-redirect-origin,route-authorization-guard}.test.ts` | Tests | Regression coverage for authz | Present and meaningful |\n\n## Verification Performed\n\nAll commands were read-only, run against `/tmp/opencode/mct-audit-target` at `8d299b8d`.\n\n| Command | Observed result |\n|---|---|\n| `git log -1 --format='%H %s'` | `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd Merge PR #168: promote develop to main` |\n| `grep -n \"assertProductionSecrets\\|assertProductionTurnstile\" apps/api/src/config/env.ts` | Both guards present (`env.ts:100-108`, `85-93`); `getEnv()` calls both |\n| `grep -rn \"get_analytics_summary\" --include=*.sql --include=*.ts .` | Only `apps/api/src/routes/analytics.ts:84`; no migration/seed definition |\n| `grep -rn \"to anon\" supabase/migrations/` (files > 5302434) | No blanket anon DML re-grant; `5302434` revokes and narrows |\n| `grep -n \"RLS_READS_ENABLED\\|RLS_WRITES_ENABLED\" apps/api/src/lib/rls-startup-check.ts` | Production refuses boot with empty read list; empty write list only logs |\n| `grep -rn \"req.apiKey\" apps/api/src` | Only `middleware/auth.ts:70-82`; `permissions.ts` never reads key scopes |\n| `grep -rn \"pinnedFetch\" apps/worker/src apps/api/src` | Webhook dispatch/retry/test use it; `module-tasks.ts` uses plain `fetch` after `assertSafeUrl` |\n| `grep -rn \"PLATFORM_ADMIN_KEYS\\|isPlatformAdminKey\" apps/api/src` | Remaining uses are in-org (`tickets.ts:190-195,443-451`); cross-tenant uses `isCrossTenantKey` |\n| `grep -rn \"M365_WEBHOOK_SECRET\" apps .github docker-compose.yml` | Only explanatory comments in `env.ts:58` and `.env.example:33` \u2014 dead key removed |\n| `grep -rn \"email_confirm\" apps/api/src/routes/bulk.ts` | `email_confirm: true` still present (line 114) |\n| `grep -rn \"auth/callback\" apps/api/src apps/web/app` | API serves POST `/api/v1/auth/callback`; web route is `/auth/callback`; sign-up redirect uses request Host |\n| `grep -n \"permissions\" supabase/migrations/5302042_api_keys.sql` | Column defaults to `'[]'::jsonb`; no writer |\n| `grep -rn \"assertBodyOrgMatches\" apps/api/src/middleware/org-access.ts` | Called on both `requireOrgAccess` branches (lines 228, 249) |\n| `python3 -c \"json.load(...)\"` on the emitted findings JSON | Parses; 40 findings, all required keys, valid severity/status values |\n\nHeadline-claim reproductions: `SEC-P1-001`, `SEC-P2-008`, `SEC-P2-009`, `SEC-P3-002`, `SEC-P3-007`, `ADMIN-P1-001`, `CHAIN-P1-001/002`, `FEAT-P2-001` \u2014 all `supported` from source at `8d299b8d`. `SEC-P2-007` \u2014 `partially supported` (plumbing and boot gate exist; deployed secret values external, `unverified`). `SEC-P2-006` \u2014 `supported` (still broken). `ACM-P2-006` \u2014 `partially supported` (enforced at auth, not pruned).\n\n## Executive Summary\n\nThe security posture is materially stronger than the previous full run's baseline: field encryption fails closed, the reset redirect is no longer caller-controlled, webhook dispatch and webhook test calls use a DNS-pinned fetch, the anon DML blanket grant is gone, `/health` no longer leaks provider state, RLS predicate hygiene has a CI guard, and API keys actually authenticate. The org-pinned `requireAdmin` + `resolveAdminTenantScope` combination closes the tenant-admin cross-tenant read path, and the audit/impersonation trail is reviewable by genuine platform admins only.\n\nThe most important **new** risk is a privilege-escalation gap in role assignment: `PATCH /memberships/:id`, `POST /memberships/invite`, `POST /bulk/invite` and `POST /organizations/onboard` all accept a caller-chosen role (id/key) without the `super_admin` guard that `/users/:id/role` enforces. A user with the delegable `users:manage` permission (or any tenant admin) can mint a `super_admin` membership and move into the cross-tenant trust tier that `ADMIN-P1-001` pinning relies on.\n\nSecondary themes: the PII encryption control is additive (plaintext stays authoritative), the worker's monitoring fetches retain the DNS-rebinding TOCTOU fixed for webhooks, API-key scopes are stored but ignored, the global RBAC catalog is mutable by an org-scoped `roles:manage`, and MFA remains opt-in with a `false` deployed default.\n\nRecommended next actions: fix the role-assignment guard this week (one shared helper + tests); route monitoring through `pinnedFetch`; decide the PII cutover; enforce or drop API-key scopes; and make admin accounts require aal2.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Auth provider | `middleware/auth.ts`, Supabase GoTrue | Session/JWT + API keys | Implemented | Low | HS256 pinned; Supabase fallback bounded by timeout |\n| Session cookies | `apps/web/lib/cookie-domain.ts`, `mct_session` | Web session | Implemented | Low | httpOnly, secure, lax, parent domain |\n| JWT validation | `middleware/auth.ts:100-134`, `lib/mfa.ts` | Verify + MFA step-up | Implemented | Medium | MFA opt-in; SSE revalidation does not pin algorithms |\n| CSRF/CORS | `middleware/csrf.ts`, `app.ts:93-109` | Browser write protection | Implemented | Low/Medium | `CORS_ORIGIN=\"*\"` still reflects any origin |\n| Rate limits | `middleware/rate-limit.ts`, `app.ts:125-146` | Abuse throttling | Implemented | Medium | Email key not normalized; auth bucket per-email |\n| Security headers | `middleware/security-headers.ts` | API headers/CSP | Implemented | Low | Caddyfile still sets deprecated X-XSS-Protection |\n| Input/output validation | Zod schemas across routes; `middleware/security.ts` | Validation | Implemented | Low | Zod strips unknown keys; blocklist is defense in depth |\n| File handling | `lib/upload-validation.ts`, `documents.ts`, `file-requests.ts` | Uploads/downloads | Implemented | Low | MIME sniffing, org paths, signed URLs |\n| API permissions | `middleware/permissions.ts`, `lib/permissions.ts` | RBAC enforcement | Implemented | Medium | Uncached; API-key scopes ignored |\n| Admin permissions | `middleware/admin.ts`, `lib/admin-scope.ts` | Admin gate + scope | Implemented | Low | Org pinning + allTenants rule |\n| Tenant isolation | `middleware/org-access.ts`, `lib/tenant.ts` | Org scoping | Implemented | Medium | App-layer primary; RLS opt-in |\n| RLS policies | `supabase/migrations/5302100/5302112/5302434`, `scripts/check-rls-predicate.mjs` | DB backstop | Partial (opt-in) | Medium | Prod boot gate for reads; writes warn only |\n| API keys | `middleware/api-key.ts`, `routes/api-keys.ts` | Machine credentials | Implemented | Medium | Auth works; scopes dead; always service-role |\n| Webhooks | `routes/webhooks.ts`, `lib/webhook-signature.ts` | Inbound verification | Implemented | Low | HMAC over raw body, replay claims, constant-time M365 |\n| Secrets/env | `config/env.ts`, `deploy-do.yml`, compose | Config validation | Implemented | Low | Fail-closed prod asserts; dead M365 key removed |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Auth provider | 4 | `auth.ts` HS256 pin, Supabase fallback timeout, MFA support | MFA not enforced by default | Role-aware aal2 enforcement |\n| Session tokens/cookies | 4 | `cookie-domain.ts`, CSRF double-submit | No server-side revocation list (Supabase-managed) | Document revocation expectations |\n| JWT validation | 4 | `auth.ts:107`, `auth.ts:150-163` | SSE revalidation omits `algorithms` | Pin algorithms in `notifications.ts:89` |\n| CSRF/CORS | 3 | `csrf.ts`, `app.ts:101-106` | `*` reflects any origin with credentials | Reject `*` when credentialed/prod |\n| Rate limits | 3 | `rate-limit.ts` per-email buckets | Email key not normalized; no per-token limits | Normalize keys; review auth ceilings |\n| Security headers | 4 | `security-headers.ts` | Caddyfile deprecated header | Align Caddy header set |\n| Input/output validation | 4 | Zod route schemas, `security.ts` | Blocklist heuristics only | Keep Zod as the contract |\n| File handling | 4 | sniffing, org-bound paths, signed URLs | Monitoring fetch TOCTOU (worker) | Use pinned fetch everywhere |\n| API permissions | 3 | `permissions.ts` enforcement | Uncached; key scopes ignored | Cache; enforce key scopes |\n| Admin permissions | 4 | `admin.ts`, `admin-scope.ts` | Role-assignment escalation path | Shared super_admin guard |\n| Tenant/org isolation | 4 | `org-access.ts`, `tenant.ts`, search/admin scoping | App-layer primary; RLS opt-in | Finish RLS rollout |\n| RLS policies | 3 | approved-aware helper, guards, anon least privilege | Writes default service-role; values external | Verify deployed allowlists |\n\n## Detailed Review\n\n### Item: Authentication and MFA\n\n- Evidence: `middleware/auth.ts:46-181`, `lib/mfa.ts`, `routes/auth.ts:404-730`, `apps/web/lib/auth/auth-actions.ts`.\n- What it does: verifies HS256 JWTs against a comma-separated secret list, falls back to Supabase `getUser` (5 s timeout), then applies MFA step-up when `MFA_ENFORCEMENT_ENABLED` is true and the user has a verified TOTP factor.\n- Missing controls: MFA default off; SSE revalidation (`routes/notifications.ts:89`) verifies without `algorithms` pinning; sign-up `emailRedirectTo` uses the request Host.\n- Risks: admin sessions password-only by default (new finding); Host echo in confirmation email (new finding).\n\n### Item: Authorization middleware and tenant scoping\n\n- Evidence: `middleware/admin.ts:22-64`, `middleware/org-access.ts:20-325`, `middleware/permissions.ts:54-93`, `lib/admin-scope.ts`, `lib/tenant.ts`, `lib/roles.ts`.\n- What it does: pins admin checks to the resolved org unless the caller holds `super_admin`; only `admin`/`super_admin` cross tenants; `assertBodyOrgMatches` rejects body/query org mismatches; `loadOwned`/`assertResourceOrg` enforce row ownership.\n- Missing controls: role-assignment paths do not validate `super_admin`; `roles` catalog mutations are not platform-gated.\n- Risks: privilege escalation to the cross-tenant tier (new P1); cross-tenant RBAC catalog mutation (new P2).\n\n### Item: API keys\n\n- Evidence: `middleware/api-key.ts`, `middleware/auth.ts:67-88`, `routes/api-keys.ts`, `supabase/migrations/5302042_api_keys.sql`.\n- What it does: prefix lookup + SHA-256 timing-safe compare, active/expiry checks, org pinning, best-effort `last_used_at`.\n- Missing controls: stored `permissions` are never enforced; create API cannot set them; GET list has no permission gate; RLS never applies (no `req.userJwt`).\n- Risks: scoped keys silently over-privileged; RLS rollout blind spot (new finding).\n\n### Item: Webhooks and SSRF\n\n- Evidence: `routes/webhooks.ts`, `lib/webhook-signature.ts`, `lib/pinned-fetch.ts`, `apps/worker/src/tasks/{webhook-dispatcher,webhook-retry,module-tasks}.ts`.\n- What it does: raw-body HMAC verification, timestamp tolerance, atomic idempotency claims, constant-time M365 `clientState`, DNS-pinned outbound dispatch with no redirects.\n- Missing controls: monitoring checks (uptime/website) guard-then-fetch; `fetchSslExpiry` raw `tls.connect`.\n- Risks: SSRF from worker into droplet internals via DNS rebinding (new finding).\n\n### Item: PII encryption\n\n- Evidence: `lib/field-encryption.ts`, `lib/profile-pii.ts`, `routes/profiles.ts`, `supabase/migrations/5302135`.\n- What it does: AES-256-GCM with fail-closed production key validation; writes a mirrored `encrypted_pii` column.\n- Missing controls: reads never decrypt through the helper; plaintext columns remain authoritative.\n- Risks: control does not protect at-rest data (new finding).\n\n### Item: RLS and database posture\n\n- Evidence: `services/supabase.ts:198-226`, `lib/rls-startup-check.ts`, `supabase/migrations/5302100/5302112/5302434/5302436`, `scripts/check-rls-predicate.mjs`, `docs/RLS-rollout.md`.\n- What it does: per-module opt-in user-scoped client; approved-aware `is_org_member`; anon least-privilege; CI guards for predicate regressions.\n- Missing controls: writes default to service-role; API keys always service-role; deployed allowlist values external.\n- Risks: tenant isolation remains application-layer by default (SEC-P2-007 partially fixed).\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| SEC-001 | Auth provider | `middleware/auth.ts:100-177` | HS256 + Supabase fallback | MFA opt-in | P2 | Role-aware aal2 |\n| SEC-002 | Session tokens/cookies | `cookie-domain.ts:14-26` | httpOnly/secure/lax, CSRF | No local revocation list | P3 | Document revocation |\n| SEC-003 | JWT validation | `auth.ts:107`, `notifications.ts:89` | Signature verified | SSE omits algorithms pin | P3 | Pin algorithms |\n| SEC-004 | CSRF/CORS | `csrf.ts`, `app.ts:101-106` | Double-submit | `*` reflects any origin | P3 | Reject `*` in prod |\n| SEC-005 | Rate limits | `rate-limit.ts:42-66` | Per-email + per-IP | Email key case-split | P3 | Normalize email key |\n| SEC-006 | Security headers | `security-headers.ts` | CSP/HSTS/CORP | Caddy legacy header | P3 | Align Caddy |\n| SEC-007 | Input validation | Zod schemas; `security.ts` | Typed allowlists | Blocklist heuristics | P3 | Keep Zod contract |\n| SEC-008 | File handling | `upload-validation.ts`; `documents.ts` | Sniff + org paths | Worker fetch TOCTOU | P2 | pinnedFetch everywhere |\n| SEC-009 | API permissions | `permissions.ts` | requirePermission | Uncached; key scopes dead | P2 | Cache + enforce scopes |\n| SEC-010 | Admin permissions | `admin.ts`, `admin-scope.ts` | Org pinning + allTenants | Role-assignment escalation | P1 | Shared super_admin guard |\n| SEC-011 | Tenant isolation | `org-access.ts`, `tenant.ts` | Org-scoped reads/writes | RLS opt-in | P2 | Finish RLS rollout |\n| SEC-012 | RLS policies | 5302100/5302112/5302434 | Approved-aware, least privilege | Write default service-role | P2 | Verify allowlists |\n\n## Findings\n\nNine new findings were raised; thirty-one previous-register rows were re-verified (table below). New findings use the shared format without IDs (assigned by the aggregator).\n\n### Finding: super_admin role can be granted through membership/onboarding/bulk-invite APIs without the /users/:id/role guard\n\n- Severity: P1\n- Confidence: High\n- Area: SEC\n- Evidence:\n  - `apps/api/src/routes/users.ts:406-420` \u2014 the only path with the explicit `super_admin` assignment guard\n  - `apps/api/src/validators/membership.ts:3-8`; `apps/api/src/routes/memberships.ts:95-104,123-139` \u2014 invite/PATCH accept any `roleId`\n  - `apps/api/src/routes/bulk.ts:145-151`; `apps/api/src/validators/organization.ts:42`; `apps/api/src/routes/organizations.ts:77-125` \u2014 bulk invite and onboarding accept any role id/key\n  - `apps/api/src/lib/roles.ts:27`; `apps/api/src/middleware/org-access.ts:37-60`; `apps/api/src/middleware/admin.ts:49-58` \u2014 `super_admin` is the cross-tenant, unpinned tier\n- What is happening: role assignment is validated on one route only; the other three accept the caller's role choice, including `super_admin`.\n- Why it matters: a delegable `users:manage` holder or tenant admin can promote any account (or themselves) into the trust tier that `ADMIN-P1-001` org pinning depends on.\n- Security impact: cross-tenant read/write on every `requireOrgAccess`/`requireAdmin` surface, audited only as impersonation.\n- Recommended fix: one shared `assertRoleAssignable(req, roleKey/roleId)` helper used by all four paths; DB trigger as backstop.\n- Suggested validation: integration tests per path asserting a non-super-admin caller receives 403 when assigning `super_admin`.\n- Owner suggestion: API principal engineer / security. Effort: M. Status: open.\n\n### Finding: Worker monitoring checks are guard-then-fetch (DNS-rebinding TOCTOU)\n\n- Severity: P2\n- Confidence: High\n- Evidence: `apps/worker/src/tasks/module-tasks.ts:540,548-551,590,602-605`; `fetchSslExpiry` at `:27-42`; contrast `apps/worker/src/tasks/webhook-dispatcher.ts:150` and `apps/worker/src/tasks/webhook-retry.ts:122` (pinnedFetch)\n- What is happening: uptime/website monitor URLs are DNS-validated once and then fetched again; the SSL probe does a raw `tls.connect`.\n- Why it matters: a tenant admin (monitor creation is a normal feature) can point a rebinding hostname at loopback/private addresses on the worker host.\n- Security impact: SSRF into Redis/Prometheus/metadata from the production droplet.\n- Recommended fix: use `pinnedFetch` for checks and pin the TLS socket; share the guard module between api/worker.\n- Suggested validation: unit test with a resolver that returns a public address then a loopback address; assert the fetch is blocked.\n- Owner suggestion: API/worker platform engineer. Effort: S\u2013M. Status: open.\n\n### Finding: PII field encryption is additive: plaintext profile columns remain the source of truth\n\n- Severity: P2\n- Confidence: High\n- Evidence: `supabase/migrations/5302135_profiles_encrypted_pii.sql:3-6,25-26`; `apps/api/src/routes/profiles.ts:159-175` (writes both), `:61,108` (selects `*`); `lib/profile-pii.ts` decrypt helper unused on reads\n- What is happening: every profile write stores an encrypted mirror next to unchanged plaintext columns.\n- Why it matters: a DB read still yields plaintext; the control does not protect against the threat it targets.\n- Recommended fix: decrypt on read, run the backfill, drop/blank plaintext; or document a dated cutover and stop advertising at-rest encryption.\n- Suggested validation: test that a profile write leaves no plaintext in `full_name/email/phone/title` after cutover.\n- Owner suggestion: API/backend + data governance. Effort: M\u2013L. Status: open.\n\n### Finding: Global role catalog is mutable by any org's roles:manage holder\n\n- Severity: P2\n- Confidence: Medium\n- Evidence: `supabase/migrations/5302026_\u2026v3.sql:161-168` (no org column); `apps/api/src/routes/roles.ts:96,139,185,252` (no org/platform gate), `:269-271` (only super_admin role protected); `apps/api/src/middleware/permissions.ts:63-88` (permission union with no org)\n- What is happening: `roles`/`role_permissions` are global but writable with a tenant-scoped permission.\n- Why it matters: delegated role managers can alter authorization for other tenants.\n- Recommended fix: platform-admin gate for catalog mutations, or org-scope custom roles.\n- Owner suggestion: API platform / security. Effort: M. Status: open.\n\n### Finding: API-key scopes are stored but never enforced; keys always bypass RLS\n\n- Severity: P2\n- Confidence: High\n- Evidence: `apps/api/src/middleware/api-key.ts:75,99`; `apps/api/src/middleware/auth.ts:70-82`; `middleware/permissions.ts` never reads `req.apiKey`; `apps/api/src/routes/api-keys.ts:17-21` (no permissions field), `:34-53` (GET ungated); `apps/api/src/services/supabase.ts:210` (`req.userJwt` required for RLS client)\n- What is happening: keys act as the creating user; stored scopes are dead config; RLS never applies to keys.\n- Recommended fix: intersect key permissions in `requirePermission` or drop the column; gate the list route; document the RLS bypass.\n- Owner suggestion: API platform / security. Effort: S\u2013M. Status: open.\n\n### Finding: MFA enforcement is opt-in and the deployed default is false\n\n- Severity: P2\n- Confidence: High\n- Evidence: `apps/api/src/lib/mfa.ts:28-30,84-95`; `apps/api/src/config/env.ts:64-67`; `.github/workflows/deploy-do.yml:693`; `infra/digitalocean/docker-compose.yml:89`; `docs/MFA.md:48,63`\n- What is happening: enforcement requires an operator secret; deploy/compose default to `false`.\n- Why it matters: admin/super_admin accounts can operate with password-only sessions.\n- Recommended fix: enforce aal2 for admin roles or flip the prod default and document the rollout.\n- Owner suggestion: API platform / security. Effort: S\u2013M. Status: open.\n\n### Finding: Sign-up confirmation redirect is built from the caller-controlled Host header\n\n- Severity: P3\n- Confidence: Medium\n- Evidence: `apps/api/src/routes/auth.ts:182`; contrast `:33-57`; `apps/api/src/app.ts:174`; `apps/web/app/auth/callback/route.ts:8`; `supabase/config.toml.production.example:29-34`\n- What is happening: `emailRedirectTo` echoes `req.get('host')` and points at a non-existent API route; only Supabase's redirect allowlist bounds the risk.\n- Recommended fix: use `resolveTrustedRedirectOrigin` + the web callback path; add a spoofed-Host regression test.\n- Owner suggestion: API team / security. Effort: S. Status: open.\n\n### Finding: Analytics admin reads are not tenant-scoped and expose platform-wide event data including visitor IPs\n\n- Severity: P3\n- Confidence: High\n- Evidence: `apps/api/src/routes/analytics.ts:64-91` (requireAdmin only); `supabase/migrations/5302106_store_analytics.sql:1-15` (no org column, IP/user-agent)\n- What is happening: any tenant admin can read the platform-wide store analytics table.\n- Recommended fix: restrict to super_admin / `resolveAdminTenantScope`, or org-scope the events.\n- Owner suggestion: API platform / security. Effort: S. Status: open.\n\n### Finding: Auth rate-limit key uses the raw email string without normalization\n\n- Severity: P3\n- Confidence: High\n- Evidence: `apps/api/src/middleware/rate-limit.ts:48-53` vs `:61-64`\n- What is happening: per-account throttling splits across case variants.\n- Recommended fix: `email.trim().toLowerCase()` in both generators; unit test.\n- Owner suggestion: API platform engineer. Effort: S. Status: open.\n\n### Previous-register verification outcomes\n\n| Title (same as previous register) | Status at 8d299b8d | Evidence / note |\n|---|---|---|\n| PII field encryption silently degrades to reversible plaintext | verified-fixed | `env.ts:100-108`, `field-encryption.ts:39-58`, `profiles.ts:159-175`; residual coverage gap is a new finding |\n| Secret scanner echoes the matched secret value into CI logs | verified-fixed | `scripts/scan-secrets.sh:27-32` prints filenames only |\n| Webhook SSRF guard has a DNS-rebinding TOCTOU window | verified-fixed | `pinnedFetch` in worker dispatch/retry + API test endpoint; monitoring residual is a new finding |\n| Client-onboarding mutations run without `requirePermission` (authorization outlier) | verified-fixed | `client-onboarding-command-center.ts:20-21,41\u2026` |\n| MSP platform roles are cross-tenant for org access but not for permissions | verified-fixed | `roles.ts:26-37`; `org-access.ts:43-60`; `permissions.ts:26` |\n| Forgot-password email redirect still uses attacker-controlled `Origin` header | verified-fixed | `auth.ts:33-57,327-330` + regression test |\n| `GET /analytics/summary` calls a `get_analytics_summary` RPC that no migration defines | still-open | `analytics.ts:84`; repo-wide grep finds no definition |\n| RLS is bypassed on API requests by default | partially-fixed | `supabase.ts:198-226`; `rls-startup-check.ts:40-46`; deployed secret values external (`unverified`) |\n| CAPTCHA/Turnstile is bypassed when the secret is unset | verified-fixed | `env.ts:85-93`; `public.ts:132-144` |\n| `/health` publicly discloses provider configuration and Redis errors | verified-fixed | `health.ts:131-161` |\n| gitleaks generic-api-key/jwt hits are false positives | verified-fixed | `.gitleaks.toml`; `scripts/ci/verify-gitleaks-config.sh`; `secret-history-scan.yml` |\n| `5302116` grants anon/authenticated full DML on every public table | verified-fixed | `5302434` revokes; no later re-grant |\n| CORS reflects any origin with credentials when `CORS_ORIGIN=\"*\"` | still-open | `app.ts:101-106`; deploy pins an allowlist (`deploy-do.yml:96`) |\n| `notification-preferences` PUT accepts a body `organizationId` without `assertOrgScopeMatches` | verified-fixed | `org-access.ts:162-175,228,249` |\n| `resolveEffectivePermissions` is uncached | still-open | `lib/permissions.ts` has no cache |\n| Deprecated header and broad API CSP style directive | verified-fixed | `security-headers.ts:7-8,31-37` (Caddy leftover noted) |\n| M365 webhook `clientState` is compared non-constant-time | verified-fixed | `timing-safe.ts`; `webhooks.ts:596` |\n| Org-agnostic `requireAdmin` lets a tenant admin read other tenants' admin data | verified-fixed | `admin.ts:49-58`; `admin-scope.ts:55-57`; audit/search consumers |\n| Impersonation/cross-tenant access is logged but not reviewable or alerted | verified-fixed | `audit.ts:122-191` (allTenants gate) |\n| Bulk invite creates pre-confirmed auth accounts (and onboarding auto-approves admin) | still-open | `bulk.ts:108-116`; `organizations.ts:118-125` |\n| Active-org cookie setter performs no server-side authorization | still-open | `org-actions.ts:8-18`; API validates memberships |\n| Low-trust MSP role key composes into a cross-tenant read pivot | verified-fixed | `roles.ts` split + consumers |\n| Caller-controlled reset redirect composes into an account-takeover assist | verified-fixed | `auth.ts:327-330` + tests |\n| Client-onboarding mutations run without any `requirePermission` gate | verified-fixed | same evidence as SEC-P2-003 |\n| `PLATFORM_ADMIN_KEYS` and `ADMIN_BYPASS_KEYS` are inconsistent trust sets | verified-fixed | remaining `isPlatformAdminKey` uses are in-org (`tickets.ts:190-195,443-451`) |\n| API keys store `expires_at` but nothing enforces or prunes expiry | partially-fixed | enforced at `api-key.ts:82`; no prune task in worker |\n| API keys cannot authenticate; the feature is dead | verified-fixed | `middleware/api-key.ts` + `auth.ts:67-88` + tests |\n| M365 webhook secret is dead config while the real auth value is undeployed | verified-fixed | `env.ts:56-59`; `.env.example:32-34`; `deploy-do.yml:597,689` |\n| Deploy pipeline does not write several secret-class env vars | verified-fixed | `deploy-do.yml:647,689-708` |\n| Public file-request upload authorizes with a permission unioned across all orgs | verified-fixed | `file-requests.ts:109-159,184-237` |\n| Web middleware gates routes on an unverified JWT `exp` | partially-fixed | documented non-authoritative UX gate (`middleware.ts:5-16`); API is the control |\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Tenant admin/user-manager escalates to super_admin membership | P1 | Medium | Cross-tenant access | `memberships.ts:95-139`; `bulk.ts:145-151`; `organizations.ts:77-125` | Shared role-assignment guard |\n| Worker SSRF via monitoring DNS rebinding | P2 | Medium | Internal service/metadata access | `module-tasks.ts:540-605` | pinnedFetch + pinned TLS |\n| API-key scope confusion | P2 | Low | Over-privileged machine access | `api-key.ts`; `permissions.ts` | Enforce or drop scopes |\n| PII encryption gives false assurance | P2 | High | Data exposure at rest | `5302135`; `profiles.ts` | Complete cutover |\n| Admin accounts without MFA | P2 | Medium | Account takeover | `mfa.ts`; `deploy-do.yml:693` | Role-aware aal2 |\n| Global RBAC catalog mutated per-tenant | P2 | Low | Cross-tenant authz drift | `roles.ts`; `5302026:161` | Platform gate / org-scoped roles |\n\n## Recommendations\n\n### Immediate / Release Blocking\n1. Fix the role-assignment guard (P1) on all four paths; add regression tests.\n\n### This Week\n2. Decide and schedule the PII cutover (P2) or document the scaffold explicitly.\n3. Enforce or remove API-key scopes; gate `GET /api-keys` (P2).\n4. Move monitoring fetches to `pinnedFetch` (P2).\n\n### This Month\n5. Platform-gate global role/permission mutations (P2).\n6. Enforce aal2 for admin roles or flip the prod default (P2).\n7. Restrict platform analytics reads; fix or remove the undefined RPC (P3).\n8. Add expiry pruning for API keys (P2, residual of ACM-P2-006).\n\n### Later / Platform Evolution\n9. Finish the RLS rollout (writes) and verify deployed allowlists (P2).\n10. Normalize rate-limit keys; pin algorithms in SSE revalidation; align Caddy headers (P3).\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Normalize auth rate-limit email key | Closes a per-account throttle split | `middleware/rate-limit.ts` | Unit test with case variants |\n| Use `resolveTrustedRedirectOrigin` for sign-up | Removes Host echo | `routes/auth.ts` | Spoofed-Host test |\n| Add `algorithms: [\"HS256\"]` to SSE revalidation | Consistency with `auth.ts` | `routes/notifications.ts` | Unit test |\n| Require permission on `GET /api-keys` | Matches docs/intent | `routes/api-keys.ts` | Route-auth test |\n| Drop `X-XSS-Protection` from Caddyfile | Header consistency | `infra/digitalocean/Caddyfile.prod` | Header check |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Shared `assertRoleAssignable` + DB trigger backstop | P1 | API security | M | None |\n| PII plaintext cutover + backfill verification | P2 | Backend/data | M\u2013L | `FIELD_ENCRYPTION_KEY` deployed |\n| API-key scope enforcement + UI | P2 | API platform | M | Product decision |\n| Monitoring SSRF pinned fetch | P2 | Worker platform | S | None |\n| Global RBAC mutation platform gate | P2 | API platform | M | None |\n| Admin aal2 policy | P2 | API security | S\u2013M | Supabase MFA enabled |\n| Permission resolution cache | P3 | API platform | M | Invalidation hooks |\n| SSE/`jwt.verify` algorithm pinning sweep | P3 | API platform | S | None |\n| API-key expiry prune task | P2 | Worker platform | S | None |\n\n## Suggested Tests\n\n- Unit: role-assignment guard matrix (4 routes \u00d7 caller roles \u00d7 target roles, including `super_admin` denial).\n- Unit: `pinnedFetch` used by module-tasks (mock resolver returns public then loopback).\n- Unit: profile write/read with encryption cutover; assert no plaintext columns after migration.\n- Unit: rate-limit key normalization (case/whitespace variants share a bucket).\n- Integration: API-key with restricted DB `permissions` receives 403 on an unlisted module.\n- Integration: `PATCH /memberships/:id` by a `users:manage` non-admin cannot set `super_admin`.\n- Security/regression: spoofed `Host` on sign-up does not change `emailRedirectTo`.\n- CI: extend `scripts/check-rls-predicate.mjs`-style static guard to assert every `supabase.rpc()` called in `apps/api` exists in migrations.\n\n## Suggested Documentation Updates\n\n- `docs/MFA.md` \u2014 role-aware enforcement and the deployed default.\n- `docs/RLS-rollout.md` \u2014 document the API-key and platform-admin service-role bypasses; state how to verify deployed allowlist values.\n- `docs/modules/api-keys.md` \u2014 either document scope enforcement or remove `permissions` from the data model.\n- `docs/ENVIRONMENT_VARIABLES.md` \u2014 add the CORS `*` credential caveat.\n- `SECURITY.md` / threat model \u2014 record the role-assignment trust boundary and the monitoring SSRF surface.\n- `docs/RLS-coverage-matrix.md` \u2014 refresh after the write-side rollout.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Are the deployed `RLS_READS_ENABLED`/`RLS_WRITES_ENABLED` secrets actually populated as docs claim (~44/17 modules)? | Determines real RLS coverage | GitHub secret listing / droplet `.env` (operator) |\n| Is the Supabase redirect allowlist pinned to the web origin only? | Bounds the sign-up Host echo | Supabase project auth settings (operator) |\n| Are API-key scopes intended to be enforced, or is the column vestigial? | Determines fix direction | Product/API decision |\n| Is `super_admin` membership intended to be assignable by tenant admins? | The P1 fix depends on the intended model | Security owner decision |\n| Has the PII backfill script ever run in production? | Determines cutover effort | `scripts/backfill-profile-pii.mjs` run log (operator) |\n\n## Appendix\n\n- Reproduce the P1: as a caller with `users:manage` in org A, `PATCH /api/v1/memberships/:ownMembershipId` with `{\"roleId\": \"<super_admin role uuid>\", \"status\": \"approved\"}`; the handler (`memberships.ts:123-139`) updates without the `users.ts:411-419` guard.\n- Reproduce the SSRF residual: configure an uptime check whose hostname answers `A 93.184.216.34` for the guard lookup and `A 127.0.0.1` for the worker fetch (`module-tasks.ts:540-551`); observe the fetch executes against loopback.\n- RLS helper lineage: `is_org_member` approved filter added in `5302100:8-20`, `search_path` pinned in `5302112:19`, predicate regressions guarded by `scripts/check-rls-predicate.mjs` (baseline 5302430).\n- Topology: Caddy (`infra/digitalocean/Caddyfile.prod`) terminates 80/443 and proxies to `api:4000`/`web:3000`; the API container publishes no host port, so `trust proxy: 1` + the localhost rate-limit skip cannot be reached by spoofed `X-Forwarded-For` from the public internet.\n"
+}

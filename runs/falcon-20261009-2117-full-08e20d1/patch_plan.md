@@ -1,0 +1,458 @@
+# Patch plan
+
+## DATA-P0-001 — 41-hour EVE ingestion outage with confirmed data loss (empty 10.08 index, ~1.74 GB spool purge, non-retriable sink drops); durable capacity fix absent from the audited tree
+
+Live read-only evidence shows the single-node OpenSearch went RED 2026-10-07T19:20Z and stayed red ~45.5 h; EVE ingestion stalled ~41 h (falcon_eve_last_event_age_seconds peaked 143,946 s); falcon-eve-2026.10.08 has 0 docs; the 10.09 index holds a delayed flush (earliest event_time 2026-10-08T03:15:01Z, ingested_at up to 10-09T16:50Z); the aggregator logged 'Not retriable; dropping the request' with unavailable_shards_exception and component_events_dropped counts (62..13310); the edge spool purged 1,743,575,365 B across 13 rotations. The audited tree (08e20d1) still keeps the OpenSearch snapshot repo inside the data LV (compose/central/docker-compose.yml:78) and sets only enable_for_single_data_node; the relocation/watermark-margin fixes exist only on post-audit main 6e4fccd. Fix: land the capacity changes in the audited line, add a sink-failure DLQ/replay, and a bounded write-block drill asserting zero dropped events.
+
+## ARCH-P1-001 — Single-host concentration: host loss is total pipeline loss
+
+One Ubuntu 24.04 KVM host (falcon) runs capture, storage, metrics, alerting and delivery; there is no warm standby. Host loss is total monitoring loss (the probe buffers ~2 GiB then blocks). The prior register records this as owner-accepted with a documented RTO/RPO acceptance. Fix: warm standby or a tested RTO/RPO acceptance artifact; re-verify at each major change.
+
+## ARCH-P1-002 — Live host source tree has diverged from the audited commit and is dirty; merged remediation is not deployed
+
+The live program tree /home/user/falcon-build is at local main=6e4fccd (origin/main=08e20d1); merge-base is 54d67fd (2026-10-04) and the live branch carries two unpushed commits (4a64c76, 6e4fccd) plus uncommitted changes (config/prometheus/edge-alerts.yaml with 119 added sensor-health lines; review-package artifacts). The live tree is missing merged remediation #43-#48, including the OBS-P0-001 per-file textfile freshness rules (grep falcon-textfile-collector: 0 live vs 3 audited) and restore_assertion.sh (#48). The live Grafana has 77 rules, none of falcon-textfile-collector-{absent,stale,stale-daily}; all 77 were last updated 2026-10-03T03:49-03:50Z. Runtime metrics report commit=6e4fccd dirty=1. docs/CURRENT_STATE.md:103 claims the live host runs current main. Impact: findings marked verified-fixed are not live; live alerting is weaker than documented; unreviewed config runs live. Fix: converge the live tree on origin/main (PR the local ops commit), commit/revert the dirty change, re-provision the rules, and alert on falcon_runtime_source_dirty/commit age.
+
+## ARCH-P1-003 — Central Vector aggregator is in a cgroup OOM restart loop; no container memory/restart alert covers it
+
+falcon-central-vector-aggregator-1 is repeatedly OOM-killed at its 512 MiB cgroup limit: 18 'Memory cgroup out of memory: Killed process (vector)' kernel events on 2026-10-09 (first 02:29:19Z), 5 on 2026-10-08, 0 on 2026-10-07; RestartCount=23; docker stats shows 510.8MiB/512MiB (99.77%); vector internals show a large edge_ingest backlog (received 903,021 vs sent 474,013 at capture) consistent with probe-buffer replay after each restart. Pipeline e2e assertions failed at 19:56Z/20:41Z and recovered 21:25Z. The alert set has no central container memory-near-limit or generic policy-restart rule (the only restart-loop rule is Suricata-specific; falcon-container-unhealthy misses a container that restarts and becomes healthy). Impact: continuous central ingest interruptions and loss of in-memory sink buffers (500 events/kill). Fix: bound source-side queues / right-size the limit, investigate the replay burst, and add memory/restart alerts for central services.
+
+## CHAIN-P1-001 — WireGuard peers still have host-wide reach: the committed SEC-P1-002 narrowing is not applied to the live host
+
+Deploy the narrowed ruleset (bootstrap/30-firewall.sh) and add a live firewall drift check; correct the 'Remediated' wording until a live artifact exists.
+
+## CI-P1-001 — Same-repo PR workflows execute on a passwordless-sudo self-hosted runner
+
+validate.yml:26-28 routes every same-repo pull_request (and push/schedule/dispatch) to the self-hosted runner. GitHub evaluates PR workflows from the PR merge commit, so a same-repo PR that edits .github/workflows/** (including weekly Dependabot github-actions bumps) executes the edited workflow before human review. PR #49's validate run (37986933263) executed on runner edge-builder; a throwaway probe run on 2026-10-04 (37189467074 job 111398447974) showed SUDO_OK and /usr/bin/docker for that runner user (ci-runner job 111398448046 showed SUDO_NO). Impact: pre-review PR code has root-equivalent reach on a lab host in the same runner group that serves the credential-bearing edge bake (docs/security/CI_CD_INCIDENT_PLAYBOOK.md:34). Fix: run PR jobs on the non-sudo ci-runner or an ephemeral runner; remove passwordless sudo from the runner service account; restrict the org runner group to selected workflows. Validation: a test PR must fail 'sudo -n true'; jobs for pull_request show the non-sudo runner.
+
+## DATA-P1-001 — Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate
+
+The repo states the Wazuh estate has no retention (RETENTION_MATRIX.md:19-27 'no ISM policy exists'), but the live Wazuh indexer has five ISM policies: wazuh-retention (30d, attached to wazuh-alerts-*), security-auditlog-retention (180d, attached), wazuh-archives-14d and wazuh-states-retention (90d) defined, elastiflow (14d rollover) defined. Authoritative _settings show no policy attached to wazuh-monitoring-*, wazuh-statistics-*, wazuh-states-* or elastiflow-flow-* (13.5M docs/3.8GB unmanaged). IRIS case DB remains unbounded (RESTORE.md:350 OPEN). Fix: correct the docs to the live set, attach the missing policies or record exceptions, decide the IRIS lifecycle, and add a checker comparing live policy_id vs a declared matrix.
+
+## DR-P1-001 — Nightly backup job failed 3 times in 7 days; Oct 8-9 snapshot hole; RPO gap ~37 h; no retry and no immediate alert
+
+falcon-backup.service (daily 03:30Z, config/systemd/falcon-backup.timer:5) failed at Oct 3 03:30:01, Oct 8 03:30:05 and Oct 9 03:30:16 with 'snapshot failed (state=); not updating freshness' (journal). The job makes a single snapshot attempt (bootstrap/85-backup-job.sh:29-35) and the unit has no Restart=/OnFailure= (config/systemd/falcon-backup.service). The last scheduled success was Oct 7 03:34; the next success was a manual run Oct 9 16:41:50 after the data-LV recovery, leaving an RPO gap of ~37 h and no snap-20261008/snap-20261009-0330 in the falcon-backup repository (only snap-20261007-033000 and snap-20261009-164150). The instant failures correlate with a RED cluster under data-LV watermark pressure: 'OpenSearch cluster red' was firing continuously Oct 7 19:20Z -> Oct 9 16:41Z (relay journal) and the recovery evidence shows 51 unassigned shards at 90% data-LV usage. The snapshot API response is not logged and the container was later recreated, so the exact error is unrecoverable (diagnostic gap). Detection was 36 h-late: 'Backup stale' fired Oct 8 15:45Z, resolved Oct 9 16:51Z. Fix: bounded retry with backoff (mirror bootstrap/80-offsite-backup.sh:75-91), log the OpenSearch response on failure, add an immediate failure signal (OnFailure unit or short-deadline freshness rule), and a RED-cluster precondition check with a clear message.
+
+## EVOL-P1-001 — Cross-repo shared tooling has drifted and still has no pin/hash enforcement
+
+The shared-tooling policy is proposed only: 7 same-path tools, 2 identical / 5 differ, parallel secret scanners with non-overlapping coverage, and the capture-wrapper hardening landed in falcon only (the edge copy still sources the credential file and records the wrong exit code). The recommended option B (per-repo automation/shared-tooling.lock + a read-only shared_tooling_check.sh wired into both CIs) is not implemented (both files absent) and the owner choice (C7/E-1) is unsigned. Fix: record the decision and implement option B with an allowlist (owner + expiry); unify the capture wrapper and scanner patterns first.
+
+## EVOL-P1-002 — MCT vendoring policy proposed but not enforced; the pin gate remains blind to mct/compose
+
+The vendored MCT subtree carries 37 image references (8 digest-pinned, 29 unpinned, 11 floating) with no recorded upstream commit, and check_compose_pins() still globs compose/** only; the digest cross-check now covers mct/compose + automation/wazuh but passes only via an explicit, expiring waiver (pins/supply-chain-waivers.json, review_by 2026-12-31). Reviving a staged service would bypass the supply-chain control unless the waiver is revisited. Fix: implement VENDORING P4 (extend the pin check with an exceptions table, or enforce archive-only), record the upstream pin at the next import, and keep the waiver expiry visible; decide E-2a/E-2b (C8).
+
+## INFRA-P1-001 — Declared wg0 firewall narrowing (SEC-P1-002) is not applied; every VPN peer still has blanket access
+
+config/nftables/falcon.nft replaces the blanket `iifname "wg0" accept` with per-port allows (9443; 15140/15141; 514/1514/1515; 514/2055) and PORT_PROTOCOL_MATRIX.md N-24 addendum says the narrowing is applied. The live /etc/nftables.conf still has the blanket rule (line 24) and the live kernel table inet falcon_filter shows it; /etc/nftables.conf sha256 8a7f5b941a26963f4b1041a7f65391aefa474b8ae6a304fc3d218072b3b78cdf differs from config/nftables/falcon.nft sha256 f6b187220587da2a84538b8d44f0a4fdddcc0ebc268c01b1f4ee18f27b182c9e (identical at 6e4fccd and 08e20d1). nftables.service is enabled+active and wg0 has 8 peers, so every peer can reach host listeners (SSH 22 with password auth EX-01, 9443 control plane, 1516/1517/1518) outside the intended trust set. bootstrap/30-firewall.sh installs+applies the file but has not been re-run since commit 7bb6187; post_reboot_verify.sh:25-35 only checks policy drop and DOCKER-USER. Fix: re-run bootstrap/30-firewall.sh (rollback available) and add a live assertion comparing the applied wg0 rules to the declared file.
+
+## NOTIF-P1-001 — Public lab ntfy endpoint is dead: tunnel ingress and repo docs disagree on the hostname; watcher heartbeat read and owner public subscriptions cannot work
+
+Make one hostname canonical end-to-end (prefer falcon-ntfy.mainecybertech.us in bootstrap 96/97 + tunnel ingress + DNS, or switch all consumers and add a cert for ntfy.falcon.mainecybertech.us); then verify the owner read and watcher read and add a public read check to the weekly canary.
+
+## OBS-P0-001 — OBS-P0-001 remediation not provisioned live: 6 rules missing from Grafana; runtime tree 22 commits behind
+
+The direct-scrape half of OBS-P0-001 is live (5 Prometheus targets, all up), but the monitoring-death rules added by PR #46/#49 are not provisioned: the live Grafana rule set has 77 rules and lacks falcon-textfile-collector-stale, falcon-textfile-collector-stale-daily and falcon-textfile-collector-absent (bootstrap/90-alerting.sh:632-642), falcon-monitoring-scrape-absent (:620-622), falcon-backup-offsite-dlq (:467-469) and falcon-relay-path-failures (:543-545). The repository documents the residual itself: 'Provisioning the new rules live requires running bootstrap/90-alerting.sh on the lab' (docs/runbooks/MONITORING_SCRAPE_AND_FRESHNESS.md:77-82). Root cause: the live runtime tree /home/user/falcon-build is 22 commits behind origin/main (HEAD 6e4fccd) and its provisioning script (80 rules) predates the Oct 5 additions; the tree also lacks automation/validation/restore_assertion.sh. The prior follow-up register's verified-fixed note (PR #46 merged) holds for the code only, not the live deployment. Fix: deploy current main (or run the provisioning script from the audited tree), verify the six rules evaluate, and add a drift check comparing provisioned rule IDs to the script/catalogue.
+
+## OBS-P1-001 — Aggregator source-side event drops neither exported nor alerted; 0.7-1.5M events dropped unseen
+
+automation/validation/export_monitor_metrics.sh exports only sink-side Vector metrics (falcon_pipeline_sink_http_errors/errors/discarded/buffer, lines 66-77); the source-side counter vector_component_discarded_events_total{component_id="edge_ingest",component_kind="source",intentional="false"} is not read and no rule covers it. On Oct 9 the aggregator dropped 677,475 events in the current instance and 1.5M+ in the prior instance while the only alerts were buffer-cap and feed-silence; nothing alerted on the loss itself. Fix: export the source dropped/received counters and add a rule (increase > 0 or drop-ratio threshold) plus a Vector restart/OOM counter; prove it with a bounded drill.
+
+## PERF-P1-001 — Vector aggregator OOM-kill loop under catch-up load discards events at the ingest source
+
+The aggregator (512 MiB cgroup limit, compose/central/docker-compose.yml:150-152) is pinned at 99.3-99.95% of its limit while replaying the 2026-10-08/09 backlog; the kernel OOM-killed it at 20:45:08Z, 21:09:16Z and 21:19:12Z (restartcount=23), interrupting in-flight edge requests. Vector recorded 900,521 then 975,176 unintentional discards at edge_ingest within minutes (curl 127.0.0.1:9598/metrics) and logs 'Events dropped ... Source send interrupted mid-flight'; the OpenSearch sink concurrently logs request timeouts. The sink has no explicit buffer/request tuning (config/vector/aggregator.yaml:116-131) and there is no end-to-end acknowledgement, so permanent loss cannot be ruled out. Fix: raise the limit to >=1 GiB and/or add a bounded disk buffer on the sink, set request.timeout_secs/batch sizes, enable acknowledgements between edge and aggregator, and alert on restarts/OOM and source discards. Evidence: journalctl -k OOM lines; docker inspect/stats; Vector logs and counters.
+
+## PERF-P1-002 — Root LV carries the relocated 56 GiB snapshot repository with no root-side retention or reclaim
+
+The OpenSearch snapshot repository was relocated on 2026-10-09 from the data LV to /var/lib/falcon-snapshots/opensearch on the root LV (bind-mounted back to /srv/falcon/backups/opensearch). Root is now 136/171 GiB (83%, 28 GiB free) and the last snapshot added 4.28 GiB (217 files); the nightly job (bootstrap/85-backup-job.sh:29-35) has no age/count retention, and the disk guard's snapshot prune fires only when /srv/falcon free < 10 GiB (automation/validation/disk_guard.sh:20,27,111-127) - the data LV currently has 96 GiB free, so the now root-resident repo can never be pruned by it. The Grafana rule 'Root disk projected full within 7 days' has been firing since 20:49:10Z; at ~4.3 GiB/night the 85% warning is <1 night away, 90% ~2-3 nights, full disk ~6-7 nights. Fix: add snapshot retention by age/count in the backup job and make the guard evaluate the filesystem holding the repo (df -P /var/lib/falcon-snapshots).
+
+## PRIV-P1-001 — Wazuh indexer and IRIS case data still have no retention or deletion window (owner-gated)
+
+No ISM/lifecycle policy exists for the Wazuh indexer estate (wazuh-*, wazuh-monitoring-*) or for IRIS case data/downloads, so there is no bounded deletion guarantee for security/case data. The retention matrix names both as GAPs; the owner decision (owner-action C1; prior rows DATA-P1-001/SEARCH-P2-001) remains open. The 2026-10-09 capacity work (snapshot repo relocated off the data LV; 7 migrated volumes retired) relieved reactive pressure but did not create a retention window. Fix: owner decides windows (suggested Wazuh alerts 90 d / statistics 30 d via an indexer ISM policy; IRIS lifecycle TBD), implement, document in RETENTION_MATRIX.md, and add an accelerated deletion test per class.
+
+## RES-P1-001 — Vector aggregator OOM crash-loop drops security telemetry (512 MiB cap; 23 kills; 0.7-1.5M source-side drops per window)
+
+The central Vector aggregator (falcon-central-vector-aggregator-1) runs under a 512 MiB cgroup limit (compose/central/docker-compose.yml:149-152). On 2026-10-08/09 the kernel OOM-killed the container 23 times (5 on Oct 8, 18 on Oct 9; journalctl -k 'Killed process ... vector'; RestartCount=23 at 21:19:13Z). Each kill interrupts in-flight ingest; the source-side counter vector_component_discarded_events_total{component_id="edge_ingest",intentional="false"} reached 677,475 in the container started 21:19Z and 1.5M+ in the prior instance, with container logs repeatedly reporting 'Events dropped ... Source send interrupted mid-flight; pipeline may be overloaded or shutting down' (1,240-11,574 per event). The probe disk buffer absorbed backpressure but sat at its 2 GiB cap (2,042 MiB at 19:02Z) for ~7 hours (13:47-20:47Z), so the edge was one step from dropping UDP syslog. Fix: right-size the aggregator memory limit/request for the current ingest rate (or reduce batch/memory use), add an alert on aggregator restarts/OOM, export and alert the source-side discarded counter, and re-run the drop drill against the source path.
+
+## SEC-P1-001 — SEC-P1-002 remediation committed but not applied live - WireGuard blanket accept still in effect
+
+The repository fix that narrows the former blanket `iifname "wg0" accept` (commit 7bb6187, 2026-10-03 02:24 -0400) is NOT applied on the live host: `/etc/nftables.conf:24` still contains the blanket accept and the live `nft list chain inet falcon_filter input` matches the old file, while `config/nftables/falcon.nft:24-33` carries the intended per-port set (9443; 15140/15141; 514/1514/1515; udp 514/2055). Consequence: every WireGuard peer (8 peers live, including lower-trust enrolled endpoint devices) can reach every host listener bound to 0.0.0.0 - the edge control plane 9443, the enrollment service 8791, Traefik 80/443 (all consoles via Host-header routing), the Wazuh manager 1515 - and can attempt SSH, because the blanket rule precedes the SSH source-address rules. This is a delivery-vs-configuration gap: the repo reads fixed while the live host remains exposed. Fix: apply config/nftables/falcon.nft via bootstrap/30-firewall.sh (or nft -f), verify the live chain matches, and add an assertion for the wg0 rule set to post_reboot_verify.sh/port_matrix_check.sh.
+
+## WH-P1-001 — OpenSearch sink drops failed batches with no dead-letter path and the failure counters stayed 0 through a 40-hour outage
+
+The Vector elasticsearch sink (aggregator.yaml:116-131) has no dead-letter path; the file DLQ consumes only route_valid.invalid. During the 2026-10-08/09 outage the aggregator logged 'Not retriable; dropping the request' with component_events_dropped counts (62..13310) while Prometheus showed falcon_pipeline_sink_errors_total=0 and falcon_pipeline_sink_discarded_events_total=0 for the whole window and falcon_pipeline_sink_sent_events_total was flat ~38h. The live vector metrics endpoint materializes only the edge_ingest source discarded series, so the sink series the exporter filters on is absent and the falcon-pipeline-sink-write-failures alert (bootstrap/90-alerting.sh:233) could not fire; detection relied on freshness/e2e. Fix: capture sink failures (journal/proxy) and replay them, and make the failure counters provably increment with a firing proof.
+
+## ACM-P2-001 — Live client-VPN enrollment credential is a single shared token with no expiry; per-device lifecycle implemented but unused
+
+The enrollment service supports per-device bindings `<name>:<token>[:<expiry-epoch>]` with hmac compare, expiry enforcement and per-name override of the shared token; issue-enroll-token.sh issues 24h-TTL per-device tokens and replaces the binding on re-run. But the live `/srv/falcon/secrets/vpn_enroll.token` contains exactly one bare shared token line (structure checked 2026-10-09T21:33Z, value not read): no per-device bindings, no expiry. The shared secret is baked into the self-contained endpoint installer scripts (ENROLLMENT_CLOSURE.md:15), so any endpoint - or anyone who obtains a script - can enroll arbitrary new WireGuard peers; revocation means rotating the secret for every device. This is a documented owner action (docs/phase9/OWNER_ACTIONS.md C6, 'shared token unrotated') but remains the current live credential state. Fix: issue per-device tokens for every active device, rotate and remove the bare line, and extend enrollment_closure_check.sh to fail when a bare shared token remains.
+
+## ADMIN-P2-001 — Admin/observability consoles are exposed through public routers without origin authentication
+
+The operator consoles are published through Cloudflare Tunnel with only application logins at the origin: Grafana and OSD via the falcon host paths, IRIS via iris.mainecybertech.us, the Wazuh dashboard via soc.mainecybertech.us, ntfy with native auth, and only ntopng has origin basic auth. Live origin probes (2026-10-09T21:23Z, loopback): `/` -> 302 Grafana login, `/dash/` -> 302 OSD login, `/ntop` -> 401; public probes from the owner IP: iris -> 302 origin `/dashboard`, soc -> 302 origin `/app/login` (owner-IP Access bypass honored). The only network gates are Cloudflare Access at the edge (with the documented owner-IP bypass) and the host firewall (origin web only from mgmt/admin subnets + loopback). Risk R-15 is recorded OPEN. Fix: origin auth or Access-JWT validation in front of the console routers, or an explicit refreshed acceptance against R-15. Prior-run ID ADMIN-P2-001, still open; same root cause as SEC-P2-001.
+
+## ADMIN-P2-002 — Access-posture gate accepts origin reachability; no automated check verifies Cloudflare Access enforcement anymore
+
+At commit 08e20d1 the external-smoke workflow was relaxed so that ANY 302 passes: a non-cloudflareaccess.com location is reported as 'OK ... owner-IP Access bypass; origin reachable'. The same file still says in its job comment that it 'Must run from GitHub's network' and that 'On the lab the vantage is internal and the result is wrong', yet runs-on was changed to [self-hosted, lab] in 70292a0; the job summary still claims 'iris/soc: must be 302 to cloudflareaccess.com (Access still enforcing)'. The commit message's 'Access posture is verified externally' has no artifact in the repo (grep for cloudflareaccess/posture checks returns only this workflow). Live from the lab, iris and soc already return origin redirects - exactly the condition now accepted. Consequence: an Access app removal/misconfiguration for iris/soc leaves CI green, and the governance doc (CI_GOVERNANCE_RECONCILIATION.md:40) still describes the workflow as verifying Access posture. Fix: restore a trustworthy posture check (external vantage or a scoped Cloudflare API/service-token check) that fails on non-Access redirects; if the lab vantage is kept, split availability vs posture and correct the summary text.
+
+## ADMIN-P2-003 — No centralized actor-level audit trail for Grafana/ntfy/IRIS console admin actions
+
+Host file/identity changes are audited (auditd watches in bootstrap/60-host-auditd.sh), OpenSearch REST activity is audited (plugins.security.audit.config.enable_rest: true in bootstrap/60-central-deploy.sh) and the Wazuh indexer has internal_opensearch audit, but Grafana/ntfy/IRIS console activity lives only in container-local json-file logs (20 MB x 5, config/docker/daemon.json) that are not shipped anywhere: the live host Wazuh agent collects journald/audit.log/dpkg plus df/netstat/last commands and has no Docker container-log source. The Traefik access log records ClientAddr/host/path/status with no authenticated user identity. As a result, admin role/settings/delete/export actions on those consoles cannot be reconstructed from a durable, searchable store, and there are no detection rules for them. Fix: ship container logs into the Wazuh/OpenSearch pipeline (Wazuh docker-listener or a Vector source), enable app audit features where available, and add rules for admin role/settings/delete/export events.
+
+## API-P2-001 — Ingest contract relies on a shared secret header, not request signing or idempotency keys
+
+The edge->aggregator ingest path is authenticated only by HTTP basic auth with a shared secret (falcon-vector-edge / VECTOR_INGEST_PW); there is no per-request signature, timestamp/nonce, or idempotency key. Retries and replays produce duplicate documents (DQ-P2-002 measures the duplicate ratio but does not prevent it). No change between e267ce1 and 08e20d1. Fix: add HMAC/mTLS request signing with a timestamp/nonce and a deterministic idempotency key, keeping basic auth as a second factor.
+
+## ARCH-P2-001 — Declared container hardening lags the running containers
+
+Verified fixed at this commit: compose/central/docker-compose.yml declares no-new-privileges on the central services and cap_drop ALL on vector/prometheus/grafana/ntfy; live docker inspect shows the same controls on the running containers, and the continuous running-vs-declared drift metric falcon_container_drift{kind="security"} is 0 (container_drift_check.sh). Residual opportunity (not a declared/live gap): no service uses a read-only root filesystem.
+
+## ARCH-P2-002 — Wazuh and vendored MCT stacks run tag-only images outside pin/SBOM scope
+
+Partially fixed: pins/images.lock (24 entries) now includes the Wazuh 4.14.7 images plus cloudflared/nginx/python with recorded digests, and sbom/ carries Wazuh SBOMs. Residual: pins/supply-chain-waivers.json still grants a blanket waiver for mct/compose (*), mct/VENDORING.md records 29/37 unpinned refs, and live containers still run cloudflare/cloudflared:latest and nginx:stable. Fix: scope the waiver per ref, pin/floating-tag replacement at next deploy, or make the archive tree non-deployable.
+
+## ARCH-P2-003 — Live ingest authentication is a shared secret header, not mTLS
+
+Unchanged: the probe edge sink and the aggregator edge_ingest source use HTTP basic auth with a shared credential over the internal network; there is no per-device certificate identity, request signing or idempotency. Fix: certificate/mTLS identity for ingest or request signing + idempotency keys.
+
+## BP-P2-001 — CODEOWNERS is invalid: every entry uses an unresolvable org handle
+
+GitHub's codeowners/errors API returns 6 'Unknown owner' errors for .github/CODEOWNERS (lines 7,10-14): every entry uses the bare org handle @MaineCyberTech, which is not a user and not an org/team (GET /orgs/MaineCyberTech/teams returns []). GitHub ignores all six lines, so the documented advisory review control (BRANCH_PROTECTION.md:34-35) assigns no owners, including for sensitive trees /.github/, /ci/, /bootstrap/, /pins/. The file's own comment anticipated the fix ('replace @MaineCyberTech with the owner user account') but it was never applied. Fix: use @JulianB-MCT (owner user with admin/write) or create a team and use @MaineCyberTech/<team>; confirm codeowners/errors returns zero errors; update BRANCH_PROTECTION.md.
+
+## CHAIN-P2-001 — The only automated Access-posture check no longer verifies Access (external-smoke accepts any 302 from the lab vantage)
+
+Restore an external vantage for the Access assertion (or use the Cloudflare API), and keep the bypass acceptance as a separate informational check.
+
+## CI-P2-001 — Auto-merge workflow holds `contents: write` with no environment protection
+
+Prior CI-P2-001 remains open. dependabot-merge.yml:17-19 declares contents:write + pull-requests:write; :27 runs on the self-hosted lab runner; :46-48 checks green then runs `gh pr merge --squash --delete-branch` without --match-head-commit, leaving a TOCTOU window; no environment protection exists (environments API total_count 0). The owner-applied `dependabot-approved` label is the only human disposition (BRANCH_PROTECTION.md:95). Fix: add --match-head-commit <headRefOid>, reduce scopes to the minimum (contents:write + pull-requests:read), add an environment with required reviewers when the plan allows or convert the merge to an owner-run workflow_dispatch.
+
+## CI-P2-002 — external-smoke no longer asserts Cloudflare Access posture and passes on an owner-IP bypass
+
+external-smoke.yml:3-6 and :23-25 still claim the check runs from GitHub's network and asserts 302 -> cloudflareaccess.com, but commit 70292a0b moved it to the self-hosted lab runner and commit 08e20d1a made any 302 pass ('owner-IP Access bypass; origin reachable'). Run 37985746101 (2026-10-09T20:15Z, HEAD) succeeded with that bypass message for iris and soc, while the job summary (lines 64-67) still says 'must be 302 to cloudflareaccess.com (Access still enforcing)'. The commit message claims Access posture is verified externally, but no in-repo artifact of that verification exists. Impact: an Access regression on the public hostnames would not be detected and the artifact misstates what was checked. Fix: restore an external vantage or rescope the workflow to origin reachability, record where Access posture is verified, and correct comments/summary.
+
+## CI-P2-003 — Repository Actions settings default to permissive (write token, PR approvals, any action, no SHA-pin requirement)
+
+Live API: /actions/permissions returns allowed_actions=all and sha_pinning_required=false; /actions/permissions/workflow returns default_workflow_permissions=write and can_approve_pull_request_reviews=true. All three current workflows declare their own permissions, so this is latent: any future workflow without a permissions block gets a read-write token by default; Actions may approve its own PRs; any marketplace action is allowed; SHA pinning is not enforced server-side (the repo pins manually and runs zizmor). Fix: set default workflow permissions to read, disable 'Allow GitHub Actions to create and approve pull requests', consider allowed_actions=selected and sha_pinning_required=true.
+
+## CTR-P2-001 — Adopted MCT/Wazuh stacks run without baseline container hardening or healthchecks
+
+compose/central and compose/probe were hardened (no-new-privileges on 11 services, cap_drop ALL on vector/prometheus/grafana/ntfy, explicit users, healthchecks everywhere), but the adopted first-party stacks do not carry the same baseline: compose/mct/docker-compose.opencanary.yml and compose/mct/iris-web/* declare no security_opt, no cap_drop and no healthcheck; automation/wazuh/multi-node/*.yml declares no security_opt/healthcheck. Live profile 2026-10-09: 27 running, 0 privileged, 16 without no-new-privileges, healthchecks on only 13/27; opencanary (decoys on the management IP) and IRIS run as image-default root. The repo's own 2026-10-02 audit rated this CONTAINER-P1-001 and IMAGE_SCAN_DISPOSITION.md:91-93 records the migrated stacks as outside the scan disposition. Fix: add security_opt no-new-privileges, cap_drop ALL (plus required caps), non-root users where supported, healthchecks, and bring the adopted images into pin/SBOM/vuln scope.
+
+## DOC-P2-002 — The 'authoritative' current-state page lags its sources (rule count, condition status, follow-up list)
+
+docs/CURRENT_STATE.md (last modified 2026-10-03) calls itself the authoritative current-state page but now contradicts the README and the generated catalogue on the alert-rule count (77 vs 79), still lists C7 volume deletion as pending ~2026-10-08 although the retirement executed 2026-10-09 in this clone (main 6e4fccd / ops c13a416), and the EVOLUTION_GUIDE state block still describes C2 credential residuals and a firing pairing-drift alert although CURRENT_STATE records C2 DONE and pairing restored 2026-10-03. ALERT_FIRING_PROOFS.md also lags at 77/75 coverage after the two OBS-P0-001 rules. Fix: refresh CURRENT_STATE.md and the evolution-guide state block from the ledgers + generated catalogue (append a 2026-10-09 section), refresh the firing-proof coverage, and extend the README-ledger drift test to rule counts.
+
+## DR-P2-001 — OpenSearch disk watermarks left relaxed (93/96/98) after the Oct 9 incident; cluster still yellow with 44 unassigned shards
+
+During the Oct 9 data-LV recovery the watermarks were raised persistently (GET /_cluster/settings: low 93%, high 96%, flood_stage 98%; evidence 20261009T163940Z_data-volume-watermark-recovery-4.out step 2). The data LV is now at ~60% and root at 83%, so the relaxation is no longer needed, yet it remains persistent and the decision-log row (2026-10-09T20:15Z) merely notes 'Watermarks remain 93/96/98 persistent'. With flood stage at 98% the cluster keeps writing much closer to a full volume than the 95% default, on a host that reached 90% and RED two days earlier. The cluster is still yellow with 44 unassigned shards. Fix: revert to defaults (85/90/95) now that margin is restored, or record an explicit owner acceptance; document the expected single-node yellow state so it is not confused with the incident.
+
+## DR-P2-002 — Bulk telemetry snapshot repositories are stored offsite unencrypted; only config/secrets archives are encrypted
+
+bootstrap/80-offsite-backup.sh encrypts the config archive, new-services archives and edge-secrets archives (openssl enc with backup_enc.key), but uploads the OpenSearch and Wazuh indexer snapshot repositories as plain files (upload_repo_delta to spaces:.../monitoring/opensearch and .../monitoring/wazuh-indexer; lines 545-564). Those repositories contain syslog, flow, IDS alert and Wazuh alert data. The Spaces key is access-controlled, but there is no encryption-at-rest evidence for these objects (rclone config has no SSE settings; lines 489-503). The archive key itself is escrowed only by owner attestation (CUSTODY_ATTESTATION.md) and that escrow has not been drilled. Fix: document and owner-accept the plaintext-repo decision, or enable SSE on the bucket/objects; add a decrypt-from-escrow drill for backup_enc.key.
+
+## EVOL-P2-001 — The OpenSearch identity apply is not merge-safe (R-28 hazard documented; owner decision pending)
+
+bootstrap/60-central-deploy.sh runs a config-driven securityadmin apply that REPLACES the whole internal-user set (documented in the script and in EVOLUTION_GUIDE §8.1), so an out-of-band identity is silently deleted on the next re-run; R-28 is closed through declared identities + verify-after-rerun, but the recommended merge-safe/fail-loud apply is not implemented and owner decision E-4a is unsigned. Prior IDs: 20261002 EVOL-P2-001; 20260930 EVOL-P3-001. Fix: make the apply merge-safe or fail loud on undeclared users; keep the declared registry as the source of truth.
+
+## FEAT-P2-001 — Vendored MCT services are present in Compose while the subtree policy calls the tree archive-only
+
+Partially fixed: mct/VENDORING.md:62-78 classifies mct/compose as archive-only, docs/runbooks/MCT_CONSOLIDATION.md:22-39 records the live-vs-staged map, and remediation_guards_test.sh passes (no first-party deployment artifact references mct/compose). Residual: automation/validation/container_drift_check.sh:150 still lists mct/compose in DECLARED_ROOTS, so a container started from the archive tree would classify as declared, and P4 (pin exceptions + vendor-drift import manifest) is unimplemented. Fix: drop mct/compose from declared roots or classify it explicitly; implement P4.
+
+## FEAT-P2-002 — Alerting feature state is stale: 79 rules claimed/catalogued, 77 live; six merged rules are not provisioned
+
+README.md:30 claims 79 alert rules and docs/phase9/ALERT_CATALOGUE.yaml lists 79 (including falcon-textfile-collector-{absent,stale,stale-daily}), but the live Grafana API has 77 rules; missing are falcon-textfile-collector-{absent,stale,stale-daily}, falcon-backup-offsite-dlq, falcon-monitoring-scrape-absent and falcon-relay-path-failures. All 77 live rules were last updated 2026-10-03T03:49:54-03:50:04Z (the last provisioning run), while the six rules have been in bootstrap/90-alerting.sh since 2026-10-03/10-04 (alert_rule_lint derives 83 UIDs). The catalogue generator claims it 'cannot drift' but regeneration is manual, and the lint test is static with no live comparison. Impact: documented monitoring-death coverage (including the OBS-P0-001 freshness rules) is not live. Fix: re-provision from the converged tree, regenerate the catalogue, add a live-vs-source rule drift check.
+
+## HYGIENE-P2-001 — Large generated SBOM/vulnerability JSON remains committed (37 files, 29 MB, up to 3.0 MB each)
+
+Move generated SBOM/vuln JSON to release artifacts or compress; gate regeneration/freshness; keep in-repo only the provenance manifest.
+
+## HYGIENE-P2-002 — Canonical release-gate page carries a superseded audit opinion; the newest full run's P0 is not referenced
+
+Update the release-gate reconciliation to the newest run and add a check that the referenced run is the newest committed run.
+
+## INFRA-P2-001 — Live deployment tree is not the audited commit: 22 behind origin/main, 2 ahead, and its own CI fails
+
+/home/user/falcon-build (the tree systemd ExecStart paths and container ro-mounts resolve to) is on main at 6e4fccd = origin/main (08e20d1) behind 22 / ahead 2. It lacks OBS-P0-001 (bootstrap/90-alerting.sh: 0 vs 3 falcon-textfile-collector rules), FINAL-P1-001 (ci/validate.py check_restore_assertion: 0 vs 2 occurrences), API-P1-001 and HYG-P1-001; the live Prometheus mounts the live tree's prometheus.yml/edge-alerts.yaml and units run /home/user/falcon-build/automation/**. The live lineage also commits 12 evidence files from 2026-10-09 without ledgers/evidence_index.csv rows, so validate CI on the ops branch (c13a4160, runs 279/280) fails the evidence-index check. A deploy from the audited commit would move the OpenSearch snapshot mount from /var/lib/falcon-snapshots/opensearch back to /srv/falcon/backups/opensearch (compose/central/docker-compose.yml:78 differs). Fix: land the live commits (PR #49), update the host tree to origin/main, and add a read-only checkout-vs-origin drift check (container drift exists; tree drift does not).
+
+## INFRA-P2-002 — Live Prometheus alert rules exist only as uncommitted working-tree changes
+
+config/prometheus/edge-alerts.yaml in /home/user/falcon-build is modified but uncommitted: +112/-7 lines adding OBS-P2-002 gating and new edge sensor/capture/A-B slot alerts dated 2026-10-09, which do not exist at 08e20d1 (grep falcon_edge_inventory_collector_last_run_timestamp = 0 occurrences). The live Prometheus container mounts this exact file read-only. The single host's working tree is the only copy; a fresh deploy from main or host loss silently drops the rules. Untracked .bak-edge-rules files sit alongside. Fix: commit the changes (or capture them as a patch artifact) and rebind the live rules to a commit.
+
+## INFRA-P2-003 — Daily backup hook has failed for two consecutive runs and has not updated snapshot freshness
+
+falcon-backup.service is failed: the Oct 8 and Oct 9 03:30 runs logged 'snapshot failed (state=); not updating freshness' and 'incomplete run (rc=1); wrote marker'; the last success was Oct 7. The timer remains armed for Oct 10 03:30Z. The failure window coincides with the data-LV watermark incident; the capacity/snapshot relocation landed only in the live tree and is not in the audited commit. Recovery point age is now >48h and the aborted marker is not currently present in /srv/falcon/compose-state. Fix: confirm the relocated snapshot repo, run the backup, verify a fresh snapshot + offsite sync, repair marker surfacing, and merge the relocation.
+
+## INV-P2-001 — Repository is majority generated/derived content with no in-repo regeneration or drift check
+
+Still majority generated bytes (evidence/ 2269 files + sbom/ 39 files = ~60% of 3865 files; 14MB + 29MB of 55MB = ~78%), but the two largest generated trees are now bound and verified: check_generated_drift.py (DEFAULT_MANIFESTS = evidence/MANIFEST.sha256) PASSes with 2268 entries, sbom_hashes.sh verify PASSes for 38 artifacts, and the evidence index/digest/publication checks pass (ci/validate.py checks 13/18/sbom-hashes). Residual: committed audit-run folders are validated structurally only (audit_run_lifecycle.sh) with no content binding, and mct/ has no import manifest (VENDORING.md P4 proposed, not implemented). Fix: bind committed run folders (e.g., record the canonical run hash) and implement the mct/ import manifest.
+
+## IR-P2-001 — No facilitated tabletop exercise has been run; Scenario 5 (total monitoring/alerting loss) remains unexercised
+
+The 10-scenario catalogue, roles, ground rules, record template and facilitation kit all exist (docs/phase9/exercises/...), including the required Scenario 5 total-loss-of-monitoring path and Scenario 6 alert-delivery loss. But no session has been recorded: docs/phase9/exercises/TABLETOP_PACKAGE.md:3 states 'no facilitated exercise has been run against it'; records/README.md:3-6 states 'no exercise has been run and no record exists here yet'; the records index is '(none yet - IR-P0-001 OPEN)'. The 2026-09-23 session was a compressed implementer walkthrough (3 scenarios) and the 2026-10-01 Scenario 5 exposure was a paper walkthrough, which the package itself says is not an exercise. The extended check (scenario for total loss of the monitoring/alerting path) is satisfied on paper only, and the out-of-band notification latency is unmeasured. Fix: schedule and record a facilitated session (owner + responder + independent reviewer), starting with Scenario 5; measure out-of-band latency; sign and index the record; repeat quarterly.
+
+## IR-P2-002 — Escalation contacts remain placeholders; incident escalation path unverified (IR-P2-005 open)
+
+docs/security/ESCALATION_CONTACTS_TEMPLATE.md is a field template: all 13 required roles are OWNER-INPUT across name/contact/out-of-band/hours/backup/verification, and section 5 states the values were never collected, so 'the incident runbook's escalation path is a placeholder and IR-P2-005 stays open'. The current incidents (Oct 8-9 backup failures, Oct 9 capacity incident) were handled through the owner's own channels, but the documented path cannot be followed by a second responder. Fix: fill the contact table in owner custody, verify at least one out-of-band channel end to end, and record the verification log; keep sensitive values out of the repository.
+
+## IR-P2-003 — Recurring incidents lack post-incident review; Oct 8-9 backup failure has no root-cause record
+
+Three backup failures in seven days (Oct 3, 8, 9) and a ~45-hour OpenSearch RED episode (Oct 7 19:20Z -> Oct 9 16:41Z) are visible in the live journals, but the only in-repo record is the Oct 9 capacity decision-log row plus raw evidence files; there is no incident record with timeline, root cause, impact and follow-ups for the backup failure class, although docs/phase9/INCIDENT_2026-09-23_PYTHON_INTERPRETER.md shows the expected format. The extended check 'verify previous fixes stuck' is mixed: the Oct 3 Wazuh per-feed rule stuck (falcon-feed-stale-wazuh is live), while host-memory-pressure noise (38 firings in 4 days) and backup snapshot fragility recur. Fix: run a post-incident review for the Oct 7-9 episode and record it append-only; add the recurring backup-failure pattern to the review cadence.
+
+## NOTIF-P2-002 — Notification noise remains high: 409 messages/48h, 361 FIRING/RESOLVED transitions, and sub-repeat-interval flapping on several rules
+
+Raise `for` on the flapping feed/probe rules, add maintenance mute timings or a relay-side same-title suppression window, and record the 7-day noise measurement.
+
+## OBS-P2-001 — ALERT_CATALOGUE.yaml contradicts live Grafana while claiming it cannot drift
+
+The committed catalogue (79 alerts) lists the three textfile-collector rules that are not provisioned live, and omits falcon-feed-stale-wazuh, which is live; live Grafana has 77 rules. The file header says 'Generated from the live Grafana rules' and the generator docstring claims 'regenerated from the live rules so it cannot drift from what is deployed' (automation/validation/build_alert_catalogue.py:1-9) - both false against the current lab. Fix: regenerate the catalogue after closing the deployment gap (finding 1) and add a catalogue-vs-live comparison to the drift checks.
+
+## OBS-P2-002 — Alert noise/flapping high during incidents; root-disk projection false-positive from the relocation step
+
+In the four days Oct 6-9 the relay published 334 FIRING notifications (both paths; per-day lines 50/62/262/294) and 500 alert state-change annotations accumulated in the 2.5 h window 19:16-21:42Z during the incident. Recurring top offenders: 'Live source tree not reviewable' 44, 'Host memory pressure (early warning)' 38, 'Wazuh alert feed stale' 40, 'Syslog-TLS feed stale' 40, 'Probe buffer' 52 combined, 'Container unhealthy' 24. The 'Root disk projected full within 7 days' alert fired at 20:49Z because predict_linear over 6 h saw the one-off 60 GB snapshot-repo copy (predict_linear = -757,706,754,084; root 83%) - a step change, not a trend. Fix: add step-change suppression or a trend floor to projection rules, review repeat/for tuning for the noisiest rules, and run the documented 7-day noise accounting after each incident.
+
+## ORCH-P2-001 — Committed 2026-10-05 full-run record contradicts the canonical gate and omits the domain evidence
+
+The falcon repo's durable record of the 2026-10-05 full-domain run (docs/audits/repo-deep-dive/20261005-0354-full-main-e267ce1) says 'Verdict: GO WITH CONDITIONS' while carrying P0 x1/P1 x7; the pack's canonical run for the same audit (runs/falcon-20261005-full-main-e267ce1) says NO-GO, matching the pack's own gate rule P0 -> NO-GO (tools/lib_findings.py:149-165). The committed copy was produced by the then-current publish_audit.py whose gate treated P0 as a condition (git show 729b9f1:tools/publish_audit.py:198); the pack unified the gate 30 minutes later (commit 1e2a086, 2026-10-04 21:29) but the published falcon artifact was never reconciled (only renamed in 427298b). The repo copy also presents the full-domain findings under profile 'focused-security-supply-chain-ci', promptCount 4, reports [lens_focused_security_supply_chain_ci.md], with no per-domain reports (the pack copy carries 42), and its follow_up_register keeps all 34 findings 'open' while the pack register carries post-audit statuses (e.g. OBS-P0-001 verified-fixed). Fix: republish/reconcile the committed run from the canonical pack run (all domain reports + the shared gate), or append an explicit reconciliation note; add a publish-time check that a P0-bearing run cannot emit GO/GO WITH CONDITIONS while unresolved.
+
+## ORCH-P2-002 — full_domain.py hardcodes profile=base and records area codes as lenses; falcon-lab coverage is not representable
+
+tools/full_domain.py writes "profile": "base" unconditionally (lines 203, 219) and "lenses": [d["area"] for d in domains] (line 224), so the run manifest lists 43 area codes under 'lenses' and records no lens IDs. The pack's falcon-lab manifest schema uses 'lenses' for the five lens overlays (ND/REV/INTG/LIVE/ADV; examples/audit_manifest.falcon-lab.example.json:101; profiles/falcon-lab.manifest.json:29-31). The falcon adaptation documented in profiles/falcon-lab.md (46 prompts incl. 41 EVID, 42 XREPO, 43 FLEET, 44 DQ; 5 lenses; repo-canonical output) and prompts/MASTER_RUNNER_FALCON_LAB.md cannot be driven or recorded by the full-domain driver; both the prior and current 'full' falcon runs are the base 42-prompt set, so the falcon-only domains and the lens wave are not audited, and tools/check_run.sh:47-52 never requires the falcon-lab extras because profile != falcon-lab. Fix: add a profile option, emit the falcon-lab manifest shape when auditing falcon, and record lens IDs/results; or document the reduced scope explicitly in the manifest.
+
+## PERF-P2-001 — Persistent host memory/swap pressure; capacity envelope and memory budget stale after Wazuh/IRIS consolidation
+
+The live host is 6 vCPU / 12 GiB with ~10 GiB used, 2.2-2.4 GiB available and 3.9-5.8 GiB swap used (falcon_host_swap_used_percent 63.53, falcon_host_memory_available_percent 27.11). Prometheus 7-day history: SwapFree min 2.20 GiB / avg 3.30 GiB; MemAvailable min 1.40 GiB / avg 4.50 GiB; pswpout peaks ~2170 pages/s. The Wazuh multi-node cluster (3 indexers ~1 GiB each, dashboard 728 MiB, 2 managers) and IRIS were consolidated onto the host after the documented envelope was measured (docs/phase5/PERFORMANCE_ENVELOPE.md:10-11: 4 vCPU / 11.7 GiB / 4.7 GiB used) and exceed the <=9 GiB service-memory budget (docs/architecture/STORAGE_CAPACITY_MODEL.md:36). Swap pressure correlates with OpenSearch write latency (sink timeouts) and raises OOM recurrence risk. Fix: decide the Wazuh/IRIS memory contract (cap or move), update the envelope/budget, and tune the swap alert to the observed baseline.
+
+## PERF-P2-002 — Data-LV warning/reclaim thresholds are GiB constants that coincide with OpenSearch's own watermarks on a 221 GiB volume
+
+falcon-data-lv-low fires below 15 GiB free (bootstrap/90-alerting.sh:522-523) = 93.2% used on the 221 GiB data LV, i.e. the same point as OpenSearch's low watermark (live persistent: low 93%, high 96%, flood 98%); the disk guard reclaims only below 10 GiB = 95.5% (disk_guard.sh:20). There is effectively no early-warning band between healthy and storage-engine refusal, and reclaim cannot prevent the flood stage. The 2026-10-09 recovery evidence shows the failure mode (cluster red, create-index block, 90% LV, manual snapshot deletion). Fix: express thresholds as percentages with an early band (warn 80 / act 85 / reclaim 90) or compute GiB from the volume size, verify falcon-data-projection fires before 93%, and add a CI check keeping guard/alert thresholds below the OpenSearch low watermark. Incident causality is Medium confidence (exact trigger of the Oct 8 index-creation block not fully provable from surviving logs).
+
+## PERF-P2-003 — Pipeline-loss metrics track only the sink; ~1M source-side discards are invisible to alerting
+
+automation/validation/export_monitor_metrics.sh:70-77,472-489 exports only the OpenSearch sink's counters as falcon_pipeline_sink_*. During the current catch-up the source-side counter vector_component_discarded_events_total{component_id="edge_ingest",intentional="false"} reached ~975k while the exported falcon_pipeline_sink_discarded_events_total read 0, so the provisioned Grafana rule 'Pipeline sink write failures or dropped events' stays silent through real event loss. The exporter also writes all-zero pipeline values without a sentinel when 127.0.0.1:9598 is unreachable during an aggregator restart (observed at 21:49Z, recovered at 21:55Z). Fix: export discarded/error counters for every source/transform/sink (at least edge_ingest), alert on increase(...) > 0, and emit a metric_ok/sentinel gauge for the pipeline block.
+
+## PERF-P2-004 — Data-LV warning/reclaim thresholds are GiB constants that coincide with OpenSearch's own watermarks on a 221 GiB volume
+
+TBD
+
+## PERF-P2-005 — Pipeline-loss metrics track only the sink; ~1 M source-side discards are invisible to alerting
+
+TBD
+
+## PRIV-P2-001 — Vendored MCT client/vendor layer has no privacy-classification boundary in this repository
+
+DATA_GOVERNANCE.md lists processors and classes for the falcon-lab stack but not the vendored MCT layer (IRIS is covered only as 'case data'; MISP/Velociraptor/Greenbone/Security Onion are staged or VM-side; client-onboarding records exist as templates/placeholders). A reviewer cannot determine the privacy boundary of the vendored content or its vendors from this repo; onboarding a real client would immediately create unclassified processing. Fix: record the boundary (vendored archive-only; MCT program owns client-data classification) in DATA_GOVERNANCE.md and MCT_CONSOLIDATION.md, and extend the processor table when an integration is revived.
+
+## PRIV-P2-003 — Published production verdict still binds a superseded package and carries a contradictory readiness line
+
+PRODUCTION_VERDICT.md binds repository commit c312ab7 and a 1,168-entry package (manifest 4476fc93…) while PACKAGE_DIGEST.txt binds commit 69b3c80 and a 3,783-entry package (manifest 5f591655…) with production_readiness=APPROVED; the verdict's readiness line still says NOT_SUPPORTED. C1 (re-review/rebind) remains OPEN, so reviewers cannot map the approval to the delivered data-handling configuration. Fix: at C1, regenerate the verdict from the ledgers per the template (identity block from PACKAGE_DIGEST.txt; corrected readiness wording) and publish the reviewer disposition + owner adoption; extend the digest/verdict consistency test to the binding fields. Cross-ref prior DOC-P2-004 (20260930 run).
+
+## REL-P2-001 — Deployment state is not bound to any release: the live host runs a divergent worktree with uncommitted runtime config
+
+Record a per-deploy manifest (commit + config hashes) and include the deployed commit in release notes; commit the runtime config drift or capture it as evidence.
+
+## RES-P2-001 — Host memory headroom exhausted: ~18.5% available, 4.5/8 GiB swap used, recurring OOM kills
+
+At 21:23Z the host had 2,376 MiB of 12,830 MiB available (18.5%), 4,566 MiB of 8,191 MiB swap in use, and load average 24.6. The early-warning rule 'Host memory pressure (early warning)' (falcon_host_memory_available_percent < 20) was pending/firing and has fired 38 times since Oct 6 on the relay. Vector is the current OOM victim, but any workload spike can evict another container (OpenSearch, three Wazuh indexers, Grafana, IRIS). Fix: capacity plan (move/resize the Wazuh indexer tier or add RAM), explicit memory requests/limits per service, and a swap-usage review.
+
+## SBOM-P2-001 — Release/SBOM artifacts are integrity-checked but unsigned; image/SBOM license gate not enforced
+
+Prior SBOM-P2-001 remains open. Provenance is SHA-256 integrity only: sbom_hashes.sh:13-18 states the manifest is NOT signed (no published signing key), no workflow/script uses attestation/cosign/gpg, and docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:102-105,156-158 records D1 (signing authority) as OWNER DECISION REQUIRED. The image/SBOM license allow-deny gate is still not implemented (docs:88-92; ci/license_check.py covers installed Python distributions only per LICENSE_GATE.md:18-21; no pins/licenses.allow exists). Partial progress: the vulnerability gate is now enforced in CI via validate.yml:105 (--require-vuln --vuln-waivers) and the 38-artifact SBOM set is hash-verified. Fix: decide D1 (owner-held ed25519/GPG signature or GitHub artifact attestations) and bind the manifest hash in PACKAGE_DIGEST.txt; implement the component-license allow/deny gate with an exception process.
+
+## SC-P2-001 — Dependabot vulnerability alerts disabled; Python CI dependencies uncovered by version updates
+
+GitHub-native dependency vulnerability alerting is off: GET /vulnerability-alerts -> 404 and GET /dependabot/alerts -> 403 'Dependabot alerts are disabled for this repository' (a settings toggle; unlike branch protection the API does not cite a plan limit). .github/dependabot.yml:1-7 configures only the github-actions ecosystem, so ci/requirements-ci.txt (hash-pinned pyyaml 6.0.3, zizmor 1.30.1) has no update bot. Code scanning/dependency review are GHAS plan-gated (403) and the dependency-graph SBOM endpoint is 404. Compensating controls: committed trivy scans gated by --require-vuln with 12 images waived to 2026-12-31, gitleaks, and the Python license gate. Fix: enable Dependabot alerts; add a pip ecosystem entry for /ci; keep the trivy refresh.
+
+## SC-P2-002 — Inherited credential estate is still pending rotation and 19 vendored scripts source credential files wholesale
+
+Prior SECRET-P2-001 remains open with an updated count. docs/security/CREDENTIAL_ROTATION_REGISTER.md:12-13 records 20/20 credential classes PENDING as of 2026-10-04 (rotation_status.py --fail-if-pending exists; no ROTATED rows). The vendored residual is real but smaller than documented: docs claim 28 scripts; a grep reproduction on 2026-10-09 finds 19 files under mct/scripts/** that combine 'set -a' with sourcing a credential env file, so those processes carry every key in the file in their environment. The first-party tree is remediated (env_key.sh single-key reads at 41 call sites; ci/validate.py:278-303 blocks sourcing /home/user/.env). Live modes verified: /home/user/.env 0600 user:user, capture.env 0600, /srv/falcon/secrets 0700 root. Fix: execute the 20 owner rotations (capture id + negative test each); migrate the vendored files to the single-key reader at the next MCT import or an owner-approved vendored patch wave; correct the doc counts.
+
+## SEARCH-P2-001 — Retention gaps remain on the Wazuh indexer alerts class and IRIS; RETENTION_MATRIX.md is stale vs the live clusters
+
+Attach a template-backed ISM policy to wazuh-alerts-4.x-* (owner-gated), refresh RETENTION_MATRIX.md from the live clusters, and add an unmanaged-index metrics check.
+
+## SEC-P2-001 — Public-facing routers have no origin authentication; `ntfy-auth` is dead config
+
+All public hostnames reach the origin (Traefik) with no origin-side authentication except the `/ntop` basic-auth route. Grafana (`falcon-grafana`), OpenSearch Dashboards (`falcon-dash`), IRIS (`iris-public`), the Wazuh dashboard (`soc-wazuh`), enrollment (`vpn-enroll`) and ntfy (`ntfy-public`) rely on their own app login (or native ntfy auth / enrollment token). The only network gate is Cloudflare Access at the edge (apps for falcon/iris/soc, with a documented owner-IP bypass) plus the host firewall, which admits origin web traffic only from the mgmt/admin subnets and the tunnel loopback. The `ntfy-auth` Traefik middleware is defined but referenced by no router (ntfy authenticates itself with `auth-default-access: deny-all`). Live origin probes (2026-10-09T21:23Z, loopback): `/` -> 302 Grafana login, `/dash/` -> 302 OSD login, `/ntop` -> 401; public probes from the owner IP: iris -> 302 origin `/dashboard`, soc -> 302 origin `/app/login`. The origin cannot distinguish an Access-authenticated request from a bypassed one (no `Cf-Access-Jwt-Assertion` validation anywhere). Fix: validate the Access JWT at Traefik (forward-auth) or add an origin auth layer for the console routers; wire `ntfy-auth` or delete it; otherwise record the residual explicitly. Prior-run ID SEC-P2-001, still open; config unchanged between e267ce1 and 08e20d1.
+
+## SEC-P2-002 — Public rate limits key on client-supplied X-Forwarded-For; no per-account limits on auth endpoints
+
+The Traefik `public-rate-limit` middleware (50/s average, 100 burst) keys its bucket on the raw `X-Forwarded-For` header value (`sourceCriterion.requestHeaderName`). When traffic arrives through Cloudflare, the header is client-influenced (Cloudflare appends the connecting IP to a client-provided value) and cloudflared connects from 127.0.0.1, so the header is the only per-client key; rotating the prefix changes the bucket and defeats the intended flood/credential-stuffing bound. The enrollment service's own limit (60/60s per socket source) collapses to a single fleet-wide bucket behind Traefik. There are no per-account/per-email lockouts on Grafana/OSD/Wazuh/IRIS logins. Fix: key the limit on `CF-Connecting-IP` (set/overwritten by Cloudflare) or a cloudflared-injected header, add a stricter limit for login paths, and enable app-level brute-force controls where available. Confidence Medium: config semantics reproduced; bypass not load-tested.
+
+## SECRET-P2-001 — Inherited credential estate still 20/20 pending rotation; vendored scripts source credential stores wholesale
+
+Unchanged since the prior run. rotation_status.py reports 20 items / 0 rotated / 20 pending; the register (docs/security/CREDENTIAL_ROTATION_REGISTER.md:12-13) and the vendored checklist remain PENDING; --live shows the inherited stores untouched (ops/creds.env mtime 2026-08-31, wazuh-local.env 2026-08-07). An independent scan finds 23 scripts under mct/** sourcing creds.env/wazuh-local.env/.env wholesale (14 with set -a; the docs count 28/22 across a wider set). Fix: execute the documented rotation order with name-only capture evidence per row, then migrate the vendored scripts to automation/validation/lib/env_key.sh.
+
+## SECRET-P2-002 — Live owner credential file has undocumented keys and the validator is not wired into any gate
+
+check_owner_env.py against the live /home/user/.env reports 9 keys (expected 7), mode 0600, 0 duplicates, 2 unknown keys: do_api (line 8) and unifi_cert_sha256 (line 9) -> FAIL. docs/security/OWNER_ENV_INVENTORY.md:47 still states 7 keys/PASS and .env.example carries the same 7. The validator is documented as a proposed ci/validate.py check (OWNER_ENV_INVENTORY.md:49-74; CI_SECRET_GATE.md:173-175) but no owner-env check exists in ci/validate.py, so the drift is only visible when run by hand. do_api is plausibly a second DigitalOcean token alongside do_pf (untracked credential class). Fix: reconcile the inventory (document or remove the keys) and wire the validator into the gate.
+
+## TEST-P2-001 — external-smoke no longer verifies Cloudflare Access from an external vantage; it accepts the owner-IP bypass
+
+external-smoke.yml's header states iris/soc must be '302 -> cloudflareaccess.com' from GitHub's network, but the job now runs on [self-hosted, lab] (line 26) and commit 08e20d1 changed the check to accept any 302, including a non-cloudflareaccess location labeled 'owner-IP Access bypass; origin reachable' (lines 37-45). The 2026-10-09 run (id 37985746101, success) logged both hostnames via the bypass branch. The gate therefore cannot detect an Access-policy regression for non-owner clients; the stated assertion is not exercised. Fix: keep the check on an external vantage (use the owner DO host or another external runner), treat the bypass as a warning with a recorded residual, or narrow the workflow's claim and track the posture elsewhere.
+
+## ACM-P3-001 — No consolidated access-control matrix; authorization remains per-service and distributed across four documents
+
+There is no single access-control matrix artifact. The knowledge is spread across docs/architecture/PORT_PROTOCOL_MATRIX.md (route/port -> auth/firewall), docs/runbooks/ACCESS_AND_ACCOUNTS.md (human surfaces + custody), docs/architecture/IDENTITY_AND_SECRETS.md (identities + OpenSearch roles) and docs/architecture/TRUST_BOUNDARIES.md (boundary controls). Console application roles (Grafana org roles, OSD roles, IRIS roles) are not defined in the repo at all; ntfy ACLs exist only as live provisioning state. `find . -iname '*access*matrix*'` returns nothing. Impact: drift between docs and live state is harder to detect (the live wg0 firewall and Access policy mismatches in this run are examples), and a reviewer must read four documents to reconstruct access. Fix: publish docs/security/access_control_matrix.md (route, exposure class, auth mechanism, enforcement point, account/role, custody, verification command), generated/checked against the PORT matrix and Traefik routers. Prior-run ID ACM-P3-001, still open (docs improved since, no single artifact).
+
+## ACM-P3-002 — Documented Cloudflare Access policy state does not match live behavior for the falcon host
+
+docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-127 states the falcon, iris and soc Access apps each carry an `allow-owner-domain` policy plus a `bypass-owner-public-ip` policy for the owner's public address (the decision log records the bypass for 142.105.190.25/32 on the falcon app, 2026-09-21T19:05Z). Live from egress 142.105.190.25 (Cloudflare trace-verified) on 2026-10-09T21:24Z: falcon returns 302 to mainecybertech.cloudflareaccess.com (challenge, no bypass), while iris and soc return origin redirects (bypass honored). Either the falcon policy changed without a ledger entry or the doc is stale; the Access model documentation and the external-smoke rationale both depend on this. Fix: re-verify the three apps read-only via the Cloudflare API, record the current policies, and update ACCESS §6 and the decision log.
+
+## AI-P3-001 — Agent/audit-run pointers are stale: the lifecycle runbook still calls the 2026-09-30 run 'the current run' and AGENTS.md points at it as the full-domain reference
+
+Update rule 6 and the AGENTS.md pointer to the newest published run; keep docs/CURRENT_STATE.md as the authoritative state page.
+
+## AI-P3-002 — No AI-provenance policy and no per-tool agent instruction coverage
+
+Add CLAUDE.md/copilot-instructions.md pointers and a provenance rule; no server-side change required.
+
+## ARCH-P3-001 — Port matrix describes ingest auth as a shared secret header while the implementation is HTTP basic auth
+
+docs/architecture/PORT_PROTOCOL_MATRIX.md:27 (N-08) lists 'shared secret header' for edge->aggregator ingest, but config/vector/aggregator.yaml:25-28 and config/vector/edge.yaml:245-246 implement HTTP basic auth. Both are shared-secret based but differ in implementation and rotation. Fix: correct the matrix row and any negative-test wording.
+
+## BP-P3-001 — Dependabot auto-merge compensating control has never been exercised
+
+The label-gated sweep (dependabot-merge.yml:41-45) is the human disposition that replaces plan-blocked required review, but it has never gated a merge: the dependabot-approved label does not exist in the repo labels API, zero of 49 PRs were authored by app/dependabot, and the latest sweep run (37926819556) logged 'no open dependabot PRs'. Dependabot dynamic update runs do execute (4 runs, last 2026-10-07 success), so the absence of PRs is not itself proof of breakage - but the compensating control is unexercised and its failure modes are untested. Fix: create the label, exercise the path once with a staged PR, capture the result, and record the exercise date in the enforcement matrix.
+
+## CHAIN-P3-001 — Anonymous origin -> admin console exposure, plus latent docker.sock mounts in the vendored Shuffle compose
+
+Add origin auth to public routers; remove docker.sock from the staged stack or keep it archive-only with a revival checklist.
+
+## CI-P3-001 — Hosted-runner dependency is dead and scheduled-workflow failures are silent
+
+Scheduled external-smoke jobs on 2026-10-07 (37662354033), 2026-10-08 (37820256218) and 2026-10-09 (37966546614) have labels [ubuntu-latest], runner_name empty, 0 steps and ~2s duration: the job never started because GitHub-hosted runners are billing-blocked (the workflow's own comment says so). validate.yml:26-28 still falls back to ubuntu-latest for fork PRs, so fork PRs get no validation. No workflow emits a failure notification (grep: no notify step; automation/alerting/ntfy_relay.py only relays Grafana webhooks), so the gate was dead for three days until noticed manually. Fix: remove/replace the hosted fallback and document the fork-PR policy; add a failure notification or watchdog metric for scheduled workflows.
+
+## CI-P3-002 — Three probe workflows remain registered/active with no file on any branch
+
+The Actions API lists 7 workflows, including lab-probe (.github/workflows/lab-probe.yml), lab-pwsh-probe and testnuc-runner-verify (testnuc-verify.yml), all state=active, while git for-each-ref shows only validate.yml, external-smoke.yml and dependabot-merge.yml on every live ref. The probe files were pushed to short-lived branches (probe/lab-toolchain, probe/pwsh-lab, ci-verify-testnuc) on 2026-10-04/05 and ran on self-hosted lab runners; the branches were deleted but the registrations persist. Impact: workflow inventory drift (docs describe 3), potential trigger ambiguity if a file reappears, and evidence that branch pushes can run arbitrary code on lab runners. Fix: clean up the registrations, keep probes out of the persistent repo, and add an API-vs-tree inventory assertion.
+
+## CTR-P3-001 — Vendored MCT compose still mounts docker.sock and uses unpinned images under a blanket waiver
+
+Same issue as the prior run, still present at 08e20d1. mct/compose/docker-compose.shuffle.yml mounts /var/run/docker.sock into shuffle-backend (line 48) and shuffle-orborus (line 87). The mct/compose tree is covered by a blanket pins/supply-chain-waivers.json entry (root=mct/compose, ref=*, review_by 2026-12-31) and 29 image refs there are unpinned (DET-P3-003). Live exposure is latent: the drift check shows 27 running containers, 0 privileged, 0 docker.sock mounts, and mct/compose is archive-only per mct/VENDORING.md. Fix: remove/justify the socket mounts (socket proxy or rootless), pin by digest, and scope the waiver per ref with an expiry.
+
+## CTR-P3-002 — Local OpenSearch image installs the repository-s3 plugin as root with no artifact pin; rebuild mismatch is warn-only
+
+compose/central/opensearch-s3.Dockerfile switches to USER root, installs repository-s3 with --batch (version implied by the base image, no checksum), then returns to USER 1000. The resulting image is digest-pinned (falcon-opensearch-s3:2.19.6@sha256:07e7ce3f... in pins/images.lock and compose), but a rebuild downloads the plugin unpinned and bootstrap/60-central-deploy.sh:56-63 only logs a WARN when the freshly built image id differs from the pinned digest. Fix: install a versioned plugin artifact with a recorded hash and make a rebuild/digest mismatch fail closed (or require an explicit override).
+
+## DET-P3-001 — [GIT] No LICENSE file
+
+Add a license.
+
+## DET-P3-002 — [SEC] gitleaks not installed (secret scan skipped)
+
+Install gitleaks in CI to enable the secret scan.
+
+## DET-P3-003 — [SUPPLY] 29 container image(s) without a digest pin
+
+Pin images by digest (`image@sha256:...`) for reproducible, tamper-evident deploys.
+
+## DOC-P2-001 — Pack-fidelity verification is still not wired into the delivery build; the notes file carries no verdict
+
+RELEASE_PACK_VERIFICATION.md:81 and CI_GOVERNANCE_RECONCILIATION.md:63 still record the residual: pack_fidelity.py is local-only and verify_delivery.sh does not run it, so a stale repomix pack can be archived into the delivery; PACK_VERIFICATION_NOTES.txt is a list while the verdict lives on stdout/exit code. The notes-file purpose mismatch from the prior run is fixed (the file is regenerated by pack_fidelity.py). Fix: call pack_fidelity.py (fail closed) in verify_delivery.sh before archiving; optionally write counts/verdict into the notes file; add a mutated-pack fixture test.
+
+## DOC-P3-001 — Imprecise version shorthand in the README vs the pinned versions
+
+README.md uses 'Suricata 8' and 'OpenSearch 2.19' while pins/images.lock pins jasonish/suricata:8.0.7 and opensearchproject/opensearch:2.19.6 (and dashboards 2.19.6). Low impact; fix by stating exact versions or pointing at pins/images.lock.
+
+## DR-P3-001 — Scheduled end-to-end restore assertion still absent; merged assertion not present in the live tree
+
+Prior DR-P3-001 asked for a scheduled end-to-end restore assertion. FINAL-P1-001 added automation/validation/restore_assertion.sh (offline happy path plus corrupt-object and wrong-key fail-closed cases) and wired it into ci/validate.py (check_restore_assertion, lines 386-400), but (a) it runs only in the release gate, not on a schedule, and (b) the live runtime tree /home/user/falcon-build does not contain the file (git rev-list --count HEAD..origin/main = 22; ls automation/validation/restore_assertion.sh -> missing), so the lab cannot run it either. The last live restore rehearsal remains the 2026-10-01 C5 run (decrypt + 1.47M-doc restore in 21 s; RESTORE.md addendum). Fix: deploy the merged tree to the lab, then add a scheduled (e.g. monthly) timer that runs the offline assertion plus a bounded live restore rehearsal with a success stamp and staleness alert.
+
+## DR-P3-002 — Local snapshot retention was ad hoc under pressure; recovery evidence contains failing delete commands
+
+There is no designed local retention policy for the falcon-backup repository (only remote upload inventories are pruned). Local snapshots accumulated until the data LV hit its watermark; the Oct 9 recovery evidence shows six DELETE attempts (snap-20260930..20261004) that all failed with 'contains unrecognized parameter: [wait_for_completion]', and the repository now holds only two snapshots (Oct 7 + Oct 9 manual). Fix: document a local keep-N policy and a dry-run-safe prune path, correct/annotate the failing commands, and keep at least the offsite-verified window local.
+
+## EVOL-P3-002 — No feature-flag mechanism; the documented additive-deploy substitute is pending owner acceptance
+
+There is no per-feature flag/kill-switch in either repository; EVOLUTION_GUIDE §9 documents additive deploy + damping + canary/lab/stable (edge) + idempotent rollback as the official substitute, with real flags deferred to fleet scale. Owner decision E-4b is unsigned. Fix: record the acceptance (or fund the flag registry before multi-site expansion).
+
+## HYGIENE-P3-001 — No root LICENSE/NOTICE file; README ownership section grants no terms
+
+Add a LICENSE/NOTICE with the intended terms (cross-ref DET-P3-001).
+
+## INV-P3-001 — Legacy host-absolute evidence paths require manual rewrite to resolve in a clone
+
+264 evidence_index.csv rows still use ../monitoring-build/evidence/... and all 1127 evidence/raw meta.json records carry absolute /home/user/falcon-build paths, so recorded paths do not resolve in a fresh clone by themselves. The resolver automation/validation/resolve_evidence_path.py maps both forms to evidence/raw/... and verifies existence (two samples resolved, exit 0), is documented in REPOSITORY.md:61-74 and covered by resolve_evidence_path_test.sh. Fix: adopt resolve-then-check in the evidence tooling (e.g., check_evidence_index.py) or emit repo-relative paths in new meta records, keeping legacy rows as history.
+
+## INV-P3-002 — Delivery pack fidelity artifact ships two unresolved 'unexpected; investigate' entries
+
+PACK_NOT_INCLUDED.txt (a committed delivery artifact) lists evidence/raw/REVIEW-FIX/20261001T202630Z_sec-p3-001-gitleaks-tree.out and mct/config/examples/secrets.example.env as 'not-in-pack (unexpected; investigate)'; both files exist in the tree and neither path is named in make-repomix.sh's ignore list. No disposition was ever recorded, so the shipped artifact advertises unexplained gaps in the review pack. Fix: reproduce the pack build, determine and record the cause (e.g., tool-side secret-file heuristics - verify, do not assume), then regenerate PACK_NOT_INCLUDED.txt with reasons or adjust the fidelity classification.
+
+## INV-P3-003 — Gate claim 'a stale digest fails' is not implemented; the delivery digest binds an 11-commit-old tree
+
+PACKAGE_DIGEST.txt binds repository_commit=69b3c80 (generated 2026-10-04T21:36:48Z) while HEAD is 08e20d1 (11 commits ahead, git rev-list --count 69b3c80..HEAD). ci/validate.py:494-497 claims 'A stale digest therefore fails here instead of being mistaken for current', but check_digest_binding.py:83-88 only runs git cat-file -e to test resolvability, never HEAD equality; the check passes at HEAD. AGENTS.md's standard flow requires rebinding the delivery when the tree changed. Fix: implement a staleness policy (fail when repository_commit != HEAD on main, or record an explicit superseded-by field), or correct the docstring to state that only resolvability is checked.
+
+## NOTIF-P2-001 — ntfy-auth middleware is still dead config; ntfy-native deny-all is the actual control
+
+Wire ntfy-auth on the public ntfy router (defense-in-depth) or delete the dead middleware; keep ntfy-native deny-all as the primary control.
+
+## NOTIF-P3-001 — Stale ntfy test-topic ACLs remain in the live user DB from the storm/probe tests
+
+Deny the stale test-topic ACLs and add a prune/review step to the runbook.
+
+## OBS-P3-001 — Live alerting config is uncommitted drift ahead of the audited commit (edge-alerts.yaml)
+
+The live /etc/prometheus/edge-alerts.yaml is 340 lines vs 235 in the audited commit, and the live tree has config/prometheus/edge-alerts.yaml modified-uncommitted with 2026-10-09 additions (sensor hardware-health, capture-service, inventory collector gating; e.g. EdgeSensorCaptureInterfaceMissing, firing since 19:24Z). Alerting changes are not bound to any reviewed commit, so the audited commit cannot reproduce the live rule set. Fix: commit or revert the live changes, regenerate the catalogue, and add config-vs-commit binding to the drift gate.
+
+## ORCH-P3-001 — Run id does not start with the timestamp required by the consumer repo's lifecycle check
+
+tools/full_domain.py:185-191 prefixes the repo name in default_run() although its own comment (lines 186-189) says run ids must start YYYYMMDD-HHMM- to satisfy consumer CI. Falcon's automation/validation/audit_run_lifecycle.sh:120-122 enforces ^[0-9]{8}-[0-9]{4}- and the already-published runs required a dedicated rename commit (427298b, PR #45). The current run id falcon-20261009-2117-full-08e20d1 again starts with the repo name, so publishing it unchanged into docs/audits/repo-deep-dive/ fails the repo's run check. Fix: emit <timestamp>-<mode>-<branch>-<sha7> (repo recorded in scope.name), auto-rename at publish, and assert the id shape at publish time.
+
+## PERF-P3-001 — Measured performance envelope and capacity model are stale; no performance budgets exist
+
+docs/phase5/PERFORMANCE_ENVELOPE.md:10-11 documents 4 vCPU / 11.7 GiB / 4.7 GiB used (measured 2026-09-21/22) while the live host is 6 vCPU / 12 GiB with ~10 GiB used and 63.5% swap; docs/architecture/STORAGE_CAPACITY_MODEL.md:7-8,14-21 still describes the Phase-0 plan (74 GiB root / 60 GiB data) vs live 171 GiB / 221 GiB LVs. The cost register exists (docs/runbooks/CAPACITY_AND_TELEMETRY.md:64-79) but unit costs/budgets are owner-side blanks, and no ingest-lag/snapshot-duration/exporter-runtime budgets were found. Fix: append the 2026-10-09 measured footprint, replace the planned allocation with the live layout, define budgets (feed lag <15 min steady state, snapshot <15 min, exporter <5 s, root free >=25%) and reference them from the alert rules.
+
+## PERF-P3-002 — Per-minute whole-cluster monitoring queries add avoidable load to the single-node cluster
+
+automation/validation/export_monitor_metrics.sh:147-190 runs a per-feed filters aggregation with max(timestamp) over the whole falcon-eve-* set every minute (plus duplicate sample <=2000 docs, mapping drift and ISM retention metrics). Live falcon-eve-* = 14 indices / 118.5M docs / 59.2 GB, and a single date-histogram _search measured 'took': 1998 ms during catch-up, competing with ingestion on the same 6 vCPU node. Fix: bound the freshness aggregation to a recent window (e.g. 24 h) with a periodic full-index validation, and export the exporter's own runtime with a budget alert.
+
+## PERF-P3-006 — Measured performance envelope and capacity model are stale; no performance budgets exist
+
+TBD
+
+## PERF-P3-007 — Per-minute whole-cluster monitoring queries add avoidable load to the single-node cluster
+
+TBD
+
+## PRIV-P3-001 — Owner/legal privacy inputs and notice/processor artifacts outstanding; the 'synthetic-only' wording persists
+
+The owner approved D7 on 2026-09-30 (authority for the owner's own devices/sites, metadata-only) but the written scope, the classification-doc wording update, and the entity/DPA/jurisdiction-notice inputs remain outstanding (A6/C3). DATA_FLOW_AND_CLASSIFICATION.md:4 still states 'Lab traffic is synthetic; no real user traffic is captured' while RETENTION_MATRIX.md:50-51 says the claim was corrected and DATA_GOVERNANCE.md:29 documents live owner-device telemetry. Fix: apply the D7 wording in both classification docs, record the device/site scope, and complete C3 with owner/legal inputs (or explicitly accept the lab-scope limitation).
+
+## REL-P3-001 — No root CHANGELOG/release-notes generator; the 2026-10-04..09 window is undocumented
+
+Add a root CHANGELOG/release-notes generator fed from git + ledgers; publish per-release drafts.
+
+## REL-P3-002 — Releases are not versioned: no tags, no VERSION file; binding artifacts overwrite in place
+
+Tag releases (annotated) and/or add a VERSION file; consider versioned digest filenames.
+
+## RES-P3-001 — No failure-injection coverage for aggregator OOM / host memory exhaustion (the failure mode that actually occurred)
+
+Existing drills cover the sink write-rejection path, disk pressure, sensor silence, alert storms and VPN, but nothing exercises aggregator memory exhaustion, the OOM restart path, or buffer-at-cap behavior. Add a bounded chaos test: force an OOM on a memory-limited aggregator with a synthetic burst; assert (a) the source-drop metric is exported, (b) the new alert fires, (c) the probe buffer drains after recovery, (d) gaps are bounded and recorded.
+
+## SBOM-P3-001 — Delivered review package excludes the SBOM set entirely; only the summary CSV ships
+
+build_review_package.sh:39 copies only sbom/vuln-summary.csv to the package root; :50-51 deletes every *.cdx.json; :71 prints the exclusion. PACKAGE_MANIFEST.sha256 (3,783 entries; sha256 5f591655... equals PACKAGE_DIGEST.txt review_package_manifest_sha256) contains zero *.cdx.json entries and zero sbom/ paths; the summary appears as ./vuln-summary.csv (entry 3783). docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:159 records D2 (ship vs dated exclusion) as OWNER/POLICY DECISION REQUIRED. Impact: a pack-only reviewer cannot verify SBOM completeness or component licenses from the delivery. Fix: decide D2 - include sbom/*.cdx.json, sbom/vuln/*.json and the (signed) SBOM_MANIFEST.sha256 in the review package and re-bind PACKAGE_DIGEST.txt; or record the dated exclusion decision.
+
+## SEARCH-P3-001 — Legacy falcon-eve indices keep divergent mappings; consumer queries against them silently under-return
+
+Owner-gated reindex or runtime-field repair for the 09.21-09.30 window; keep the legacy label visible to consumers.
+
+## SECRET-P3-001 — Rotation register/live-store paths for IRIS and the MCT stack are stale after consolidation
+
+rotation_status.py --live reports /opt/mct-security-stack/.env and /opt/mct-security-stack/data/dfir-iris/iris-web/.env as absent on the live host, while the running IRIS stack is deployed from /opt/iris-web (docker compose labels) with secrets under /srv/falcon/secrets/iris-web.env (0600 root). Register rows 11-20 and checklist rows 11-20 name the pre-consolidation VM stores, so their --live verification cannot be produced on this host. Fix: update the register/checklist paths to the consolidated stores or mark migrated rows explicitly.
+
+## SECRET-P3-002 — Break-glass custody is procedural only (OD-04 pending); no custodian, sealed credential, or rehearsal
+
+BREAK_GLASS_CUSTODY.md records OD-04 as PENDING: the only emergency path today is root via sudo with the sudo value in /home/user/.env or /home/user/.config/falcon/capture.env, controlled by file mode alone. The custody procedure (custodians, sealed value, two-person rule, post-use rotation, annual review) and the tabletop checklist are written but unchecked; no rehearsal evidence was found. Fix: owner names custodians, seals the credential, runs the tabletop, and logs the decision row.
+
+## TEST-P3-001 — CI evidence-integrity check verifies zero captures; all meta files reference off-repo artifact paths
+
+check_evidence_integrity skips any meta whose raw_artifact is outside the repo when FALCON_EVIDENCE_OPTIONAL=1 (ci/validate.py:195-216). Independent scan: 0/1127 meta files reference an in-repo artifact (863 -> /home/user/falcon-build/..., 264 -> /home/user/monitoring-build/...), so CI passes with '0 captures, 1133 external skipped' (run 37985725668) and verifies nothing; only a lab run resolves the paths (local gate: 1127 captures). The committed evidence tree is still bound by generated-drift (evidence/MANIFEST.sha256) and the evidence-index cross-check, so this is a precision/claim gap. Fix: state the skip explicitly and/or split the check (CI verifies the committed manifest; the lab verifies meta hashes).
+
+## TEST-P3-002 — The test-requires skip marker is only honored in the first 15 lines; validate_gate_test.sh's marker is dead
+
+ci/validate.py reads only the first 15 lines of each suite to find '# test-requires: root|docker' (validate.py:434-441). validate_gate_test.sh declares it at line 26, outside that window, so the suite is not skipped: it runs and passes 12/12 as uid 1000 (full gate log: 'PASS shell tests: .../validate_gate_test.sh (0.3s)'; 'PASS shell tests (50 suite(s))', no skip). A genuinely root/docker-requiring suite whose marker is placed later would run instead of skipping. Fix: scan the header comment block (or whole file) for the marker and move or remove the dead marker.
+
+## WH-P3-001 — No replay/idempotency protection or tests on the notification path (ntfy); Shuffle path retired
+
+The Grafana->relay->ntfy path has no signature, timestamp tolerance, nonce or idempotency key; a captured valid POST can re-publish an alert within the rate budget, and there is no replay/duplicate test (the 51-suite inventory covers relay auth only). The residual is documented (ntfy_relay.py:22-34; NOTIFICATION_AND_DEADMAN.md section 4). The Shuffle half of the prior finding is retired live (no containers; manager integration disabled 2026-09-27; vendored smoke script is dry-run default). Fix: add a duplicate-delivery test and either an optional ntfy X-Message idempotency id or an explicit re-recording of the accepted residual; archive the Shuffle smoke script.
+

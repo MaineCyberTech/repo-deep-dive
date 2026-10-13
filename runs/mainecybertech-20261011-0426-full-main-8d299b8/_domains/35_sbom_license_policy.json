@@ -1,0 +1,468 @@
+{
+  "domain": "35_sbom_license_policy",
+  "file": "35_sbom_license_policy.md",
+  "area": "SBOM",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:51Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "SBOM Is Lockfile-Only, Not an Image SBOM or Attestation",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:220-243 \u2014 per-image Trivy CycloneDX SBOM is generated against steps.build-api.outputs.digest and attested with actions/attest-sbom (push-to-registry: true); identical steps for mct-worker (:286-304) and mct-web (:355-373)",
+        ".github/workflows/build-push.yml:64-90 \u2014 the manual build path also emits a digest-bound image SBOM per image (artifact only)",
+        "docs/SBOM_PROCESS.md:11-14,36-63 \u2014 documents the two artifacts (lockfile vs image) and the digest/attestation binding"
+      ],
+      "impact": "The previous P1 (lockfile-only SBOM) no longer holds: every shipped image has a CycloneDX SBOM bound to its immutable digest and a registry-side attestation, so OS-package and in-image npm contents are covered for incident response.",
+      "recommendation": "Keep as-is; no action. Future work: validate image SBOMs before attestation (new finding) and cover third-party runtime images (new finding).",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: deploy-do.yml attests digest-bound image SBOMs via actions/attest-sbom (lines 234-243/298-304/367-373); the lockfile SBOM remains as a secondary artifact in sbom.yml:35-60.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P1",
+      "title": "Unsigned Images With No Provenance/Attestation",
+      "evidence": [
+        ".github/workflows/build-push.yml:85-90,155-160,236-241 \u2014 actions/attest-build-provenance per image",
+        ".github/workflows/deploy-do.yml:244-249,306-311,375-380 \u2014 provenance attestation on the deploy path (id-token/attestations write at :31-35)",
+        ".github/workflows/deploy-do.yml:391-515 \u2014 verify-attestations job resolves each tag to a digest and runs `gh attestation verify` (fail closed) before deploy; the deploy job needs verify-attestations (:538)"
+      ],
+      "impact": "Images now carry SLSA-style build provenance and the deploy gate verifies it, so a substituted registry image without a valid attestation is rejected (normal deploys fail closed; rollback path uses an explicit reviewed allow-list at :464-485).",
+      "recommendation": "Keep; close the residual TOCTOU (verification is not bound to the pulled artifact) captured as a new finding.",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: attest-build-provenance in build-push.yml and deploy-do.yml; verify-attestations gates deploy on gh attestation verify of the deployed digest (deploy-do.yml:509-514).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P1",
+      "title": "No version identity: no tags, no product version, no commit binding in generated artifacts",
+      "evidence": [
+        "scripts/generate-sbom.mjs:300-315,325-328,441-465 \u2014 reads VERSION and GITHUB_SHA; emits metadata.component.version '<version>+<sha>' plus mct:productVersion / mct:commit properties and a deterministic serialNumber (:424-428)",
+        "scripts/validate-sbom.mjs:63-67 \u2014 CI fails if the version or mct:commit binding is missing",
+        "git tag \u2192 0 tags; no release workflow (grep for softprops/gh release/create-release in .github/workflows \u2192 none)",
+        "docs/SBOM_PROCESS.md:65-76 and docs/RELEASING.md:52-61 \u2014 declare the commit SHA authoritative and state no git tag is required",
+        "VERSION:1 \u2014 product version is 0.1.0"
+      ],
+      "impact": "Generated artifacts now bind to the exact commit and product version. The residual is release identity: no annotated tags and no GitHub Release exists, so SBOMs cannot be attached to a release and version history is date-based.",
+      "recommendation": "Owner/release decision: either cut annotated tags on prod promotion and attach the lockfile SBOM to the GitHub Release, or keep the documented commit-SHA-as-identity model and delete the remaining 'tagged release' language from CHANGELOG/RELEASING where it implies tags.",
+      "owner": "platform engineering (release owner)",
+      "target": "this week",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: commit+product-version binding present in generate-sbom.mjs and enforced by validate-sbom.mjs; git tag is still empty and no release workflow exists \u2014 now a documented decision (docs/SBOM_PROCESS.md:65-76) rather than an omission.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P1",
+      "title": "No license allow/deny policy in dependency review or any CI gate",
+      "evidence": [
+        "security/license-policy.json:3-56 \u2014 allowlist and deny list (GPL/AGPL/SSPL/BUSL/EUPL/OSL/RPL + CC-BY-NC)",
+        "scripts/license-gate.mjs:35-66,92-110,133-146 \u2014 classifies every resolved license string; exits 1 on denied/unknown",
+        ".github/actions/dependency-audit/action.yml:19-28 \u2014 license gate runs in test.yml:52 (every PR) and validate.yml:17 (deploy gate)",
+        ".github/workflows/dependency-review.yml:17,25-30 \u2014 fail-on-severity: high, license-check, deny-licenses + reviewed purl exemptions on the PR diff",
+        "docs/LICENSE_POLICY.md:6-15,17-55 \u2014 human-readable policy and exceptions"
+      ],
+      "impact": "A copyleft/source-available dependency can no longer enter the resolved tree unnoticed: the full-tree gate runs on every PR and on the deploy path, and the PR-diff gate denies the same family.",
+      "recommendation": "Keep. Fix the exception-matching, expiry, and doc-mismatch residuals captured as new findings.",
+      "owner": "supply-chain owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: dependency-review.yml deny-licenses (lines 24-25) + scripts/license-gate.mjs over security/license-policy.json, wired into the dependency-audit composite used by test.yml and validate.yml.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P1",
+      "title": "SBOM carries no license data and no dependency graph, limiting triage and license review",
+      "evidence": [
+        "scripts/generate-sbom.mjs:258-269 \u2014 loads licenses.json into a package\u2192license map; :356-358 emits component.licenses",
+        ".github/workflows/sbom.yml:35-50 \u2014 collect-licenses.mjs writes licenses.json and SBOM_LICENSES_JSON feeds the generator",
+        "scripts/generate-sbom.mjs:365-406 \u2014 dependency graph (root \u2192 importers, package \u2192 package from lockfile snapshots)",
+        "scripts/validate-sbom.mjs:47-54 \u2014 fails on an empty graph or dangling refs"
+      ],
+      "impact": "The lockfile SBOM now supports advisory triage and license review directly (per-component licenses, graph, commit binding, serialNumber).",
+      "recommendation": "Keep; regenerate the licenses.json via scripts/collect-licenses.mjs in local runbooks (new docs-drift finding).",
+      "owner": "supply-chain owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: generate-sbom.mjs populates per-component licenses (when licenses.json is supplied), a dependencies relationship graph, serialNumber and commit metadata; validate-sbom.mjs enforces the graph and floor.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "SBOM is artifact-only: not release-bound, not commit-bound, not attested",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:234-243 \u2014 image SBOMs are attested to the registry as OCI referrers (durable, not artifact-only)",
+        ".github/workflows/sbom.yml:55-60 \u2014 the lockfile SBOM is still uploaded as the 30-day `sbom-cyclonedx` workflow artifact with no release/attachment step",
+        "docs/SBOM_PROCESS.md:179-186 \u2014 'The lockfile SBOM is uploaded as a CI artifact rather than attached to a GitHub Release. Release attachment remains open (SBOM-P2-001) ... The lockfile SBOM has no durable copy yet.'",
+        "git tag \u2192 0; no release workflow exists"
+      ],
+      "impact": "For shipped images the finding is closed (digest-bound attestation). For the lockfile SBOM the artifact still expires after 30 days and is not attached to any release, so there is no durable per-commit npm BOM outside CI artifacts.",
+      "recommendation": "Either attest the lockfile SBOM too (actions/attest-sbom with the commit subject) or upload it to durable storage/Spaces per run; if releases are adopted, attach sbom.cdx.json to the GitHub Release (REL-P1-001).",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: the image path is fixed (digest-bound SBOM attestation, registry OCI referrer); the lockfile SBOM remains artifact-only with 30-day retention and no release attachment \u2014 documented as an accepted residual in docs/SBOM_PROCESS.md:179-186.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "No container/image SBOM; base-image OS packages untracked",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:220-233 \u2014 Trivy scan-type: image, format: cyclonedx against ghcr.io/.../mct-api@<digest>; same for worker/web",
+        ".github/workflows/build-push.yml:64-76,135-146,216-227 \u2014 identical image SBOMs on the manual build path",
+        "docs/SBOM_PROCESS.md:36-63,78-91 \u2014 image SBOM covers Alpine OS packages plus npm-in-image contents; base image is node:20-alpine@sha256 (apps/api/Dockerfile:1)"
+      ],
+      "impact": "Base-image OS packages and in-image language packages are now recorded per digest, so an OS-package advisory can be mapped to the deployed image.",
+      "recommendation": "Keep. Add a validation step for the image SBOMs (new finding) and cover the third-party runtime images (new finding).",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: per-image CycloneDX SBOMs generated on the deploy path (deploy-do.yml) and the manual build path (build-push.yml), bound to the pushed digest.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "`docs/CI.md` documents the SBOM workflow as \"Blocking\" but it gates nothing",
+      "evidence": [
+        "docs/CI.md:29 \u2014 the SBOM row's final column now reads 'Artifact-only (not a gate)' and describes the lockfile SBOM as validated before upload",
+        ".github/workflows/sbom.yml:52-53 \u2014 the workflow validates its own output but is not part of the required-check set (test.yml / validate.yml do not run it)"
+      ],
+      "impact": "The documentation no longer contradicts the pipeline: the SBOM workflow is honestly described as artifact-only.",
+      "recommendation": "Keep the corrected wording; refresh the stale half of the same row (image SBOMs are emitted by build-push.yml \u2014 deploy-do.yml also emits them) per the new docs-drift finding.",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: docs/CI.md:29 now says 'Artifact-only (not a gate)' instead of Blocking.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "Root license is ISC with no documented rationale",
+      "evidence": [
+        "package.json:4 \u2014 \"license\": \"ISC\"; every workspace package.json (apps/api, apps/web, apps/worker, packages/config, packages/sdk, packages/ui) also declares ISC",
+        "docs/LICENSE_POLICY.md:66-71 \u2014 'ISC is permissive and MIT-equivalent; it is intentional for this private, non-published monorepo. (Finding SBOM-P3-001 is a documentation gap, not a license change request.)'",
+        "LICENSE \u2014 root ISC license text present"
+      ],
+      "impact": "The license choice is now explained, so reviewers and future agents no longer have to infer intent.",
+      "recommendation": "Keep. The license choice itself remains an owner decision tracked under SC-P3-001.",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: docs/LICENSE_POLICY.md:66-71 documents the ISC rationale and states it is intentional.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "SBOM format/count not validated before upload; no regression guard",
+      "evidence": [
+        "scripts/validate-sbom.mjs:1-80 \u2014 checks bomFormat/specVersion/serialNumber, unique bom-refs, non-dangling dependency edges, a 100-component sanity floor, and the version/commit binding; exits 1 on failure",
+        ".github/workflows/sbom.yml:52-53 \u2014 'Validate SBOM' runs before 'Upload SBOM artifact'",
+        "reproduction (audit host has no node runtime): parsed pnpm-lock.yaml with the validator/generator's exact regexes in python3 \u2014 1,446 package entries, all 1,446 with an integrity line, so the floor and graph checks operate on real input (floor 100 \u226a 1,446)"
+      ],
+      "impact": "A parser regression that silently shrinks or corrupts the lockfile SBOM now fails the SBOM workflow instead of uploading a bad artifact.",
+      "recommendation": "Keep. Extend the same guard to the Trivy image SBOMs (new finding).",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: scripts/validate-sbom.mjs exists and runs in sbom.yml before upload; parser assumptions confirmed against the current pnpm-lock.yaml with a python3 walk (node not available on the audit host, so the script itself was not executed).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "No artifact provenance, attestation, or signing; `id-token: write` requested but unused",
+      "evidence": [
+        ".github/workflows/build-push.yml:15-16 \u2014 id-token/attestations write permissions now used by actions/attest-build-provenance (:85-90 etc.)",
+        ".github/workflows/deploy-do.yml:31-35 \u2014 same permissions on the deploy workflow; provenance attested at :244-249/306-311/375-380",
+        ".github/workflows/deploy-do.yml:391-515 \u2014 verify-attestations job proves each image was built by this repo before deploy"
+      ],
+      "impact": "Images are now signed by GitHub's build-provenance attestation service and verified before deployment, so the unused-permission gap is closed.",
+      "recommendation": "Keep; add --predicate-type checks and digest-pinned pulls (new finding).",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: build provenance + SBOM attestations are produced and the deploy gate verifies provenance (verify-attestations job).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "License policy not enforced in CI; non-OSI and LGPL licenses present",
+      "evidence": [
+        "scripts/license-gate.mjs \u2014 enforces the allowlist + exceptions over the full resolved tree",
+        ".github/actions/dependency-audit/action.yml:19-28 \u2014 wired into test.yml (PRs) and validate.yml (deploy gate)",
+        "security/license-policy.json:58-94 \u2014 the LGPL/FSL/MPL/UNKNOWN licenses already in the tree carry explicit, expiring, reviewed exceptions",
+        "docs/LICENSE_POLICY.md:41-55 \u2014 exception table with review dates"
+      ],
+      "impact": "Non-OSI/LGPL packages can no longer enter the tree without an explicit reviewed exception, and the existing ones are documented.",
+      "recommendation": "Keep; enforce the exception package scope and expiry dates (new findings).",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: the license policy gate runs in CI over the resolved tree (dependency-audit composite); exceptions are explicit and dated.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "SBOM is generated but not bound to a commit or attached to releases/images",
+      "evidence": [
+        "scripts/generate-sbom.mjs:441-465 \u2014 metadata.component.version '<version>+<sha>' + mct:commit property (commit binding)",
+        ".github/workflows/deploy-do.yml:234-243 \u2014 image SBOMs bound to the image digest and pushed as OCI attestations",
+        "docs/SBOM_PROCESS.md:11-14,131-147 \u2014 binding table and the verification commands"
+      ],
+      "impact": "Both SBOM kinds are now bound to the artifact they describe (commit for the npm tree, digest for images) and the image SBOMs are attached to the image via the registry.",
+      "recommendation": "Keep; release attachment is not applicable until tags/releases exist (REL-P1-001).",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: lockfile SBOM is commit-bound; image SBOMs are digest-bound and attested. 'Attached to a release' is N/A \u2014 the repo has no tags/GitHub Releases by documented decision (docs/RELEASING.md:52-61).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "Dependabot PR backlog is large and not triaged; one stale update conflicts with resolved versions",
+      "evidence": [
+        ".github/dependabot.yml:1-87 \u2014 npm, github-actions, docker (root + 3 apps + infra), terraform; grouped, weekly Monday, open-pull-requests-limit: 10",
+        "grep for 'dependabot' in .github/workflows/ \u2192 no workflow: there is no triage, auto-merge, or stale-PR automation in the repository",
+        "docs/DEPENDENCY_POLICY.md:66-68 \u2014 'Security updates should be triaged promptly; the audit noted a large backlog.'"
+      ],
+      "impact": "Whether the backlog is still large is GitHub-side state that cannot be verified from the repository; repository-side triage automation still does not exist, so the process remains manual.",
+      "recommendation": "Either document a triage SLA with a scheduled reminder (pattern: secret-rotation-reminder.yml) or add dependabot grouping/auto-merge for patch updates after CI passes; record the decision in docs/DEPENDENCY_POLICY.md.",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "not re-verified at 8d299b8d (reason): the PR backlog and the conflicting update are GitHub-side state, not repository state. Repository evidence is unchanged \u2014 config only, no triage automation.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "Root package license remains \"ISC\"",
+      "evidence": [
+        "package.json:4 \u2014 \"license\": \"ISC\"; LICENSE contains the ISC text",
+        "docs/LICENSE_POLICY.md:66-71 \u2014 declares ISC intentional for this private, non-published monorepo"
+      ],
+      "impact": "The license itself is unchanged; the rationale is now documented, so the remaining item is an owner/legal decision rather than a defect.",
+      "recommendation": "Owner decision only: accept ISC explicitly (e.g. a dated line in docs/LICENSE_POLICY.md or the risk register) or relicense. No engineering work required.",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified still open at 8d299b8d: root and every workspace package.json remain ISC; the rationale is now documented and declared intentional (docs/LICENSE_POLICY.md:66-71), so this is effectively an owner-accepted decision with no separate sign-off artifact.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "`licenses.json` is committed but unenforced and unverified",
+      "evidence": [
+        ".gitignore:59-63 \u2014 licenses.json, sbom.cdx.json and sbom.spdx.json are ignored",
+        ".github/actions/dependency-audit/action.yml:30-42 \u2014 'Ensure generated license/SBOM artifacts stay untracked' fails if any of them is tracked again",
+        "git ls-files -- licenses.json sbom.cdx.json sbom.spdx.json \u2192 empty (all untracked at 8d299b8d)"
+      ],
+      "impact": "The aggregate cannot drift from the lockfile because it is never committed; the guard makes regression fail the PR/deploy gate.",
+      "recommendation": "Keep.",
+      "owner": "@owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: licenses.json untracked + gitignored; the untracked-artifact guard runs in the dependency-audit composite.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "SBOM is produced as a transient artifact, not bound to a release",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:234-243,298-304,367-373 \u2014 actions/attest-sbom with push-to-registry: true binds each image SBOM to the pushed digest as an OCI referrer",
+        "docs/SBOM_PROCESS.md:56-63,149-158 \u2014 durable SBOM attestation complements the 30-day artifact",
+        "docs/RELEASING.md:122-129 \u2014 post-release SBOM retrieval/verification instructions"
+      ],
+      "impact": "A shipped image's SBOM is now durable in the attestation store/registry beyond the artifact window; the residual is the lockfile SBOM, which is still transient (tracked under SBOM-P2-001).",
+      "recommendation": "Keep. Consider attesting the lockfile SBOM as well if a durable per-commit npm BOM is required.",
+      "owner": "@owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: the deploy path generates digest-bound image SBOMs and attests them to the registry.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "License exceptions are matched by license string only \u2014 documented package scope and UNKNOWN fail open",
+      "evidence": [
+        "scripts/license-gate.mjs:37-39 \u2014 exceptions are keyed by entry.license only; the entry's `packages` array is never read (grep for entry.packages \u2192 no use)",
+        "scripts/license-gate.mjs:50-53 \u2014 classify() returns ok for any license string present in the exceptions map, regardless of which package declares it",
+        "security/license-policy.json:87-92 \u2014 the `UNKNOWN` exception (listed for browser-assert) makes every package with no license field pass the full-tree gate",
+        "docs/LICENSE_POLICY.md:44-45 \u2014 'Each is scoped to the named packages only \u2014 a *different* package with the same license still fails the gate.' (contradicted by the code)",
+        "pinned dependency-review-action source src/licenses.ts (2031cfc) \u2014 unlicensed/NOASSERTION changes are reported but never added to the forbidden bucket, so the PR gate also cannot fail on a missing license"
+      ],
+      "impact": "A new MPL-2.0, LGPL-3.0-or-later, FSL-1.1-MIT or unlicensed dependency passes the full-tree gate without review, and a package with no license field passes both gates. The compliance control does not implement the documented contract.",
+      "recommendation": "Match exceptions on (license string, package name): compare pkg.name against entry.packages and fail when a license is excepted for a different package. Treat UNKNOWN as a violation by default with per-package exceptions. Update the security/license-policy.json comment and docs/LICENSE_POLICY.md to match. Add unit fixtures for: new package with an excepted license string \u2192 fail; excepted package \u2192 pass; unlicensed new package \u2192 fail.",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; static analysis of license-gate.mjs + policy JSON + docs. The gate could not be executed (no node runtime on the audit host), but the matching logic is a direct string lookup.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "Exception `expires` dates are documentation-only and never enforced by the gates",
+      "evidence": [
+        "security/license-policy.json:66,76,84,92 \u2014 every exception carries an `expires` date (2027-10-02/03)",
+        "scripts/license-gate.mjs \u2014 no reference to `expires` anywhere (grep \u2192 none); the only stale-exception signal is when the license string disappears entirely (:127-130), which never fires for UNKNOWN",
+        "security/dependency-audit-policy.json:13-20 \u2014 allowlist entry with \"expires\": \"2027-01-01\"",
+        "scripts/audit-gate.mjs \u2014 allowlist is indexed by advisory id only (:75-77); no reference to `expires` (grep \u2192 none)",
+        "docs/DEPENDENCY_POLICY.md:30 \u2014 'with a reason and an expiry. They never block but are always printed.'"
+      ],
+      "impact": "Reviewed exceptions persist indefinitely after their review date with no failing signal, so an accepted risk (e.g. the UNKNOWN blanket or an unpatchable advisory) can outlive the review that justified it.",
+      "recommendation": "Parse `expires` (ISO date) in both gates and fail (or ::warning:: + job-summary) when past due; add a CI test with a fixture policy whose date is in the past. Keep a documented renewal process in docs/LICENSE_POLICY.md and docs/DEPENDENCY_POLICY.md.",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; grep-verified that neither scripts/license-gate.mjs nor scripts/audit-gate.mjs reads the expires field.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "Deploy verifies the tag's attestation but pulls by mutable tag; the SBOM predicate is never verified",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:501-514 \u2014 verify-attestations resolves the pushed tag to a digest and runs `gh attestation verify` with --signer-workflow/--source-digest (no --predicate-type)",
+        ".github/workflows/deploy-do.yml:786-788 \u2014 the deploy step then pulls ghcr.io/.../mct-api:${IMAGE_TAG} by mutable tag; infra/digitalocean/docker-compose.yml:69,131,187 reference the same :${IMAGE_TAG}",
+        "docs/SBOM_PROCESS.md:120-135 \u2014 documents a stricter manual check (--predicate-type https://cyclonedx.org/bom) that CI does not run",
+        "docs/SBOM_PROCESS.md:159-174 \u2014 claims the job 'proves each image that deploy is about to pull was built by THIS repository'"
+      ],
+      "impact": "A GHCR writer (or a compromised job holding packages:write) can re-point the commit-SHA tag after verification and the deploy will pull and run the substituted image \u2014 the original CTR-P1-003 substitution threat is narrowed but not closed. Because `gh attestation verify` is not given --predicate-type, the gate does not require the build-provenance predicate (or the SBOM predicate) specifically; either attestation type satisfies it.",
+      "recommendation": "Have verify-attestations output the resolved digests and pass them to the deploy job; pull and run by @sha256:... (compose image with digest), or re-resolve + re-verify the digest on the droplet immediately after pull. Add --predicate-type checks for both SLSA provenance and the CycloneDX SBOM predicate, and validate the SBOM content.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; hits the extended check 'no post-signing additions in the release set'. Exploit requires registry write access, but the fix is cheap (digest-pinned pull).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P2",
+      "title": "No scheduled dependency vulnerability re-scan \u2014 advisories are only evaluated on PRs and deploys",
+      "evidence": [
+        ".github/actions/dependency-audit/action.yml:12-17 \u2014 the vulnerability gate (scripts/audit-gate.mjs) is only invoked from test.yml:52 (pull_request) and validate.yml:17 (deploy gate, reached via deploy-do.yml push)",
+        ".github/workflows/sbom.yml:8-9 \u2014 the only weekly dependency-related schedule generates/validates the SBOM but never runs the audit gate",
+        ".github/workflows/codeql.yml:8-9 \u2014 weekly schedule exists but covers code scanning, not dependency advisories",
+        "no workflow in .github/workflows/ references scripts/audit-gate.mjs on a schedule (grep cron + audit-gate)"
+      ],
+      "impact": "If no PR or deploy happens for weeks, an advisory published against the unchanged resolved tree is invisible to CI. GitHub Dependabot alerts may cover this, but that is a repository setting and cannot be verified from the repo.",
+      "recommendation": "Add a weekly scheduled job that runs `node scripts/audit-gate.mjs` (enforcing) or `--report` plus a deduplicated issue (pattern: secret-rotation-reminder.yml), or document explicitly that Dependabot security alerts are the compensating control and record the last triage date.",
+      "owner": "supply-chain owner",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d; repo-side evidence is complete, but whether GitHub Dependabot security alerts are enabled is not visible in the repository (marked medium confidence).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "Image SBOMs are attested but never validated (no floor or binding check)",
+      "evidence": [
+        "scripts/validate-sbom.mjs:56-61 \u2014 component floor and binding checks exist, but only for the lockfile document (docs/SBOM_PROCESS.md:95-100 states it is not run against the Trivy image SBOMs)",
+        ".github/workflows/deploy-do.yml:220-243 \u2014 the Trivy image SBOM is attested immediately after generation; no validation step in between",
+        ".github/workflows/build-push.yml:64-83 \u2014 the image SBOM is uploaded as an artifact with no validation",
+        "docs/SBOM_PROCESS.md:36-53 \u2014 the binding fields to assert (metadata.component.purl/name = ...@sha256:..., aquasecurity:trivy:RepoDigest)"
+      ],
+      "impact": "A Trivy/SBOM regression that emits an empty or partial image SBOM would still be attested and stored as the durable record for that digest, defeating the purpose of the attestation.",
+      "recommendation": "Add a small validator for the image SBOM (non-empty components, expected component classes present, metadata.component.purl contains the image digest) and run it before attest-sbom / upload; reuse the check in both workflows.",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; direct code evidence (no validation step between generation and attestation).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "Runbooks and script headers still document the broken `pnpm licenses list --json` command; docs/CI.md SBOM row is stale",
+      "evidence": [
+        "docs/SBOM_PROCESS.md:116 and docs/DEPENDENCY_POLICY.md:77 \u2014 local runbooks instruct `pnpm licenses list --json > licenses.json`",
+        "scripts/license-gate.mjs:16,30 and scripts/generate-sbom.mjs:11,258 \u2014 usage/headers describe the same command as the input source",
+        ".github/workflows/sbom.yml:36-47 and scripts/collect-licenses.mjs:5-19 \u2014 document that on the pinned pnpm@10.34.3 (package.json packageManager) this exact command exits 1 and writes an error document to stdout, which is why CI switched to collect-licenses.mjs",
+        "docs/SBOM_PROCESS.md:26 \u2014 still says per-component licenses are 'sourced from `pnpm licenses list --json`'",
+        "docs/CI.md:29 \u2014 the SBOM row still says image SBOMs are emitted by build-push.yml (deploy-do.yml also emits and attests them)"
+      ],
+      "impact": "An operator or future agent following the runbook produces a licenses.json containing an error object and then sees the license gate or SBOM generation fail (or produce an SBOM without licenses) locally \u2014 a documented procedure that does not work as written.",
+      "recommendation": "Replace the command with `node scripts/collect-licenses.mjs --out licenses.json` in both docs and in the two script headers; update docs/SBOM_PROCESS.md:26 and docs/CI.md:29 to match the implemented pipeline.",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the command's failure mode is documented in-repo. It could not be reproduced literally (no node/pnpm runtime on the audit host).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "Documented sharp license exception does not match the machine policy",
+      "evidence": [
+        "docs/LICENSE_POLICY.md:50 \u2014 table row excepts `Apache-2.0 AND LGPL-3.0-or-later` for `@img/sharp-win32-x64`",
+        "security/license-policy.json:79-81 \u2014 the actual exception key is the bare `LGPL-3.0-or-later` scoped (in text) to `@img/sharp-libvips-linux-x64`",
+        ".github/workflows/dependency-review.yml:28 \u2014 comment repeats the Windows purl / expression pairing",
+        "scripts/license-gate.mjs:54-63 \u2014 an expression whose leaf hits the deny list fails; `Apache-2.0 AND LGPL-3.0-or-later` is not an exception key, so it would be denied if the Windows package were ever installed (e.g. a Windows contributor or a supportedArchitectures change)"
+      ],
+      "impact": "The documented exception does not protect the documented case: the machine policy and the human table disagree about the license string and the package. A non-Linux run of the license gate can fail with no obvious remediation, and reviewers cannot trust the table as the policy of record.",
+      "recommendation": "Make the exception key match the real reported license string(s) and implement package scoping (see the exception-matching finding); then regenerate the docs table from security/license-policy.json, or add a CI check that the two artifacts list the same (license, package) pairs.",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the artifact mismatch is certain (docs vs JSON vs dependency-review comment). The exact license string reported for the Windows binary was not reproduced (node_modules absent, no install allowed).",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "Shipped third-party images and GitHub Actions dependencies have no SBOM coverage",
+      "evidence": [
+        "infra/digitalocean/docker-compose.yml:28,208,248,311 \u2014 the production host runs redis:7-alpine, prom/prometheus, prom/alertmanager and caddy:2-alpine (all digest-pinned) alongside the app images",
+        ".github/workflows/deploy-do.yml:220-233,286-296,355-365 \u2014 image SBOMs exist only for mct-api, mct-worker, mct-web",
+        "docs/SBOM_PROCESS.md:89-91,170-171 \u2014 acknowledges the image SBOM does not cover the compose pull for third-party images",
+        "all workflow `uses:` are SHA-pinned (grep: no unpinned action refs), but no SBOM enumerates the GitHub Actions dependencies"
+      ],
+      "impact": "An OS-package advisory in redis/caddy/prometheus/alertmanager cannot be mapped to the deployed stack from the produced SBOMs, and the Actions supply chain is inventoried only by the pinned refs in the workflows.",
+      "recommendation": "Extend the weekly SBOM job (or a new one) to produce and retain CycloneDX SBOMs for the third-party runtime images by digest, and add a generated actions inventory (name, pinned SHA, version) to the SBOM process docs or the lockfile SBOM.",
+      "owner": "platform/infrastructure",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; coverage gap is documented in docs/SBOM_PROCESS.md, so the residual is a scope decision as much as a defect.",
+      "area": "SBOM"
+    },
+    {
+      "severity": "P3",
+      "title": "PR license gate depends on the deprecated `deny-licenses` option and cannot fail on unknown licenses",
+      "evidence": [
+        ".github/workflows/dependency-review.yml:25-26 \u2014 uses license-check + deny-licenses (plus fail-on-severity: high at :17)",
+        "pinned dependency-review-action README (2031cfc) \u2014 deny-licenses is 'deprecated for possible removal in the next major release' and 'If we can't detect the license for a dependency we will inform you, but the action won't fail'",
+        "pinned action source src/licenses.ts (2031cfc) \u2014 unlicensed/NOASSERTION changes are pushed to a reported-only bucket, never to `forbidden`"
+      ],
+      "impact": "The PR-diff layer silently stops enforcing license rules when the action drops deny-licenses, and it never blocks a newly added unlicensed dependency. The full-tree gate (test.yml) is the backstop, but it shares the UNKNOWN fail-open.",
+      "recommendation": "Migrate to `allow-licenses` (mutually exclusive with deny-licenses) and/or rely on the full-tree license gate that already runs on PRs; add an explicit no-license failure to scripts/license-gate.mjs (see the exception-scoping finding) so unknown licenses cannot pass either gate.",
+      "owner": "supply-chain owner",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; verified against the pinned action SHA 2031cfc (README + src/licenses.ts fetched during the audit).",
+      "area": "SBOM"
+    }
+  ],
+  "report": "# SBOM and License Policy Audit\n\n## Audit Metadata\n\n- Audit name: `repo-deep-dive`\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `mainecybertech` (MaineCyberTech portal monorepo)\n- Branch: `main`\n- Commit SHA: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd` (2026-10-11 00:13:46 -0400, \"Merge PR #168: promote develop to main\")\n- Generated at: 2026-10-11\n- Auditor: subagent domain pass (prompt 35), read-only\n- Area code: SBOM\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/35_sbom_license_policy.md`\n- Scope limitations: the audit host has no `node`/`pnpm` runtime and the target is read-only (no installs), so the `.mjs` scripts were inspected statically and their lockfile-parsing assumptions were reproduced with a `python3` walk; GitHub-side state (Dependabot PR backlog, live required checks, Dependabot alerts) is not observable from the repository and is marked `Unknown`/medium confidence where relevant. Live GHCR attestations were not queried.\n\n## Scope\n\nReviewed: package manifests and license fields; `pnpm-lock.yaml`; Dockerfiles and both compose files; GitHub Actions workflows and composite actions (SBOM, dependency review, build/push, deploy, validate, test, CodeQL); dependency-update config; the SBOM generator/validator and license/audit gates; the license and dependency-audit policies; the SBOM, license, dependency, CI and release documentation; release provenance/signing; the exception process.\n\nNot reviewed here (owned by other domains): image digest pinning policy and Dockerfile lint (container runtime security), secret scanning/rotation, and the CI workflow topology itself.\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `package.json`, `apps/*/package.json`, `packages/*/package.json` | manifests | license fields, versions, pnpm overrides | all declare `ISC`; root `packageManager: pnpm@10.34.3` |\n| `pnpm-lock.yaml` | lockfile | resolved tree, integrity, graph source | 1,446 package entries, all with `integrity`; `snapshots:` + `importers:` present |\n| `scripts/generate-sbom.mjs` (472 lines) | generator | CycloneDX 1.5 lockfile SBOM | commit/version binding, licenses, graph, serialNumber |\n| `scripts/validate-sbom.mjs` | validator | CI regression guard | floor 100, unique bom-refs, no dangling refs, binding |\n| `scripts/collect-licenses.mjs` | collector | replaces broken `pnpm licenses list` | reads installed tree |\n| `scripts/license-gate.mjs`, `security/license-policy.json` | policy gate | allow/deny + exceptions | string-scoped matching (finding) |\n| `scripts/audit-gate.mjs`, `security/dependency-audit-policy.json` | vulnerability gate | all-scope advisories + allowlist | `expires` unenforced (finding) |\n| `.github/workflows/sbom.yml`, `dependency-review.yml`, `build-push.yml`, `deploy-do.yml`, `validate.yml`, `test.yml`, `codeql.yml` | CI | generation, gating, attestation, verification | see inventory |\n| `.github/actions/dependency-audit/action.yml`, `setup-pnpm/action.yml` | composite actions | shared gates, frozen-lockfile install | used by test.yml:52 and validate.yml:17 |\n| `.github/dependabot.yml` | update config | npm/actions/docker/terraform | weekly, grouped, limit 10 |\n| `docs/SBOM_PROCESS.md`, `docs/LICENSE_POLICY.md`, `docs/DEPENDENCY_POLICY.md`, `docs/CI.md`, `docs/RELEASING.md` | docs | claims to verify against code | several drift items |\n| `apps/*/Dockerfile`, `infra/digitalocean/docker-compose.yml`, `docker-compose.yml` | images | base/runtime image identity | base images and third-party runtime images digest-pinned |\n| `.gitignore:59-63` | config | generated-artifact tracking policy | licenses.json/sbom.* ignored |\n| pinned `actions/dependency-review-action@2031cfc` README + `src/licenses.ts` + `src/purl.ts` | upstream | semantics of deny-licenses / allow-dependencies-licenses | fetched during audit |\n\n## Verification Performed\n\n| Command / action | Observed result |\n|---|---|\n| `git log -1 --format='%H %ci %s'` | `8d299b8d\u2026` 2026-10-11, merge of PR #168 \u2014 target confirmed |\n| `git diff --stat 9c0b88c..HEAD -- <domain files>` | empty: every SBOM/license file is byte-identical to the previous audit target; only `deploy-do.yml` changed (observability/SSH, +34/-5) |\n| `cat .github/workflows/sbom.yml` | generate \u2192 validate \u2192 upload (30-day artifact); no install failure path; uses `collect-licenses.mjs` |\n| `grep -n \"attest\\|sbom\\|provenance\\|id-token\\|digest\" deploy-do.yml` | per-image Trivy SBOM + `actions/attest-sbom` + `attest-build-provenance`; `verify-attestations` gates deploy |\n| `grep -rn \"uses:\" .github/workflows .github/actions \\| grep -v \"@[0-9a-f]\\{40\\}\"` | no unpinned action references (all 40-hex SHAs) |\n| `git tag \\| wc -l` | `0` \u2014 no tags; `grep -rn \"softprops\\|gh release\\|create-release\" .github scripts docs` \u2192 only prior audit reports |\n| `git ls-files -- licenses.json sbom.cdx.json sbom.spdx.json` | empty (untracked); `.gitignore:60,63` ignores them; composite action fails if tracked again |\n| python3 walk of `pnpm-lock.yaml` using the generator's exact regexes | 1,446 package entries, 1,446 integrity lines, 1,446 distinct name@version; floor 100 and graph checks have real input |\n| `node scripts/generate-sbom.mjs` / `validate-sbom.mjs` / `license-gate.mjs` | **not reproducible** \u2014 `node: command not found` on the audit host; no install allowed. Static analysis + lockfile walk used instead |\n| `grep -n \"expires\" scripts/license-gate.mjs scripts/audit-gate.mjs` | no match in either gate (policies carry `expires`; nothing reads it) |\n| `grep -n \"packages\" scripts/license-gate.mjs` | only inventory iteration; `entry.packages` from the policy is never consulted |\n| `webfetch` pinned `dependency-review-action` README + `src/licenses.ts` + `src/purl.ts` | `deny-licenses` deprecated; unlicensed deps never fail; `allow-dependencies-licenses` purl matching normalizes `%40` (the sharp exemption does apply on the PR gate) |\n| `grep -n \"image:\" infra/digitalocean/docker-compose.yml` | redis/prometheus/alertmanager/caddy digest-pinned; app images `:${IMAGE_TAG}` (tag) |\n| `sed -n '391,515p' deploy-do.yml`, `grep -n \"pull_retry\"` | digest resolved+verified at :501-514, then pulled by tag at :786-788 |\n| `grep -rn \"dependabot\" .github/workflows` | no triage/auto-merge automation |\n\n## Executive Summary\n\nThe domain has moved a long way from the prior full run. The lockfile SBOM is CycloneDX 1.5, commit- and version-bound, carries per-component licenses and a dependency graph, and is validated by a regression guard before upload (`sbom.yml:35-60`). Every shipped image gets a Trivy CycloneDX SBOM bound to its pushed digest and attested into the registry (`deploy-do.yml:220-243` and siblings), build provenance is attested and **verified fail-closed before deploy** (`verify-attestations`), and a real license allow/deny policy now runs on every PR and on the deploy gate over the full resolved tree (`license-gate.mjs` + `security/license-policy.json` + the `dependency-audit` composite). Generated aggregates stay untracked by policy and by guard. All GitHub Actions are SHA-pinned and Dependabot covers npm, actions, docker and terraform.\n\nThe remaining risk is not absence but **contract fidelity**. The license exceptions are matched by license string only, so the documented per-package scoping is not enforced and the `UNKNOWN` exception lets any unlicensed package pass both gates. Exception `expires` dates are decoration \u2014 neither gate reads them. On the provenance side, the deploy verifies the tag\u2192digest attestation and then pulls the **mutable tag**, so a registry writer could substitute the artifact after verification; the SBOM predicate is never explicitly verified. Image SBOMs are attested without any completeness/binding validation, third-party runtime images (redis, caddy, prometheus, alertmanager) and the Actions dependencies have no SBOM coverage, and there is no scheduled re-scan of the resolved tree against newly published advisories. Documentation drift (broken `pnpm licenses list` command in runbooks/headers, a sharp exception that does not exist in the machine policy, a stale CI.md row) will mislead the next operator or agent.\n\nVerdict: the pipeline is **functionally strong (score ~4/5) but not yet trustworthy as an audit artifact** until exception scoping/expiry, digest-pinned deployment, image-SBOM validation and the scheduled advisory scan are fixed. No P0/P1 issues were found at this commit; the previously filed P1s are verified fixed except the release-identity residual (partially fixed).\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Lockfile SBOM | `scripts/generate-sbom.mjs`, `sbom.yml` | CycloneDX 1.5 npm SBOM | implemented, validated | low | commit+version bound; 30-day artifact; not release-attached |\n| Image SBOM | `deploy-do.yml:220-243` etc., `build-push.yml:64-90` | per-image OS+npm SBOM | implemented, attested on deploy path | medium | unvalidated; third-party images uncovered |\n| Provenance | `actions/attest-build-provenance` | SLSA-style build provenance | implemented + verified | medium | verified against tag\u2192digest, deploy pulls tag |\n| SBOM attestation | `actions/attest-sbom` (`push-to-registry`) | durable digest-bound SBOM | implemented | medium | predicate not verified at deploy |\n| License policy | `security/license-policy.json`, `scripts/license-gate.mjs` | allow/deny + exceptions | implemented in CI | medium | string-scoped; expiry ignored |\n| PR license gate | `dependency-review.yml` | diff-level deny list | implemented | medium | deprecated option; unlicensed never fails |\n| Vulnerability gate | `scripts/audit-gate.mjs`, `security/dependency-audit-policy.json` | all-scope advisories | implemented on PR/deploy | medium | no schedule; expiry ignored |\n| License inventory | `scripts/collect-licenses.mjs` | licenses.json from installed tree | implemented | low | docs still name the broken pnpm command |\n| Dependency updates | `.github/dependabot.yml` | npm/actions/docker/terraform | configured | medium | no triage automation |\n| Generated artifacts | `.gitignore:59-63`, composite guard | untracked aggregates | enforced | low | `git ls-files` empty |\n| Release identity | `VERSION`, git tags, releases | product version / release | partial | medium | no tags/releases (documented decision) |\n| Docs | `docs/SBOM_PROCESS.md`, `LICENSE_POLICY.md`, `DEPENDENCY_POLICY.md`, `CI.md` | operator guidance | mostly accurate | low | several stale commands/rows |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Package manifests | 4 | all workspace `package.json` declare `ISC`; rationale documented (`docs/LICENSE_POLICY.md:66-71`) | no per-package license CI check (lockfile only) | add a manifest license lint to the docs/guard set |\n| Lockfiles | 4 | `pnpm-lock.yaml` committed; `setup-pnpm` installs `--frozen-lockfile` (action.yml:52) | lockfile freshness only via Dependabot | keep |\n| Docker images | 4 | base images digest-pinned (`apps/*/Dockerfile:1`); prod compose third-party images digest-pinned | app images pulled by tag after verification | digest-pinned deploy (new finding) |\n| GitHub Actions | 4 | every `uses:` is a 40-hex SHA; Dependabot `github-actions` weekly | no inventory/SBOM of Actions deps | generate an actions inventory (new finding) |\n| Dependency updates | 3 | comprehensive `dependabot.yml`; PRs re-run both gates | no triage automation; no scheduled re-scan | scheduled audit + triage SLA |\n| License fields | 4 | per-component `licenses` in the lockfile SBOM; root/workspace ISC | license data depends on licenses.json presence | keep |\n| Third-party/transitive deps | 4 | full resolved tree gated in CI; graph emitted | exception scoping/UNKNOWN fail-open | scope exceptions by package |\n| SBOM workflows | 4 | generate\u2192validate\u2192upload; parser-regression floor | not part of the deploy gate (documented artifact-only) | optionally run generate+validate in validate.yml |\n| Container SBOM | 4 | digest-bound image SBOMs, attested on deploy path | unvalidated; third-party runtime images uncovered | validate image SBOMs; cover redis/caddy/etc. |\n| Dependency review | 3 | `fail-on-severity: high` + deny list + purl exemptions | deprecated `deny-licenses`; unlicensed never fails | migrate to `allow-licenses`; no-license failure |\n| Vulnerability alerts | 3 | audit-gate on every PR and deploy; CodeQL weekly | no scheduled dependency re-scan | weekly `audit-gate` job or documented Dependabot reliance |\n| Release provenance | 3 | provenance attested + verified; SBOMs digest-bound | tag-TOCTOU; no tags/releases | digest-pinned deploy; tag/release decision |\n\n## Detailed Review\n\n### Item: Lockfile SBOM generation and binding\n\n- Evidence: `scripts/generate-sbom.mjs:258-269,300-315,325-328,365-406,424-465`; `sbom.yml:35-60`; `scripts/validate-sbom.mjs:47-67`.\n- What it does: parses `pnpm-lock.yaml` (packages/snapshots/importers) into a CycloneDX 1.5 document with purls, hex integrity hashes, per-component licenses, a dependency graph, a deterministic serialNumber, and `metadata.component.version = \"<VERSION>+<sha>\"` plus `mct:productVersion`/`mct:commit`.\n- Current controls: validation before upload (format, unique refs, dangling refs, floor 100, binding); CI regenerates it on push/PR/weekly.\n- Missing controls: no durable storage for the lockfile SBOM (30-day artifact); no release attachment.\n- Risks: a per-commit npm BOM is unavailable after the artifact window.\n\n### Item: Image SBOMs and attestation\n\n- Evidence: `deploy-do.yml:220-243,286-304,355-373`; `build-push.yml:64-90,135-160,216-241`; `docs/SBOM_PROCESS.md:36-63`.\n- What it does: Trivy scans the pushed digest (`format: cyclonedx`) and (on the deploy path) `actions/attest-sbom` binds the document to the digest as an OCI referrer.\n- Current controls: digest binding; durable attestation.\n- Missing controls: no validation of the image SBOM; no SBOM for redis/caddy/prometheus/alertmanager.\n\n### Item: Deploy attestation verification\n\n- Evidence: `deploy-do.yml:391-515` (verify), `:786-788` (pull), `infra/digitalocean/docker-compose.yml:69,131,187`.\n- What it does: resolves each tag to a digest, runs `gh attestation verify` with `--signer-workflow`/`--source-digest`, fail-closed; rollback path uses an explicit allow-list.\n- Missing controls: the resolved digest is not passed to the deploy; the pull is by tag; no `--predicate-type` for provenance or SBOM.\n- Risks: post-verification substitution; SBOM predicate could be absent while verification still passes.\n\n### Item: License policy and exception process\n\n- Evidence: `security/license-policy.json`; `scripts/license-gate.mjs:35-146`; `dependency-review.yml:17,25-30`; `docs/LICENSE_POLICY.md:6-98`.\n- What it does: full-tree allow/deny gate on every PR and deploy; diff-level deny list on PRs; exceptions carry a reason, package list and expiry.\n- Missing controls: package scope and `expires` are not enforced; the docs/JSON disagree for sharp; `deny-licenses` is deprecated; unlicensed deps never fail.\n- Risks: a new copyleft/unlicensed dependency can pass unreviewed.\n\n### Item: Dependency updates and vulnerability alerts\n\n- Evidence: `.github/dependabot.yml`; `.github/actions/dependency-audit/action.yml:12-17`; `test.yml:52`; `validate.yml:17`; `codeql.yml:8-9`.\n- What it does: weekly grouped updates; audit gate on PRs and deploys; CodeQL weekly.\n- Missing controls: no scheduled dependency audit; no triage automation.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| SBOM-001 | Package manifests | `package.json:4` + workspace manifests | ISC declared everywhere; rationale documented | no manifest lint | P3 | add a manifest license check |\n| SBOM-002 | Lockfiles | `pnpm-lock.yaml`; `setup-pnpm/action.yml:52` | frozen-lockfile installs; integrity in SBOM | \u2014 | \u2014 | keep |\n| SBOM-003 | Docker images | `apps/*/Dockerfile:1`; compose files | digest-pinned base/third-party images | app images pulled by tag | P2 | digest-pinned deploy |\n| SBOM-004 | GitHub Actions | all `uses:` SHA-pinned; `dependabot.yml` | pinning + weekly updates | no actions SBOM | P3 | generate an actions inventory |\n| SBOM-005 | Dependency updates | `dependabot.yml:1-87` | grouped weekly PRs | no triage automation | P2 | triage SLA / automation |\n| SBOM-006 | License fields | `generate-sbom.mjs:356-358` | per-component licenses in SBOM | depends on licenses.json | \u2014 | keep |\n| SBOM-007 | Third-party/transitive deps | `license-gate.mjs`; lockfile SBOM graph | full-tree gate + graph | exception scoping/UNKNOWN | P2 | scope by package; fail UNKNOWN |\n| SBOM-008 | SBOM workflows | `sbom.yml:35-60` | generate/validate/upload | artifact-only (documented) | P3 | consider a deploy-gate run |\n| SBOM-009 | Container SBOM | `deploy-do.yml:220-243` | digest-bound, attested | unvalidated; third-party images | P2/P3 | validate; extend coverage |\n| SBOM-010 | Dependency review | `dependency-review.yml:17,25-30` | severity + deny list | deprecated option; unlicensed | P3 | migrate to allow-licenses |\n| SBOM-011 | Vulnerability alerts | `audit-gate.mjs` via composite | PR + deploy gating | no schedule | P2 | weekly audit job |\n| SBOM-012 | Release provenance | `verify-attestations`; `generate-sbom.mjs` | provenance verified; commit/digest binding | tag-TOCTOU; no tags/releases | P2 | digest-pinned deploy; release decision |\n\n## Findings\n\nVerification rows reuse the previous register's titles (aggregator assigns IDs); new findings are listed after them. Full evidence is in `35_sbom_license_policy.json`.\n\n### Verification of previous findings (17 rows)\n\n| Title | Sev | Status | Key evidence at 8d299b8d |\n|---|---|---|---|\n| SBOM Is Lockfile-Only, Not an Image SBOM or Attestation | P1 | verified-fixed | `deploy-do.yml:220-243` attest-sbom per image |\n| Unsigned Images With No Provenance/Attestation | P1 | verified-fixed | `build-push.yml:85-90`; `deploy-do.yml:391-515` verify fail-closed |\n| No version identity: no tags, no product version, no commit binding in generated artifacts | P1 | partially-fixed | `generate-sbom.mjs:441-465` binds version+commit; `git tag` = 0 |\n| No license allow/deny policy in dependency review or any CI gate | P1 | verified-fixed | `license-policy.json`; `license-gate.mjs`; composite in test/validate |\n| SBOM carries no license data and no dependency graph | P1 | verified-fixed | `generate-sbom.mjs:258-269,365-406`; `validate-sbom.mjs:47-54` |\n| SBOM is artifact-only: not release-bound, not commit-bound, not attested | P2 | partially-fixed | image path fixed; lockfile SBOM still 30-day artifact (`SBOM_PROCESS.md:179-186`) |\n| No container/image SBOM; base-image OS packages untracked | P2 | verified-fixed | Trivy `format: cyclonedx` per digest |\n| `docs/CI.md` documents the SBOM workflow as \"Blocking\" but it gates nothing | P2 | verified-fixed | `docs/CI.md:29` now \"Artifact-only (not a gate)\" |\n| No artifact provenance, attestation, or signing; `id-token: write` unused | P2 | verified-fixed | permissions used; provenance attested + verified |\n| License policy not enforced in CI; non-OSI and LGPL licenses present | P2 | verified-fixed | gate runs in CI; exceptions documented |\n| SBOM is generated but not bound to a commit or attached to releases/images | P2 | verified-fixed | commit-bound; digest-bound+attested; releases N/A |\n| Dependabot PR backlog is large and not triaged | P2 | open | repo-side: config only, no triage automation; backlog not repo-visible |\n| Root license is ISC with no documented rationale | P3 | verified-fixed | `docs/LICENSE_POLICY.md:66-71` documents rationale |\n| SBOM format/count not validated before upload; no regression guard | P3 | verified-fixed | `validate-sbom.mjs` + `sbom.yml:52-53` |\n| Root package license remains \"ISC\" | P3 | still-open | `package.json:4` ISC; now declared intentional (owner decision) |\n| `licenses.json` is committed but unenforced and unverified | P2 | verified-fixed | `.gitignore:60,63`; untracked guard; `git ls-files` empty |\n| SBOM is produced as a transient artifact, not bound to a release | P3 | verified-fixed | registry-side SBOM attestations on the deploy path |\n\n### New findings (9 rows)\n\n#### SBOM-P2 (new) \u2014 License exceptions are matched by license string only; documented package scope and UNKNOWN fail open\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: open\n- Evidence: `scripts/license-gate.mjs:37-39,50-53` (exceptions keyed by license; `entry.packages` never read); `security/license-policy.json:87-92` (`UNKNOWN` exception for browser-assert \u2192 blanket pass for every unlicensed package); `docs/LICENSE_POLICY.md:44-45` claims per-package scoping that the code does not implement; pinned `dependency-review-action` `src/licenses.ts` reports unlicensed deps without failing.\n- What is happening: any new dependency whose license string equals an exception key passes without review, and any package with no license field passes both gates.\n- Why it matters: the compliance control does not implement its documented contract; a future MPL-2.0 / LGPL-3.0-or-later / FSL / unlicensed dependency merges unreviewed.\n- Recommended fix: match on (license, package name); fail UNKNOWN unless the package is explicitly listed; update JSON comment and docs; add unit fixtures.\n- Owner/effort: supply-chain owner \u00b7 S\u2013M\n\n#### SBOM-P2 (new) \u2014 Exception `expires` dates are documentation-only\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: open\n- Evidence: `security/license-policy.json:66,76,84,92`; `security/dependency-audit-policy.json:16`; neither `scripts/license-gate.mjs` nor `scripts/audit-gate.mjs` references `expires` (grep); `docs/DEPENDENCY_POLICY.md:30` promises an expiry.\n- Why it matters: accepted risks outlive their review with no failing signal (the only removal hint is when the license string vanishes \u2014 never for UNKNOWN).\n- Recommended fix: parse ISO dates and fail/warn when past due; add a past-date fixture test.\n- Owner/effort: supply-chain owner \u00b7 S\n\n#### SBOM-P2 (new) \u2014 Deploy verifies the tag's attestation but pulls by mutable tag; SBOM predicate never verified\n\n- Severity: P2 \u00b7 Confidence: high \u00b7 Status: open\n- Evidence: `deploy-do.yml:501-514` (tag\u2192digest + `gh attestation verify`, no `--predicate-type`), `:786-788` (pull by `:${IMAGE_TAG}`), `docker-compose.yml:69,131,187`; `docs/SBOM_PROCESS.md:120-135` documents a stronger manual check than CI runs; `:159-174` claims deploy-time verification.\n- Why it matters: post-signing substitution (re-pointing the commit tag) defeats the stated guarantee; the SBOM predicate could be absent while verification still passes. Direct hit on the \"no post-signing additions\" extended check.\n- Recommended fix: pass resolved digests from `verify-attestations` to the deploy and pull/run by digest (or re-verify on the droplet); add `--predicate-type` checks for provenance and SBOM.\n- Owner/effort: platform/infrastructure \u00b7 M\n\n#### SBOM-P2 (new) \u2014 No scheduled dependency vulnerability re-scan\n\n- Severity: P2 \u00b7 Confidence: medium \u00b7 Status: open\n- Evidence: `dependency-audit` composite (`action.yml:12-17`) is only invoked from `test.yml:52` (PR) and `validate.yml:17` (deploy gate); `sbom.yml:8-9` is weekly but never runs the audit; `codeql.yml:8-9` is code scanning.\n- Why it matters: advisories published while the tree is unchanged stay invisible to CI; Dependabot alerts may cover it but are not repo-verifiable.\n- Recommended fix: weekly scheduled `audit-gate.mjs` (or report + dedup issue), or document Dependabot alerts as the compensating control with a triage date.\n- Owner/effort: supply-chain owner \u00b7 S\n\n#### SBOM-P3 (new) \u2014 Image SBOMs are attested but never validated\n\n- Severity: P3 \u00b7 Confidence: high \u00b7 Status: open\n- Evidence: `validate-sbom.mjs:56-61` + `SBOM_PROCESS.md:95-100` (lockfile only); `deploy-do.yml:220-243` attests with no validation step; `build-push.yml:64-83` uploads unvalidated.\n- Why it matters: an empty/partial image SBOM would be attested and retained as the durable record for that digest.\n- Recommended fix: small validator (component floor, expected classes, digest in `metadata.component.purl`) run before attest/upload.\n- Owner/effort: platform/infrastructure \u00b7 S\n\n#### SBOM-P3 (new) \u2014 Runbooks and script headers still document the broken `pnpm licenses list --json`; docs/CI.md row stale\n\n- Severity: P3 \u00b7 Confidence: high \u00b7 Status: open\n- Evidence: `docs/SBOM_PROCESS.md:116,26`; `docs/DEPENDENCY_POLICY.md:77`; `scripts/license-gate.mjs:16,30`; `scripts/generate-sbom.mjs:11,258`; the failure mode is documented at `sbom.yml:36-47` and `collect-licenses.mjs:5-19` (pinned pnpm 10.34.3 writes an error document); `docs/CI.md:29` still credits build-push.yml only for image SBOMs.\n- Why it matters: the documented local procedure fails as written and can produce an error-document licenses.json.\n- Recommended fix: point every doc/header at `node scripts/collect-licenses.mjs --out licenses.json`; refresh the CI.md row.\n- Owner/effort: supply-chain owner \u00b7 S\n\n#### SBOM-P3 (new) \u2014 Documented sharp license exception does not match the machine policy\n\n- Severity: P3 \u00b7 Confidence: medium \u00b7 Status: open\n- Evidence: `docs/LICENSE_POLICY.md:50` (`Apache-2.0 AND LGPL-3.0-or-later`, `@img/sharp-win32-x64`) vs `security/license-policy.json:79-81` (key `LGPL-3.0-or-later`, `@img/sharp-libvips-linux-x64`) vs `dependency-review.yml:28` (Windows purl comment); `license-gate.mjs:54-63` denies an expression whose LGPL leaf is denied and whose full string is not an exception key.\n- Why it matters: the documented exception does not protect the documented case on a non-Linux run; the table of record disagrees with the machine policy.\n- Recommended fix: align the exception key/package with reality, implement package scoping, and regenerate the docs table (or add a parity check).\n- Owner/effort: supply-chain owner \u00b7 S\n\n#### SBOM-P3 (new) \u2014 Shipped third-party images and GitHub Actions deps have no SBOM coverage\n\n- Severity: P3 \u00b7 Confidence: high \u00b7 Status: open\n- Evidence: `infra/digitalocean/docker-compose.yml:28,208,248,311` (redis/prometheus/alertmanager/caddy, digest-pinned); image SBOMs only for mct-api/worker/web (`deploy-do.yml:220,286,355`); acknowledged at `SBOM_PROCESS.md:89-91,170-171`; no actions inventory.\n- Why it matters: OS advisories in the runtime sidecars cannot be mapped from the produced SBOMs; Actions inventory is implicit in workflow files.\n- Recommended fix: emit/retain SBOMs for the third-party images by digest; add a generated actions inventory.\n- Owner/effort: platform/infrastructure \u00b7 M\n\n#### SBOM-P3 (new) \u2014 PR license gate depends on the deprecated `deny-licenses` and cannot fail on unknown licenses\n\n- Severity: P3 \u00b7 Confidence: high \u00b7 Status: open\n- Evidence: `dependency-review.yml:25-26`; pinned action README (deprecation warning; \"if we can't detect the license \u2026 the action won't fail\"); pinned `src/licenses.ts` (unlicensed/NOASSERTION never `forbidden`).\n- Why it matters: the diff layer silently stops enforcing when the option is removed and never blocks unlicensed additions.\n- Recommended fix: migrate to `allow-licenses` and/or rely on the full-tree gate; add the no-license failure to `license-gate.mjs`.\n- Owner/effort: supply-chain owner \u00b7 S\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Unreviewed copyleft/unlicensed dependency enters the tree | P2 | Medium | Legal/compliance exposure | license-gate string scoping; UNKNOWN exception | package-scoped exceptions; fail UNKNOWN |\n| Post-verification image substitution at deploy | P2 | Low | Runs an unverified artifact in prod | tag pull after digest verification | digest-pinned pull/re-verify |\n| Durable SBOM attestation records an empty image SBOM | P3 | Low | Incident triage relies on bad data | no image-SBOM validation | validate before attest |\n| Advisory published between deploys is missed | P2 | Medium | Slow remediation | no scheduled audit | weekly audit job / Dependabot reliance documented |\n| Expired exception silently persists | P2 | Medium | Accepted risk outlives review | `expires` unread | enforce expiry in gates |\n| Operator runbook fails locally | P3 | Medium | Wasted time / missing licenses locally | broken pnpm command in docs | point to collect-licenses.mjs |\n| Release identity absent (no tags/releases) | P3 | High | SBOM not release-attachable | `git tag` = 0 | owner decision (REL-P1-001) |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\nNone. No P0/P1 findings are open at this commit.\n\n### This Week\n\n1. Scope license exceptions by package and fail `UNKNOWN` by default (`license-gate.mjs` + policy JSON + docs + fixtures).\n2. Enforce `expires` in `license-gate.mjs` and `audit-gate.mjs`.\n3. Digest-pin the deploy: pass resolved digests from `verify-attestations` and pull/run by `@sha256:\u2026`; add `--predicate-type` checks.\n\n### This Month\n\n4. Add a weekly scheduled dependency audit (enforcing or report + dedup issue).\n5. Validate image SBOMs before attest/upload.\n6. Fix the runbook/header drift (`collect-licenses.mjs`) and the sharp exception/docs mismatch.\n7. Decide and record: release tags/attachment (REL-P1-001) and lockfile-SBOM durability (SBOM-P2-001).\n\n### Later / Platform Evolution\n\n8. Cover third-party runtime images with SBOMs; add an Actions inventory.\n9. Migrate the PR gate off `deny-licenses` to `allow-licenses`.\n10. Optionally run `generate-sbom.mjs` + `validate-sbom.mjs` in `validate.yml` so a parser regression blocks deploys (dependency-free, cheap).\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Fail on expired exceptions | closes a silent drift | `license-gate.mjs`, `audit-gate.mjs` | fixture with past date fails |\n| Package-scope exceptions | restores the documented contract | `license-gate.mjs`, `license-policy.json` | fixture: same license, different package fails |\n| Replace the pnpm command in docs/headers | runbook works as written | `SBOM_PROCESS.md`, `DEPENDENCY_POLICY.md`, `license-gate.mjs`, `generate-sbom.mjs` | literal walk on a dev box |\n| Add `--predicate-type` to `gh attestation verify` | requires the predicate that is claimed | `deploy-do.yml` | dry-run dispatch, job summary shows both checks |\n| Refresh `docs/CI.md:29` image-SBOM producer | docs match pipeline | `docs/CI.md` | review |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Digest-pinned deploy + post-pull re-verification | P2 | platform/infrastructure | M | verify-attestations outputs |\n| Weekly dependency audit job | P2 | supply-chain owner | S | none |\n| Image-SBOM validator | P3 | platform/infrastructure | S | none |\n| Third-party image SBOM coverage | P3 | platform/infrastructure | M | SBOM job design |\n| Actions dependency inventory | P3 | supply-chain owner | S | none |\n| Release tags + SBOM attachment decision | P3 | release owner | S\u2013M | owner decision |\n| Exception parity check (docs \u2194 JSON) | P3 | supply-chain owner | S | package scoping |\n\n## Suggested Tests\n\n- Unit: `license-gate.mjs` fixtures \u2014 allowed license passes; denied fails; exception for package A does not cover package B; `UNKNOWN` for a listed package passes, for a new package fails; expired exception fails/warns.\n- Unit: `audit-gate.mjs` \u2014 expired allowlist entry fails/warns.\n- Unit: image-SBOM validator \u2014 empty components, missing digest in `metadata.component.purl`, and a valid Trivy document.\n- CI: assert `docs/LICENSE_POLICY.md` exception table equals `security/license-policy.json` (license, package pairs).\n- CI: assert `git ls-files licenses.json sbom.cdx.json sbom.spdx.json` empty (exists; keep).\n- Security/regression: an integration job that re-points a test tag after verification and asserts the deploy would refuse a digest mismatch (or a unit test of the digest-passing logic).\n- Manual: follow `docs/SBOM_PROCESS.md` \"Retrieve and verify\" literally on a workstation; record any failing command.\n\n## Suggested Documentation Updates\n\n- `docs/SBOM_PROCESS.md`: replace the local `pnpm licenses list --json` steps; state that image SBOMs are also emitted by `deploy-do.yml`; document the image-SBOM validation once added.\n- `docs/LICENSE_POLICY.md`: fix the sharp row; describe exception scoping as implemented; document expiry enforcement.\n- `docs/DEPENDENCY_POLICY.md`: replace the broken command; state the scheduled-audit trigger and the triage SLA.\n- `docs/CI.md`: correct the SBOM row's image-SBOM producer and note the new scheduled audit job.\n- `docs/RELEASING.md`: keep the commit-as-identity model explicit; if tags are adopted, describe SBOM attachment.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Are GitHub Dependabot security alerts enabled and triaged? | determines whether the no-scheduled-scan gap is compensated | repo settings (not in repo) / alert triage log |\n| Which license string does `@img/sharp-win32-x64` actually report on a Windows install? | fixes the docs/JSON mismatch precisely | `pnpm install` on Windows + `collect-licenses.mjs` |\n| Is the lockfile SBOM required as a durable compliance artifact, or is the registry-attested image SBOM sufficient? | decides SBOM-P2-001 remediation | owner/legal decision |\n| Will annotated tags/GitHub Releases be adopted? | REL-P1-001; SBOM release attachment | owner/release decision |\n| Is `redis/caddy/prometheus/alertmanager` SBOM coverage in scope for compliance? | scope of the third-party SBOM gap | owner decision |\n\n## Appendix\n\n### Dependency source inventory\n\n- npm workspace tree: `pnpm-lock.yaml` (1,446 resolved package entries), installed frozen-lockfile in CI (`setup-pnpm/action.yml:52`); licenses collected from the installed tree by `scripts/collect-licenses.mjs`.\n- Container images: `node:20-alpine@sha256:fb4cd\u2026` (base, `apps/*/Dockerfile`); prod runtime `redis:7-alpine`, `prom/prometheus:v3.5.1`, `prom/alertmanager:v0.28.1`, `caddy:2-alpine` (all digest-pinned, `infra/digitalocean/docker-compose.yml`); app images `mct-api|worker|web:<sha>` built by `deploy-do.yml`/`build-push.yml`.\n- GitHub Actions: all `uses:` pinned to 40-hex SHAs; updated weekly by `.github/dependabot.yml`; no generated inventory.\n- Terraform providers: covered by Dependabot (`/infra/terraform/digitalocean`); out of this domain's gates.\n\n### License risk review (current tree, by policy artifact)\n\n- Permissive allowlist (MIT/ISC/Apache-2.0/BSD/0BSD/BlueOak/Unlicense/CC0/CC-BY/Python-2.0/Artistic-2.0/WTFPL/Zlib/BSL-1.0/PostgreSQL/OpenSSL/X11/NCSA/MS-PL/UPL-1.0) \u2014 `security/license-policy.json:3-30`.\n- Denied (GPL/AGPL all forms, SSPL-1.0, BUSL-1.1, CC-BY-NC, EUPL, OSL-3.0, RPL-1.5) \u2014 `:32-56`.\n- Reviewed exceptions with expiry: MPL-2.0 (axe-core tooling), FSL-1.1-MIT (@sentry/cli tooling), LGPL-3.0-or-later (@img/sharp-libvips-linux-x64, dev/build-only via @storybook/nextjs; no workspace package declares sharp \u2014 grep of `apps/*/package.json`, `packages/*/package.json`), UNKNOWN (browser-assert, dev-only) \u2014 `:58-94`; caveats: scope/expiry not enforced, sharp docs mismatch.\n- Root product license: ISC for every workspace (`package.json` + `apps/*` + `packages/*`), rationale documented.\n\n### Evidence-gathering notes\n\n- The domain files are unchanged between `9c0b88c` (previous audit target) and `8d299b8d`; every verification row therefore re-verified the same artifacts at the new commit, and the `deploy-do.yml` diff since `9c0b88c` (observability/SSH only) does not touch the attestation or SBOM steps.\n- Scripts could not be executed (no node runtime; read-only target, no installs). Parser assumptions were reproduced with python3 against the real lockfile; upstream action semantics were verified against the pinned SHA.\n"
+}

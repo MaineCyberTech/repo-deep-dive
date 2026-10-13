@@ -1,0 +1,387 @@
+{
+  "domain": "04_usability_workflow_audit",
+  "file": "04_usability_workflow_audit.md",
+  "area": "USE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:46Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Self-service password reset dead-ends: the email link lands on a page that cannot complete the reset",
+      "evidence": [
+        "apps/api/src/routes/auth.ts:327-330 \u2014 forgot-password sends Supabase resetPasswordForEmail with redirectTo `<APP_BASE_URL>/password-reset` (GoTrue appends a PKCE `code` or recovery token to that URL)",
+        "apps/web/app/(public)/password-reset/page.tsx:1-37 \u2014 the page is client-only, reads no searchParams/hash, and posts email + new password directly",
+        "apps/api/src/routes/auth.ts:349-378 \u2014 POST /api/v1/auth/reset-password is guarded by requireAuth and rejects any email != req.authUser.email, so it only works for an already-signed-in user",
+        "apps/web/app/auth/callback/route.ts:8-15 \u2014 the only route that exchanges a Supabase `code` into a session is /auth/callback, which the reset email never targets",
+        "grep 'searchParams|useSearchParams|location.hash' apps/web/app/(public)/password-reset/page.tsx \u2192 0 matches"
+      ],
+      "impact": "A user who forgets their password can never recover access from the emailed link; the reset form returns an auth error (or nothing useful), so every reset escalates to manual admin intervention. The profile-page password change uses the same endpoint, which is why the flow appears to work for signed-in users.",
+      "recommendation": "Route the reset link through /auth/callback (or have /password-reset read the `code`/fragment, exchange it, then call reset-password with the resulting session). Add an E2E test that follows the actual emailed URL shape.",
+      "owner": "Web + API auth owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. No USE rows existed in the previous register to re-verify.",
+      "area": "USE"
+    },
+    {
+      "severity": "P1",
+      "title": "Signup email-confirmation link points at the API host and 404s, blocking first login",
+      "evidence": [
+        "apps/api/src/routes/auth.ts:182 \u2014 sign-up sets emailRedirectTo `${req.protocol}://${req.get(\"host\")}/auth/callback`, i.e. the API origin",
+        "infra/digitalocean/Caddyfile.prod:19-30 \u2014 api.<domain> proxies every path to api:4000; only the web app (app./www.) serves /auth/callback",
+        "apps/api/src/middleware/not-found.ts:3-5 \u2014 unknown API paths return 404 JSON, so the confirmation link cannot complete",
+        ".github/workflows/deploy-do.yml:333 \u2014 production NEXT_PUBLIC_API_URL=https://<api_domain> confirms web and API are different hosts",
+        "apps/web/app/auth/callback/route.ts:8-15 \u2014 the working callback lives on the web host"
+      ],
+      "impact": "New signups receive a confirmation link that dead-ends on the API 404; they cannot verify their email, so the onboarding funnel stops after the signup form. This also silently breaks the pending-approval flow that the signup copy promises.",
+      "recommendation": "Build emailRedirectTo from APP_BASE_URL (as forgot-password already does via resolveTrustedRedirectOrigin) so it targets the web /auth/callback. Verify the Supabase redirect allow-list contains that URL.",
+      "owner": "API auth owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. External Supabase redirect allow-list config is unknown; if the URL is not allow-listed GoTrue falls back to the dashboard Site URL, but the in-repo contract is wrong either way.",
+      "area": "USE"
+    },
+    {
+      "severity": "P1",
+      "title": "Admin approval queue cannot approve or reject memberships (roleId sent as empty string)",
+      "evidence": [
+        "apps/web/app/(admin)/admin/approvals/actions.ts:28-39 \u2014 approveMembership sends `{ roleId: \"\", status: \"approved\" }`",
+        "apps/web/app/(admin)/admin/approvals/actions.ts:41-52 \u2014 rejectMembership sends `{ roleId: \"\", status: \"rejected\" }`",
+        "apps/api/src/validators/membership.ts:3-8 \u2014 updateMembershipSchema requires roleId: z.string().uuid(), so an empty string fails validation",
+        "apps/api/src/routes/memberships.ts:123-127 \u2014 PATCH /memberships/:id parses the body with that schema",
+        "apps/web/app/(admin)/admin/approvals/page.tsx:116-124 \u2014 the queue renders Approve/Reject User buttons wired to those actions with no error handling"
+      ],
+      "impact": "The single most important admin onboarding step (approving a pending user so they can enter the portal) fails: the action throws, no membership changes, and the admin sees an error screen instead of a confirmation. Pending users stay locked out until someone edits the membership from the user detail page.",
+      "recommendation": "Resolve the membership's current role (or make roleId optional in the PATCH schema) and return/display the API error; add a test that approval from the queue transitions status to approved.",
+      "owner": "API platform + web admin",
+      "target": "this week",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. UI presentation of the thrown action (error boundary vs. inline) is inferred; the API rejection is certain.",
+      "area": "USE"
+    },
+    {
+      "severity": "P1",
+      "title": "Every SDK delete reports failure after succeeding because the client cannot parse empty 204 bodies",
+      "evidence": [
+        "packages/sdk/src/client.ts:96 \u2014 executeFetch unconditionally does `await res.json()` before checking res.status",
+        "apps/api/src/routes/documents.ts:597, apps/api/src/routes/api-keys.ts:173, apps/api/src/routes/memberships.ts:173, apps/api/src/routes/tickets.ts:521 \u2014 delete handlers end with `res.status(204).send()` (46 occurrences across apps/api/src/routes/*.ts)",
+        "packages/sdk/src/__tests__/sdk-expanded.test.ts:14-40 \u2014 the test double returns a JSON body even for status 204, so CI never reproduces the real empty-body behavior",
+        "apps/web/components/admin/AdminApiKeysClient.tsx:74-84 \u2014 on the resulting parse error the UI shows 'Failed to delete API key' and keeps the row",
+        "apps/web/components/admin/RecordDetail.tsx:56-68 \u2014 module record deletes surface the raw error string",
+        "apps/web/app/(admin)/admin/documents/page.tsx:438-470 \u2014 bulk delete swallows each per-item error and returns ok:true, so a real failure is indistinguishable from success"
+      ],
+      "impact": "Deleting an API key, document, membership, webhook, module record, etc. appears to fail (error toast/raw JSON error, row stays/rolls back) even though the server deleted it; users retry, and stale rows persist until a manual refresh. Combined with the bulk loop that swallows errors, some bulk deletes claim success while single deletes claim failure \u2014 the same operation gives contradictory feedback.",
+      "recommendation": "In executeFetch, treat 204/empty bodies as `null` (e.g. check status 204 or content-length 0 before res.json()). Add SDK tests with truly empty bodies, and have the web delete actions surface per-item results.",
+      "owner": "SDK/API contracts owner",
+      "target": "this week",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. Cross-cutting with domain 08 (API contracts); no existing finding covers it.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Bulk document operations report success without per-item results (false success on partial failure)",
+      "evidence": [
+        "apps/web/app/(admin)/admin/documents/page.tsx:438-470 \u2014 bulkDeleteAction loops `api.documents.remove(id)` inside try/catch that ignores every error, then returns `{ok:true, ids}`",
+        "apps/web/components/admin/AdminDocumentsCenterClient.tsx:851-869 \u2014 on ok it announces 'N documents were removed.' with no per-item detail",
+        "apps/web/app/(portal)/portal/documents/bulk-actions.ts:12-25 \u2014 bulk folder/metadata return `updated: documentIds.length` regardless of the API result",
+        "packages/sdk/src/documents.ts:103-120 \u2014 SDK types bulk responses as `{updated:number}` and discards the API's `{results, successful, failed}`",
+        "apps/api/src/routes/documents.ts:676-694 and 722-745 \u2014 the API does return per-row `results`, `successful`, `failed`",
+        "apps/web/app/(admin)/admin/tickets/page.tsx:63-95 \u2014 bulk ticket update surfaces `failed` but ignores the API's `skipped` count (not in the SDK type)"
+      ],
+      "impact": "Admins can be told 'N documents were removed/updated' when some or all items were rejected (version conflict, permission, tenant filter); the misleading success blocks retries and hides data-governance mistakes. This is the exact 'single success message over partially failed items' anti-pattern.",
+      "recommendation": "Plumb the API's per-item results through the SDK and web actions; render 'X succeeded, Y failed' with the failed ids/errors, and never report the requested count as the result.",
+      "owner": "Web admin + API documents",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Ticket lists and dashboard counts silently stop at 25 rows (no pagination) in portal and admin",
+      "evidence": [
+        "apps/web/app/(portal)/portal/support/page.tsx:56 \u2014 api.tickets.list({ organizationId }) with no limit/page",
+        "apps/api/src/routes/tickets.ts:98 \u2014 the API default limit is 25 (max 100)",
+        "apps/web/components/portal/SupportCenterClient.tsx:181-191 \u2014 'Open/Closed/All Tickets' cards count only the fetched page",
+        "apps/web/app/(admin)/admin/tickets/page.tsx:109-114 \u2014 api.tickets.list({}) with no pagination",
+        "apps/web/components/admin/AdminTicketCenterClient.tsx:376-382 \u2014 client-side 'Show more' only reveals rows already fetched, so it can never exceed 25"
+      ],
+      "impact": "A client or admin with more than 25 tickets sees wrong totals and cannot reach older tickets from the list; 'All Tickets' and the open/closed metrics understate reality, and a closed ticket may be invisible. MSP staff may believe a ticket does not exist.",
+      "recommendation": "Paginate the list endpoints (page/limit + total) in both ticket centers, or fetch with limit=100 and add server-side paging; derive the stat cards from the API total.",
+      "owner": "Web platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Admin 'Delete Ticket' only closes the ticket; copy promises a restorable soft-delete and Restore is unreachable",
+      "evidence": [
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/actions.ts:79-101 \u2014 deleteTicketAction validates the typed DELETE then calls api.tickets.update(ticketId, { status: 'closed' })",
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/page.tsx:259-299 \u2014 the confirmation says 'This performs a safer soft-delete so the ticket can be restored later'",
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/page.tsx:241-252 \u2014 Restore Ticket renders only when isDeletedTicket(ticket) is true, which the delete path never sets",
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/actions.ts:122-136 \u2014 restoreTicketAction only flips status back to 'new'",
+        "apps/api/src/routes/tickets.ts:492-529 \u2014 the hard DELETE /tickets/:id endpoint exists but is never called from the web UI"
+      ],
+      "impact": "Admins believe they deleted a ticket when they only closed it; closed tickets remain in lists/exports and count against closed-ticket stats. The promised restore path can never appear, and a genuinely deleted (API-level) ticket would have no UI recovery path.",
+      "recommendation": "Either call the DELETE endpoint behind the typed confirmation and implement a real tombstone/restore, or relabel the action 'Close ticket' and drop the soft-delete copy.",
+      "owner": "Web admin tickets",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. Related but distinct from domain 26's 'Destructive deletes are inconsistently confirmation-gated'.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Ticket notification deep links 404 in the portal (/portal/tickets/* does not exist)",
+      "evidence": [
+        "apps/web/components/NotificationBell.tsx:187-192 \u2014 tickets map to `${basePath}/tickets/${module_id}`; the portal layout passes basePath='/portal'",
+        "apps/web/components/NotificationsPageClient.tsx:94-100 \u2014 same mapping on the notifications page",
+        "apps/web/app/(portal)/portal/support/[ticketId]/page.tsx \u2014 the real portal ticket route is /portal/support/<id>",
+        "`ls apps/web/app/(portal)/portal/tickets` \u2192 no such directory; no rewrite for /portal/tickets in apps/web/next.config.mjs:23-31",
+        "apps/web/app/(portal)/portal/not-found.tsx \u2014 the 404 page is what the user lands on"
+      ],
+      "impact": "Clicking a ticket notification \u2014 the primary action for a new ticket event \u2014 takes the client to a 404 instead of the ticket. Clients must navigate manually, and may conclude the portal is broken.",
+      "recommendation": "Map portal ticket notifications to /portal/support/<id> (admin keeps /admin/tickets/<id>), and add a link-resolution test for each module.",
+      "owner": "Web platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Notification surfaces swallow failures: preferences save silently fails and a failed list load renders a false empty state",
+      "evidence": [
+        "apps/web/app/(portal)/portal/notifications/preferences/NotificationPreferencesClient.tsx:89-96 \u2014 updatePreferences failure is caught and ignored; the success banner is the only feedback and never appears on failure",
+        "apps/web/app/(portal)/portal/notifications/preferences/NotificationPreferencesClient.tsx:44-52 \u2014 the initial load failure is also ignored, so toggles render as all-on defaults",
+        "apps/web/app/(portal)/portal/notifications/preferences/NotificationPreferencesClient.tsx:172-176 \u2014 copy says 'Preferences are saved immediately' while the page requires Save Preferences",
+        "apps/web/components/NotificationsPageClient.tsx:60-74 \u2014 list load failure is swallowed, then line 166-167 shows 'No notifications found.'",
+        "apps/web/components/NotificationBell.tsx:175-185 \u2014 bell preference toggle reverts silently on failure (no message)"
+      ],
+      "impact": "Users believe they disabled email notifications when the save failed, or believe they have no notifications when the API is down. Both are trust-damaging and, for preferences, can lead to missed ticket/billing email they explicitly tried to keep.",
+      "recommendation": "Show an inline error + retry on load and save failure; only show the empty state when the load succeeded; align the copy with the save-button model.",
+      "owner": "Web portal",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. NOTIF-P1-001 (preference enforcement) was re-verified fixed at 9c0b88c and is owned by domain 30; this finding is only about the UI feedback.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "NotificationBell SSE fallback leaks a 30-second polling interval per component instance",
+      "evidence": [
+        "apps/web/components/NotificationBell.tsx:108-113 \u2014 es.onerror closes the stream, starts `setInterval(fetchUnread, 30000)`, and 'returns' a cleanup that is discarded",
+        "apps/web/components/NotificationBell.tsx:115-118 \u2014 the effect cleanup only calls es.close(), never clearInterval",
+        "apps/web/components/NotificationBell.tsx:204 and app/(admin)/admin/layout.tsx:161 \u2014 the bell is mounted in both portal and admin headers"
+      ],
+      "impact": "After any SSE failure (proxy restart, auth expiry, network blip) each mounted bell keeps polling /notifications/unread-count forever, even after unmount; repeated navigation accumulates intervals, increasing API load and the chance of rate-limit errors that further degrade the notification UI.",
+      "recommendation": "Store the interval id in a ref and clear it in the effect cleanup (and before starting a new one); or replace SSE with a reconnect-with-backoff + single poller.",
+      "owner": "Web platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Client-onboarding create swallows the redirect: success shows a cryptic error and invites duplicate records",
+      "evidence": [
+        "apps/web/app/(portal)/portal/client-onboarding-command-center/actions.ts:14-40 \u2014 redirect(`/portal/client-onboarding-command-center/${created.id}`) is inside try/catch; the catch returns `{ok:false, error: e.message}` where message is 'NEXT_REDIRECT'",
+        "apps/web/app/(portal)/portal/client-onboarding-command-center/new/OnboardingCreateForm.tsx:14-17 \u2014 the client renders the returned error and stays on the form",
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/actions.ts:31-34 \u2014 other actions in the repo explicitly rethrow NEXT_REDIRECT, confirming the intended pattern",
+        "apps/web/app/(portal)/portal/client-onboarding-command-center/actions.ts:15-35 \u2014 the record is created before the redirect, so the data exists despite the error"
+      ],
+      "impact": "The user is told creation failed after it succeeded, sees a meaningless 'NEXT_REDIRECT' message, and may submit again, creating duplicate onboarding records that then need manual cleanup.",
+      "recommendation": "Rethrow redirect errors (or move redirect outside the try/catch) as done elsewhere; add a test that asserts navigation after create.",
+      "owner": "Web portal",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Onboarding checklist items cannot be completed anywhere in the web app",
+      "evidence": [
+        "apps/web/app/(portal)/portal/client-onboarding-command-center/[id]/page.tsx:99-105 \u2014 checklist checkboxes are rendered `disabled`; the page has no update controls",
+        "packages/sdk/src/client-onboarding-command-center.api.ts:92-99 \u2014 updateChecklistItem exists in the SDK",
+        "apps/api/src/routes/client-onboarding-command-center.ts:242-256 \u2014 PATCH /:id/checklist/:itemId exists on the API",
+        "grep 'updateChecklistItem|checklist' apps/web/app apps/web/components apps/web/lib \u2192 no caller in the web app",
+        "apps/web/app/(admin)/admin/onboarding/[id]/page.tsx:47-81 \u2014 the admin detail edits record fields but shows no checklist"
+      ],
+      "impact": "The onboarding command center's core workflow (completing discovery/M365/security checklist items) dead-ends: items render but no user can mark them done, so progress percentages never advance and the tracker stays empty until someone updates the database directly.",
+      "recommendation": "Wire the checklist PATCH into the portal/admin onboarding detail (checkbox + notes + completed_by), or seed items and provide an admin completion control.",
+      "owner": "Web portal + API",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Session/MFA expiry has no user-facing explanation and the ?mfa=required step-up redirect is ignored",
+      "evidence": [
+        "apps/web/middleware.ts:134-138 \u2014 expired/missing session redirects straight to /login with no reason parameter",
+        "apps/web/app/(public)/login/page.tsx \u2014 no 'session expired' copy or query-param handling (grep 'expired' \u2192 only MFA pending message)",
+        "apps/web/app/(portal)/layout.tsx:100-103 and app/(admin)/admin/layout.tsx:118-122 \u2014 MFA_REQUIRED redirects to /portal/profile/security?mfa=required",
+        "apps/web/app/(portal)/portal/profile/security/page.tsx:12-17 \u2014 the page reads only `recovered`, not `mfa=required`",
+        "apps/web/app/(portal)/portal/profile/security/MfaSettingsClient.tsx:100-110,166-172 \u2014 the step-up prompt appears only when generating/revoking recovery codes"
+      ],
+      "impact": "Users bounced mid-task cannot tell whether they were signed out, blocked by permissions, or need a second factor. MFA-enforced users land on the security page with no explanation and no visible way to satisfy the requirement, effectively dead-ending the session until they discover the recovery-code flow.",
+      "recommendation": "Add ?reason=expired copy on /login and a visible 'Verify to continue' step-up banner (challenge+verify for any verified factor) when ?mfa=required is present.",
+      "owner": "Web auth UX",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Privileged membership/approval actions lack confirmation and success feedback (suspend/reject are one click)",
+      "evidence": [
+        "apps/web/app/(admin)/admin/approvals/page.tsx:71-79 \u2014 Approve Org / Reject Org submit immediately, no confirmation",
+        "apps/web/app/(admin)/admin/approvals/page.tsx:116-124 \u2014 Approve User / Reject User submit immediately, no confirmation",
+        "apps/web/app/(admin)/admin/users/[userId]/page.tsx:167-233 \u2014 membership role and status (including suspended/rejected) change on Save with no confirmation dialog or result message",
+        "apps/web/app/(admin)/admin/users/[userId]/actions.ts:22-50 \u2014 updateMembership has no try/catch and returns no result, so failures surface as an error boundary",
+        "apps/web/components/admin/ConfirmDialog.tsx \u2014 an accessible confirm dialog exists and is used for deletes/API keys, so the pattern is available"
+      ],
+      "impact": "A single misclick can deny a user's access (reject/suspend) with no undo and no explicit confirmation; admins also get no 'saved' feedback, so they may repeat the action or assume it failed.",
+      "recommendation": "Use ConfirmDialog for status transitions that remove access, and return a success/error result rendered as a toast or inline message.",
+      "owner": "Web admin",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. Overlaps thematically with domain 26's destructive-action rows but is a distinct (membership/access) workflow.",
+      "area": "USE"
+    },
+    {
+      "severity": "P2",
+      "title": "Change Password form collects a Current Password it never checks and advertises a weaker rule than the API enforces",
+      "evidence": [
+        "apps/web/app/(portal)/portal/profile/ProfileClient.tsx:243-256 \u2014 the Current Password field is required and bound to pwCurrent",
+        "apps/web/app/(portal)/portal/profile/ProfileClient.tsx:74-98 \u2014 handlePasswordChange never sends or verifies pwCurrent; it calls auth.resetPassword(email, pwNew)",
+        "apps/web/app/(portal)/portal/profile/ProfileClient.tsx:80-82,268 \u2014 client-side rule is 'at least 6 characters'",
+        "apps/api/src/routes/auth.ts:61-69 \u2014 the API requires zxcvbn score >= 3 (strong), not 6 characters",
+        "apps/web/app/(public)/signup/page.tsx:82-98 \u2014 signup shows no password requirements at all"
+      ],
+      "impact": "Users type their current password into a field that has no effect (false security affordance), and passwords that pass the client rule are rejected by the API with a strength message the UI never explained \u2014 friction and support tickets during account setup and rotation.",
+      "recommendation": "Remove the unused field or actually verify it (Supabase reauth), display the real strength rules up front, and reuse one shared password-policy component on signup/reset/profile.",
+      "owner": "Web auth UX",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. The 'current password not verified' aspect may also interest the security domain.",
+      "area": "USE"
+    },
+    {
+      "severity": "P3",
+      "title": "Portal ticket creation gives no success confirmation and the tested action is dead code with a mismatched field name",
+      "evidence": [
+        "apps/web/components/portal/SupportCenterClient.tsx:245-258 \u2014 on ok the modal closes silently; no toast or confirmation",
+        "apps/web/app/(portal)/portal/support/actions.ts:7-39 \u2014 createPortalTicket reads formData 'title' and is not imported by any page (grep: only tests)",
+        "apps/web/app/(portal)/portal/support/page.tsx:21-54 \u2014 the live inline action reads 'subject', matching the form field",
+        "apps/web/__tests__/app/(portal)/portal/support/actions.test.ts \u2014 covers only the dead action, so the live path has no test",
+        "apps/web/app/(portal)/portal/dashboard/page.tsx:121-132 \u2014 'Create Ticket' links to /portal/support without opening the create modal"
+      ],
+      "impact": "Users cannot tell whether their ticket was submitted (they only notice the modal closing); the duplicate/mismatched action plus tests create a false sense of coverage, and the dashboard CTA adds an extra step.",
+      "recommendation": "Show a success toast with a link to the new ticket, delete the dead action (or align names), test the live action, and deep-link the dashboard CTA to an open create form.",
+      "owner": "Web portal",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P3",
+      "title": "Offline/poor-network support is absent from the running app (service worker never registered)",
+      "evidence": [
+        "apps/web/public/sw.js:1-47 \u2014 a cache-first service worker exists with an 'Offline' 503 fallback",
+        "grep 'serviceWorker' apps/web/app apps/web/components apps/web/lib apps/web/instrumentation-client.ts \u2192 0 matches, so sw.js is never registered",
+        "grep 'navigator.onLine' across the web app \u2192 0 matches; no offline banner or retry affordance",
+        "apps/web/components/NotificationBell.tsx:42-45, apps/web/components/NotificationsPageClient.tsx:70-72 \u2014 network failures are swallowed rather than surfaced"
+      ],
+      "impact": "On flaky connections users get silent stale/empty screens (or a generic error boundary) with no indication they are offline and no cached shell; the intended PWA caching never activates.",
+      "recommendation": "Register the service worker behind an env flag with a versioned cache, and add an online/offline banner plus a manual retry; or remove sw.js if offline is out of scope.",
+      "owner": "Web platform / PWA",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. May overlap domain 17 (mobile/PWA); not yet reported there.",
+      "area": "USE"
+    },
+    {
+      "severity": "P3",
+      "title": "Document version history is display-only: no per-version download/restore and it hides itself for single-version documents",
+      "evidence": [
+        "apps/web/components/portal/DocumentVersionsClient.tsx:36-37 \u2014 returns null when versions.length <= 1",
+        "apps/web/components/portal/DocumentVersionsClient.tsx:22-30 \u2014 load errors go to console only, then render as 'no versions'",
+        "apps/web/components/portal/DocumentVersionsClient.tsx:44-54 \u2014 rows show only version number + date, no actions",
+        "apps/api/src/routes/documents.ts:813-846 \u2014 the API exposes GET /:id/versions/:versionId/signed-url",
+        "packages/sdk/src/documents.ts:122-137 \u2014 the SDK has no method for that signed URL, so the UI cannot call it"
+      ],
+      "impact": "When a document is replaced, users can see that versions exist but cannot retrieve an earlier one; a single-version document shows no version information at all, and load failures look like 'no history'.",
+      "recommendation": "Add a per-version download (SDK method + UI action) and an inline error state; show the version section even for one version.",
+      "owner": "Web portal + SDK",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    },
+    {
+      "severity": "P3",
+      "title": "Web edit flows never send If-Match, so concurrent admin edits silently overwrite each other",
+      "evidence": [
+        "apps/api/src/middleware/optimistic-locking.ts:12-16 \u2014 requireIfMatch passes when the header is absent, making conflict detection opt-in",
+        "grep 'If-Match' packages/sdk/src \u2192 0 matches; api.tickets.update and api.documents.update send only a JSON body",
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/actions.ts:8-35 \u2014 the edit form submits title/description/status without any version",
+        "apps/api/src/routes/tickets.ts:251-268 \u2014 the API only throws VERSION_CONFLICT when ifMatchVersion is supplied"
+      ],
+      "impact": "Two admins editing the same ticket (or document metadata) get last-write-wins with no warning; the first admin's changes vanish, and the 409 path the API implements is never exercised by the product.",
+      "recommendation": "Thread the row version into edit forms and send If-Match; render the API's 409 as 'modified by someone else \u2014 reload'.",
+      "owner": "Web admin + SDK",
+      "target": "next quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d. Impact is plausible but not reproduced (no live app run).",
+      "area": "USE"
+    },
+    {
+      "severity": "P3",
+      "title": "Form error handling is lossy or missing: signup can hang, onboarding errors are generic, bulk invite says 'Request failed'",
+      "evidence": [
+        "apps/web/app/(public)/signup/page.tsx:15-31 \u2014 signupAction is awaited with no try/catch; a thrown action leaves loading=true forever ('Creating Account...')",
+        "apps/web/app/(public)/login/page.tsx:52-57 \u2014 login wraps the same pattern in try/catch, showing the intended handling",
+        "apps/web/components/admin/OrganizationOnboardingWizard.tsx:129-131 \u2014 the catch replaces the API message with 'Onboarding failed. The slug may already be in use or the admin email is invalid.'",
+        "apps/web/components/admin/BulkInviteForm.tsx:41-43 \u2014 a request failure renders a single synthetic row with 'Request failed'",
+        "apps/web/app/(portal)/portal/client-onboarding-command-center/actions.ts:38-40 \u2014 surfaces the raw 'NEXT_REDIRECT' string"
+      ],
+      "impact": "Users cannot distinguish validation problems (slug taken, weak password, invalid email) from outages, and the signup button can stick in a loading state with no recovery other than a reload.",
+      "recommendation": "Wrap all submit handlers in try/finally, keep the API's message where it is user-safe, and map validation errors to the offending field.",
+      "owner": "Web platform",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "Fresh finding at 8d299b8d.",
+      "area": "USE"
+    }
+  ],
+  "report": "# Usability and Workflow Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `mainecybertech` (target `/tmp/opencode/mct-audit-target`, read-only)\n- Branch: `main`\n- Commit SHA: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd`\n- Generated at: 2026-10-11\n- Auditor: domain subagent (`04_usability_workflow_audit`, area `USE`)\n- Area code: USE\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/04_usability_workflow_audit.md`\n- Scope limitations: static review of the code only; the app was **not** run (no server, no browser, no\n  database). Claims about runtime behavior are derived from code paths and are marked with confidence.\n  Supabase dashboard configuration (redirect allow-lists, SMTP) is external and unknown.\n\n## Scope\n\nReviewed end-to-end web workflows in `apps/web` (Next.js App Router) against `apps/api`, `packages/sdk`,\nand `infra/digitalocean` where the workflow depends on them:\n\n- Onboarding: signup, email confirmation, pending approval, admin approval queue, organization\n  onboarding wizard, client-onboarding command center.\n- Login/signup/reset: password login, MFA challenge/recovery/step-up, forgot/reset password.\n- Navigation: portal/admin sidebars, subnav, breadcrumbs, org switcher, global search.\n- Dashboards: portal dashboard (admin dashboard inspected for structure).\n- Forms: auth forms, profile, support ticket, admin module CRUD, bulk invite, onboarding wizard.\n- Search/filter/sort: admin tickets, admin users, portal global search, notifications filters.\n- Bulk workflows: bulk invite, bulk ticket update, bulk document folder/metadata/delete/visibility.\n- Admin/support workflows: ticket lifecycle (create/triage/comment/edit/delete/restore), approvals,\n  user/membership management, API keys, documents, onboarding.\n- Notifications and preferences: bell, notifications page, notification preferences, profile.\n- Error recovery, empty/loading states, destructive actions, session expiry, offline, help paths.\n\nNot reviewed in depth: store/marketing funnels (public store checkout, quiz, quote), billing payment\nflows (covered by domain 29), accessibility conformance (domain 05), mobile layout specifics (domain 17).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `apps/web/middleware.ts` | code | Session/expiry gate, domain routing, CSP | Non-authoritative UX gate (ARCH-P3-001) |\n| `apps/web/lib/auth/auth-actions.ts` | code | Login/MFA/signup/logout actions | Signup redirect + MFA cookie handling |\n| `apps/web/app/(public)/{login,signup,forgot-password,password-reset,pending}/page.tsx` | code | Auth UX | Reset page has no token handling |\n| `apps/api/src/routes/auth.ts` | code | Sign-up/reset/MFA endpoints | `emailRedirectTo`, `requireAuth` on reset |\n| `apps/web/app/(portal)/layout.tsx`, `app/(admin)/admin/layout.tsx` | code | Portal/admin shells, route-permission maps, MFA redirect | `?mfa=required` produced but unused |\n| `apps/web/components/portal/SupportCenterClient.tsx`, `app/(portal)/portal/support/*` | code | Ticket create/reply | Field-name drift vs `actions.ts` |\n| `apps/web/app/(admin)/admin/tickets/**` | code | Ticket lifecycle, inline status, delete/restore | Delete only closes |\n| `apps/web/components/admin/AdminTicketCenterClient.tsx` | code | Search/filter/sort/bulk tickets | 25-row cap; no success toast |\n| `apps/web/app/(admin)/admin/approvals/*` | code | Membership/org approval | `roleId:\"\"` breaks PATCH |\n| `apps/web/app/(admin)/admin/users/**`, `components/admin/{AdminUsersClient,InviteUserForm,BulkInviteForm}.tsx` | code | User/membership admin, bulk invite | No confirm/feedback on status changes |\n| `apps/web/components/admin/OrganizationOnboardingWizard.tsx`, `app/(admin)/admin/onboarding/**`, `app/(portal)/portal/client-onboarding-command-center/**` | code | Onboarding workflows | Redirect swallowed; checklist read-only |\n| `apps/web/app/(portal)/portal/documents/**`, `components/portal/{PortalDocumentsCenterClient,DocumentVersionsClient,DocumentShareClient}.tsx`, `app/(admin)/admin/documents/**` | code | Document flows, bulk actions, shares | Bulk false success |\n| `apps/web/components/NotificationBell.tsx`, `NotificationsPageClient.tsx`, `notifications/preferences/*` | code | Notifications + preferences | Wrong ticket links, silent failures, interval leak |\n| `apps/web/app/(portal)/portal/profile/ProfileClient.tsx` | code | Preferences/profile/password | Unused current-password field |\n| `apps/web/app/(portal)/portal/profile/security/*` | code | MFA management/step-up | Step-up only via recovery codes |\n| `packages/sdk/src/client.ts`, `documents.ts`, `tickets.ts`, `memberships.ts` | code | Web\u2194API contract | `res.json()` on 204; no If-Match |\n| `apps/api/src/routes/{tickets,documents,memberships,client-onboarding-command-center}.ts` | code | Behavior behind UI | Per-item bulk results; PATCH checklist |\n| `apps/api/src/middleware/optimistic-locking.ts`, `validators/membership.ts`, `middleware/not-found.ts` | code | Conflict handling, validation | `If-Match` optional; roleId UUID |\n| `infra/digitalocean/Caddyfile.prod`, `.github/workflows/deploy-do.yml` | config | Host topology for email links | API host \u2260 app host |\n| `apps/web/public/sw.js` | code | Offline asset | Never registered |\n| `apps/web/e2e/a11y.spec.ts`, `.github/workflows/e2e.yml` | test | Existing workflow coverage | No auth-recovery E2E |\n| Previous run `mainecybertech-20261004-full-main-9c0b88c` register + `_domains/04_usability_workflow_audit.json` | artifact | Verification duty | No `USE` rows exist |\n\n## Verification Performed\n\nPrevious-run verification duty (per instructions):\n\n| Check | Command | Observed result |\n|---|---|---|\n| `USE` rows in previous follow-up register | `grep -c \"| USE-\" .../mainecybertech-20261004-full-main-9c0b88c/follow_up_register.md` | `0` \u2014 there are no USE rows to re-verify |\n| Previous domain JSON | `cat .../_domains/04_usability_workflow_audit.json` | `\"findings\": []` (reconciliation pass had no USE findings) |\n| Only UX-area row | `grep -n \"^| UX\" follow_up_register.md` | `UX-P3-001` (accessibility breadth scan) \u2014 subject matter belongs to domain `05_ui_ux_accessibility_audit`; **not duplicated here** per instructions |\n| Earliest full run (20261002) | `grep -rn \"USE-P\" docs/audits/repo-deep-dive/20261002-0344-develop-6286137/` | no USE findings in the committed corpus either |\n\nFresh-audit verification commands (all read-only):\n\n| Check | Command | Observed result |\n|---|---|---|\n| Empty-body DELETE exposure | `grep -rho \"res.status(204)\" apps/api/src/routes/*.ts | wc -l` | `46` 204-only delete/removal handlers |\n| SDK parses every body | `sed -n '80,105p' packages/sdk/src/client.ts` | `await res.json()` before any status check |\n| 204 masked in tests | `sed -n '14,40p' packages/sdk/src/__tests__/sdk-expanded.test.ts` | mock returns `{success:true,data:null}` even for status 204 |\n| Approval payload | `grep -n \"roleId\" apps/web/app/(admin)/admin/approvals/actions.ts` | `33: roleId: \"\"`, `46: roleId: \"\"` |\n| API roleId rule | `cat apps/api/src/validators/membership.ts` | `roleId: z.string().uuid()` |\n| Password-reset token handling | `grep -c \"searchParams|useSearchParams|location.hash\" apps/web/app/(public)/password-reset/page.tsx` | `0` |\n| Reset endpoint guard | `grep -n \"reset-password|requireAuth,\" apps/api/src/routes/auth.ts` | `349:/reset-password`, `350: requireAuth` |\n| Signup redirect host | `grep -n \"emailRedirectTo\" apps/api/src/routes/auth.ts` | `182: .../auth/callback` built from the API request host |\n| Prod topology | `sed -n '1,31p' infra/digitalocean/Caddyfile.prod` | `api.<domain>` \u2192 `api:4000` only; `/auth/callback` exists only on the web host |\n| Ticket list cap | `sed -n '95,105p' apps/api/src/routes/tickets.ts` | default `limit = 25`; portal/admin call `list({})` |\n| Notification ticket links | `grep -n \"tickets/\" components/NotificationBell.tsx components/NotificationsPageClient.tsx` | `${basePath}/tickets/<id>`; `ls app/(portal)/portal/tickets` \u2192 not found |\n| MFA redirect consumers | `grep -rn \"mfa=required\" apps/web --include=*.tsx` | only producers (3 layouts/guards); no consumer |\n| Service worker registration | `grep -rn \"serviceWorker\" apps/web/app apps/web/components apps/web/lib apps/web/instrumentation-client.ts | wc -l` | `0` |\n| Offline handling | `grep -rn \"navigator.onLine\" apps/web/app apps/web/components apps/web/lib | wc -l` | `0` |\n| If-Match usage | `grep -rn \"If-Match\" packages/sdk/src | wc -l` | `0` |\n| Checklist UI | `grep -rn \"updateChecklistItem|hecklist\" apps/web/app apps/web/components apps/web/lib` | no onboarding-checklist caller; SDK+API methods exist |\n| Dead support action | `grep -rn \"createPortalTicket\" apps/web` | only `actions.ts` + its test; live action is inline in `support/page.tsx` |\n\n## Executive Summary\n\nThe web app is a large, mostly coherent portal (319 routes) with several genuinely good UX foundations:\ngrouped permission-aware navigation, route-level error boundaries, skeleton loading states, an accessible\nconfirmation dialog, optimistic updates with rollback and toasts in the admin document center, per-item\nresults in the bulk-invite UI, and `DataErrorNote` to distinguish \"load failed\" from \"no data\".\n\nThe audit nevertheless found four P1 workflow breaks that a real user hits early:\n\n1. **Account recovery is broken.** The emailed password-reset link lands on a page that cannot complete\n   the reset, because the reset endpoint requires an authenticated session and the page never consumes\n   the Supabase `code`/token.\n2. **Signup cannot be completed.** The confirmation email redirect is built from the API host, which\n   serves no `/auth/callback` route, so the link 404s.\n3. **Admins cannot approve pending users.** The approval queue sends `roleId: \"\"`, which the API schema\n   rejects (UUID required); the action throws instead of approving.\n4. **Every delete looks like a failure.** The SDK calls `res.json()` on empty 204 bodies, so 46 API\n   delete endpoints surface as errors even when the delete succeeded \u2014 and some bulk deletes then\n   swallow the same error and claim success.\n\nBeyond those, the recurring theme is **missing or misleading feedback**: bulk document operations\nreport the requested count rather than per-item results; ticket lists silently stop at 25 rows and\ntheir stats are computed from that page; ticket \"delete\" is only a close while the UI promises a\nrestorable soft-delete; notification preferences can fail silently; notification deep links for\ntickets 404; and the MFA step-up redirect is produced but never explained.\n\nRecommended next actions: fix the four P1s this week (they are small, localized changes), then make\nfeedback truthful in the bulk/notification/ticket surfaces, and add E2E coverage that walks the\nactual emailed-link shapes (signup confirm, password reset) \u2014 the current unit tests mock those paths\nand therefore hide the breaks.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Login (+MFA/recovery) | `app/(public)/login/page.tsx`, `lib/auth/auth-actions.ts` | Sign-in | Functional; good error handling | Low | Recovery/step-up covered below |\n| Signup | `app/(public)/signup/page.tsx` | Create account | Functional UI; no try/catch; no password guidance | Medium | Confirmation link broken (API) |\n| Email confirmation | `app/auth/callback/route.ts`, `api routes/auth.ts:182` | Verify email | Web route works; email points at API host | High | P1 |\n| Forgot/reset password | `forgot-password/page.tsx`, `password-reset/page.tsx` | Self-service recovery | Forgot works; reset cannot complete | High | P1 |\n| Pending approval page | `app/(public)/pending/page.tsx` | Explain blocked access | Clear copy + sign-out | Low | No \"check status\" affordance |\n| Admin approval queue | `app/(admin)/admin/approvals/**` | Approve orgs/users | Org approve works; membership approve broken | High | P1 |\n| Org onboarding wizard | `components/admin/OrganizationOnboardingWizard.tsx` | Create org + first admin | 3-step wizard with review | Medium | Generic error text |\n| Client onboarding center | `app/(portal)/.../client-onboarding-command-center/**` | Track client onboarding | Create + read-only; redirect swallowed | Medium | Checklist not completable |\n| Portal navigation | `components/portal/PortalSidebarContent.tsx`, `lib/navigation/portal-nav.ts` | Grouped nav + subnav | Permission-filtered, keyboard-aware | Low | 69 modules, grouped |\n| Portal dashboard | `app/(portal)/portal/dashboard/page.tsx` | Landing + quick actions | Empty states + error note | Low | CTA does not open ticket modal |\n| Support center | `components/portal/SupportCenterClient.tsx` | Client tickets | Create/reply/list | Medium | 25-row cap; no success toast |\n| Admin ticket center | `components/admin/AdminTicketCenterClient.tsx` | Triage + bulk | Search/filter/sort/bulk with partial-failure messaging | Medium | Success silent; skipped ignored |\n| Ticket detail (admin) | `app/(admin)/admin/tickets/[ticketId]/**` | Lifecycle | Edit/comments/activity/delete | Medium | Delete=close mismatch |\n| Documents (portal/admin) | `app/(portal)/portal/documents/**`, `app/(admin)/admin/documents/**` | Upload/download/share/version/bulk | Rich admin client; optimistic updates | Medium | Bulk false success; single delete errors |\n| Notifications | `components/NotificationBell.tsx`, `NotificationsPageClient.tsx` | Bell + list | SSE + polling fallback, filters | Medium | Wrong ticket links; interval leak |\n| Notification preferences | `notifications/preferences/*` | Channel toggles | Table + Save | Medium | Silent save failure; copy mismatch |\n| Profile/security | `app/(portal)/portal/profile/**` | Profile, password, MFA | Functional | Medium | Unused current-password; step-up hidden |\n| Error boundaries | `app/(portal|admin|public)/error.tsx`, `global-error.tsx` | Recovery | Try again / log out / login | Low | No support link |\n| Empty/loading states | `components/EmptyState.tsx`, 26 `loading.tsx` | Feedback | Skeletons at portal/admin roots; EmptyState widely used | Low | Some pages render false empties |\n| Offline | `public/sw.js` | Caching | File exists, never registered | Medium | PWA caching inactive |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Onboarding | 2 | Signup/pending pages; approval queue; wizard | Confirmation link 404s; approval action fails; checklist not completable | Fix redirect host + roleId; wire checklist |\n| Login/signup/reset | 2 | `auth-actions.ts`, login MFA handling | Reset dead-ends; no password guidance; silent session expiry | Route reset via callback; add policy copy + expired banner |\n| Navigation | 4 | Grouped sidebar, subnav, breadcrumbs, permissions | Deep-link CTA gaps; no help entry | Deep-link CTAs; add support/help link |\n| Dashboards | 3 | Portal dashboard with error note + empty states | Counts derived from capped lists | Use API totals; add trend/context |\n| Forms | 3 | Consistent `cyber-*` styles, SubmitButton pending state | Lossy/generic errors; signup can hang; unused fields | try/finally + field-level errors |\n| Search/filter/sort | 3 | Admin tickets/users filters + chips; portal search with error state | Ticket search client-side over 25 rows | Server-side search + pagination |\n| Bulk workflows | 2 | Bulk invite per-item results; ticket partial failures | Document bulk false success; skipped ignored; no success toast | Plumb per-item results everywhere |\n| Admin/support workflows | 2 | Rich ticket/document admins; ConfirmDialog | Approval break; delete=close; no confirm on access revocation | Fix P1s; confirm destructive transitions |\n| Notifications | 2 | Bell + page + preferences + SSE | Wrong links; silent failures; interval leak | Fix links, surface errors, clear interval |\n| Preferences | 3 | Notification prefs + profile | Silent save failure; inconsistent save models | Error feedback; single save model |\n| Error recovery | 3 | Error boundaries, `withRetry`, `DataErrorNote` | Swallowed errors; raw messages; no support link | Centralize error mapping + support link |\n| Empty/loading states | 3 | 26 loading files; EmptyState component | False empties on failed loads; 204 false failures | Distinguish error vs empty consistently |\n\n## Detailed Review\n\n### Personas\n\n| Persona | Goals | Current experience | Top friction |\n|---|---|---|---|\n| New client user | Sign up, get approved, see dashboard | Signup succeeds but confirmation link 404s; approval may fail | Onboarding P1s |\n| Existing client user | Track tickets, download docs, manage notifications | Ticket create works but is silent; ticket notification links 404; prefs can fail silently | Feedback + links |\n| MSP admin / technician | Triage tickets, manage users/orgs, bulk operations | Ticket workflow good; approvals broken; deletes report false failures; 25-row cap | P1s + truthfulness |\n| MSP super-admin / operator | Cross-tenant admin, approvals, break-glass | Cross-tenant scoping fixed in prior runs; onboarding wizard functional | Error clarity |\n| Support staff (read-only) | Find a ticket fast | Search works client-side over first 25 rows | Pagination |\n| Mobile user on flaky network | Work on the go | No offline banner or caching; silent empties | Offline support |\n\n### Workflow friction table\n\n| Workflow | Entry point | Friction observed | Severity |\n|---|---|---|---|\n| Signup \u2192 confirm \u2192 pending | `/signup` \u2192 email link | Email link points at API host \u2192 404 (P1) | P1 |\n| Forgot \u2192 reset \u2192 login | `/forgot-password` \u2192 email link \u2192 `/password-reset` | Reset page cannot consume the token; endpoint needs a session (P1) | P1 |\n| Approve pending user | `/admin/approvals` | Approve/Reject throw (roleId `\"\"`); no result feedback | P1 |\n| Delete any record | admin module detail / API keys / documents | SDK cannot parse 204; UI reports failure after success | P1 |\n| Create support ticket | `/portal/support` | Silent close; dashboard CTA doesn't open the modal; dead duplicate action | P3 |\n| Client ticket triage | `/admin/tickets` | 25-row cap; bulk success silent; skipped ignored | P2 |\n| Delete ticket | ticket detail | Only closes; copy promises soft-delete/restore | P2 |\n| Bulk documents | `/admin/documents`, `/portal/documents` | Success claims even when items fail | P2 |\n| Client onboarding | command center | Create error after success; checklist not completable | P2 |\n| Notification click | bell / notifications page | Ticket links 404 | P2 |\n| Notification preferences | preferences page | Silent save failure; copy contradicts Save button | P2 |\n| MFA step-up | any portal page | Redirect without explanation; no visible step-up control | P2 |\n| Password change | profile | Current password unused; requirements mismatch | P2 |\n| Offline | any page | No banner/caching; silent stale UI | P3 |\n\n### High-friction areas\n\n1. **Account lifecycle (signup/confirm/reset/approve)** \u2014 three of the four P1s live here; the paths are\n   individually small fixes but currently block the entire client onboarding funnel.\n2. **Truthful feedback on destructive/bulk actions** \u2014 deletes report failure after success; bulk\n   deletes report success on swallowed failure; bulk visibility/metadata report requested counts.\n3. **Notification surfaces** \u2014 wrong deep links plus swallowed errors make the notification system\n   look unreliable precisely when it matters.\n4. **Large-list workflows** \u2014 ticket lists stop at 25 rows with no pagination or indication.\n\n### Item: Password reset\n\n- Evidence: `apps/web/app/(public)/password-reset/page.tsx:17-37`; `apps/api/src/routes/auth.ts:327-330,349-378`; `apps/web/app/auth/callback/route.ts:8-15`.\n- What it does: sends email + new password to an authenticated endpoint; ignores the link token.\n- Missing controls: no code exchange, no session bootstrap, no expired-link state.\n- Recommended improvement: exchange `code` in `/password-reset` (or redirect through `/auth/callback`) before showing the form.\n- Suggested tests: E2E that visits the URL shape GoTrue produces (`?code=...`), completes reset, and signs in.\n\n### Item: Ticket lifecycle\n\n- Evidence: `support/page.tsx:56`; `AdminTicketCenterClient.tsx:297-322,376-382`; `tickets/[ticketId]/actions.ts:79-101`.\n- What it works well: admin triage, inline status/priority, comment edit window, activity timeline, typed delete confirmation.\n- Gaps: list cap/pagination; delete=close semantics; silent bulk success; skipped ids hidden.\n- Suggested tests: pagination beyond 25; delete \u2192 visible state change; bulk with one failing row.\n\n### Item: Documents\n\n- Evidence: `PortalDocumentsCenterClient.tsx:130-170`; `app/(admin)/admin/documents/page.tsx:438-470`; `DocumentVersionsClient.tsx:36-37`.\n- Works well: signed-URL download with fallback message, share revoke confirmation, optimistic admin updates with rollback, toasts.\n- Gaps: false success on bulk; version history read-only; single delete reports failure (204 bug).\n\n### Item: Notifications and preferences\n\n- Evidence: `NotificationBell.tsx:108-119,187-192`; `NotificationsPageClient.tsx:60-74,94-100`; `NotificationPreferencesClient.tsx:89-96`.\n- Gaps: wrong ticket route, silent failures, interval leak, contradictory copy.\n\n### Item: Admin access changes\n\n- Evidence: `approvals/actions.ts:28-52`; `users/[userId]/page.tsx:167-233`; `users/[userId]/actions.ts:22-50`.\n- Gaps: broken approve/reject; no confirmations; no success/error feedback.\n\n### UX copy suggestions\n\n| Current copy | Suggested copy | Where |\n|---|---|---|\n| \"This performs a safer soft-delete so the ticket can be restored later.\" | \"This will close the ticket and keep it in history.\" (or implement real delete) | ticket delete confirm |\n| \"Preferences are saved immediately and control whether new notifications are sent to each channel.\" | \"Changes apply after you click Save Preferences.\" | notification preferences |\n| \"Onboarding failed. The slug may already be in use or the admin email is invalid.\" | Show the API message, e.g. \"Slug 'acme' is already taken.\" | onboarding wizard |\n| \"Request failed\" | \"Could not reach the server. Your CSV was not imported \u2014 try again.\" | bulk invite |\n| \"Something went wrong\" (boundaries) | Add \"Contact support at /portal/support\" link | error boundaries |\n| \"Password must be at least 6 characters.\" | State the real rule (e.g. \"Use 12+ characters or a passphrase; common passwords are rejected.\") | reset/profile |\n| \"Check your email to confirm your account, then return to continue.\" | Add \"Didn't get it? Resend confirmation\" once the link is fixed | signup |\n\n### Manual QA scenarios\n\n1. Sign up with a fresh email, open the confirmation email, complete confirmation, land on `/pending`, get approved, sign in.\n2. Forgot password for a signed-out account, follow the emailed link, set a new password, sign in with it.\n3. As admin, approve a pending membership from `/admin/approvals` and verify status/role.\n4. Delete an API key and a document; verify the row disappears without an error toast.\n5. Select 3 documents in admin bulk delete, force one to fail (already deleted), verify per-item outcome.\n6. Create a ticket from the portal dashboard CTA and confirm visible success + the ticket in the list.\n7. Click a \"ticket created\" notification in the portal bell; expect the ticket page, not 404.\n8. Toggle an email preference with the API offline; expect an error, not a false success.\n9. Let a session expire on a portal page; expect an explanation on `/login`.\n10. With MFA enforced, use an aal1 session and confirm the security page offers a step-up.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| USE-001 | Onboarding | `auth.ts:182`, `Caddyfile.prod:19-30` | Signup form + pending page | Confirmation link 404s | P1 | Build redirect from APP_BASE_URL |\n| USE-002 | Login/signup/reset | `password-reset/page.tsx`, `auth.ts:349` | Forgot-password works | Reset cannot complete | P1 | Exchange code before reset |\n| USE-003 | Navigation | `PortalSidebarContent.tsx`, `PortalSubnav.tsx` | Grouped, permission-filtered nav | Help/support entry missing; CTAs shallow | P3 | Add help link; deep-link CTAs |\n| USE-004 | Dashboards | `portal/dashboard/page.tsx` | Empty states + error note | Counts from capped lists | P2 | Use API totals |\n| USE-005 | Forms | `ProfileClient.tsx`, `signup/page.tsx` | Required fields, pending buttons | Lossy errors; unused field; signup can hang | P2 | try/finally + field errors |\n| USE-006 | Search/filter/sort | `AdminTicketCenterClient.tsx:333-425` | Search/org/status/sort + chips | Client-side over 25 rows | P2 | Server-side pagination/search |\n| USE-007 | Bulk workflows | `admin/documents/page.tsx:438-470`; `portal/documents/bulk-actions.ts` | Confirm dialogs; bulk invite per-item results | False success; skipped hidden | P2 | Per-item results in UI |\n| USE-008 | Admin/support workflows | `approvals/actions.ts:28-52`; `tickets/[ticketId]/actions.ts:79` | Admin consoles + confirm dialogs | Approval broken; delete=close | P1/P2 | Fix payload; real delete or relabel |\n| USE-009 | Notifications | `NotificationBell.tsx:187-192` | Bell + SSE + polling fallback | Wrong links; interval leak | P2 | Fix routes; clear interval |\n| USE-010 | Preferences | `NotificationPreferencesClient.tsx:89-96` | Save button + success banner | Failure silent; copy mismatch | P2 | Error feedback + copy fix |\n| USE-011 | Error recovery | error boundaries; `retry.ts` | Try again; DataErrorNote; withRetry | Swallowed errors; raw messages | P2 | Central error mapping |\n| USE-012 | Empty/loading states | 26 `loading.tsx`; `EmptyState.tsx` | Skeletons + empty components | False empties on failed loads | P2 | Gate empty on success flag |\n\n## Findings\n\nThe full machine-readable list is in `04_usability_workflow_audit.json`. Summary by severity and status:\n\n| # | Severity | Title | Confidence | Status |\n|---|---|---|---|---|\n| 1 | P1 | Self-service password reset dead-ends | high | open |\n| 2 | P1 | Signup email-confirmation link 404s (API host) | high | open |\n| 3 | P1 | Approval queue cannot approve/reject memberships (`roleId:\"\"`) | high | open |\n| 4 | P1 | Deletes report failure after succeeding (SDK 204 parsing) | high | open |\n| 5 | P2 | Bulk document operations report false success | high | open |\n| 6 | P2 | Ticket lists/counts capped at 25 rows | high | open |\n| 7 | P2 | \"Delete Ticket\" only closes; copy promises soft-delete/restore | high | open |\n| 8 | P2 | Ticket notification deep links 404 in the portal | high | open |\n| 9 | P2 | Notification surfaces swallow failures / false empty state | high | open |\n| 10 | P2 | NotificationBell SSE fallback leaks polling interval | high | open |\n| 11 | P2 | Client-onboarding create swallows redirect (\"NEXT_REDIRECT\" shown) | high | open |\n| 12 | P2 | Onboarding checklist cannot be completed in the web app | high | open |\n| 13 | P2 | Session/MFA expiry has no explanation; `?mfa=required` ignored | high | open |\n| 14 | P2 | Membership/approval actions lack confirmation + feedback | high | open |\n| 15 | P2 | Change Password: unused current password + wrong rule | high | open |\n| 16 | P3 | Portal ticket creation silent; tested action is dead code | high | open |\n| 17 | P3 | Offline support absent (sw.js never registered) | high | open |\n| 18 | P3 | Version history display-only / hidden for one version | high | open |\n| 19 | P3 | No If-Match in web edit flows (silent overwrite) | medium | open |\n| 20 | P3 | Lossy/missing form error handling | high | open |\n\nFinding-format detail for each item (abbreviated from the JSON; IDs assigned by the aggregator):\n\n### Finding: Self-service password reset dead-ends (P1)\n\n- Severity: P1 \u00b7 Confidence: High \u00b7 Area: USE\n- Evidence: `apps/api/src/routes/auth.ts:327-330` (redirectTo `/password-reset`), `apps/api/src/routes/auth.ts:349-378` (`requireAuth` reset), `apps/web/app/(public)/password-reset/page.tsx:17-37` (no token handling), `apps/web/app/auth/callback/route.ts:8-15` (the only code exchange).\n- What is happening: the reset email points at a page that ignores the token and calls an endpoint that only works for a signed-in user.\n- Why it matters / impact: account recovery fails; every reset escalates to an admin.\n- Recommended fix: exchange the code (directly or via `/auth/callback`) before showing the reset form. Validation: E2E from the real email URL shape.\n- Owner: Web + API auth owner \u00b7 Effort: S \u00b7 Status: open\n\n### Finding: Signup email-confirmation link points at the API host (P1)\n\n- Severity: P1 \u00b7 Confidence: High \u00b7 Area: USE\n- Evidence: `apps/api/src/routes/auth.ts:182`; `infra/digitalocean/Caddyfile.prod:19-30`; `apps/api/src/middleware/not-found.ts:3-5`; `deploy-do.yml:333`.\n- What is happening: `emailRedirectTo` is built from the API request host; only the web host serves `/auth/callback`.\n- Impact: new signups cannot confirm their email \u2192 onboarding funnel stops.\n- Fix: build the redirect from `APP_BASE_URL` (as forgot-password does). Validation: send a real confirmation email in a non-prod environment and follow it.\n- Owner: API auth owner \u00b7 Effort: S \u00b7 Status: open\n\n### Finding: Approval queue cannot approve/reject memberships (P1)\n\n- Severity: P1 \u00b7 Confidence: High \u00b7 Area: USE\n- Evidence: `apps/web/app/(admin)/admin/approvals/actions.ts:28-52`; `apps/api/src/validators/membership.ts:3-8`; `apps/api/src/routes/memberships.ts:123-127`.\n- Impact: pending users stay locked out; admins see an error instead of approval.\n- Fix: send the current/explicit roleId (or relax the schema), handle errors, add a test. Owner: API + web admin \u00b7 Effort: S \u00b7 Status: open\n\n### Finding: Deletes report failure after succeeding (P1)\n\n- Severity: P1 \u00b7 Confidence: High \u00b7 Area: USE (cross-cutting with API contracts)\n- Evidence: `packages/sdk/src/client.ts:96`; 46 `res.status(204)` handlers (e.g. `documents.ts:597`, `api-keys.ts:173`); masked test at `sdk-expanded.test.ts:14-40`; UI effects at `AdminApiKeysClient.tsx:74-84` and `RecordDetail.tsx:56-68`.\n- Impact: users believe deletes failed; stale rows/rollbacks; retries.\n- Fix: treat 204/empty as `null` in `executeFetch`; add empty-body tests. Owner: SDK/API contracts \u00b7 Effort: S \u00b7 Status: open\n\n### Findings 5\u201320\n\nDetails (evidence, impact, recommendation, owner, target, confidence) are recorded in\n`04_usability_workflow_audit.json`; titles and severities are listed in the summary table above.\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Clients cannot recover accounts (reset) | P1 | High | Access loss, support load | Reset page + requireAuth endpoint | Fix reset code exchange |\n| New signups cannot activate | P1 | High | Onboarding funnel broken | emailRedirectTo host | Use APP_BASE_URL |\n| Admins cannot approve users | P1 | High | Clients locked out | roleId \"\" vs UUID schema | Fix payload + test |\n| Delete operations appear broken | P1 | High | Confusion, duplicate work, trust loss | SDK `res.json()` on 204 | Empty-body handling |\n| Silent partial failures on bulk docs | P2 | Medium | Data-governance mistakes | Bulk loops/actions | Per-item results |\n| Users miss tickets beyond row 25 | P2 | High for large tenants | Missed SLAs | Default limit 25 | Pagination |\n| Notification links 404 | P2 | High | Missed updates | Wrong route mapping | Fix mapping + test |\n| Preferences silently fail | P2 | Medium | Missed/extra email | Swallowed catch | Error feedback |\n| MFA-enforced sessions dead-end | P2 | Medium (only when MFA enabled) | Lockout until support | `?mfa=required` unused | Step-up banner |\n| SSE fallback interval leak | P2 | Medium | API load, rate limits | Discarded cleanup | Ref + clear |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\n1. Fix the four P1s (reset token exchange, signup redirect host, approval roleId, SDK 204 handling).\n2. Add regression tests for each: E2E reset-from-email, E2E confirm-from-email, API+web approval test, SDK empty-body test.\n\n### This Week\n\n3. Correct notification ticket deep links and add a link-resolution test per module.\n4. Make bulk document/ticket actions report per-item results (surface `successful`/`failed`/`skipped`).\n5. Add success/error feedback and ConfirmDialog to membership status transitions and approvals.\n6. Clear the SSE polling interval on unmount.\n\n### This Month\n\n7. Paginate ticket lists (portal + admin) and derive counts from API totals.\n8. Fix the ticket delete semantics (real delete + tombstone/restore, or relabel to Close).\n9. Fix notification preferences error handling and copy; distinguish \"load failed\" from \"empty\".\n10. Rethrow redirects in the client-onboarding action; wire checklist completion (portal or admin).\n11. Add session-expired copy and an explicit MFA step-up banner on the security page.\n12. Remove or implement the Current Password check and publish the real password policy.\n\n### Later / Platform Evolution\n\n13. Register the service worker (or remove it) and add online/offline messaging.\n14. Thread If-Match/version through edit forms and render 409 conflicts.\n15. Add per-version document download and always-visible version info.\n16. Standardize form error mapping (API message \u2192 field/inline/toast) across all modules.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Fix notification ticket href | One-line mapping | `NotificationBell.tsx:188`, `NotificationsPageClient.tsx:96` | Unit test href |\n| Clear polling interval | Stops API leak | `NotificationBell.tsx:108-118` | Jest fake timers |\n| Rethrow NEXT_REDIRECT | Create works as expected | `client-onboarding-command-center/actions.ts:38-40` | Unit test |\n| Add signup try/finally | No stuck button | `signup/page.tsx:15-31` | Unit test rejection |\n| Empty-body handling in SDK | 46 deletes stop lying | `packages/sdk/src/client.ts:96` | SDK test with empty body |\n| Fix preferences copy | Removes contradiction | `NotificationPreferencesClient.tsx:172-176` | Copy review |\n| Deep-link dashboard CTA | One click saved | `portal/dashboard/page.tsx:121` | Manual QA |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Password reset via code exchange | P1 | Auth owner | S | None |\n| Signup redirect from APP_BASE_URL | P1 | API auth | S | Supabase allow-list |\n| Approval roleId fix | P1 | API + web | S | None |\n| SDK 204/empty-body support | P1 | SDK owner | S | None |\n| Bulk per-item results (docs/tickets) | P2 | Web + API | M | SDK types |\n| Ticket pagination | P2 | Web platform | M | API totals |\n| Ticket delete semantics | P2 | Web admin + API | M | Product decision |\n| Notification links + feedback | P2 | Web platform | S\u2013M | None |\n| MFA step-up surface | P2 | Web auth | M | None |\n| Checklist completion UI | P2 | Web portal | M | None |\n| Offline/PWA activation | P3 | Web platform | M | Product scope |\n| If-Match editing | P3 | Web + SDK | M | None |\n\n## Suggested Tests\n\n- **Unit (web):** notification href mapping; SSE interval cleanup with fake timers; signup action rejection keeps button usable; client-onboarding action rethrows redirect.\n- **Unit (SDK):** `executeFetch` with a 204/empty body resolves to null; delete methods do not retry on parse errors.\n- **API:** PATCH membership with the approval-queue payload returns 400 today (regression), and returns 200 with a resolved role after the fix.\n- **E2E (Playwright):** signup \u2192 follow confirmation URL shape \u2192 `/pending`; forgot password \u2192 follow reset URL shape (`?code=`) \u2192 new password \u2192 login; admin approve pending user; delete API key/document shows success; bulk document delete with one failing id shows partial result; ticket notification opens `/portal/support/<id>`; session expiry shows an explanation on `/login`.\n- **Manual:** the 10 scenarios in Detailed Review.\n- **CI:** add an integration job that runs the SDK against the real API container for one DELETE route (catches empty-body regressions).\n\n## Suggested Documentation Updates\n\n- `docs/TROUBLESHOOTING.md`: add \"Deletes report failure but the row is gone\" (SDK 204) and \"Confirmation/reset emails\" troubleshooting.\n- `docs/ENVIRONMENT_VARIABLES.md`: clarify that `APP_BASE_URL` must be the web origin used in emails and that `NEXT_PUBLIC_API_URL` is the API origin (never a link target).\n- New `docs/runbooks/PASSWORD_RESET_AND_EMAIL_LINKS.md`: how reset/confirm links are generated, allowed redirects, and how to test them.\n- `docs/WEB_UI_CONVENTIONS.md`: feedback rules (every mutation reports success/error; bulk reports per-item; destructive transitions confirm; no swallowed catches).\n- `docs/audits/.../04_usability_workflow_audit.md` (this report): link from the run INDEX.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Is `MFA_ENFORCEMENT_ENABLED` on in production? | Determines whether the MFA dead-end is live | Droplet env (not in repo) |\n| Is `https://api.<domain>/auth/callback` allow-listed in Supabase? | If not, GoTrue may fall back to the dashboard Site URL and confirmation might work by accident | Supabase project settings |\n| Is the ticket delete-by-close intentional? | Changes whether we relabel or implement tombstones | Product owner decision |\n| What is the intended maximum ticket list size? | Drives pagination design | Product owner |\n| Should the client onboarding command center be client-editable? | Drives checklist UI placement | Product owner |\n| Is SMTP configured in production? | Preference emails may no-op regardless of UI | NOTIF-P2-002 residual (domain 30) |\n\n## Appendix\n\n- Target commit: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd` (`Merge PR #168: promote develop to main`).\n- Route inventory: 319 `page.tsx`, 26 `loading.tsx`, 4 `error.tsx`, 3 `not-found.tsx`.\n- 204-only API handlers: 46 (`grep -rho \"res.status(204)\" apps/api/src/routes/*.ts | wc -l`).\n- Previous register: no `USE` rows; `UX-P3-001` (a11y breadth scan) belongs to domain 05 and was not duplicated.\n- Machine-readable findings: `_domains/04_usability_workflow_audit.json` (20 findings: 4\u00d7P1, 11\u00d7P2, 5\u00d7P3; all `open`).\n"
+}

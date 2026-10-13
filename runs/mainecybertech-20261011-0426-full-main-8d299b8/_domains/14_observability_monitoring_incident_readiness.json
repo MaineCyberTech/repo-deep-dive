@@ -1,0 +1,457 @@
+{
+  "domain": "14_observability_monitoring_incident_readiness",
+  "file": "14_observability_monitoring_incident_readiness.md",
+  "area": "OBS",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:47Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "title": "Prometheus alert rules are not routed anywhere",
+      "evidence": [
+        "infra/digitalocean/prometheus.yml:14-17 \u2014 alerting block forwards firing alerts to alertmanager:9093",
+        "infra/digitalocean/docker-compose.yml:244-307 \u2014 alertmanager v0.28.1 service is defined, internal-only, with healthcheck",
+        "infra/digitalocean/alertmanager.tmpl.yml:63-100 \u2014 routing tree: critical -> critical receiver, Watchdog -> watchdog receiver, catch-all -> default",
+        ".github/workflows/deploy-do.yml:739-747 \u2014 prod deploy fails closed when ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty"
+      ],
+      "impact": "The original defect (rules evaluated but alerts visible only in an internal Prometheus UI) is closed: alerts now route to Alertmanager and to the org ntfy instance. Residual risk is verification, not routing: there is no in-repo evidence a synthetic alert actually traversed the path.",
+      "recommendation": "Keep the routing as-is; close the verification gap by dispatching one synthetic alert (amtool/Prometheus UI) and recording the ntfy delivery as a release artifact.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: prometheus.yml alerting block + alertmanager service + routing tree + prod fail-closed guard all present; ntfy basic-auth receivers added in mainecybertech#154. Residual: docs/RELEASE_GATE.md:34,64 still list 'synthetic alert delivered' as an unchecked exit condition, and promtool/amtool validation is manual only (prometheus.rules.test.yml:3-6).",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "No committed dashboards or SLO/error-budget definitions",
+      "evidence": [
+        "infra/digitalocean/dashboards/mct-overview.json:1-108 \u2014 Grafana-importable dashboard with 7 panels (availability, p95 latency, 5xx rate, webhook/notification success, RLS share, active orgs/users)",
+        "docs/SLO.md:10-31 \u2014 5 SLOs with PromQL, targets and an error-budget policy (43 min/30d, fast-burn/slow-burn)",
+        "docs/SLO.md:32-40 \u2014 states the stack ships Prometheus + Alertmanager only; Grafana must be added to render the dashboard"
+      ],
+      "impact": "Definitions are committed and reviewed (quarterly cadence stated). Residual: no Grafana service exists, so the dashboard is an importable artifact only, and Prometheus has no published ports (compose:207-237) \u2014 operators must SSH-tunnel to use the PromQL.",
+      "recommendation": "Either add a Grafana service to the compose stack and provision the JSON, or document the SSH-tunnel workflow in MONITORING_AND_ALERTING.md; also add the missing latency/webhook/notification alert rules promised by the SLO table.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: both artifacts exist (dashboard JSON 108 lines, SLO.md 40 lines). Residual: docs/SLO.md:15 promises a latency page at p95>2s/10m and :16-17 list webhook/notification objectives with no alert rule in prometheus.rules.yml \u2014 tracked separately in the 'most golden-signal and SLO metrics have no alert rules' finding.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Backup/restore is scheduled but not verified on the deployed branch",
+      "evidence": [
+        ".github/workflows/db-backup.yml:14 \u2014 job runs in environment 'dev' (backups target the dev database/buckets)",
+        ".github/workflows/db-restore-test.yml:14 \u2014 restore test also runs in environment 'dev'; weekly cron at line 5",
+        ".github/workflows/db-backup.yml:48-63, db-restore-test.yml:241-255 \u2014 failure notifiers now post to the org ntfy topic with Slack fallback",
+        "docs/RELEASE_GATE.md:25,66 \u2014 exit condition 'a dated db-restore-test run is green with row assertions' still unchecked"
+      ],
+      "impact": "Backup failure is now loudly alerted (ntfy, verified end-to-end for the notifier path per DR-P2-001). What remains unproven is that a restore works against the deployed branch/prod data: every scheduled run targets the dev environment and no dated green restore artifact exists.",
+      "recommendation": "Run db-restore-test against a production-derived snapshot (or add a prod-environment restore job with approval), record the green run URL in RELEASE_GATE, and assert row counts/checksums, not just table presence.",
+      "owner": "platform/ops",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: workflows and ntfy notifiers present (mainecybertech#157); prod/deployed-branch restore still not evidenced. Previously recorded partially-fixed at 9c0b88c \u2014 unchanged.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "Incident runbooks/tabletop evidence is partial",
+      "evidence": [
+        "docs/PLATFORM_FAILURE_RUNBOOKS.md:19-103 \u2014 runbooks for host loss, Redis, Supabase, failed deploy, webhook backlog",
+        "docs/PLATFORM_FAILURE_RUNBOOKS.md:110-118 \u2014 every drill row is '_pending' with operator '_unassigned' and no evidence",
+        "docs/INCIDENT_RESPONSE.md:133-136 \u2014 requires a quarterly tabletop using incident_tabletop_scenarios.md, which does not exist in the repo",
+        "docs/INCIDENT_RESPONSE.md:126-131 \u2014 still describes IR-P0-003 as open ('Alertmanager ... not deployed'), contradicting the deployed stack"
+      ],
+      "impact": "Runbooks are useful but unexercised; the incident plan references missing artifacts and misstates the current alerting topology, which would mislead a responder during an incident.",
+      "recommendation": "Create docs/incident_tabletop_scenarios.md and backup_restore_drill_plan.md (or fix the references), run and record one tabletop + one restore drill with date/participants/outcomes, and update INCIDENT_RESPONSE.md \u00a78 to the deployed Alertmanager/Watchdog design.",
+      "owner": "platform/engineering lead",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: runbooks present; no exercise evidence; new evidence of broken doc references (missing tabletop/drill files) and a stale IR-P0-003 statement in INCIDENT_RESPONSE.md:126-131.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P0",
+      "title": "Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver",
+      "evidence": [
+        "infra/digitalocean/alertmanager.tmpl.yml:86-100,144-152 \u2014 Watchdog alert routed to a dedicated watchdog receiver with repeat_interval 5m",
+        "infra/digitalocean/alertmanager.tmpl.yml:32-38 \u2014 receiver URL is documented as an off-box heartbeat endpoint, not on the droplet",
+        "infra/digitalocean/docker-compose.yml:239-307 \u2014 alertmanager service, internal only, state volume, healthcheck",
+        ".github/workflows/deploy-do.yml:728-747 \u2014 production deploy fails when ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty; dev warns",
+        "docs/MONITORING_AND_ALERTING.md:271-352 \u2014 operating model incl. 'what happens when the whole stack dies'"
+      ],
+      "impact": "The control is implemented end to end in code/config: a dead Prometheus/Alertmanager/droplet stops the heartbeat and the external service pages. Remaining uncertainty is operator-side (whether the secret is set) and exercise evidence.",
+      "recommendation": "Record one observed heartbeat and one deliberate missed-heartbeat drill (stop alertmanager, confirm the external page) as a release artifact; keep the prod fail-closed guard.",
+      "owner": "platform/infrastructure",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: watchdog route/receiver + prod fail-closed guard present (mainecybertech#154 era). Not exercised: no in-repo artifact shows the external receiver was ever pinged or paged (RELEASE_GATE.md:64-65 unchecked); the URL value is an operator secret and cannot be verified from the repo \u2014 marked not exercised rather than unverified-broken.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P1",
+      "title": "No runtime detection or alerting for tenant-isolation (RLS) regressions",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:163-196 \u2014 portal_rls_bypass_total (module/kind/org_resolved) and portal_rls_enforced_total",
+        "apps/api/src/services/supabase.ts:217,224 \u2014 metrics emitted on every scoped-client selection",
+        "infra/digitalocean/prometheus.rules.yml:94-112 \u2014 MCTTenantScopeRegression alert (absolute >=50% org-less threshold)",
+        "infra/digitalocean/prometheus.rules.yml:120-142 \u2014 MCTRlsEnforcedShareCollapsed alert",
+        "infra/digitalocean/prometheus.rules.test.yml:20-94 \u2014 promtool unit tests covering fire/no-fire cases"
+      ],
+      "impact": "The control exists and was designed against two reproduced failure modes (dead rule via clamp_min misuse; self-referential baseline). Residual: the rule tests are not executed by CI, so a future edit can silently break reachability again.",
+      "recommendation": "Wire prometheus.rules.test.yml into the CI validate workflow (docker run promtool test rules) so rule reachability is regression-tested.",
+      "owner": "platform/security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d and CORRECTED: the previous register recorded this 'still open at 9c0b88c' \u2014 that was wrong. Both rules and the bypass/enforced metrics are present at 9c0b88c and 8d299b8d (6de167d3/ed534479 are ancestors of 9c0b88c). Residual: promtool tests are manual (prometheus.rules.test.yml:3-6).",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Several Prometheus metrics are declared but not wired, limiting incident diagnosis",
+      "evidence": [
+        "apps/api/src/routes/organizations.ts:331, projects.ts:288, tickets.ts:221, documents.ts:305 \u2014 creation counters incremented",
+        "apps/api/src/routes/search.ts:213 \u2014 search counter; lib/idempotency.ts:110,124 \u2014 idempotency hits",
+        "apps/api/src/routes/admin.ts:46, users.ts:98 \u2014 active org/user gauges refreshed; services/supabase.ts:59 \u2014 db query duration observed",
+        "main fix: commit 36e5f723 (mainecybertech#147) wired the declared metrics"
+      ],
+      "impact": "Wiring gap closed. Residual is documentation drift only: two docs still say these metrics are not wired (see the doc-drift finding).",
+      "recommendation": "Update the metric tables in docs/MONITORING_AND_ALERTING.md and docs/SLO.md; no code change needed.",
+      "owner": "API platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: every metric named in the finding has a live call site (grep of record*/set* functions). Docs stale at docs/MONITORING_AND_ALERTING.md:130-134 and docs/SLO.md:20-22.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "No alerting on audit-trail gaps or privileged (impersonation/admin) abuse",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:125-130 \u2014 portal_impersonation_events_total; services/impersonation.ts:46 increments on every impersonation_log write",
+        "infra/digitalocean/prometheus.rules.yml:48-56 \u2014 MCTImpersonationBurst alert (>0.5 events/s over 10m)",
+        "no metric or rule exists for audit-write failures, missing audit rows, or export/gap detection (grep of prometheus.rules.yml and metrics.ts)"
+      ],
+      "impact": "Privileged cross-tenant access now has a runtime alert (the high-value half is fixed). A silent audit-trail gap (writes failing or being skipped) would still go undetected, which undermines the evidence the alert itself relies on.",
+      "recommendation": "Add a counter for failed/skipped audit writes and an alert on non-zero rate; add a daily reconciliation of expected vs written audit rows where feasible.",
+      "owner": "API platform / security",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: impersonation burst alert present (was added before 9c0b88c); audit-trail gap alerting still absent. Previous register said open \u2014 updated to partially-fixed with residual documented.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "No alerting when webhook dead-letters accumulate or payment reconciliation drifts",
+      "evidence": [
+        "apps/api/src/lib/metrics.ts:136-145 \u2014 portal_webhook_dead_letters_total; worker metrics.ts:65-70 \u2014 worker_webhook_dead_letters_total",
+        "apps/api/src/lib/webhook-dispatcher.ts:124, worker tasks webhook-dispatcher.ts:128, webhook-retry.ts:175,208 \u2014 counters incremented",
+        "apps/worker/src/tasks/stripe-reconcile.ts:91-142 \u2014 reconciliation logs counts only; no metric emitted",
+        "infra/digitalocean/prometheus.rules.yml:1-143 \u2014 no rule references any webhook/dead-letter/reconciliation metric"
+      ],
+      "impact": "Dead letters and reconciliation drift are exactly the 'silent data-integrity' failures; they are now measurable but nothing alerts, so an operator must query Prometheus manually.",
+      "recommendation": "Add alert rules on rate(portal_webhook_dead_letters_total)/rate(worker_webhook_dead_letters_total) > 0 and on reconciliation error counts; export a stripe-reconcile metric (reconciled/errors/suspended) and alert on errors>0 or drift>0.",
+      "owner": "platform/backend + billing",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: dead-letter counters exist (added 68fd8d12) but no rule; stripe-reconcile still has no metric. Previous register open \u2014 confirmed still open.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts",
+      "evidence": [
+        "docs/MONITORING_AND_ALERTING.md:62,68-79 \u2014 documents GET /health returning 'checks' incl. database and 503 when any check fails",
+        "apps/api/src/routes/health.ts:131-141 \u2014 public /health returns only service/status/uptime; checks live on /health/detail gated by METRICS_TOKEN (146-161)",
+        "apps/api/src/routes/health.ts:118-123 \u2014 Redis is reported but explicitly never degrades health; not mentioned in the doc",
+        "docs/MONITORING_AND_ALERTING.md:107 \u2014 redis healthcheck documented as 'redis-cli -a $REDIS_PASSWORD ping' vs compose:58 REDISCLI_AUTH form"
+      ],
+      "impact": "An operator following the doc expects provider/Redis detail on /health and may misread a 'healthy' API as fully checked; the doc also omits Stripe/JSM checks that can return 503.",
+      "recommendation": "Rewrite \u00a72/\u00a73 of MONITORING_AND_ALERTING.md to match health.ts (public vs detail, Stripe/JSM, Redis severity) and the actual healthcheck commands.",
+      "owner": "platform/engineering",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: doc and code still disagree on the exact lines cited. Previous register open \u2014 confirmed still open.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "`/metrics` is fully public when `METRICS_TOKEN` is unset",
+      "evidence": [
+        "apps/api/src/routes/health.ts:16-26 \u2014 authorizeInternalRequest returns false when no token is configured",
+        "apps/api/src/app.ts:154-164 \u2014 /metrics returns 404 unless the configured bearer token is presented (fail-closed)",
+        "infra/digitalocean/Caddyfile:22-23 \u2014 public Caddy also 404s /metrics"
+      ],
+      "impact": "Fixed: an unconfigured deployment no longer exposes metric labels. Residual: with no token, the Prometheus scrape itself cannot authenticate (see the METRICS_TOKEN deploy-guard finding).",
+      "recommendation": "None for this finding; address the scrape/guard residual separately.",
+      "owner": "API platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: fail-closed token gate in code and Caddy; prior fix mainecybertech#155/#154 era (a7776f3f). Residual tracked in the METRICS_TOKEN finding.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "`/health` publicly discloses provider configuration and Redis errors",
+      "evidence": [
+        "apps/api/src/routes/health.ts:128-141 \u2014 public /health exposes only service, status, uptime",
+        "apps/api/src/routes/health.ts:146-161 \u2014 provider/Redis detail requires METRICS_TOKEN (404 otherwise)",
+        "apps/api/src/routes/health.ts:32-33,45-89 \u2014 provider checks cached 30s to avoid amplification"
+      ],
+      "impact": "Fixed: no config-presence oracle or raw Redis error strings to unauthenticated callers.",
+      "recommendation": "None; keep the gate. (The doc still describes the old response \u2014 see the doc-drift finding.)",
+      "owner": "API platform / security",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: public response minimized, detail gated, provider checks cached (a7776f3f).",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Availability detection lives inside the failed domain; no external dead-man's switch or alert delivery",
+      "evidence": [
+        "infra/digitalocean/alertmanager.tmpl.yml:144-152 \u2014 off-box watchdog receiver",
+        ".github/workflows/deploy-do.yml:739-747 \u2014 prod fail-closed guard",
+        ".github/workflows/db-backup.yml:59-62 \u2014 external ntfy delivery for backup failures (mainecybertech#157)"
+      ],
+      "impact": "The in-stack-only detection gap is closed at the configuration level: both the alert path (ntfy) and its liveness (watchdog) leave the droplet. Residual is exercise evidence only.",
+      "recommendation": "Keep; record one synthetic delivery and one missed-heartbeat drill.",
+      "owner": "platform/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: same control set as IR-P0-003 (watchdog receiver + fail-closed prod guard + external ntfy delivery). Not exercised end-to-end; see the alert-path-exercise finding.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Most golden-signal and SLO metrics have no alert rules (latency, circuit breaker, auth failures, notification/webhook failures, worker jobs, queue depth)",
+      "evidence": [
+        "infra/digitalocean/prometheus.rules.yml:8,18,33,48,94,120 \u2014 only six rules exist; a name-by-name comparison shows 4 of 30 declared metric names referenced",
+        "docs/SLO.md:15 \u2014 promises a latency page at p95>2s/10m; no such rule exists (portal_http_request_duration_seconds unalerted)",
+        "apps/api/src/lib/metrics.ts:37-42,86-91,99-118,136-145 \u2014 auth failures, circuit-breaker state, notification delivery, webhook dead letters all unalerted",
+        "apps/worker/src/metrics.ts:9-29,65-70 \u2014 task executions/duration/queue depth and worker dead letters unalerted; task-registry.ts:48-67 emits failure/error statuses",
+        "apps/worker/src/health-server.ts:10-31 \u2014 a disconnected queue reports status 'degraded' but still HTTP 200, so container health never fails"
+      ],
+      "impact": "A stalled queue, failing jobs, an open provider circuit breaker, an auth-failure spike, or notification/webhook delivery failures are invisible to alerting; the first signal may be a user report. The SLO table overstates alert coverage.",
+      "recommendation": "Add rules: worker_task_executions_total{status=~'failure|error'} rate>0; worker_task_queue_depth > N or queue='unavailable'; portal_circuit_breaker_status==2; portal_auth_attempts_total{result='failure'} spike; notification/webhook failed-rate and dead-letter rate; p95 latency >2s/10m. Add promtool tests for each and run them in CI.",
+      "owner": "platform/infrastructure (SRE)",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; covers the OBS half of CHAIN-P2-010 (silent worker failures) and the SLO promises in docs/SLO.md.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "HTTP metric labels use the raw request path, creating unbounded Prometheus series cardinality",
+      "evidence": [
+        "apps/api/src/middleware/request-id.ts:43 \u2014 httpRequestsTotal.inc({ route: req.path, ... })",
+        "apps/api/src/middleware/request-id.ts:47 \u2014 httpRequestDuration.observe({ route: req.path, ... })",
+        "no route-normalization helper exists (grep for req.route/normalizeRoute finds only the OpenAPI extractor)",
+        "infra/digitalocean/docker-compose.yml:224,232 \u2014 30d retention with a 256MB Prometheus memory limit"
+      ],
+      "impact": "Every URL with an embedded id (/api/v1/tickets/<uuid>, documents, webhooks, etc.) creates new time series per method/status/bucket. Cardinality grows without bound, raising Prometheus memory/disk pressure; a TSDB OOM would take monitoring down (leaving only the external watchdog).",
+      "recommendation": "Label with the Express route template (req.baseUrl + req.route?.path) or an allow-list of normalized routes; add a unit test asserting ids do not appear as labels.",
+      "owner": "API platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Web error tracking is silently disabled in production (code reads NEXT_PUBLIC_SENTRY_DSN; deploy provides SENTRY_DSN)",
+      "evidence": [
+        "apps/web/sentry.server.config.ts:3, apps/web/sentry.edge.config.ts:3, apps/web/instrumentation-client.ts:3 \u2014 all read process.env.NEXT_PUBLIC_SENTRY_DSN",
+        "infra/digitalocean/docker-compose.yml:190-194 \u2014 web service receives SENTRY_DSN (unused by the web Sentry configs)",
+        ".github/workflows/build-push.yml:191-196 \u2014 web build args do not include NEXT_PUBLIC_SENTRY_DSN",
+        "docs/MONITORING_AND_ALERTING.md:162 \u2014 claims Sentry is initialized in all 3 services; docs/ADMIN_FEATURES.md:293 documents the NEXT_PUBLIC_ requirement"
+      ],
+      "impact": "Browser, server and edge errors from the web app are never reported in production; the documented Sentry alert rules for web issues can never fire. Silent because Sentry.init is skipped when the DSN is falsy.",
+      "recommendation": "Pass NEXT_PUBLIC_SENTRY_DSN (Sentry DSNs are public by design) into the web image build and/or the web container env; add a boot warning in production when it is missing; update docs.",
+      "owner": "web platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Alerting configuration is not validated in CI and the deploy health gate ignores Prometheus/Alertmanager",
+      "evidence": [
+        "infra/digitalocean/prometheus.rules.test.yml:1-6 \u2014 promtool check/test documented as manual docker runs",
+        ".github/workflows/validate.yml:1-110 and test.yml \u2014 no promtool/amtool step (grep across .github/workflows finds none)",
+        ".github/workflows/deploy-do.yml:835-858 \u2014 container health gate checks only api, web, worker",
+        "infra/digitalocean/docker-compose.yml:207-237 \u2014 prometheus has no healthcheck; alertmanager:302-307 has one but is not gated"
+      ],
+      "impact": "A syntax/reachability error in prometheus.rules.yml or a broken alertmanager template ships with a green deploy: Prometheus/Alertmanager can fail to start while the workflow reports success, leaving monitoring dead until the external watchdog notices.",
+      "recommendation": "Add a CI job running promtool check rules + promtool test rules (prometheus.rules.test.yml) and amtool check-config on a rendered template; extend the deploy gate to require prometheus and alertmanager healthy and assert up{job=~'mct-api|mct-worker'}==1 after deploy.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the register's 'promtool/amtool checks green' claim referred to manual checks during remediation, not CI.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Empty METRICS_TOKEN has no deploy guard and is documented as optional; it breaks the API scrape and fires a false service-down alert",
+      "evidence": [
+        ".github/workflows/deploy-do.yml:722-727 \u2014 metrics-token file written from METRICS_TOKEN with chown/chmod but no non-empty check (contrast the watchdog guard at 739-747)",
+        "apps/api/src/app.ts:154-164 + routes/health.ts:16-26 \u2014 API 404s /metrics unless a token is configured and presented",
+        "infra/digitalocean/prometheus.yml:19-32 \u2014 mct-api scrape requires the bearer credentials_file",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:78 and docs/ENVIRONMENT_VARIABLES.md:77 \u2014 still describe METRICS_TOKEN as optional",
+        "commit 8f8dbe42 \u2014 the unauthenticated scrape previously made MCTServiceDown fire on a healthy API"
+      ],
+      "impact": "If the secret is unset/empty, the scrape 404s, up==0 for 2m, and a critical MCTServiceDown page fires on a healthy API (exactly the incident PR #155 fixed); meanwhile real metrics are absent. Deploy stays green.",
+      "recommendation": "Fail the prod deploy when METRICS_TOKEN is empty (mirror the watchdog guard), require a non-empty file, update the secrets matrix/env docs to 'required for monitoring', and assert up{job='mct-api'}==1 in the post-deploy health check.",
+      "owner": "platform/infrastructure",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; builds on mainecybertech#155/#166/#167 which fixed the credential file path/permissions but not the empty-value case.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Alert delivery and the dead-man's switch are configured but never exercised end-to-end; no monitoring-of-monitoring rules",
+      "evidence": [
+        "docs/RELEASE_GATE.md:34 \u2014 exit condition 'Alertmanager is wired to a receiver and a synthetic alert is delivered'",
+        "docs/RELEASE_GATE.md:64-65 \u2014 operator checklist item 'synthetic alert delivery' still unchecked",
+        "docs/MONITORING_AND_ALERTING.md:320-322 \u2014 'should be tested by stopping alertmanager and confirming the external service reports the missed heartbeat' (no recorded drill)",
+        "infra/digitalocean/prometheus.rules.yml:1-143 \u2014 no rule on prometheus_rule_evaluation_failures_total or alertmanager notification failures; no exporter/probe freshness metrics"
+      ],
+      "impact": "A misconfigured receiver URL, wrong ntfy credentials, or a dead external heartbeat endpoint is invisible until a real incident; the platform cannot currently prove its alerting path works.",
+      "recommendation": "Dispatch one synthetic alert and record the ntfy delivery; run one missed-heartbeat drill and record the external page; add meta-alerts (rule-evaluation failures, Alertmanager notification failures) and a freshness check on the watchdog heartbeat.",
+      "owner": "platform/ops",
+      "target": "this week",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the release gate treats this as a pre-go-live exit condition.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "Container logs are not persisted off-box and are destroyed by the deploy's `compose down`",
+      "evidence": [
+        "infra/digitalocean/docker-compose.yml:19-23 \u2014 json-file driver, max-size 10m, max-file 3 (bounded per container)",
+        ".github/workflows/deploy-do.yml:809 \u2014 `docker compose -p mct-portal down --remove-orphans` removes the previous containers and their logs before `up`",
+        "docs/MONITORING_AND_ALERTING.md:49-52 \u2014 log forwarding to a central service is listed as 'future'",
+        "no `log` directive in infra/digitalocean/Caddyfile or Caddyfile.prod (edge access logs absent)"
+      ],
+      "impact": "During an incident the available log window is ~30MB per container and the previous deployment's logs are deleted by the next deploy, so crash-loop or pre-deploy evidence can be lost; there is no cross-service search, and edge (Caddy) requests are not logged at all.",
+      "recommendation": "Ship logs off-box (DO agent/Loki/vector) or snapshot `docker compose logs` to an artifact before `down`; enable Caddy access logs with rotation; document the retention window in MONITORING_AND_ALERTING.md.",
+      "owner": "platform/ops",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "API/worker Sentry release markers are not delivered (no SENTRY_RELEASE/GIT_SHA)",
+      "evidence": [
+        "apps/api/src/lib/sentry.ts:11 \u2014 release: env.SENTRY_RELEASE ?? process.env.GIT_SHA",
+        "apps/worker/src/main.ts:18-19 \u2014 same fallback",
+        ".github/workflows/deploy-do.yml:647,676 \u2014 deploy forwards only SENTRY_DSN; no SENTRY_RELEASE or GIT_SHA",
+        "infra/digitalocean/docker-compose.yml:78,141 \u2014 api/worker env has SENTRY_DSN only; web bakes NEXT_PUBLIC_GIT_SHA at build (build-push.yml:194)"
+      ],
+      "impact": "API/worker errors and performance events are not tagged with the deploy they belong to, so regressions cannot be correlated to a release; web has a marker only in the client bundle.",
+      "recommendation": "Add SENTRY_RELEASE (or GIT_SHA) to the deploy envs and compose api/worker services; mirror it for web server-side Sentry.",
+      "owner": "platform/backend",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; INFRA-P2-006 already noted Sentry release/sample rely on defaults.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "Alertmanager secret provisioning gaps: matrix omits ALERTMANAGER_*; awk renderer breaks on '&' or backslash in values",
+      "evidence": [
+        "infra/digitalocean/alertmanager.tmpl.yml:27-51 \u2014 required env names documented only in the template header",
+        "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:1-120 \u2014 no ALERTMANAGER_* or NTFY_ALERTS_* rows (grep finds none)",
+        "infra/digitalocean/docker-compose.yml:280-292 \u2014 rendering uses awk gsub(), where '&' in a replacement expands to the matched text; the guard at :291 then aborts the container",
+        ".github/workflows/deploy-do.yml:748-751 \u2014 deploy only warns when a critical URL is set without credentials"
+      ],
+      "impact": "Operators cannot provision alerting from the secrets matrix; a secret containing '&' or a backslash (plausible in generated passwords/URLs) corrupts the rendered config and Alertmanager exits \u2014 which the deploy gate does not detect.",
+      "recommendation": "Add the ALERTMANAGER_*/NTFY_* rows to the secrets matrix; render with a method that escapes replacement metacharacters (or reject values containing '&' at deploy time with a clear error); gate on alertmanager health.",
+      "owner": "platform/infrastructure + docs",
+      "target": "next quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d; awk replacement semantics are certain, whether any live secret contains such characters is unknown.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "Metrics rate limiter leaves almost no headroom for the 15s scrape (max 5/min vs 4/min)",
+      "evidence": [
+        "apps/api/src/middleware/rate-limit.ts:68-76 \u2014 /metrics limited to 5 requests/min per IP, skipping only 127.0.0.1/::1",
+        "infra/digitalocean/prometheus.yml:5 \u2014 global scrape_interval 15s (4 scrapes/min from the prometheus container IP)"
+      ],
+      "impact": "Any additional /metrics request in the same minute from the scrape IP (manual debug, retry, a second scraper) returns 429 and fails that scrape; repeated 429s can flap up==0 and trigger a false MCTServiceDown.",
+      "recommendation": "Skip the limiter for authenticated/internal scrapes or raise the limit well above the scrape rate; assert scrape success after deploy.",
+      "owner": "API platform",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P2",
+      "title": "No repository evidence of external uptime checks for platform endpoints; an edge/proxy failure is undetected in-stack",
+      "evidence": [
+        "infra/digitalocean/prometheus.rules.yml:8-16 \u2014 MCTServiceDown covers only up{job=~'mct-api|mct-worker'} internal scrapes (containers can be up while the public edge is down)",
+        "infra/digitalocean/docker-compose.yml:310-337 \u2014 caddy has no monitoring or alert path; its healthcheck only runs `caddy validate`",
+        "docs/MONITORING_AND_ALERTING.md:210-211 \u2014 CPU/disk 'DO monitoring' claims are not represented anywhere in the repo",
+        "no blackbox exporter, uptime check config, or external probe in the repository (grep); the uptime-monitor product module (apps/worker/src/tasks/module-tasks.ts:500-560) monitors tenant-supplied URLs, not the platform"
+      ],
+      "impact": "If Caddy crashes, a certificate expires, or DNS/TLS breaks while the API/worker containers stay healthy, users are down but no in-stack alert fires; only deploy-time checks and the alerting-path watchdog exist.",
+      "recommendation": "Add an external uptime check (DO Uptime, healthchecks-style probe, or blackbox_exporter) for https://api.<domain>/health and the app login page, delivered to the same ntfy topic, and record its configuration in MONITORING_AND_ALERTING.md.",
+      "owner": "platform/ops",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the watchdog heartbeat proves the alert path is alive, not that the user-facing endpoint serves traffic.",
+      "area": "OBS"
+    },
+    {
+      "severity": "P3",
+      "title": "SLO and monitoring docs drift from implemented metrics and alert rules",
+      "evidence": [
+        "docs/SLO.md:20-22 \u2014 says worker job success and BullMQ queue depth are 'not exported as metrics yet'; apps/worker/src/metrics.ts:9-29 exports both",
+        "docs/MONITORING_AND_ALERTING.md:130-134 \u2014 lists db query duration/creation counters/search/active gauges/idempotency as 'defined, not wired'; wired since mainecybertech#147",
+        "infra/digitalocean/prometheus.rules.yml:3-4 \u2014 comment says Watchdog 'fires once per day' while the rule is expr vector(1) (line 34) pinging every 5m (alertmanager.tmpl.yml:99)",
+        "docs/MONITORING_AND_ALERTING.md:154-156 \u2014 'Without a receiver, alerts are visible only in the internal Prometheus UI' vs the deployed Alertmanager"
+      ],
+      "impact": "Operators and future audits are given contradictory state, which already produced one wrong verification note (IR-P1-006 recorded as still open at 9c0b88c).",
+      "recommendation": "Refresh the metric tables, the Watchdog comment, and the alert-delivery section; add a doc check that the metric names in MONITORING_AND_ALERTING.md exist in the code.",
+      "owner": "platform/engineering",
+      "target": "next quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "OBS"
+    }
+  ],
+  "report": "# Observability, Monitoring, and Incident Readiness Audit\n\n## Audit Metadata\n\n- Audit name: `repo-deep-dive` (full hardening rerun)\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: `mainecybertech` (monorepo: api / worker / web, Supabase, single DigitalOcean droplet)\n- Branch: `main` @ `8d299b8d` (merge of PR #168)\n- Generated at: 2026-10-11\n- Auditor: subagent, domain 14 (area code **OBS**)\n- Scope limitations: repository-only review. No production/lab access, no secret values, no live Prometheus/Alertmanager/ntfy calls. \"Delivered/configured\" is distinguished from \"exercised\"; operator-side secret presence is marked unverifiable.\n\n## Scope\n\nReviewed: structured logs, request-id correlation, error tracking (Sentry), metrics (API + worker), tracing, health/readiness, client/API/worker errors, job metrics, DB/queue/webhook/notification metrics, uptime checks, alert rules, Alertmanager routing + ntfy delivery, dashboards/SLOs, incident runbooks, audit/security-log signals, release markers, user-impact and data-quality signals.\n\nNot reviewed: tenant-facing uptime-monitor product internals beyond confirming it is not platform self-monitoring; Sentry account configuration (alert rules are UI-side); DigitalOcean monitoring config (not in repo).\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `apps/api/src/lib/metrics.ts` (263 lines) | Source | API metric registry (30 named metrics) | prom-client, `portal_` prefix |\n| `apps/worker/src/metrics.ts` (119 lines) | Source | Worker job/queue/webhook metrics | 9 named metrics |\n| `apps/api/src/middleware/request-id.ts` | Source | Request IDs + HTTP metrics labels | `route: req.path` (cardinality) |\n| `apps/api/src/routes/health.ts` | Source | Public `/health`, gated `/health/detail` | Fail-closed token gate |\n| `apps/api/src/app.ts:145-171` | Source | Middleware order + `/metrics` gate | 404 without token |\n| `apps/api/src/lib/logger.ts`, `apps/worker/src/logger.ts` | Source | pino JSON + redaction | Redacts PII/secret paths |\n| `apps/api/src/lib/sentry.ts`, worker `main.ts`, web `sentry.*.config.ts` | Source | Error tracking init | Web DSN variable mismatch |\n| `apps/worker/src/health-server.ts`, `task-registry.ts` | Source | Worker health + job metrics | Queue degraded \u21d2 still 200 |\n| `infra/digitalocean/prometheus.yml` | Config | Scrape configs + bearer scrape | `metrics-token` credentials file |\n| `infra/digitalocean/prometheus.rules.yml` | Config | 6 alert rules | 4/30 metric names referenced |\n| `infra/digitalocean/prometheus.rules.test.yml` | Test | promtool rule unit tests (manual) | Not run in CI |\n| `infra/digitalocean/alertmanager.tmpl.yml` | Config | Routing to ntfy + watchdog | awk-rendered template |\n| `infra/digitalocean/docker-compose.yml:206-344` | Config | Prometheus/Alertmanager/Caddy | No published monitoring ports |\n| `infra/digitalocean/dashboards/mct-overview.json` | Artifact | Grafana dashboard (7 panels) | Not provisioned anywhere |\n| `.github/workflows/deploy-do.yml` | CI/CD | Secret delivery, fail-closed guard, health gate | No monitoring-stack gate |\n| `.github/workflows/db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | CI/CD | Backup alerting | ntfy notifiers, `environment: dev` |\n| `docs/MONITORING_AND_ALERTING.md`, `docs/SLO.md`, `docs/RELEASE_GATE.md`, `docs/INCIDENT_RESPONSE.md`, `docs/PLATFORM_FAILURE_RUNBOOKS.md`, `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md` | Docs | Operator-facing claims | Several stale statements |\n| Previous run register/risk register (`mainecybertech-20261004-full-main-9c0b88c`) | Register | Verification duty | OBS + IR rows re-checked |\n\n## Verification Performed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `git log --oneline 9c0b88c..8d299b8d` | Command | Delta since previous audit | 4 observability commits: ntfy routing (#154), scrape auth (#155, #166, #167) |\n| Metric-name vs rule comparison (python, regex over `metrics.ts` + `rules.yml`) | Command | \"Which declared metrics lack alert rules\" | 4 of 30 referenced; 26 have no rule |\n| `git show 9c0b88c:infra/.../prometheus.rules.yml` | Command | Verify IR-P1-006 at prior commit | Rules already present \u2014 register note was wrong |\n| `grep -rn \"promtool\\|amtool\" .github/ scripts/` | Command | CI validation of alerting config | No matches \u2014 manual only |\n| `grep -rn \"NEXT_PUBLIC_SENTRY_DSN\"` | Command | Web Sentry wiring | Read by web configs; never set by build/deploy |\n| `grep -rn \"NTFY\" .github/workflows/*.yml` | Command | Backup alert delivery | 3 workflows post to ntfy with Slack fallback |\n| `grep -rn \"environment: dev\" .github/workflows/db-*.yml` | Command | Deployed-branch restore verification | Backup/restore target dev only |\n| `grep -rn \"req.route\\|normalizeRoute\" apps/api/src` | Command | Metric label normalization | None \u2014 raw `req.path` used |\n| `git merge-base --is-ancestor 6de167d3 9c0b88c` | Command | Correct IR-P1-006 status | Ancestor \u2014 rule existed at 9c0b88c |\n| File reads of all evidence listed above | Read | Primary evidence | Line numbers cited in findings |\n\nNot reproducible in this audit: Sentry project alert rules (UI-side), DigitalOcean monitoring (not in repo), live ntfy delivery, actual secret values.\n\n## Executive Summary\n\nThe observability stack is materially better than the previous audit left it. Since `9c0b88c` the team added ntfy delivery with basic auth to Alertmanager (#154), authenticated the Prometheus\u2192API scrape with a deploy-written `metrics-token` file (#155/#166/#167), and wired the remaining declared metrics (#147). The alert path is now: rules \u2192 Alertmanager \u2192 org ntfy topic, plus an off-box watchdog dead-man's switch with a production fail-closed deploy guard (IR-P0-003). The committed SLO doc and Grafana-importable dashboard exist, and the RLS/tenant-isolation telemetry is real, wired, and unit-tested (IR-P1-006 is actually fixed \u2014 the previous register wrongly recorded it open).\n\nThe main weaknesses are in breadth and proof rather than the core path: only 6 alert rules exist for 30 declared metrics, so latency, circuit-breaker state, auth-failure spikes, notification/webhook delivery failures, worker job failures and queue depth are measurable but unalerted. Web error tracking is silently disabled in production (`NEXT_PUBLIC_SENTRY_DSN` is never provided while the deploy passes `SENTRY_DSN`). HTTP metric labels use the raw request path, creating unbounded Prometheus series cardinality against a 256MB memory limit. Alerting configs are not validated in CI, and the deploy health gate ignores Prometheus/Alertmanager, so a broken rules file or an empty `METRICS_TOKEN` ships green. Finally, the alert path has never been exercised end-to-end (no synthetic alert/heartbeat evidence; the release gate still lists it as an exit condition), and the incident docs contradict the deployed topology while referencing two files that do not exist.\n\nPriority actions: (1) exercise the alert path and record evidence; (2) add the missing golden-signal rules and wire `promtool` tests into CI; (3) fix the web Sentry DSN and the `route` label cardinality; (4) add a non-empty `METRICS_TOKEN` deploy guard and gate the deploy on monitoring health.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| API metrics | `apps/api/src/lib/metrics.ts` | 21 named metrics + defaults | Implemented, token-gated `/metrics` | Medium | 26/30 metrics unalerted |\n| Worker metrics | `apps/worker/src/metrics.ts` | 9 job/queue/webhook metrics | Implemented | Medium | No alert rules |\n| Request ID | `middleware/request-id.ts` | `X-Request-ID`, child logger | Implemented | Low | Not propagated to worker jobs |\n| Logging | api/worker/web pino | Structured JSON + redaction | Implemented | Medium | No shipping; logs lost on deploy `down` |\n| Error tracking | Sentry api/worker/web | Exception capture | API/worker wired; web disabled | High | `NEXT_PUBLIC_SENTRY_DSN` never set |\n| Tracing | Sentry perf only | Distributed tracing | Absent | Low | No OTel, no cross-service trace |\n| Health/readiness | `/health`, `/health/detail`, worker `/health` | Liveness/dependency probes | Implemented | Low | Queue degraded still 200; docs stale |\n| Scrape auth | `prometheus.yml:19-32` + `metrics-token` | Bearer scrape | Implemented | Medium | No empty-token guard |\n| Alert rules | `prometheus.rules.yml` | 6 rules | Implemented | High | Latency/job/queue/delivery rules missing |\n| Alert routing | `alertmanager.tmpl.yml` | ntfy critical/default + watchdog | Implemented | Medium | Never exercised; awk renderer fragile |\n| Dead-man's switch | watchdog receiver + deploy guard | Off-box liveness | Implemented | Low | Not exercised |\n| Dashboards | `dashboards/mct-overview.json` | Grafana artifact | Committed, not provisioned | Medium | No Grafana service |\n| SLOs | `docs/SLO.md` | 5 SLOs + error budget | Committed | Medium | 2 objectives have no alert rule |\n| Runbooks | `PLATFORM_FAILURE_RUNBOOKS.md`, `INCIDENT_RESPONSE.md` | Incident response | Present | Medium | Drill table pending; broken refs |\n| Audit/security signals | impersonation metric + rule | Privileged-access alerting | Partial | Medium | No audit-gap detection |\n| Uptime checks | none in repo | External platform checks | Absent | High | Watchdog covers alert path only |\n| Release markers | `SENTRY_RELEASE`/`GIT_SHA` | Deploy correlation | Web only | Low | API/worker unversioned |\n| Data-quality signals | none | Data integrity monitoring | Absent | Low | No metrics/checks found |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Structured logs | 3 | pino JSON, redaction, 10m\u00d73 rotation (`compose:19-23`) | No shipping; deploy `down` deletes previous logs; no Caddy access logs | Ship off-box or snapshot before deploy |\n| Request IDs/correlation | 3 | `request-id.ts:16-18`; `X-Request-ID` response header | No propagation into task payloads/worker logs | Pass requestId into `enqueueTask` payloads |\n| Error tracking | 2 | api/worker Sentry init; web configs read a never-set var | Web (client/server/edge) silent; release markers absent; Sentry alert rules unverified | Provide `NEXT_PUBLIC_SENTRY_DSN`; deliver release marker |\n| Metrics | 3 | 30 metrics; token-gated; db/latency/job counters wired | Raw-path label cardinality; 26 metrics unalerted | Normalize route label; add rules |\n| Tracing | 1 | Sentry `tracesSampleRate` only | No distributed tracing/context propagation | Optional: OTel later |\n| Health/readiness | 3 | `/health` + gated `/detail`; worker `/health`; compose healthchecks | Queue degraded never fails health; docs mismatch; no web health route | Align docs; expose queue state to alerts |\n| Client/API/worker errors | 2 | API error middleware + Sentry; worker task capture | Client errors uncaptured (web Sentry off); no RUM | Fix web DSN; add Web Vitals later |\n| Job metrics | 3 | `worker_task_executions_total`, duration, queue depth | Zero alert rules; `queue=\"unavailable\"` synthetic series | Add failure/queue alerts |\n| DB/queue/webhook/notification metrics | 3 | db duration, dead letters, delivery counters (api+worker) | No rules; reconciliation has no metric | Add rules; export reconcile counts |\n| Uptime checks | 1 | Watchdog (alert-path liveness) | No external HTTP check for public endpoints | Add external uptime probe + alert |\n| Alerts | 3 | 6 rules; ntfy routing; watchdog; fail-closed prod guard | Not CI-validated; not exercised; golden signals missing | CI validation + synthetic delivery |\n| Dashboards | 2 | Dashboard JSON + SLO.md | No Grafana; Prometheus UI internal-only; SLO panels partly unalerted | Provision Grafana or document tunnel |\n\n## Detailed Review\n\n### Item: Alert rules and routing (golden signals)\n- Evidence: `prometheus.rules.yml:8-142`; `alertmanager.tmpl.yml:63-152`; `prometheus.yml:14-17`.\n- What it does: 6 rules (service down, 5xx rate, Watchdog, impersonation burst, tenant-scope regression, RLS enforced-share collapse) route by severity/alertname to ntfy (basic auth) and the off-box watchdog.\n- Missing controls: latency/SLO-burn, circuit-breaker open, auth-failure spike, notification/webhook failure + dead letters, worker failure/queue depth, disk/memory, edge reachability.\n- Risks: silent worker/queue/delivery failures; false confidence from the SLO doc.\n- Recommended improvement: add the rules above; run `promtool test rules` in CI.\n- Suggested tests: promtool unit cases per rule (fire + no-fire); a CI job; a synthetic end-to-end alert.\n- Suggested docs: update `docs/SLO.md` alert column to match reality.\n\n### Item: Prometheus scrape + METRICS_TOKEN\n- Evidence: `prometheus.yml:19-32`; `deploy-do.yml:718-727`; `app.ts:154-164`; `health.ts:16-26`.\n- What it does: bearer scrape from a 0600 credentials file chowned to the container user; API 404s unauthenticated `/metrics`.\n- Missing controls: non-empty guard; post-deploy scrape assertion; limiter headroom.\n- Risks: empty token \u21d2 404 scrape \u21d2 false `MCTServiceDown` + no metrics (the exact class of incident PR #155 fixed).\n- Recommended improvement: fail prod deploy on empty `METRICS_TOKEN`; assert `up{job=\"mct-api\"}==1` post-deploy.\n\n### Item: Logging and correlation\n- Evidence: `apps/api/src/lib/logger.ts:6-54`; `apps/worker/src/logger.ts:4-45`; `request-id.ts:15-53`; `compose:19-23`.\n- What it does: structured pino logs with requestId, PII redaction, bounded rotation.\n- Missing controls: off-box shipping; log survival across `compose down`; worker correlation to the originating request; Caddy access logs.\n- Risks: incident forensics window is small and destroyed by the next deploy.\n\n### Item: Health/readiness\n- Evidence: `health.ts:91-161`; `health-server.ts:8-57`.\n- What it does: API checks DB + Stripe + JSM (30s cache), Redis reported but non-degrading; worker reports queue state.\n- Missing controls: queue-disconnected still 200; docs describe an older response shape; no alert on health degradation (only `up`).\n\n### Item: Dashboards/SLOs/runbooks\n- Evidence: `mct-overview.json:1-108`; `SLO.md:10-40`; `PLATFORM_FAILURE_RUNBOOKS.md:19-118`; `INCIDENT_RESPONSE.md:126-136`.\n- What it does: 5 SLOs with PromQL/error budget; 7-panel dashboard; 5 platform runbooks.\n- Missing controls: Grafana; exercised drills; doc accuracy (Alertmanager status, worker metrics, wiring status, broken file references).\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| OBS-001 | Structured logs | pino api/worker/web | JSON + redaction + rotation | No shipping; lost on deploy down | P2 | Ship/snapshot logs |\n| OBS-002 | Request IDs/correlation | `request-id.ts:15-53` | UUID + `X-Request-ID` | Not propagated to jobs | P3 | Carry id into task payloads |\n| OBS-003 | Error tracking | Sentry api/worker/web | API/worker capture | Web DSN never set; release tags absent | P2 | Provide `NEXT_PUBLIC_SENTRY_DSN` |\n| OBS-004 | Metrics | `metrics.ts` (30 metrics) | Token-gated, wired | Raw-path cardinality; 25 unalerted | P2 | Normalize labels; add rules |\n| OBS-005 | Tracing | Sentry perf sampling | 20% traces when DSN set | No distributed tracing | P3 | Defer; document |\n| OBS-006 | Health/readiness | `/health`, `/detail`, worker `/health` | Probes + gated detail | Queue degraded \u21d2 200; docs stale | P3 | Align doc/code; alert queue |\n| OBS-007 | Client/API/worker errors | error middleware; task Sentry | Server-side capture | Client-side off (web DSN) | P2 | Fix web DSN |\n| OBS-008 | Job metrics | `worker metrics.ts:9-29` | Executions/duration/depth | No rules; fake `unavailable` series | P2 | Add job/queue alerts |\n| OBS-009 | DB/queue/webhook/notification metrics | api+worker metrics | Counters/histograms | No rules; reconcile metric missing | P2 | Add rules + reconcile metric |\n| OBS-010 | Uptime checks | rules only cover internal `up` | Watchdog for alert path | No external HTTP check | P2 | Add external probe |\n| OBS-011 | Alerts | 6 rules + Alertmanager + ntfy | Routed, dead-man's switch | Not CI-validated; not exercised | P2 | CI validate; synthetic delivery |\n| OBS-012 | Dashboards | dashboard JSON + SLO.md | Committed artifacts | No Grafana; UI internal | P2 | Provision or document access |\n\n## Findings\n\nVerification of previous register rows (same titles as the previous run):\n\n| Title (previous register) | Sev | Status at 8d299b8d | Evidence / note |\n|---|---|---|---|\n| Prometheus alert rules are not routed anywhere | P2 | verified-fixed | `prometheus.yml:14-17`, `compose:244-307`, `alertmanager.tmpl.yml:63-152`, `deploy-do.yml:739-747`. Residual: synthetic delivery unproven (RELEASE_GATE.md:34,64). |\n| No committed dashboards or SLO/error-budget definitions | P2 | verified-fixed | `dashboards/mct-overview.json:1-108`, `SLO.md:10-40`. Residual: no Grafana; 2 SLOs unalerted. |\n| Backup/restore is scheduled but not verified on the deployed branch | P2 | partially-fixed | `db-backup.yml:14`, `db-restore-test.yml:14` (dev env), ntfy notifiers (`db-backup.yml:48-63`). Prod restore still unevidenced. |\n| Incident runbooks/tabletop evidence is partial | P3 | partially-fixed | `PLATFORM_FAILURE_RUNBOOKS.md:19-118`; drill table `:110-118` all pending; `INCIDENT_RESPONSE.md:133-136` references missing files. |\n| Total loss of the monitoring/alerting path has no independent dead-man's-switch receiver | P0 | verified-fixed | `alertmanager.tmpl.yml:86-100,144-152`; `deploy-do.yml:728-747`. Not exercised end-to-end. |\n| No runtime detection or alerting for tenant-isolation (RLS) regressions | P1 | verified-fixed | `metrics.ts:163-196`; `supabase.ts:217,224`; `prometheus.rules.yml:94-142`; `prometheus.rules.test.yml:20-94`. **Correction**: previous register said still-open; rules existed at 9c0b88c. |\n| Several Prometheus metrics are declared but not wired, limiting incident diagnosis | P2 | verified-fixed | Call sites verified (organizations/projects/tickets/documents/search/idempotency/admin/users/supabase). Docs stale. |\n| No alerting on audit-trail gaps or privileged (impersonation/admin) abuse | P2 | partially-fixed | `MCTImpersonationBurst` rule (`prometheus.rules.yml:48-56`); audit-gap detection still absent. |\n| No alerting when webhook dead-letters accumulate or payment reconciliation drifts | P2 | still-open | Dead-letter counters exist; no rules; `stripe-reconcile.ts:91-142` has no metric. |\n| Monitoring doc and health endpoint disagree on check semantics; Redis severity undocumented in alerts | P3 | still-open | `MONITORING_AND_ALERTING.md:62,68-79,107` vs `health.ts:118-123,131-161`. |\n| `/metrics` is fully public when `METRICS_TOKEN` is unset | P3 | verified-fixed | `health.ts:16-26` fail-closed; `app.ts:161`; Caddy 404 (`Caddyfile:22-23`). |\n| `/health` publicly discloses provider configuration and Redis errors | P2 | verified-fixed | `health.ts:128-161`; 30s provider cache `:32-33,45-89`. |\n| Availability detection lives inside the failed domain; no external dead-man's switch or alert delivery | P2 | verified-fixed | Same control set as IR-P0-003 + ntfy delivery (`db-backup.yml:59-62`). Not exercised. |\n\nNew findings (full field detail in the domain JSON):\n\n| Title | Sev | Confidence | Effort | Status |\n|---|---|---|---|---|\n| Most golden-signal and SLO metrics have no alert rules (latency, circuit breaker, auth failures, notification/webhook failures, worker jobs, queue depth) | P2 | high | M | open |\n| HTTP metric labels use the raw request path, creating unbounded Prometheus series cardinality | P2 | high | S | open |\n| Web error tracking is silently disabled in production (`NEXT_PUBLIC_SENTRY_DSN` vs `SENTRY_DSN`) | P2 | high | S | open |\n| Alerting configuration is not validated in CI and the deploy health gate ignores Prometheus/Alertmanager | P2 | high | S | open |\n| Empty `METRICS_TOKEN` has no deploy guard and is documented as optional; breaks the scrape and fires a false service-down alert | P2 | high | S | open |\n| Alert delivery and the dead-man's switch are configured but never exercised end-to-end; no monitoring-of-monitoring rules | P2 | high | S | open |\n| Container logs are not persisted off-box and are destroyed by the deploy's `compose down` | P2 | high | M | open |\n| No repository evidence of external uptime checks; an edge/proxy failure is undetected in-stack | P2 | high | S | open |\n| API/worker Sentry release markers are not delivered (no `SENTRY_RELEASE`/`GIT_SHA`) | P3 | high | S | open |\n| Alertmanager secret provisioning gaps: matrix omits `ALERTMANAGER_*`; awk renderer breaks on `&`/backslash | P3 | medium | S | open |\n| Metrics rate limiter leaves almost no headroom for the 15s scrape (max 5/min vs 4/min) | P3 | high | S | open |\n| SLO and monitoring docs drift from implemented metrics and alert rules | P3 | high | S | open |\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Silent worker/job/queue failure | High | Medium | Stalled notifications/webhooks, data drift | `worker metrics.ts:9-29`; no rules | Add job/queue alerts |\n| Prometheus TSDB cardinality blow-up | High | Medium | Monitoring OOM/outage | `request-id.ts:43,47`; `compose:224,232` | Normalize route label |\n| Alerting path misconfigured/never exercised | High | Medium | No pages during a real incident | `RELEASE_GATE.md:34,64` | Synthetic alert + drill |\n| Broken alert config ships green | High | Low-Med | Monitoring dead post-deploy | `deploy-do.yml:835-858`; no promtool CI | CI validate + gate health |\n| Empty METRICS_TOKEN | Medium | Medium | False page + blind metrics | `deploy-do.yml:722-727` | Fail-closed deploy guard |\n| Web errors invisible | Medium | High | Client failures unseen | `sentry.server.config.ts:3`; build args | Provide `NEXT_PUBLIC_SENTRY_DSN` |\n| Incident evidence lost at deploy | Medium | Medium | Slower triage | `deploy-do.yml:809`; `compose:19-23` | Ship/snapshot logs |\n| Edge outage undetected | High | Low-Med | Users down, alerts green | `rules.yml:8-16`; no external probe | External uptime check |\n\n## Recommendations\n\n### Immediate / Release Blocking\n- Dispatch a synthetic alert through Prometheus \u2192 Alertmanager \u2192 ntfy and record the delivery; run one missed-heartbeat drill against the watchdog (`RELEASE_GATE.md:34,64`).\n- Provide `NEXT_PUBLIC_SENTRY_DSN` to the web build/runtime or web error tracking stays dead in prod.\n\n### This Week\n- Add the missing golden-signal rules (worker failures/queue depth, circuit breaker, auth failures, notification/webhook failure + dead letters, latency burn) with promtool tests.\n- Add a CI job (`promtool check rules`, `promtool test rules`, `amtool check-config`) and extend the deploy gate to Prometheus/Alertmanager health and `up{job=~\"mct-api|mct-worker\"}==1`.\n- Fail the prod deploy when `METRICS_TOKEN` is empty; update the secrets matrix to \"required for monitoring\".\n\n### This Month\n- Normalize the HTTP metric `route` label to the Express route template and add a regression test.\n- Add an external uptime check for the API `/health` and app login page, routed to ntfy; document it.\n- Record a restore test on a production-derived snapshot with row assertions; update `RELEASE_GATE.md`.\n- Ship logs off-box (or snapshot before `compose down`); enable Caddy access logs.\n\n### Later / Platform Evolution\n- Provision Grafana (or document the SSH-tunnel workflow) and wire the SLO dashboard.\n- Add tracing/context propagation if the topology grows beyond one droplet.\n- Add audit-trail gap detection and stripe-reconcile drift metrics.\n- Refresh `INCIDENT_RESPONSE.md`/`MONITORING_AND_ALERTING.md`/`SLO.md`; create the referenced tabletop/drill docs.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Add `NEXT_PUBLIC_SENTRY_DSN` build arg | Restores web error tracking | `build-push.yml`, `docker-compose.yml` | Web Sentry event appears in staging |\n| Fail-closed `METRICS_TOKEN` guard | Prevents false pages + blind metrics | `deploy-do.yml` | Deploy fails on empty value |\n| Promtool CI job | Catches dead/broken rules pre-merge | `.github/workflows/validate.yml` | CI runs rules tests |\n| Deploy gate on prometheus/alertmanager health | Green deploy = working monitoring | `deploy-do.yml:835-858` | Broken config fails the deploy |\n| Watchdog \"fires once per day\" comment fix | Removes a misleading claim | `prometheus.rules.yml:3-4` | Review |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Golden-signal alert rules + promtool tests | P2 | SRE | M | CI job |\n| Route-label normalization | P2 | API platform | S | \u2014 |\n| Web Sentry DSN delivery | P2 | Web platform | S | Repo secret/variable |\n| CI + deploy-gate monitoring validation | P2 | Infra | S | \u2014 |\n| Synthetic alert + heartbeat drill evidence | P2 | Ops | S | ntfy topic access |\n| External uptime check | P2 | Ops | S | DO/uptime service |\n| Log shipping/retention | P2 | Ops | M | Budget for log store |\n| Audit-gap + reconcile metrics/rules | P3 | API/security, billing | M | \u2014 |\n| Release markers for API/worker | P3 | Platform | S | \u2014 |\n| Secrets matrix for ALERTMANAGER_*/NTFY_* | P3 | Infra/docs | S | \u2014 |\n\n## Suggested Tests\n\n- Unit: route-label normalization (ids never appear as labels); metric wiring assertions for new counters (pattern already used in `search.test.ts`).\n- Rule tests: promtool fire/no-fire cases for every new rule, run in CI (extend `prometheus.rules.test.yml`).\n- Config tests: `amtool check-config` on the rendered Alertmanager config; a deploy-step assertion that the rendered file contains no surviving placeholders.\n- CI: a validate job that fails on missing rules tests, empty `METRICS_TOKEN` in prod, or unvalidated templates.\n- Integration: post-deploy script asserting `up{job=~\"mct-api|mct-worker\"}==1` and Alertmanager `/-/healthy`.\n- Manual: synthetic alert \u2192 ntfy delivery evidence; stop-alertmanager heartbeat drill; one tabletop exercise recorded in `PLATFORM_FAILURE_RUNBOOKS.md`.\n- Regression: a test that web Sentry init receives a DSN when `SENTRY_DSN` is configured (env wiring).\n\n## Suggested Documentation Updates\n\n- `docs/MONITORING_AND_ALERTING.md`: \u00a72/\u00a73 health semantics + healthcheck commands; \u00a74 metric table (\"wired\" status); \u00a77 alert table (add Prometheus rules); \u00a79 exercise evidence.\n- `docs/SLO.md`: worker/queue metrics now exported; align the Alert column with real rules; note dashboard access path.\n- `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`: add `ALERTMANAGER_*`/`NTFY_ALERTS_*`; change `METRICS_TOKEN` to required-for-monitoring.\n- `docs/INCIDENT_RESPONSE.md`: \u00a78 update IR-P0-003 status; fix references to `incident_tabletop_scenarios.md` / `backup_restore_drill_plan.md` (create or correct).\n- `docs/RELEASE_GATE.md`: record the synthetic-alert and restore-drill artifacts when executed.\n- `infra/digitalocean/prometheus.rules.yml`: fix the stale \"fires once per day\" comment.\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Is `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` actually set in prod, and where does it point? | The dead-man's switch is only real when set | Operator confirmation; `gh api` environment secrets (names only) |\n| Are the Sentry project alert rules from \u00a75 actually configured? | Documented alerting may not exist | Sentry UI screenshot/export |\n| Is DO monitoring configured for CPU/disk as \u00a77 claims? | Capacity/disk outage detection | DO dashboard capture |\n| Which IP scrapes `/metrics` and does the 5/min limiter ever trip? | Scrape reliability | Prometheus logs/`up` history |\n| Does any alerting secret contain `&` or `\\`? | awk rendering could break the container | Secret value review by operator (not exported) |\n| When was the last green `db-restore-test`, and against which DB? | Release gate condition | Actions run URL |\n\n## Appendix\n\n- Metric vs rule coverage (8d299b8d): `portal_http_requests_total`, `portal_impersonation_events_total`, `portal_rls_bypass_total`, `portal_rls_enforced_total` are referenced by rules; the remaining 26 named metrics (incl. all 9 worker metrics) have no rule.\n- Alert path (as configured): Prometheus 15s eval (`prometheus.yml:5`) \u2192 `alertmanager:9093` \u2192 routes (`alertmanager.tmpl.yml:63-100`) \u2192 ntfy critical/default (basic auth) + watchdog heartbeat every 5m (`:99`).\n- Deploy sequence relevant to observability: prepare step writes `.env` + `metrics-token` (`deploy-do.yml:666-727`), prod watchdog guard (`:739-747`), copy of monitoring configs (`:797-805`), `compose down`/`up` (`:809-824`), health gate api/web/worker only (`:835-858`), public health loops (`:869-960`).\n- Previous-run delta since `9c0b88c`: PRs #154 (ntfy basic auth), #155/#166/#167 (scrape auth + file ownership), #157 (backup ntfy), #147 (metric wiring), #168 (promotion).\n"
+}

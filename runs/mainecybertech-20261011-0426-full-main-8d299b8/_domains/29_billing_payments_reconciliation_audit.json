@@ -1,0 +1,355 @@
+{
+  "domain": "29_billing_payments_reconciliation_audit",
+  "file": "29_billing_payments_reconciliation_audit.md",
+  "area": "BILL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-11T05:17:50Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "title": "Module entitlements are derived but not enforced server-side",
+      "evidence": [
+        "apps/api/src/middleware/entitlement.ts:142-160 \u2014 requireEntitlement(moduleKey) resolves the org's entitlements and throws 402 PAYMENT_REQUIRED when a gated module is not entitled",
+        "apps/api/src/middleware/entitlement.ts:163-172 \u2014 requireActiveSubscription() exported for subscription-wide gates",
+        "apps/api/src/lib/entitlements.ts:48-54 \u2014 GATED_MODULES is derived from SUBSCRIPTION_ENABLED_MODULES minus DEFAULT_ENABLED_MODULES",
+        "apps/api/src/routes/findings.ts:28, apps/api/src/routes/security-ops.ts:22, apps/api/src/routes/governance.ts:32, apps/api/src/routes/training-hub.ts:15, apps/api/src/routes/service-catalog.ts:15, apps/api/src/routes/qbr.ts:16 \u2014 router.use(requireEntitlement(...)) applied after requireAuth + requireOrgAccess on all six gated routers",
+        "apps/api/src/__tests__/middleware-entitlement.test.ts:128-165 \u2014 402 tests for canceled/past_due/no-subscription; :167-180 provisioned-module allowance; :206-215 documents the deliberate fail-open"
+      ],
+      "impact": "Gated premium APIs (findings, security-ops, governance, training-hub, service-catalog, qbr) are no longer reachable without an active/trialing subscription or an admin-provisioned entitlement.",
+      "recommendation": "Keep as-is. Residual to track (not a regression): entitlement-resolution failure fails open by design (middleware/entitlement.ts:88-94); add an alert on the error-level log if plan-boundary bypasses must be observable.",
+      "owner": "billing/backend",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: middleware present, wired to all six gated routers, and covered by middleware-entitlement.test.ts; unchanged since the 9c0b88c verification. Residual (deliberate, documented in docs/BILLING.md:116-120): lookup failure fails open.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P1",
+      "title": "`payments` table is never populated; payment history is silently empty",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:268-297 \u2014 payment_intent.succeeded / payment_failed / canceled upserts the payments table keyed on stripe_payment_intent_id",
+        "apps/api/src/routes/webhooks.ts:81-107 \u2014 resolveBillingRefs links the payment to the local invoice row when resolvable",
+        "apps/api/src/routes/billing.ts:326-359 \u2014 POST /billing/sync backfills /v1/payment_intents per customer",
+        "apps/api/src/__tests__/webhooks.test.ts:189-260 \u2014 tests assert the payments row, invoice link and amount_cents on succeeded/failed events"
+      ],
+      "impact": "Payment history is populated from both live webhooks and the manual sync; the portal/admin payments views return real rows.",
+      "recommendation": "Keep as-is. Address the unchecked-write gap tracked in the new finding 'Stripe webhook DB writes ignore errors and still mark the event processed'.",
+      "owner": "billing/backend",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: both write paths (webhook + sync backfill) present and unchanged since 9c0b88c; webhook tests assert the row contents.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P1",
+      "title": "Missing Stripe webhook events leave refunds, void, and payment lifecycle unrecorded",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:302-316 \u2014 charge.refunded updates the linked payment to refunded/partially_refunded",
+        "apps/api/src/routes/webhooks.ts:318-328 \u2014 invoice.voided / invoice.marked_uncollectible map onto the existing void/uncollectible enum values",
+        "apps/api/src/routes/webhooks.ts:265-297 \u2014 payment_intent.* lifecycle recorded",
+        "apps/api/src/__tests__/webhooks.test.ts:262-345 \u2014 tests for full refund, partial refund, invoice.voided and invoice.marked_uncollectible"
+      ],
+      "impact": "Refund and void lifecycle transitions are now ingested instead of being dropped.",
+      "recommendation": "Keep as-is. Remaining coverage gaps (best-effort refund update, no charge.dispute/credit_note/trial_will_end) are tracked under BILL-P2-001.",
+      "owner": "billing/backend",
+      "target": "this week",
+      "confidence": "high",
+      "status": "verified-fixed",
+      "note": "re-verified at 8d299b8d: handlers present and tested; unchanged since 9c0b88c (adea562c only touched raw-body/M365 hardening).",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "No refund and incomplete trial/cancel state handling",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:302-316 \u2014 refund events now handled (the 'no refund' half of the finding is fixed)",
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:521-534 \u2014 subscriptions has plan_name/status/current_period_*/amount_cents/currency only; no trial_start, trial_end, cancel_at_period_end, canceled_at or interval",
+        "apps/api/src/routes/webhooks.ts:229-243 and apps/api/src/routes/billing.ts:305-319 \u2014 subscription upserts drop trial_end, cancel_at_period_end and item quantity",
+        "apps/worker/src/tasks/stripe-reconcile.ts:16 \u2014 cancel_at_period_end is declared in the StripeSubscription interface but never read",
+        "grep 'charge.dispute|credit_note|customer.subscription.trial_will_end' apps/api/src/routes/webhooks.ts \u2192 0 hits"
+      ],
+      "impact": "Refunds are recorded, but the mirror still cannot answer 'when does the trial end', 'does this cancel at period end', or represent disputes/credit notes; refunds only flip a payment status (no refund amount/date) and are best-effort (no row created when the payment was never mirrored).",
+      "recommendation": "Add trial_start/trial_end/cancel_at_period_end/canceled_at/interval to subscriptions and persist them in webhook + sync upserts; store refund amount/date; handle charge.dispute.* and credit_note.* if refunds/disputes matter to finance.",
+      "owner": "billing/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: the refund half is fixed (e3a14b5b, present at 9c0b88c); trial/cancel lifecycle fields and dispute/credit-note coverage remain missing.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "`POST /billing/sync` does not paginate Stripe results",
+      "evidence": [
+        "apps/api/src/routes/billing.ts:256-268 \u2014 Stripe calls pinned at invoices?limit=20, subscriptions?limit=10, payment_intents?limit=20; no starting_after/has_more loop",
+        "grep 'starting_after|has_more' apps/api/src/routes/billing.ts \u2192 0 hits",
+        "apps/api/src/routes/billing.ts:271,302,328 \u2014 each response is only consumed when res.ok; a failed Stripe call is silently skipped and the endpoint still returns success {synced}",
+        "apps/api/src/__tests__/billing.test.ts:263-358 \u2014 sync tests cover tenant scoping only; no pagination or partial-failure test"
+      ],
+      "impact": "Customers with more than the page limit have partially mirrored invoices/subscriptions/payments, and a partially failed sync still reports success \u2014 a false-success pattern for manual reconciliation.",
+      "recommendation": "Loop on has_more/starting_after (bounded), report per-object synced/error counts, and return a non-2xx or explicit errors[] when any Stripe call fails.",
+      "owner": "billing/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: unchanged since the 20261002 finding; the silent partial-failure behavior is additionally documented in the evidence above.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "Reconciliation job has no drift detection, alerting, or tests",
+      "evidence": [
+        "apps/worker/src/tasks/stripe-reconcile.ts:75-139 \u2014 reads billing_customers + local subscriptions, fetches Stripe subscription state, and only suspends memberships on terminal statuses; it never writes Stripe state back to subscriptions/invoices or compares counts/amounts",
+        "apps/worker/src/tasks/stripe-reconcile.ts:141-146 \u2014 returns {ok:true} even when errors>0 (per-customer fetch failures are counted but not surfaced)",
+        "apps/worker/src/__tests__/tasks/task-handlers.test.ts:67-74 \u2014 the only stripe-reconcile test asserts the missing-STRIPE_SECRET_KEY error",
+        "infra/digitalocean/prometheus.rules.yml \u2014 7 alert rules, none for task failures, webhook processing or billing drift",
+        "apps/api/src/routes/billing.ts:274-277 \u2014 invoice 'overdue' is only derived during sync/webhook; no scheduled job flips open\u2192overdue when due_at passes (stripe-reconcile never touches invoices)"
+      ],
+      "impact": "If webhooks are lost, the mirror stays stale (entitlements read the stale subscriptions row) and nothing detects or alerts on the divergence; partial reconcile failures are reported as task success.",
+      "recommendation": "Emit drift metrics (per-org subscription status mismatch, invoice/payment counts and sums), write fetched Stripe state back to the mirror, return failure when errors>0, alert on drift/failure, and add tests for terminal vs past_due suspension and partial failures.",
+      "owner": "billing/backend + worker/platform",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: still suspend-only, still no drift metrics/alerting/tests; the job reports ok:true on partial failure.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "Failed payments produce no notification or dunning visibility",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:176-213 \u2014 invoice.payment_failed only upserts the invoice; no notification or email is created",
+        "grep 'notify|createNotification' apps/api/src/routes/webhooks.ts \u2192 0 hits",
+        "apps/api/src/lib/notify.ts:14 \u2014 'billing' is a valid notification module but no billing producer exists (only preference lists in notifications.ts:180 and notification-preferences.ts:13)",
+        "apps/web/app/(portal)/portal/billing/BillingPageClient.tsx \u2014 no past-due banner or update-card prompt; past_due only gets a badge color (:72)"
+      ],
+      "impact": "Customers learn about failed payments only when the reconcile worker suspends their memberships; no dunning or self-serve recovery prompt exists.",
+      "recommendation": "Create a billing-module notification (plus optional email) on invoice.payment_failed with a link to the Stripe portal, and surface a past-due banner on the portal billing page.",
+      "owner": "billing/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: unchanged since the 20261002 finding; no billing notification producer and no dunning UI.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "Subscription/invoice schema lacks trial, interval, and void-lifecycle fields",
+      "evidence": [
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:82-89 \u2014 invoice_status enum includes void/uncollectible",
+        "apps/api/src/routes/webhooks.ts:318-328 \u2014 invoice.voided / invoice.marked_uncollectible now write those statuses (void-lifecycle status half fixed)",
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:521-534 \u2014 no trial_start/trial_end/cancel_at_period_end/interval/quantity columns on subscriptions",
+        "apps/api/src/routes/billing.ts:292-295 \u2014 invoices record paid_at only; no voided_at/uncollectible_at timestamps",
+        "docs/BILLING.md:26-38 \u2014 documents the same minimal column set"
+      ],
+      "impact": "The mirror still cannot answer billing-interval or trial-window questions, and void/uncollectible transitions have no timestamp; plan-aware UI/reporting requires live Stripe calls.",
+      "recommendation": "Add interval, trial_start, trial_end, cancel_at_period_end (and quantity/seat count) to subscriptions; add voided_at to invoices; populate from webhook + sync.",
+      "owner": "data/platform owner + billing/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "partially-fixed",
+      "note": "re-verified at 8d299b8d: void/uncollectible statuses are now ingested (fix landed in e3a14b5b); trial/interval columns and void timestamps still absent.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "Webhook raw body typed as `string` but consumed as `Buffer`",
+      "evidence": [
+        "apps/api/src/app.ts:116-118 \u2014 express.json verify hook stores req.rawBody = buf.toString() (a string)",
+        "apps/api/src/routes/webhooks.ts:152-156 \u2014 stripe.webhooks.constructEvent receives (req as { rawBody?: Buffer }).rawBody as Buffer without conversion",
+        "apps/api/src/lib/webhook-signature.ts:32-36 \u2014 rawBodyBuffer() normalises string|Buffer for the Jira/JSM paths (hardened in adea562c)",
+        "apps/api/src/routes/webhooks.ts:377,479 \u2014 Jira/JSM now reject when no raw body is captured"
+      ],
+      "impact": "Verification works today because the Stripe SDK accepts string|Buffer, but the declared types still contradict each other; a refactor to express.raw or a binary body could break signature verification silently.",
+      "recommendation": "Capture req.rawBody as a Buffer (buf), type it consistently, and pass it to constructEvent without the cast; add a byte-mutation signature test.",
+      "owner": "billing/backend (API platform)",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: the Jira/JSM paths were hardened (rawBodyBuffer, fail-closed), but the Stripe path still casts a string to Buffer (app.ts:117 + webhooks.ts:153).",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "Billing email stored in plaintext and raw Stripe payment-method id rendered to users",
+      "evidence": [
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:510-518 \u2014 billing_email citext and default_payment_method text stored plaintext",
+        "apps/web/app/(portal)/portal/billing/BillingPageClient.tsx:169-173 \u2014 renders customer.default_payment_method verbatim",
+        "apps/web/app/(admin)/admin/organizations/[orgId]/billing/AdminBillingClient.tsx:183-186 \u2014 same rendering in the admin console",
+        "apps/api/src/lib/field-encryption.ts \u2014 AES-256-GCM field encryption exists but is not applied to billing_customers"
+      ],
+      "impact": "Billing contact PII is stored unencrypted and an opaque Stripe pm_... token is displayed to users instead of a friendly card descriptor.",
+      "recommendation": "Encrypt billing_email with the existing field-encryption helper (or store it in the encrypted PII pattern), and display a card brand/last4 descriptor fetched from Stripe instead of the raw pm id.",
+      "owner": "billing/backend + web",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "still-open",
+      "note": "re-verified at 8d299b8d: unchanged; field encryption is still not applied to billing and both UIs render the raw payment-method id.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "Stripe webhook DB writes ignore errors and still mark the event processed",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:190-210 \u2014 invoice upsert result is not inspected (no error destructure)",
+        "apps/api/src/routes/webhooks.ts:230-246, :254-261, :281-294, :323-326 \u2014 subscription, billing_customers, payment and void/uncollectible writes are equally unchecked",
+        "apps/api/src/routes/webhooks.ts:337-340 \u2014 after processing, logWebhookDelivery stores the idempotency key as 'done' (webhooks.ts:47) and the route returns 200 {received:true}",
+        "apps/api/src/routes/webhooks.ts:338 \u2014 only recordWebhookDelivery('success', ...) is emitted; metrics.ts:132 supports a 'failed' status but it is only used by the outbound dispatcher (lib/webhook-dispatcher.ts:224)",
+        "supabase-js returns errors as values rather than throwing, so a failed write never reaches the catch at webhooks.ts:341-348"
+      ],
+      "impact": "A failed mirror write (enum/constraint drift, transient DB error, malformed payload) is acknowledged to Stripe as success, the event is never retried, and no metric or alert records the loss \u2014 silent reconciliation drift.",
+      "recommendation": "Check every Supabase write result; log and throw (or record a failed delivery metric) on error so the claim is released and Stripe retries; optionally add a dead-letter/reprocess path.",
+      "owner": "billing/backend",
+      "target": "this month",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; closely related to BILL-P2-003 (no drift detection/alerting).",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "Out-of-order or late-retried Stripe events can overwrite terminal payment states",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:167-172 \u2014 dedup key is stripe-<event.id> only; there is no per-object ordering/version guard",
+        "apps/api/src/routes/webhooks.ts:281-294 \u2014 payment_intent.* upserts write status unconditionally from the event",
+        "apps/api/src/routes/webhooks.ts:302-316 \u2014 charge.refunded writes refunded/partially_refunded",
+        "apps/api/src/lib/idempotency.ts:50 \u2014 event claims expire after 24h, while Stripe retries failed deliveries for up to ~3 days, so a late retried payment_intent.succeeded is reprocessed and can reset the row to 'succeeded'"
+      ],
+      "impact": "A refunded payment can silently revert to 'succeeded' in the mirror, so finance/admin views show a refund as collected.",
+      "recommendation": "Make payment status monotonic (never downgrade refunded/partially_refunded), or compare event.created/updated before writing; treat refunded/voided as terminal states in the upsert.",
+      "owner": "billing/backend",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d; Stripe delivery ordering across objects is not guaranteed and retries can arrive after the 24h claim TTL.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P2",
+      "title": "Billing read endpoints fall back to all-tenant scope for cross-tenant roles without an admin-scope guard or audit",
+      "evidence": [
+        "apps/api/src/routes/billing.ts:62-64, :119-124, :154-157, :175-180, :195-198 \u2014 every GET scopes only on a caller-supplied query.organization_id; with none, the query has no tenant predicate",
+        "apps/api/src/middleware/org-access.ts:136-152 and :206-226 \u2014 a cross-tenant role holder (isCrossTenantKey, roles.ts:27) with no explicit org resolves to orgId=null and no query.organization_id is injected",
+        "apps/api/src/lib/admin-scope.ts:55-57 \u2014 the hardened pattern requires profile.is_super_admin AND a cross-tenant role for allTenants; billing GETs never call resolveAdminTenantScope/applyOrgScope",
+        "apps/api/src/routes/billing.ts:219 \u2014 only POST /sync uses resolveAdminTenantScope",
+        "apps/api/src/middleware/org-access.ts:194-204 \u2014 impersonation is only logged when an explicit org was resolved"
+      ],
+      "impact": "An 'admin'-key holder without is_super_admin can read all tenants' invoices, payments, subscriptions and summary (no impersonation audit entry), diverging from the MT-P1-002/ADMIN-P1-001 allTenants policy.",
+      "recommendation": "Adopt resolveAdminTenantScope + applyOrgScope/applyRequestedOrg on the billing GETs (fail closed for empty scope) and audit implicit cross-tenant reads.",
+      "owner": "billing/backend + API platform",
+      "target": "this month",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d; the web UI always sends organization_id, so the gap is reachable via direct API/SDK use.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "`invoice.paid` paid_at handling writes epoch dates (sync) or throws when status_transitions is missing (webhook)",
+      "evidence": [
+        "apps/api/src/routes/billing.ts:292-295 \u2014 new Date((inv.status_transitions?.paid_at ?? 0) * 1000).toISOString() writes 1970-01-01 for a paid invoice without paid_at",
+        "apps/api/src/routes/webhooks.ts:204-207 \u2014 new Date(inv.status_transitions?.paid_at * 1000).toISOString() throws RangeError when status_transitions/paid_at is undefined (undefined * 1000 = NaN \u2192 Invalid Date)",
+        "apps/api/src/routes/billing.ts:33 \u2014 the local type declares status_transitions?: { paid_at?: number | null } | null, so a missing value is expected to be handled"
+      ],
+      "impact": "Sync can persist epoch timestamps; the webhook can 500 and repeatedly retry-fail for that event (claim released on failure), leaving the invoice unrecorded.",
+      "recommendation": "Guard both branches (paid_at = status_transitions?.paid_at ? new Date(paid_at*1000) : null) and add tests for paid invoices with and without status_transitions.",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "confidence": "medium",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "Payments list uses an inner join, hiding payments not linked to an invoice",
+      "evidence": [
+        "apps/api/src/routes/billing.ts:177-180 \u2014 select('*, invoices!inner(invoice_number, status)', { count: 'exact' })",
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:558-565 \u2014 payments.invoice_id is nullable (references invoices on delete set null)",
+        "apps/api/src/routes/webhooks.ts:343 \u2014 invoice_id stays null when the PaymentIntent has no Stripe invoice or the local invoice row is not yet mirrored"
+      ],
+      "impact": "One-off/unlinked payments never render in the admin payments table and are excluded from the reported total count, even though they are stored.",
+      "recommendation": "Use a left join (`invoices(invoice_number, status)`) so unlinked payments still list with a null invoice column.",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "Entitlement override cannot revoke all modules (all-disabled falls back to the subscription set)",
+      "evidence": [
+        "apps/api/src/lib/entitlements.ts:102-108 \u2014 provisioned = rows where enabled; if provisioned.length === 0 the resolver falls back to deriveEnabledModules(subscriptionActive)",
+        "apps/web/app/(admin)/admin/client-portal/ClientPortalEntitlementsForm.tsx:56,:71 \u2014 the admin form saves every PORTAL_MODULES entry (enabled true/false) and states 'Saving overrides the subscription-derived default set'",
+        "apps/api/src/routes/client-portal.ts:88 \u2014 the bootstrap payload uses the same precedence, so client and server agree"
+      ],
+      "impact": "An admin who unticks every module cannot revoke the gated set: with an active/trialing subscription all six gated modules are re-enabled on both the client and the server.",
+      "recommendation": "Treat the existence of provisioned rows (enabled or not) as an explicit override, or store an override flag; add a test for the all-disabled case.",
+      "owner": "billing/backend",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "Subscription mirror ignores seat quantity and the billing summary excludes trialing plans",
+      "evidence": [
+        "apps/api/src/routes/webhooks.ts:229-243 and apps/api/src/routes/billing.ts:305-319 \u2014 only items.data[0].price is read; item quantity and multi-item subscriptions are dropped",
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:521-534 \u2014 subscriptions has no quantity/seat column",
+        "apps/api/src/routes/billing.ts:73-77 \u2014 activeSubscriptions counts status='active' only, excluding trialing, while isSubscriptionActive (apps/api/src/lib/entitlements.ts:56-58) treats trialing as active",
+        "apps/web/app/(portal)/portal/billing/BillingPageClient.tsx:118-119,:146 \u2014 labels the count 'Active Plans' and hardcodes '/mo' for every subscription"
+      ],
+      "impact": "Seat-based plans display the per-seat unit amount as the plan total (understating revenue), and trialing tenants show 0 active plans in the summary while the plan card shows a trialing subscription.",
+      "recommendation": "Persist item quantity and billing interval (or the computed total), use the shared isSubscriptionActive predicate in the summary, and render the billing period from stored interval data.",
+      "owner": "billing/backend + web",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d; 'seat counts' and 'usage billing' are absent from the mirror (grep for usage_record/meter/quantity in billing paths returns no hits).",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "Portal 'Sync from Stripe' button is shown to client roles that lack billing:manage",
+      "evidence": [
+        "apps/web/app/(portal)/portal/billing/BillingPageClient.tsx:197-203 \u2014 the Sync button is rendered for every portal member",
+        "apps/api/src/routes/billing.ts:207 \u2014 POST /billing/sync requires requirePermission('billing','manage')",
+        "supabase/migrations/5302028_seed_permissions.sql:58-88 \u2014 client_admin/client_user/client-viewer grants exclude billing; only client-billing (supabase/migrations/5302128_role_catalog_expansion.sql:267-274) and MSP roles hold billing.manage",
+        "apps/web/e2e/portal/billing.spec.ts:19-25 \u2014 the e2e asserts the Sync button is enabled"
+      ],
+      "impact": "Most portal users see an action that returns 403 and renders the generic 'Sync error.' message; the billing.ts:378-382 comment even states the catalog does not grant billing:manage to client roles.",
+      "recommendation": "Hide/disable the button unless the caller holds billing.manage (or return a typed 403 the UI explains).",
+      "owner": "billing/backend + web",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "BILL"
+    },
+    {
+      "severity": "P3",
+      "title": "Billing docs contradict the implementation (sync gate, webhook verification, reconcile source, payment statuses)",
+      "evidence": [
+        "docs/BILLING.md:100-102 \u2014 'Requires stripe-signature header (validated for presence)' but webhooks.ts:150-163 fully verifies the signature via constructEvent",
+        "docs/BILLING.md:132-138 \u2014 the reconcile task is documented as querying memberships; stripe-reconcile.ts:75-110 queries billing_customers then subscriptions",
+        "docs/modules/billing.md:41 \u2014 'Manual sync: requireAdmin'; billing.ts:207 uses requirePermission('billing','manage')",
+        "docs/BILLING.md:68 \u2014 payments status documented as succeeded/failed/pending; code also writes refunded/partially_refunded (webhooks.ts:310)"
+      ],
+      "impact": "Operators and future agents get a wrong model of the access gate, webhook verification, reconcile inputs and payment statuses.",
+      "recommendation": "Refresh docs/BILLING.md and docs/modules/billing.md to the implemented behavior, including STRIPE_WEBHOOK_SECRET and the refund statuses.",
+      "owner": "billing/backend (docs)",
+      "target": "this quarter",
+      "confidence": "high",
+      "status": "open",
+      "note": "new finding at 8d299b8d.",
+      "area": "BILL"
+    }
+  ],
+  "report": "# Billing, Payments, and Reconciliation Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive\n- Run: `mainecybertech-20261011-0426-full-main-8d299b8`\n- Repository: MaineCyberTech/mainecybertech (target worktree `/tmp/opencode/mct-audit-target`)\n- Branch: `main`\n- Commit SHA: `8d299b8dc271c410b9ae2ceeda3d2c6c997af8fd` (`8d299b8d`)\n- Generated at: 2026-10-11\n- Auditor: domain subagent (area `BILL`, prompt `29_billing_payments_reconciliation_audit.md`)\n- Area code: BILL\n- Output path: `docs/audits/repo-deep-dive/mainecybertech-20261011-0426-full-main-8d299b8/29_billing_payments_reconciliation_audit.md`\n- Scope limitations: read-only static review. No `pnpm install`/build/test run (resource discipline on the 1 vCPU host); test coverage statements are from reading test files, not executing them. No Stripe API or production access \u2014 webhook payload-shape claims are from the code and its unit-test fixtures.\n\n## Scope\n\nReviewed: billing API routes, Stripe webhook handling, entitlement derivation and middleware, the `stripe-reconcile` worker task, billing schema + RLS, SDK billing surface, portal/admin billing UI, billing tests (API, worker, web component, e2e), and billing docs. Not reviewed (owned by other domains): general webhook-delivery machinery (WH), RLS policy correctness in depth (RLS/DATA), secrets rotation (SECRET), notification delivery internals (NOTIF), and the vendored prompt packs.\n\n## Evidence Reviewed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `apps/api/src/routes/billing.ts` | Source | All billing APIs: summary/invoices/subscriptions/payments/customer, sync, portal session | Read in full |\n| `apps/api/src/routes/webhooks.ts` | Source | Stripe event handling, idempotency, refunds, void, payment lifecycle | Read in full |\n| `apps/api/src/lib/entitlements.ts`, `apps/api/src/middleware/entitlement.ts` | Source | Entitlement derivation + server-side enforcement | Read in full |\n| `apps/worker/src/tasks/stripe-reconcile.ts`, `apps/worker/src/schedule-config.ts` | Source | Reconciliation job + daily schedule | Read in full |\n| `apps/api/src/middleware/org-access.ts`, `apps/api/src/lib/admin-scope.ts`, `apps/api/src/lib/roles.ts` | Source | Tenant scoping used by billing reads | Read in full |\n| `apps/api/src/lib/idempotency.ts`, `apps/api/src/app.ts` | Source | Webhook claim TTL + raw-body capture | Read in full |\n| `supabase/migrations/5302026_...v3.sql` (billing tables/enum/RLS), `5302028_seed_permissions.sql`, `5302128_role_catalog_expansion.sql` | Migrations | Schema + permission truth | Targeted reads |\n| `apps/api/src/__tests__/billing.test.ts`, `webhooks.test.ts`, `middleware-entitlement.test.ts`; `apps/worker/src/__tests__/tasks/task-handlers.test.ts`; `apps/web/__tests__/.../billing/page.test.tsx`; `apps/web/e2e/portal/billing.spec.ts` | Tests | Coverage of the fixed P1s and remaining gaps | Read, not executed |\n| `apps/web/app/(portal)/portal/billing/BillingPageClient.tsx`, `apps/web/app/(admin)/admin/organizations/[orgId]/billing/AdminBillingClient.tsx`, `ClientPortalEntitlementsForm.tsx` | UI | Customer/admin billing surfaces, raw PM id, sync button | Read in full |\n| `docs/BILLING.md`, `docs/modules/billing.md` | Docs | Documented behavior vs implementation | Read in full |\n| `infra/digitalocean/prometheus.rules.yml`, `alertmanager.tmpl.yml` | Config | Alerting coverage for billing/reconcile | Grepped |\n\n## Verification Performed\n\n| Command | Observed result |\n|---|---|\n| `git log -1 --format='%H %s'` | `8d299b8dc271\u2026` Merge PR #168 (promote develop to main) |\n| `git merge-base --is-ancestor 9c0b88c HEAD` | 9c0b88c IS ancestor of HEAD (previous-run commit is in history) |\n| `git log --oneline 9c0b88c..HEAD -- apps/api/src/routes/billing.ts apps/api/src/routes/webhooks.ts apps/worker/src/tasks/stripe-reconcile.ts apps/api/src/lib/entitlements.ts apps/api/src/middleware/entitlement.ts docs/BILLING.md` | Only `adea562c` (Jira/JSM raw-body + M365 replay hardening); billing logic unchanged since 9c0b88c |\n| `grep -c 'starting_after' apps/api/src/routes/billing.ts` | 0 \u2014 no Stripe pagination |\n| `grep -c 'has_more' apps/api/src/routes/billing.ts` | 0 |\n| `grep -c 'charge.dispute\\|credit_note\\|invoice.payment_action_required' apps/api/src/routes/webhooks.ts` | 0 |\n| `grep -c 'notify\\|createNotification' apps/api/src/routes/webhooks.ts` | 0 \u2014 no payment-failure notification |\n| `grep -c 'quantity' apps/api/src/routes/webhooks.ts apps/api/src/routes/billing.ts` | 0/0 \u2014 seat quantity ignored |\n| `grep -n 'trial_end\\|cancel_at_period_end\\|interval'` in webhook/sync/reconcile | Only `stripe-reconcile.ts:16` (unused interface field) |\n| `grep -rn 'recordWebhookDelivery' apps/api/src --include=*.ts \\| grep -v __tests__` | Inbound handlers emit only `\"success\"`; `\"failed\"` used only by the outbound dispatcher |\n| `grep -n 'alert:' infra/digitalocean/prometheus.rules.yml` | 7 alerts; none for task failures, webhook processing or billing drift |\n| Read of `apps/api/src/__tests__/webhooks.test.ts`, `billing.test.ts`, `middleware-entitlement.test.ts`, `task-handlers.test.ts:67-74` | P1 fixes are covered by unit tests; sync pagination, reconcile logic and refund-ordering are not |\n\n## Executive Summary\n\nBilling is a Stripe mirror (webhooks + manual sync + daily reconcile) with a server-enforced entitlement layer. The three P1 findings from the previous run are genuinely fixed and re-verified at `8d299b8d`: entitlements are enforced with `requireEntitlement` on all six gated routers, the `payments` table is written by both the webhook and `POST /billing/sync`, and refund/void/uncollectible lifecycle events are ingested. The customer portal has a Stripe-hosted billing portal, and tenant scoping on `POST /billing/sync` was hardened.\n\nThe remaining risk is not missing features but **silent drift and false success**: webhook DB writes are never checked (a failed mirror write is still acknowledged as processed), `POST /billing/sync` does not paginate and silently skips failed Stripe calls while reporting success, and the reconcile job neither detects drift nor alerts (it even returns `ok:true` with per-customer errors). A late-retried Stripe event can also overwrite a refunded payment back to `succeeded`. Plan-state fidelity is limited (no interval/trial/cancel/seat fields), and failed payments still have no notification or dunning path. Recommended next actions: (1) fail webhook writes loudly + metric; (2) paginate sync and report partial failures; (3) add drift metrics/alerts and reconcile logic tests; (4) migrate billing reads to the hardened `admin-scope` pattern; (5) add trial/interval/seat columns and dunning UI.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Billing APIs | `apps/api/src/routes/billing.ts` | summary, invoices, subscriptions, payments, customer, sync, portal session | Implemented | Medium | Sync unpaginated; writes unchecked |\n| Stripe webhook | `apps/api/src/routes/webhooks.ts:131-349` | Ingest Stripe events | Implemented | Medium | Errors swallowed; no failure metric |\n| Entitlement derivation | `apps/api/src/lib/entitlements.ts` | Org \u2192 module set | Implemented | Low | All-disabled override falls back |\n| Entitlement middleware | `apps/api/src/middleware/entitlement.ts` | Server-side plan gate | Implemented, tested | Low | Fail-open on lookup error (documented) |\n| Reconcile worker | `apps/worker/src/tasks/stripe-reconcile.ts` | Daily suspend-on-terminal | Implemented | Medium | No drift detection/alerting/tests |\n| Billing schema | `supabase/migrations/5302026_...v3.sql:510-574` | Mirror tables + RLS | Implemented | Low-Medium | No interval/trial/seat/voided_at |\n| Billing SDK | `packages/sdk/src/billing.ts` | Typed client surface | Implemented | Low | Mirrors API |\n| Portal billing UI | `apps/web/.../portal/billing/*` | Customer view + Manage/Sync | Implemented | Low-Medium | Raw PM id; sync 403 for most roles |\n| Admin billing UI | `apps/web/.../organizations/[orgId]/billing/*` | MSP view | Implemented | Low | Same PM-id rendering |\n| Entitlement admin UI | `ClientPortalEntitlementsForm.tsx` | Per-tenant module provisioning | Implemented | Low | Override cannot revoke all |\n| Billing docs | `docs/BILLING.md`, `docs/modules/billing.md` | Operator/reference docs | Stale in 4 places | Low | See docs finding |\n| Alerting | `infra/digitalocean/prometheus.rules.yml` | Platform alerts | No billing/task rules | Medium | Drift is unobservable |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Billing pages | 3 | Portal + admin pages; `page.test.tsx` render tests | No past-due banner; raw PM id; sync button 403 | Dunning banner; card descriptor; permission-aware button |\n| Subscription/plan models | 2 | `5302026_...v3.sql:521-534` | No interval/trial/cancel/seat columns | Migration + upsert wiring |\n| Entitlement checks | 4 | `entitlement.ts` + 6 wired routers + tests | Fail-open (documented); all-disabled override | Override semantics test; bypass alert |\n| Billing APIs | 3 | `billing.ts`; tenant-scope tests | No pagination; unchecked writes; inner join | Paginate; check errors; left join |\n| Payment provider integration | 3 | Stripe REST via `httpClients.stripe`; billing portal | No retry/backoff on sync calls | Retry + error reporting |\n| Webhooks | 3 | Signature verify, atomic dedup, refunds | Unchecked writes; no failure metric; ordering | Fail loudly; monotonic statuses |\n| Invoices/status records | 3 | enum + upserts + overdue derivation | overdue only derived on sync/webhook; no voided_at | Scheduled overdue refresh; timestamps |\n| Reconciliation jobs | 2 | daily `stripe-reconcile`; one env-missing test | No drift detection/alerting/tests; ok:true on errors | Drift metrics + write-back + tests |\n| Failed payments | 2 | `invoice.payment_failed` upsert | No notification/dunning | Billing notification + banner |\n| Refund/cancel/trial states | 2 | `charge.refunded`, void/uncollectible; status only | No trial/cancel fields; refund amount/date; disputes | Schema + webhook expansion |\n| Seat counts | 1 | `items.data[0].price` only | No quantity/seat column | Persist quantity |\n| Usage billing | 0 | no usage/meter code (grep) | Entirely absent | N/A unless metered plans planned |\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| BILL-001 | Billing pages | `BillingPageClient.tsx`, `AdminBillingClient.tsx` | Org-scoped fetch via SDK | Raw PM id; sync button for all roles | P3 | Permission-aware UI, card descriptor |\n| BILL-002 | Subscription/plan models | `5302026_...v3.sql:521-534` | status + period + amount | interval/trial/cancel/seat missing | P2 | Migration + upserts |\n| BILL-003 | Entitlement checks | `entitlement.ts:142-172`; 6 routers | 402 gate, admin bypass | all-disabled override; fail-open | P3 | Override semantics; alert |\n| BILL-004 | Billing APIs | `billing.ts` | auth + org access; tenant-scoped sync | no pagination; unchecked writes; inner join; unscoped reads for cross-tenant roles | P2/P3 | Paginate; check errors; left join; admin-scope |\n| BILL-005 | Payment provider integration | `httpClients.stripe` | Bearer key, timeout client | no retry/backoff on sync | P3 | Retry transient Stripe failures |\n| BILL-006 | Webhooks | `webhooks.ts:131-349` | constructEvent verify; atomic dedup; claim release on throw | unchecked DB writes; no failure metric; ordering | P2 | Check results; failed metric; monotonic status |\n| BILL-007 | Invoices/status records | enum + upserts | paid/open/void/uncollectible/overdue | overdue only refreshed on sync/webhook; no voided_at; epoch paid_at risk | P2/P3 | Scheduled refresh; guards; timestamps |\n| BILL-008 | Reconciliation jobs | `stripe-reconcile.ts` | daily, terminal-only suspend, active-preference | no drift/alert/tests; ok:true on errors | P2 | Drift metrics + write-back + tests |\n| BILL-009 | Failed payments | `webhooks.ts:176-213` | invoice status updated | no notification/dunning | P2 | Notify + portal banner |\n| BILL-010 | Refund/cancel/trial states | `webhooks.ts:302-328` | refund + void status; trialing status | no trial/cancel fields; best-effort refunds; disputes | P2 | Schema + handlers |\n| BILL-011 | Seat counts | upserts read `price` only | none | quantity ignored | P3 | Persist quantity |\n| BILL-012 | Usage billing | no usage/meter code | none | absent | N/A | Confirm product need |\n\n## Detailed Review (highlights)\n\n### Item: Stripe webhook processing\n\n- Evidence: `apps/api/src/routes/webhooks.ts:131-349`.\n- What it does: verifies the Stripe signature with `constructEvent`, claims `stripe-<event.id>` atomically (TTL 24h), maps invoice/subscription/payment/refund/void events, writes an audit event + delivery row, releases the claim on thrown errors.\n- Current controls: signature verification, atomic dedup, best-effort `resolveBillingRefs`, PII-safe delivery logging.\n- Missing controls: every Supabase write result is ignored (`:190-210`, `:230-246`, `:254-261`, `:281-294`, `:323-326`); no inbound failure metric; no ordering/monotonic guard; refunds only update an existing row.\n- Risks: silent mirror drift; refund state overwritten by late retries; failed writes acknowledged as processed.\n\n### Item: `POST /billing/sync`\n\n- Evidence: `apps/api/src/routes/billing.ts:207-376`.\n- What it does: resolves and authorizes the target org, fetches invoices/subscriptions/payment_intents per customer, upserts with `onConflict` on Stripe ids, audits `billing.sync`.\n- Current controls: `billing:manage` gate, `resolveAdminTenantScope` check, audit event.\n- Missing controls: fixed page sizes (20/10/20) with no `starting_after`; non-`ok` responses skipped silently; no row/error counts in the response.\n- Risks: false-success reconciliation; stale history for high-volume customers.\n\n### Item: `stripe-reconcile` worker\n\n- Evidence: `apps/worker/src/tasks/stripe-reconcile.ts:57-152`.\n- What it does: daily (env-gated) per-org fetch of the active/trialing (else most recent) subscription; suspends approved memberships on terminal Stripe statuses; never touches invoices or writes Stripe state back.\n- Missing controls: drift metrics, alerting, state write-back, meaningful tests; returns `ok:true` even when `errors>0` (`:146`).\n- Risks: undetectable drift; entitlements keep reading stale local subscription state.\n\n### Item: Entitlements\n\n- Evidence: `apps/api/src/lib/entitlements.ts`, `apps/api/src/middleware/entitlement.ts`, wired in 6 routers, `middleware-entitlement.test.ts`.\n- Strengths: single source of truth shared by bootstrap and middleware; 402 envelope; 30s cache; admin bypass; tested.\n- Gaps: all-disabled provisioning falls back to the subscription set (`entitlements.ts:102-108` vs the admin form's \"Saving overrides the subscription-derived default set\"); deliberate fail-open on lookup error.\n\n## Findings\n\nCanonical records (severity, evidence, status, note) are in `29_billing_payments_reconciliation_audit.json`. Titles:\n\n1. **Module entitlements are derived but not enforced server-side** \u2014 P1, `verified-fixed` (re-verified at 8d299b8d).\n2. **`payments` table is never populated; payment history is silently empty** \u2014 P1, `verified-fixed`.\n3. **Missing Stripe webhook events leave refunds, void, and payment lifecycle unrecorded** \u2014 P1, `verified-fixed`.\n4. **No refund and incomplete trial/cancel state handling** \u2014 P2, `partially-fixed`.\n5. **`POST /billing/sync` does not paginate Stripe results** \u2014 P2, `still-open`.\n6. **Reconciliation job has no drift detection, alerting, or tests** \u2014 P2, `still-open`.\n7. **Failed payments produce no notification or dunning visibility** \u2014 P2, `still-open`.\n8. **Subscription/invoice schema lacks trial, interval, and void-lifecycle fields** \u2014 P2, `partially-fixed`.\n9. **Webhook raw body typed as `string` but consumed as `Buffer`** \u2014 P3, `still-open`.\n10. **Billing email stored in plaintext and raw Stripe payment-method id rendered to users** \u2014 P3, `still-open`.\n11. **Stripe webhook DB writes ignore errors and still mark the event processed** \u2014 P2, `open` (new).\n12. **Out-of-order or late-retried Stripe events can overwrite terminal payment states** \u2014 P2, `open` (new).\n13. **Billing read endpoints fall back to all-tenant scope for cross-tenant roles without an admin-scope guard or audit** \u2014 P2, `open` (new).\n14. **`invoice.paid` paid_at handling writes epoch dates (sync) or throws when status_transitions is missing (webhook)** \u2014 P3, `open` (new).\n15. **Payments list uses an inner join, hiding payments not linked to an invoice** \u2014 P3, `open` (new).\n16. **Entitlement override cannot revoke all modules (all-disabled falls back to the subscription set)** \u2014 P3, `open` (new).\n17. **Subscription mirror ignores seat quantity and the billing summary excludes trialing plans** \u2014 P3, `open` (new).\n18. **Portal 'Sync from Stripe' button is shown to client roles that lack billing:manage** \u2014 P3, `open` (new).\n19. **Billing docs contradict the implementation (sync gate, webhook verification, reconcile source, payment statuses)** \u2014 P3, `open` (new).\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Silent billing drift from unchecked webhook writes | P2 | Medium | Finance/entitlement state diverges from Stripe | `webhooks.ts:190-326` unchecked results | Fail loudly + failed-delivery metric + retry |\n| Partial sync reported as success | P2 | Medium-High | Stale invoice/payment history | `billing.ts:256-359` | Paginate + per-object counts/errors |\n| Refund overwritten by late retried event | P2 | Medium | Refund shown as collected | `webhooks.ts:281-316`; 24h claim TTL | Monotonic status/ordering guard |\n| Undetected reconcile failures/drift | P2 | Medium | Suspensions missed; no alert | `stripe-reconcile.ts:141-146` | Drift metrics + alert + ok:false on errors |\n| Cross-tenant billing read without audit | P2 | Low-Medium | MSP `admin` role sees all tenants unaudited | `billing.ts` GETs + `org-access.ts:146` | admin-scope + audit |\n| Trial/seat/interval blind spots | P3 | High | Misleading plan amounts/labels | schema + `/mo` hardcode | Schema + UI fields |\n\n## Recommendations\n\n### Immediate / Release Blocking\n\nNone \u2014 no P0/P1 open at this commit. The three P1s are `verified-fixed`.\n\n### This Week\n\n- Make Stripe webhook writes fail loudly: check each Supabase result, emit `recordWebhookDelivery(\"failed\", ...)`, and let the claim release so Stripe retries (finding 11).\n- Guard `paid_at` in both sync and webhook paths; add tests for paid invoices without `status_transitions` (finding 14).\n\n### This Month\n\n- Paginate `POST /billing/sync` and report partial failures per object type (finding 5).\n- Add drift detection + write-back + failure surfacing + tests to `stripe-reconcile`; alert on drift/task failure (finding 6).\n- Add a monotonic status guard for payments (refunded/partially_refunded terminal) (finding 12).\n- Migrate billing GETs to `resolveAdminTenantScope`/`applyOrgScope` + audit implicit cross-tenant reads (finding 13).\n- Add trial/interval/cancel/seat columns and persist them; add `voided_at` (findings 4, 8, 17).\n- Create a billing notification + past-due portal banner on `invoice.payment_failed` (finding 7).\n\n### Later / Platform Evolution\n\n- Handle `charge.dispute.*`, `credit_note.*`, `customer.subscription.trial_will_end`; store refund amount/date (finding 4).\n- Left-join payments and show card descriptors; permission-aware sync button (findings 15, 18, 10).\n- Adopt a usage/metered-billing design only if metered plans are planned (currently absent).\n- Capture `req.rawBody` as a Buffer and drop the cast (finding 9).\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| Check + log webhook write errors | Converts silent drift into observable failure | `apps/api/src/routes/webhooks.ts` | Unit test with a mocked upsert error asserting a failed metric/throw |\n| Guard `paid_at` branches | Removes epoch writes / 500 retry loops | `billing.ts`, `webhooks.ts` | Test paid invoice with/without `status_transitions` |\n| Left join payments | Unlinked payments appear | `billing.ts:179` | API test asserting a null-invoice payment is returned |\n| Hide sync button without `billing:manage` | Removes guaranteed-403 UX | `BillingPageClient.tsx` | Component test with/without permission |\n| Fix the 4 stale doc lines | Operators get the right model | `docs/BILLING.md`, `docs/modules/billing.md` | Doc review |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Webhook write failure handling + metric | P2 | billing/backend | S | None |\n| Sync pagination + error reporting | P2 | billing/backend | S | None |\n| Reconcile drift metrics/alerts/tests | P2 | worker/platform | M | Metrics stack (OBS) |\n| Payment status monotonic guard | P2 | billing/backend | S | None |\n| Billing reads admin-scope migration | P2 | API platform | S | None |\n| Trial/interval/seat schema + upserts | P2 | data/platform | M | Migration sequencing |\n| Dunning notification + UI | P2 | billing + notifications | S | NOTIF domain |\n| Refund amount/date + disputes/credit notes | P3 | billing/backend | M | Schema |\n| Raw-body Buffer typing | P3 | API platform | S | None |\n| Entitlement override semantics | P3 | billing/backend | S | None |\n\n## Suggested Tests\n\n- Unit: webhook upsert failure \u2192 metric/throw and claim release; paid invoice without `status_transitions`; refunded payment + late `payment_intent.succeeded` stays refunded; void then late `invoice.paid` stays void.\n- Integration: `POST /billing/sync` with a two-page mocked Stripe response asserts all rows upserted and `has_more` loops; one Stripe call fails \u2192 response reports the error.\n- Worker: `stripe-reconcile` terminal vs `past_due`/`trialing`; errors>0 \u2192 `ok:false`; drift metric emitted; dryRun never mutates memberships.\n- API/security: billing GETs with no `organization_id` as an `admin`-key holder \u2192 scoped to their orgs (or 403), and an audit/impersonation entry exists.\n- E2E: portal billing as `client_user` \u2192 no Sync button (or explained 403); past-due banner renders after `invoice.payment_failed`.\n- CI: keep `middleware-entitlement.test.ts` green; add an all-disabled-entitlements case.\n\n## Suggested Documentation Updates\n\n- `docs/BILLING.md`: webhook verification is full signature verification (not presence); reconcile queries `billing_customers` + `subscriptions`; document `STRIPE_WEBHOOK_SECRET`; payments statuses include `refunded`/`partially_refunded`; note sync page limits until pagination lands.\n- `docs/modules/billing.md`: sync gate is `billing:manage` (not `requireAdmin`); add the new trial/interval/seat fields once shipped.\n- `docs/SECRETS_ROTATION.md`: already covers Stripe keys \u2014 no change needed (verified present).\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Is metered/usage billing planned? | Entire usage-billing surface is absent | Product decision |\n| Should MSP `admin` (not is_super_admin) see all-tenant billing? | Determines the intended fix for finding 13 | Owner decision; admin-scope precedent says super_admin-only |\n| Do refunds/disputes need full financial records (amounts, dates)? | Determines schema scope for finding 4 | Finance requirements |\n| Is the 24h webhook claim TTL acceptable vs Stripe's ~3-day retry window? | Affects ordering/duplicate handling | Stripe delivery policy + idempotency review (WH domain) |\n\n## Appendix\n\n- Re-verification lineage: previous run `mainecybertech-20261004-full-main-9c0b88c` (BILL rows) \u2192 this run `8d299b8d`. Since 9c0b88c, only `adea562c` touched billing-adjacent code (Jira/JSM raw-body + M365 replay); all other BILL files are byte-identical to the previous verification point, so the three P1 `verified-fixed` statuses carry forward with fresh evidence.\n- Register status summary: 3 `verified-fixed` (P1), 2 `partially-fixed` (P2), 5 `still-open` (3 P2 + 2 P3), 9 new `open` (3 P2 + 6 P3).\n"
+}
