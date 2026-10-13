@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2585
+# files: 2586
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -481,6 +481,7 @@ b882c3f85df03f116b2ca4c97f81080ab4e51cc988cbb9c43eb6101127870b37  ./runs/bench-t
 b97d29097dcd6bf9a75a34023b6cab4440367c195e11148dcf857eb828053b86  ./runs/bench-test-20261013-0819-full-main-b916709/follow_up_register.md
 355e33ddb378c6b328b1ab9ccc90d3a628f384522f8d37755e40d6daf3ed664d  ./runs/bench-test-20261013-0819-full-main-b916709/lens_deterministic.md
 99f3d6548f5af5410ccd72b5379b4f94ab07116491cdcffa3d71e399e36a7f77  ./runs/bench-test-20261013-0819-full-main-b916709/patch_plan.md
+e4eaa8a5de0d86f18f83d3f5c2dd25c64851984c37d285a4ec14a1d2749e0bdc  ./runs/bench-test-20261013-0819-full-main-b916709/reconciliation.md
 b97d29097dcd6bf9a75a34023b6cab4440367c195e11148dcf857eb828053b86  ./runs/bench-test-20261013-0819-full-main-b916709/risk_register.md
 91ac84bde283c77c90483e5597d2ab2d01af2bd73dc65c176803f16216a47bb3  ./runs/bench-test-20261013-0819-full-main-b916709/roadmap.md
 2ed3328c073a27e0ffa0c8a49cc3803fa9d59d2fb2507f4d897a8c763fb570a9  ./runs/bench-test-20261013-0819-full-main-b916709/verification_log.md
