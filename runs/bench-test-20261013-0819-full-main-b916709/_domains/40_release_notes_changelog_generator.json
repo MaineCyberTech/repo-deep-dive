@@ -1,0 +1,147 @@
+{
+  "domain": "40_release_notes_changelog_generator",
+  "file": "40_release_notes_changelog_generator.md",
+  "area": "REL",
+  "agent": "subagent",
+  "emitted_at": "2026-10-13T08:46:19Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "area": "REL",
+      "title": "No CHANGELOG and no release notes are generated for version tags; release.yml only cuts a bare tag",
+      "evidence": [
+        "git ls-files (root) -> only .gitattributes, .gitignore, AGENTS.md, LICENSE, README.md, VERSION, bench-agent.cmd, bench-gui.cmd, bench-tui.cmd; no CHANGELOG.md/CHANGELOG* anywhere in the tree",
+        ".github/workflows/release.yml:96-108 - the release job's only mutating step is `git tag -a \"$tag\" -m \"bench-test $tag\"` + push; there is no softprops/action-gh-release, no `generate_release_notes`, and no changelog step",
+        "The only GitHub Releases created are ad-hoc build artifacts: .github/workflows/build-app.yml:104-114 (tag app-<run>) and .github/workflows/build-iso.yml:116-131 (tag iso-<gpu>-<run>); neither is the version tag `vX.Y.Z`",
+        "git log --oneline: release commits are `chore(release): VERSION 1.11.5` etc.; the v-tag itself (e.g. v1.11.5 at HEAD 60ab90eb) has no user-facing body",
+        "Repo history: 4,660 of 4,967 commits are auto-generated `bench:` subjects (94%), so 'read the commits' is not a usable substitute for release notes"
+      ],
+      "impact": "There is no human-readable record of what changed, what broke, or what an operator must do per release. A user or operator opening the v1.11.5 tag gets no notes at all and must diff a history that is 94% machine output. Breaking/behaviour changes and required operator actions can ship silently.",
+      "recommendation": "Add a `CHANGELOG.md` in Keep a Changelog format and make `release.yml` create a GitHub Release for the `vX.Y.Z` tag with a generated body (conventional-commit grouping: feat/fix/perf/breaking/CVE), plus a lint that fails if VERSION was bumped without a changelog entry. Exclude `bench:` commits from generation.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    },
+    {
+      "severity": "P2",
+      "area": "REL",
+      "title": "README's release/version strings are stale and self-contradictory, so the shipped docs disagree with VERSION",
+      "evidence": [
+        "README.md:12 - `**Release \\`v1.1.0\\`** - the version lives in `VERSION` and is reported everywhere it matters`",
+        "README.md:15 - `release line plus an automatic build: \\`1.11.3+<n>.<commit>\\`` - a third value in the same paragraph",
+        "README.md:17 - `name it too (\\`ISO <gpu> v1.11.3 #<run>\\`)`",
+        "VERSION contains `1.11.5` and HEAD (60ab90eb) is tagged `v1.11.5`",
+        "README.md:2/4/7 are the primary 'what release is this' surfaces a newcomer reads; they carry the stale value"
+      ],
+      "impact": "The authoritative user-facing document advertises a release 10 minor versions behind the tag and contradicts itself within four lines. Anyone reading the README to write or consume release notes derives the wrong version, and the repo's own 'version lives in VERSION' contract is broken.",
+      "recommendation": "Make README derive the release from VERSION/`git describe` at release time (release.yml already rewrites VERSION) or link to the tag, and add a docs check that fails when README's release token disagrees with VERSION.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    },
+    {
+      "severity": "P2",
+      "area": "REL",
+      "title": "Release artifacts are tagged by workflow run number, not by version or commit, so notes cannot be tied to a build",
+      "evidence": [
+        ".github/workflows/build-iso.yml:118 - `tag_name: iso-${{ inputs.gpu || 'nvidia-legacy' }}-${{ github.run_number }}`",
+        ".github/workflows/build-iso.yml:128 - the release body itself warns: 'the tag's run number does **not** map to a commit, so check this before flashing'",
+        ".github/workflows/build-app.yml:106 - `tag_name: app-${{ github.run_number }}` (same run-number scheme)",
+        ".github/workflows/build-iso.yml:102,121-124 - the only integrity artifact is SHA256SUMS of the ISO parts plus bench-version.txt; no tag->commit mapping"
+      ],
+      "impact": "A download cannot be mapped back to the release/changelog it belongs to, so the release-notes artifact and the shipped artifact set cannot be reconciled. Automated release-note generation keyed on tag/commit is impossible for app/ISO releases (extended check 'artifacts record the commit/version they were generated from' fails for the tag identity, even though the ISO body prints github.sha).",
+      "recommendation": "Name release tags by version + short commit (e.g. `app-<version>-<sha7>` / `iso-<variant>-<version>-<sha7>`), or attach the app/ISO assets to the version tag's release. Record VERSION + commit SHA in the release body and in bench-version.txt.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    },
+    {
+      "severity": "P2",
+      "area": "REL",
+      "title": "Changelog input is unenforced: no PR/issue templates or CONTRIBUTING, and commit subjects are 94% auto-generated noise",
+      "evidence": [
+        "git ls-files .github -> only .github/workflows/{build-app,build-iso,release}.yml; no PULL_REQUEST_TEMPLATE, ISSUE_TEMPLATE, CODEOWNERS or CONTRIBUTING",
+        ".github/workflows/release.yml:56-70 - the bump is derived solely from commit subjects: `grep -qE '^feat(\\(|!|:)'` -> minor, `^(fix|perf|revert)(\\(|!|:)'` -> patch, anything else `skip`",
+        "git log --format=%s | filter 'bench:*' -> 4,660 of 4,967 commits (94%) are machine commits that carry no release meaning",
+        "No commit-lint, conventional-commit config, changelog fragment directory, or PR checklist exists in the tracked tree"
+      ],
+      "impact": "Release notes generated from git history would be unreliable: some real changes (auto/`bench:` or unconventional subjects) are invisible, and there is no place to record breaking changes, security fixes, dependency bumps or required operator actions. The PR template that could capture them does not exist.",
+      "recommendation": "Add PULL_REQUEST_TEMPLATE with a 'release note / breaking change / operator action' checklist and commitlint (conventional commits). In release.yml, exclude `bench:` subjects from generation and read an explicit `docs/CHANGELOG.d/` fragment set so a release's notes are authored, not inferred.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    },
+    {
+      "severity": "P2",
+      "area": "REL",
+      "title": "No upgrade/rollback notes are possible: schema changes are unversioned additive ALTERs and the deploy does not ship VERSION",
+      "evidence": [
+        "server/benchd.py:159-176 - `_migrate()` only issues `ALTER TABLE ... ADD COLUMN` guarded by `PRAGMA table_info`; no schema_version table and `PRAGMA user_version` is never read/written",
+        "docs/CONTROL_PLANE.md:172-185 - the documented Proxmox deploy is hand-run `pct create/push/exec` that pushes only benchd.py + web/ + the unit (VERSION is not copied), so /health reports 0.0.0+unknown",
+        "Findings 07-data-schema-migration and 32-backup-restore-drill: migrations have no down/rollback path and the only DB copy is server/data/benchd.sqlite (.gitignore:27)",
+        ".github/workflows/release.yml:81-94 - a release only rewrites VERSION; it emits no upgrade, migration or rollback guidance"
+      ],
+      "impact": "Every release ships schema/behaviour changes (e.g. ADD COLUMN api_key/machine_id/system/preset) with no documented upgrade steps, no migration version, and no rollback path. An operator cannot answer 'what do I run to upgrade, and how do I go back?' for any release, and a bad deploy is unrecoverable.",
+      "recommendation": "Add a CHANGELOG 'Upgrade' and 'Rollback' section per release; record `schema_version`/`PRAGMA user_version` in `_migrate()` and provide a documented down path; copy VERSION in the deploy step so the running build is identifiable; add a backup step before upgrade.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    },
+    {
+      "severity": "P2",
+      "area": "REL",
+      "title": "Release notes carry no generation metadata (commit/version/date), and the repo's only release-note-like artifact is a one-line verdict",
+      "evidence": [
+        "docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/RELEASE_GATE.md:1-5 - the only 'release' artifact is `Verdict: **GO WITH CONDITIONS**` plus 'P0 x0, P1 x1'; no notes, no scope, no changelog",
+        "docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/audit_manifest.json, findings.json, deterministic-findings.json are committed but pinned to commit 4ecee97 with no regeneration command or generated-at stamp",
+        "docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/INDEX.md:3 - `Focused security / supply-chain / CI deep-dive (main @ 4ecee97)` while HEAD is 60ab90eb",
+        "The two GitHub Release bodies (.github/workflows/build-app.yml:110-114, build-iso.yml:126-131) do print `${{ github.sha }}`, so the pattern exists for artifacts but not for version/tag notes"
+      ],
+      "impact": "The extended check 'generated artifacts record the commit and version they were generated from' fails for the release/notes path: a reader cannot tell which commit a changelog or release note describes, and committed audit/notes artifacts are silently stale relative to HEAD.",
+      "recommendation": "Stamp every generated notes/changelog artifact with VERSION, full commit SHA, branch and generation date (header block), and add a 'regenerate release notes' command. Include a template so the artifact set (notes + changelog + release body + upgrade/rollback) is reproducible.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    },
+    {
+      "severity": "P2",
+      "area": "REL",
+      "title": "No separate user/admin/operator/security note tracks; operator-mandated changes (token handling, exec/shell, deletes) have no release channel",
+      "evidence": [
+        "README.md:355-363 ('## Security') gives only generic advice ('rotate it if a stick leaves the lab') and no per-release operator steps",
+        "Findings 06/24/26/45 (SEC/ACM/ADMIN/CHAIN) imply operator actions on upgrade: rotating the baked BENCHD_TOKEN and GitHub PAT, re-enrolling runners, and reviewing exec/shell exposure",
+        "Findings 07/31 (DATA/SEARCH) imply operator actions for the incomplete delete (logs survive) and missing retention",
+        "No file in the tracked tree separates user-facing vs operator/admin vs security notes (docs/ contains only CONTROL_PLANE/DATA/FUTURE_WORK/METHODOLOGY/PHASE_TIMINGS)"
+      ],
+      "impact": "The remediation the audit calls for is mostly operator-facing (credential rotation, re-enrolment, destructive-command review). With no separated note tracks, operators are not told what to do when upgrading, and security fixes ship without disclosure or an action checklist.",
+      "recommendation": "Adopt a release-notes template with distinct sections: User-visible, Breaking changes, Operator actions, Security fixes (CVE-style), Migrations, Rollback, Known issues. Require the operator-action and security sections to be non-empty when the diff touches server/benchd.py auth, command handling or deletes.",
+      "confidence": "Medium",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    },
+    {
+      "severity": "P3",
+      "area": "REL",
+      "title": "No known-issues track and no breaking-change record; there is nothing to seed release notes from",
+      "evidence": [
+        "git ls-files -> no KNOWN_ISSUES.md, no CHANGELOG.md, no docs/adr/; docs/ holds only the five design docs plus audits/",
+        "Findings 09/16/21 repeatedly cite the same open items (Windows `_curses` test failure, stale version strings, unverified third-party downloads, no CI gate) that remain unresolved across releases",
+        "The prior audit follow_up_register.md (docs/audits/.../follow_up_register.md:5-11) lists all 7 findings as 'open' with no re-verification date, so recurrence is untracked"
+      ],
+      "impact": "Without a known-issues list or breaking-change record, each release note has no seed content and unresolved issues (some present for multiple releases) are never surfaced to users. Reviewers and agents cannot tell resolved from outstanding.",
+      "recommendation": "Add a `KNOWN_ISSUES.md` (or a CHANGELOG 'Known issues' section) seeded from the current audit findings, and require a breaking-change entry (with migration note) for any change to the API/token model, schema or command kinds.",
+      "confidence": "Medium",
+      "status": "open",
+      "owner": "@owner",
+      "target": "REL"
+    }
+  ],
+  "report": "# 40_release_notes_changelog_generator - 40_release_notes_changelog_generator.md\n\nDomain subagent `40_release_notes_changelog_generator` (area REL), read-only audit of `C:\\temp\\bench-test`.\n\n## Checks / Evidence\n\n- **P1 - No CHANGELOG and no release notes are generated for version tags; release.yml only cuts a bare tag** (confidence: High)\n  - `git ls-files (root) -> only .gitattributes, .gitignore, AGENTS.md, LICENSE, README.md, VERSION, bench-agent.cmd, bench-gui.cmd, bench-tui.cmd; no CHANGELOG.md/CHANGELOG* anywhere in the tree`\n  - `.github/workflows/release.yml:96-108 - the release job's only mutating step is `git tag -a \"$tag\" -m \"bench-test $tag\"` + push; there is no softprops/action-gh-release, no `generate_release_notes`, and no changelog step`\n  - `The only GitHub Releases created are ad-hoc build artifacts: .github/workflows/build-app.yml:104-114 (tag app-<run>) and .github/workflows/build-iso.yml:116-131 (tag iso-<gpu>-<run>); neither is the version tag `vX.Y.Z``\n  - `git log --oneline: release commits are `chore(release): VERSION 1.11.5` etc.; the v-tag itself (e.g. v1.11.5 at HEAD 60ab90eb) has no user-facing body`\n  - `Repo history: 4,660 of 4,967 commits are auto-generated `bench:` subjects (94%), so 'read the commits' is not a usable substitute for release notes`\n  - Impact: There is no human-readable record of what changed, what broke, or what an operator must do per release. A user or operator opening the v1.11.5 tag gets no notes at all and must diff a history that is 94% machine output. Breaking/behaviour changes and required operator actions can ship silently.\n  - Recommendation: Add a `CHANGELOG.md` in Keep a Changelog format and make `release.yml` create a GitHub Release for the `vX.Y.Z` tag with a generated body (conventional-commit grouping: feat/fix/perf/breaking/CVE), plus a lint that fails if VERSION was bumped without a changelog entry. Exclude `bench:` commits from generation.\n- **P2 - README's release/version strings are stale and self-contradictory, so the shipped docs disagree with VERSION** (confidence: High)\n  - `README.md:12 - `**Release \\`v1.1.0\\`** - the version lives in `VERSION` and is reported everywhere it matters``\n  - `README.md:15 - `release line plus an automatic build: \\`1.11.3+<n>.<commit>\\`` - a third value in the same paragraph`\n  - `README.md:17 - `name it too (\\`ISO <gpu> v1.11.3 #<run>\\`)``\n  - `VERSION contains `1.11.5` and HEAD (60ab90eb) is tagged `v1.11.5``\n  - `README.md:2/4/7 are the primary 'what release is this' surfaces a newcomer reads; they carry the stale value`\n  - Impact: The authoritative user-facing document advertises a release 10 minor versions behind the tag and contradicts itself within four lines. Anyone reading the README to write or consume release notes derives the wrong version, and the repo's own 'version lives in VERSION' contract is broken.\n  - Recommendation: Make README derive the release from VERSION/`git describe` at release time (release.yml already rewrites VERSION) or link to the tag, and add a docs check that fails when README's release token disagrees with VERSION.\n- **P2 - Release artifacts are tagged by workflow run number, not by version or commit, so notes cannot be tied to a build** (confidence: High)\n  - `.github/workflows/build-iso.yml:118 - `tag_name: iso-${{ inputs.gpu || 'nvidia-legacy' }}-${{ github.run_number }}``\n  - `.github/workflows/build-iso.yml:128 - the release body itself warns: 'the tag's run number does **not** map to a commit, so check this before flashing'`\n  - `.github/workflows/build-app.yml:106 - `tag_name: app-${{ github.run_number }}` (same run-number scheme)`\n  - `.github/workflows/build-iso.yml:102,121-124 - the only integrity artifact is SHA256SUMS of the ISO parts plus bench-version.txt; no tag->commit mapping`\n  - Impact: A download cannot be mapped back to the release/changelog it belongs to, so the release-notes artifact and the shipped artifact set cannot be reconciled. Automated release-note generation keyed on tag/commit is impossible for app/ISO releases (extended check 'artifacts record the commit/version they were generated from' fails for the tag identity, even though the ISO body prints github.sha).\n  - Recommendation: Name release tags by version + short commit (e.g. `app-<version>-<sha7>` / `iso-<variant>-<version>-<sha7>`), or attach the app/ISO assets to the version tag's release. Record VERSION + commit SHA in the release body and in bench-version.txt.\n- **P2 - Changelog input is unenforced: no PR/issue templates or CONTRIBUTING, and commit subjects are 94% auto-generated noise** (confidence: High)\n  - `git ls-files .github -> only .github/workflows/{build-app,build-iso,release}.yml; no PULL_REQUEST_TEMPLATE, ISSUE_TEMPLATE, CODEOWNERS or CONTRIBUTING`\n  - `.github/workflows/release.yml:56-70 - the bump is derived solely from commit subjects: `grep -qE '^feat(\\(|!|:)'` -> minor, `^(fix|perf|revert)(\\(|!|:)'` -> patch, anything else `skip``\n  - `git log --format=%s | filter 'bench:*' -> 4,660 of 4,967 commits (94%) are machine commits that carry no release meaning`\n  - `No commit-lint, conventional-commit config, changelog fragment directory, or PR checklist exists in the tracked tree`\n  - Impact: Release notes generated from git history would be unreliable: some real changes (auto/`bench:` or unconventional subjects) are invisible, and there is no place to record breaking changes, security fixes, dependency bumps or required operator actions. The PR template that could capture them does not exist.\n  - Recommendation: Add PULL_REQUEST_TEMPLATE with a 'release note / breaking change / operator action' checklist and commitlint (conventional commits). In release.yml, exclude `bench:` subjects from generation and read an explicit `docs/CHANGELOG.d/` fragment set so a release's notes are authored, not inferred.\n- **P2 - No upgrade/rollback notes are possible: schema changes are unversioned additive ALTERs and the deploy does not ship VERSION** (confidence: High)\n  - `server/benchd.py:159-176 - `_migrate()` only issues `ALTER TABLE ... ADD COLUMN` guarded by `PRAGMA table_info`; no schema_version table and `PRAGMA user_version` is never read/written`\n  - `docs/CONTROL_PLANE.md:172-185 - the documented Proxmox deploy is hand-run `pct create/push/exec` that pushes only benchd.py + web/ + the unit (VERSION is not copied), so /health reports 0.0.0+unknown`\n  - `Findings 07-data-schema-migration and 32-backup-restore-drill: migrations have no down/rollback path and the only DB copy is server/data/benchd.sqlite (.gitignore:27)`\n  - `.github/workflows/release.yml:81-94 - a release only rewrites VERSION; it emits no upgrade, migration or rollback guidance`\n  - Impact: Every release ships schema/behaviour changes (e.g. ADD COLUMN api_key/machine_id/system/preset) with no documented upgrade steps, no migration version, and no rollback path. An operator cannot answer 'what do I run to upgrade, and how do I go back?' for any release, and a bad deploy is unrecoverable.\n  - Recommendation: Add a CHANGELOG 'Upgrade' and 'Rollback' section per release; record `schema_version`/`PRAGMA user_version` in `_migrate()` and provide a documented down path; copy VERSION in the deploy step so the running build is identifiable; add a backup step before upgrade.\n- **P2 - Release notes carry no generation metadata (commit/version/date), and the repo's only release-note-like artifact is a one-line verdict** (confidence: High)\n  - `docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/RELEASE_GATE.md:1-5 - the only 'release' artifact is `Verdict: **GO WITH CONDITIONS**` plus 'P0 x0, P1 x1'; no notes, no scope, no changelog`\n  - `docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/audit_manifest.json, findings.json, deterministic-findings.json are committed but pinned to commit 4ecee97 with no regeneration command or generated-at stamp`\n  - `docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/INDEX.md:3 - `Focused security / supply-chain / CI deep-dive (main @ 4ecee97)` while HEAD is 60ab90eb`\n  - `The two GitHub Release bodies (.github/workflows/build-app.yml:110-114, build-iso.yml:126-131) do print `${{ github.sha }}`, so the pattern exists for artifacts but not for version/tag notes`\n  - Impact: The extended check 'generated artifacts record the commit and version they were generated from' fails for the release/notes path: a reader cannot tell which commit a changelog or release note describes, and committed audit/notes artifacts are silently stale relative to HEAD.\n  - Recommendation: Stamp every generated notes/changelog artifact with VERSION, full commit SHA, branch and generation date (header block), and add a 'regenerate release notes' command. Include a template so the artifact set (notes + changelog + release body + upgrade/rollback) is reproducible.\n- **P2 - No separate user/admin/operator/security note tracks; operator-mandated changes (token handling, exec/shell, deletes) have no release channel** (confidence: Medium)\n  - `README.md:355-363 ('## Security') gives only generic advice ('rotate it if a stick leaves the lab') and no per-release operator steps`\n  - `Findings 06/24/26/45 (SEC/ACM/ADMIN/CHAIN) imply operator actions on upgrade: rotating the baked BENCHD_TOKEN and GitHub PAT, re-enrolling runners, and reviewing exec/shell exposure`\n  - `Findings 07/31 (DATA/SEARCH) imply operator actions for the incomplete delete (logs survive) and missing retention`\n  - `No file in the tracked tree separates user-facing vs operator/admin vs security notes (docs/ contains only CONTROL_PLANE/DATA/FUTURE_WORK/METHODOLOGY/PHASE_TIMINGS)`\n  - Impact: The remediation the audit calls for is mostly operator-facing (credential rotation, re-enrolment, destructive-command review). With no separated note tracks, operators are not told what to do when upgrading, and security fixes ship without disclosure or an action checklist.\n  - Recommendation: Adopt a release-notes template with distinct sections: User-visible, Breaking changes, Operator actions, Security fixes (CVE-style), Migrations, Rollback, Known issues. Require the operator-action and security sections to be non-empty when the diff touches server/benchd.py auth, command handling or deletes.\n- **P3 - No known-issues track and no breaking-change record; there is nothing to seed release notes from** (confidence: Medium)\n  - `git ls-files -> no KNOWN_ISSUES.md, no CHANGELOG.md, no docs/adr/; docs/ holds only the five design docs plus audits/`\n  - `Findings 09/16/21 repeatedly cite the same open items (Windows `_curses` test failure, stale version strings, unverified third-party downloads, no CI gate) that remain unresolved across releases`\n  - `The prior audit follow_up_register.md (docs/audits/.../follow_up_register.md:5-11) lists all 7 findings as 'open' with no re-verification date, so recurrence is untracked`\n  - Impact: Without a known-issues list or breaking-change record, each release note has no seed content and unresolved issues (some present for multiple releases) are never surfaced to users. Reviewers and agents cannot tell resolved from outstanding.\n  - Recommendation: Add a `KNOWN_ISSUES.md` (or a CHANGELOG 'Known issues' section) seeded from the current audit findings, and require a breaking-change entry (with migration note) for any change to the API/token model, schema or command kinds.\n\n## Verification Performed\n\nRead-only source review of the target at commit `b916709`; the evidence above was\nrecorded by the domain subagent and normalized by `tools/full_domain.py` (mechanical\nreport body derived from that recorded findings JSON).\n"
+}

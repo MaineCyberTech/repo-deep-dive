@@ -1,0 +1,115 @@
+{
+  "domain": "33_incident_tabletop_exercise",
+  "file": "33_incident_tabletop_exercise.md",
+  "area": "IR",
+  "agent": "subagent",
+  "emitted_at": "2026-10-13T08:46:18Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "area": "IR",
+      "title": "No incident-response documentation, severity taxonomy, roles, or postmortem process exists anywhere in the repository",
+      "evidence": [
+        "git ls-files '*.md' - tracked docs are only AGENTS.md, README.md, docs/{CONTROL_PLANE,DATA,FUTURE_WORK,METHODOLOGY,PHASE_TIMINGS}.md plus audit/example result markdown; no INCIDENT/RUNBOOK/SECURITY/ONCALL file",
+        "git ls-files filtered for incident|runbook|postmortem|oncall|disaster|tabletop|breach - zero matches",
+        "README.md:170-203 - describes the benchd control plane and operator surface with no incident/rollback/escalation section",
+        "docs/CONTROL_PLANE.md:214-254 - 'Operating notes' cover staleness/reaper/token rotation mechanics but define no incident roles, severities, containment, comms or postmortem"
+      ],
+      "impact": "Operators of a control plane that can remotely reboot/shut down machines, run arbitrary shell (exec/shell) and raw-write block devices (iso_write/iso_write_slot) have no agreed roles, severity scale, containment steps, communication plan or postmortem template; incident handling is ad hoc and untrainable.",
+      "recommendation": "Add docs/INCIDENT_RESPONSE.md defining severity (SEV1-4), roles (incident commander/comms/scribe), containment/escalation, and a comms + blameless-postmortem template; link it from README and AGENTS.md and run the scenarios in this report as a tabletop.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "IR"
+    },
+    {
+      "severity": "P2",
+      "area": "IR",
+      "title": "No monitoring or alerting: failures are only visible when a human watches the web dashboard",
+      "evidence": [
+        "server/benchd.py:629-634 - GET /health returns only {ok,time,git,version,protocol,latest,runners}; liveness, not alertable signal",
+        "server/benchd.py:718-719 - GET /api/v1/metrics returns a static METRICS catalogue (server/benchd.py:78-90), not a Prometheus scrape endpoint",
+        "docs/CONTROL_PLANE.md:130 - '/metrics - the metric catalogue (key -> label)'",
+        "docs/CONTROL_PLANE.md:273-278 - Roadmap lists 'Prometheus//metrics export and alerting (throttle, TDR, over-temp)' as future work",
+        "grep for alert|webhook|notify|slack|email|pagerduty across the repo - no notification/alerting code",
+        "docs/CONTROL_PLANE.md:222-223 - runners are only marked offline after 15 s with no push/alert; observability is pull-only in the UI"
+      ],
+      "impact": "Runner death, a failed/aborted overnight run, server disk pressure, unbounded SQLite growth (benchd.py:254 'grows ~1 row/second per active run'), and over-temp/throttle conditions are never surfaced - someone must be staring at the Live tab. A total loss of the monitoring path itself (benchd process, its host, or the DB) is undetected and unalerted.",
+      "recommendation": "Add a Prometheus text /metrics endpoint plus alert rules (runner offline > 60s, run failed, GPU over-temp/throttle bit set, server disk < 10%, DB size/inode growth), or at minimum a webhook/email fired on run-failed and runner-offline events; add a heartbeat watch that alerts if benchd itself stops.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "IR"
+    },
+    {
+      "severity": "P2",
+      "area": "IR",
+      "title": "No backup or restore procedure for the control-plane SQLite database (all fleet history, artifacts and per-runner keys)",
+      "evidence": [
+        "server/benchd.py:50 - DEFAULT_DB = server/data/benchd.sqlite is the single authoritative store",
+        "server/benchd.py:94-143 - schema holds runners (incl. api_key), runs, phases, telemetry, logs, commands, events, artifacts, schedules",
+        "server/benchd.py:154 - WAL mode with synchronous=NORMAL",
+        ".gitignore:26-28 - server/data/ and server/benchd.conf are git-ignored, so the DB is not versioned or captured anywhere",
+        "git ls-files - no backup/restore script for the DB; docs/CONTROL_PLANE.md:254 only notes WAL growth, no backup/RPO/RTO"
+      ],
+      "impact": "Loss of the DB file (host failure, disk full, an accidental operator DELETE at server/benchd.py:665-672) is unrecoverable: run history, attached artifacts, schedules and every per-runner API key are gone, forcing re-registration of the whole fleet. There is no documented recovery time or recovery point objective.",
+      "recommendation": "Ship a backup script using `sqlite3 data/benchd.sqlite '.backup'` on a schedule with retention, document a tested restore runbook and RPO/RTO, and record the last successful restore test as evidence; add an alert on backup failure.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "IR"
+    },
+    {
+      "severity": "P2",
+      "area": "IR",
+      "title": "No operator audit log: privileged commands and destructive deletes carry no actor identity or durable trail",
+      "evidence": [
+        "server/benchd.py:119-122 - commands table stores id/runner_id/run_id/kind/payload/status/created/sent/acked/result - no actor/operator column",
+        "server/benchd.py:1220-1232 - _issue_command records only kind+payload; the shared token means every operator is indistinguishable (server/benchd.py:14-17, README.md:359)",
+        "server/benchd.py:653-681 - do_DELETE removes run rows plus their phases/telemetry/events/artifacts (lines 665-672) and runner rows (673-680) with no audit trail",
+        "server/benchd.py:515-525 - the only logging redacts token= but persists nothing; no actor, no retention",
+        "docs/CONTROL_PLANE.md:273-275 - Roadmap: 'Operator logins (per-user accounts) instead of the shared join token' (unimplemented)"
+      ],
+      "impact": "After a destructive action (iso_write to the wrong device, reboot/shutdown of a busy host, exec, or deletion of a run/runner) there is no way to attribute it. Admin abuse or an honest mistake cannot be investigated or reconstructed from the evidence.",
+      "recommendation": "Add an append-only audit table (ts, actor, source address, action kind, target runner/run, payload summary, result) written by every operator-only route, retain it independently of run deletion, and implement per-user operator accounts (roadmap) so the actor is identifiable.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "IR"
+    },
+    {
+      "severity": "P2",
+      "area": "IR",
+      "title": "No data-breach or vulnerability-disclosure process, while a public repo bakes a world-readable operator token into ISO/app artifacts",
+      "evidence": [
+        "git ls-files - no SECURITY.md or responsible-disclosure/breach process file",
+        "README.md:158-163 - CI bakes the BENCH_AGENT_CONF control-plane token into each public app bundle; README.md:359-363 - repo and ISO releases are public, 'a token baked into an ISO is world-readable; rotate it if a stick leaves the lab'",
+        ".github/workflows/build-iso.yml:62-82 - writes the BENCH_AGENT_CONF / BENCH_UPLOAD_CONF secrets into the image",
+        "AGENTS.md:178-186 - acknowledges the public repo + baked-token exposure but defines no breach/rotation procedure"
+      ],
+      "impact": "If a stick/bundle leaks, there is no documented breach path: who is notified, which log/artifact proves the exposure, how the token and per-runner keys are rotated, and how the fleet is verified clean. The operator token also grants reboot/shutdown/exec across the fleet, so an undetected leaked token is a high-impact scenario.",
+      "recommendation": "Add SECURITY.md (private disclosure contact/SLA) and a breach-response checklist including mandatory token + per-runner-key rotation, artifact/DB impact assessment, and post-rotation verification; reference it from README/AGENTS.md.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "IR"
+    },
+    {
+      "severity": "P3",
+      "area": "IR",
+      "title": "Prior audit findings are all still marked open and were never re-verified, so the same incident class recurs",
+      "evidence": [
+        "docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/follow_up_register.md:5-11 - all 7 findings (incl. SUPPLY-P1-001) status 'open' with no re-verification date or owner closure",
+        "bench/Get-Sensors.ps1:13-22 - still downloads '.../releases/latest/download/LibreHardwareMonitor.zip' and Add-Type loads it with no checksum/signature check (the same defect SUPPLY-P1-001 describes)",
+        "bench/Sample-Sensors.ps1:36-58 - same unpinned 'releases/latest' plus a mutable master-branch fallback, still unverified at the current commit"
+      ],
+      "impact": "There is no recurrence tracking: a previously-identified supply-chain incident class (unverified download loaded in-process) is still live, and the follow-up register gives no signal that fixes were attempted, landed or stuck.",
+      "recommendation": "Add re-verification dates and closure evidence to the follow-up register, pin LibreHardwareMonitor to a specific release with a committed SHA-256 verified before Expand-Archive/Add-Type (fail closed), and add a regression test asserting the pinned URL/hash so the finding cannot silently reopen.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "IR"
+    }
+  ],
+  "report": "# 33_incident_tabletop_exercise - 33_incident_tabletop_exercise.md\n\nDomain subagent `33_incident_tabletop_exercise` (area IR), read-only audit of `C:\\temp\\bench-test`.\n\n## Checks / Evidence\n\n- **P1 - No incident-response documentation, severity taxonomy, roles, or postmortem process exists anywhere in the repository** (confidence: High)\n  - `git ls-files '*.md' - tracked docs are only AGENTS.md, README.md, docs/{CONTROL_PLANE,DATA,FUTURE_WORK,METHODOLOGY,PHASE_TIMINGS}.md plus audit/example result markdown; no INCIDENT/RUNBOOK/SECURITY/ONCALL file`\n  - `git ls-files filtered for incident|runbook|postmortem|oncall|disaster|tabletop|breach - zero matches`\n  - `README.md:170-203 - describes the benchd control plane and operator surface with no incident/rollback/escalation section`\n  - `docs/CONTROL_PLANE.md:214-254 - 'Operating notes' cover staleness/reaper/token rotation mechanics but define no incident roles, severities, containment, comms or postmortem`\n  - Impact: Operators of a control plane that can remotely reboot/shut down machines, run arbitrary shell (exec/shell) and raw-write block devices (iso_write/iso_write_slot) have no agreed roles, severity scale, containment steps, communication plan or postmortem template; incident handling is ad hoc and untrainable.\n  - Recommendation: Add docs/INCIDENT_RESPONSE.md defining severity (SEV1-4), roles (incident commander/comms/scribe), containment/escalation, and a comms + blameless-postmortem template; link it from README and AGENTS.md and run the scenarios in this report as a tabletop.\n- **P2 - No monitoring or alerting: failures are only visible when a human watches the web dashboard** (confidence: High)\n  - `server/benchd.py:629-634 - GET /health returns only {ok,time,git,version,protocol,latest,runners}; liveness, not alertable signal`\n  - `server/benchd.py:718-719 - GET /api/v1/metrics returns a static METRICS catalogue (server/benchd.py:78-90), not a Prometheus scrape endpoint`\n  - `docs/CONTROL_PLANE.md:130 - '/metrics - the metric catalogue (key -> label)'`\n  - `docs/CONTROL_PLANE.md:273-278 - Roadmap lists 'Prometheus//metrics export and alerting (throttle, TDR, over-temp)' as future work`\n  - `grep for alert|webhook|notify|slack|email|pagerduty across the repo - no notification/alerting code`\n  - `docs/CONTROL_PLANE.md:222-223 - runners are only marked offline after 15 s with no push/alert; observability is pull-only in the UI`\n  - Impact: Runner death, a failed/aborted overnight run, server disk pressure, unbounded SQLite growth (benchd.py:254 'grows ~1 row/second per active run'), and over-temp/throttle conditions are never surfaced - someone must be staring at the Live tab. A total loss of the monitoring path itself (benchd process, its host, or the DB) is undetected and unalerted.\n  - Recommendation: Add a Prometheus text /metrics endpoint plus alert rules (runner offline > 60s, run failed, GPU over-temp/throttle bit set, server disk < 10%, DB size/inode growth), or at minimum a webhook/email fired on run-failed and runner-offline events; add a heartbeat watch that alerts if benchd itself stops.\n- **P2 - No backup or restore procedure for the control-plane SQLite database (all fleet history, artifacts and per-runner keys)** (confidence: High)\n  - `server/benchd.py:50 - DEFAULT_DB = server/data/benchd.sqlite is the single authoritative store`\n  - `server/benchd.py:94-143 - schema holds runners (incl. api_key), runs, phases, telemetry, logs, commands, events, artifacts, schedules`\n  - `server/benchd.py:154 - WAL mode with synchronous=NORMAL`\n  - `.gitignore:26-28 - server/data/ and server/benchd.conf are git-ignored, so the DB is not versioned or captured anywhere`\n  - `git ls-files - no backup/restore script for the DB; docs/CONTROL_PLANE.md:254 only notes WAL growth, no backup/RPO/RTO`\n  - Impact: Loss of the DB file (host failure, disk full, an accidental operator DELETE at server/benchd.py:665-672) is unrecoverable: run history, attached artifacts, schedules and every per-runner API key are gone, forcing re-registration of the whole fleet. There is no documented recovery time or recovery point objective.\n  - Recommendation: Ship a backup script using `sqlite3 data/benchd.sqlite '.backup'` on a schedule with retention, document a tested restore runbook and RPO/RTO, and record the last successful restore test as evidence; add an alert on backup failure.\n- **P2 - No operator audit log: privileged commands and destructive deletes carry no actor identity or durable trail** (confidence: High)\n  - `server/benchd.py:119-122 - commands table stores id/runner_id/run_id/kind/payload/status/created/sent/acked/result - no actor/operator column`\n  - `server/benchd.py:1220-1232 - _issue_command records only kind+payload; the shared token means every operator is indistinguishable (server/benchd.py:14-17, README.md:359)`\n  - `server/benchd.py:653-681 - do_DELETE removes run rows plus their phases/telemetry/events/artifacts (lines 665-672) and runner rows (673-680) with no audit trail`\n  - `server/benchd.py:515-525 - the only logging redacts token= but persists nothing; no actor, no retention`\n  - `docs/CONTROL_PLANE.md:273-275 - Roadmap: 'Operator logins (per-user accounts) instead of the shared join token' (unimplemented)`\n  - Impact: After a destructive action (iso_write to the wrong device, reboot/shutdown of a busy host, exec, or deletion of a run/runner) there is no way to attribute it. Admin abuse or an honest mistake cannot be investigated or reconstructed from the evidence.\n  - Recommendation: Add an append-only audit table (ts, actor, source address, action kind, target runner/run, payload summary, result) written by every operator-only route, retain it independently of run deletion, and implement per-user operator accounts (roadmap) so the actor is identifiable.\n- **P2 - No data-breach or vulnerability-disclosure process, while a public repo bakes a world-readable operator token into ISO/app artifacts** (confidence: High)\n  - `git ls-files - no SECURITY.md or responsible-disclosure/breach process file`\n  - `README.md:158-163 - CI bakes the BENCH_AGENT_CONF control-plane token into each public app bundle; README.md:359-363 - repo and ISO releases are public, 'a token baked into an ISO is world-readable; rotate it if a stick leaves the lab'`\n  - `.github/workflows/build-iso.yml:62-82 - writes the BENCH_AGENT_CONF / BENCH_UPLOAD_CONF secrets into the image`\n  - `AGENTS.md:178-186 - acknowledges the public repo + baked-token exposure but defines no breach/rotation procedure`\n  - Impact: If a stick/bundle leaks, there is no documented breach path: who is notified, which log/artifact proves the exposure, how the token and per-runner keys are rotated, and how the fleet is verified clean. The operator token also grants reboot/shutdown/exec across the fleet, so an undetected leaked token is a high-impact scenario.\n  - Recommendation: Add SECURITY.md (private disclosure contact/SLA) and a breach-response checklist including mandatory token + per-runner-key rotation, artifact/DB impact assessment, and post-rotation verification; reference it from README/AGENTS.md.\n- **P3 - Prior audit findings are all still marked open and were never re-verified, so the same incident class recurs** (confidence: High)\n  - `docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/follow_up_register.md:5-11 - all 7 findings (incl. SUPPLY-P1-001) status 'open' with no re-verification date or owner closure`\n  - `bench/Get-Sensors.ps1:13-22 - still downloads '.../releases/latest/download/LibreHardwareMonitor.zip' and Add-Type loads it with no checksum/signature check (the same defect SUPPLY-P1-001 describes)`\n  - `bench/Sample-Sensors.ps1:36-58 - same unpinned 'releases/latest' plus a mutable master-branch fallback, still unverified at the current commit`\n  - Impact: There is no recurrence tracking: a previously-identified supply-chain incident class (unverified download loaded in-process) is still live, and the follow-up register gives no signal that fixes were attempted, landed or stuck.\n  - Recommendation: Add re-verification dates and closure evidence to the follow-up register, pin LibreHardwareMonitor to a specific release with a committed SHA-256 verified before Expand-Archive/Add-Type (fail closed), and add a regression test asserting the pinned URL/hash so the finding cannot silently reopen.\n\n## Verification Performed\n\nRead-only source review of the target at commit `b916709`; the evidence above was\nrecorded by the domain subagent and normalized by `tools/full_domain.py` (mechanical\nreport body derived from that recorded findings JSON).\n"
+}

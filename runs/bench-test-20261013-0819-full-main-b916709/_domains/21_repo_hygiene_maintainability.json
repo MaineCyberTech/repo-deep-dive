@@ -1,0 +1,148 @@
+{
+  "domain": "21_repo_hygiene_maintainability",
+  "file": "21_repo_hygiene_maintainability.md",
+  "area": "HYGIENE",
+  "agent": "subagent",
+  "emitted_at": "2026-10-13T08:42:56Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "area": "HYGIENE",
+      "title": "9,555 generated result files (~55 MB) are committed under results/ despite a results/ ignore rule",
+      "evidence": [
+        ".gitignore:2 - `results/` is listed as ignored, but a gitignore rule never untracks files already in the index",
+        "git ls-tree -r b9167095 -- results/ gives 9,555 tracked files totalling 57,767,706 bytes (~55.1 MB)",
+        "results/bench-live-linux-20261011-135440/bench-live-linux-20261011-135440-logs/sys-info.log:1 - committed run log embeds host inventory (CPU/GPU/disk models, NIC state, boot time) in a public repo",
+        "AGENTS.md:59 - documentation claims results/ is 'mostly git-ignored; a few runs are tracked as history', which 9,555 files / 4,659 commits contradicts"
+      ],
+      "impact": "Every clone/fetch carries tens of MB of generated run output and machine fingerprints. The ignore rule gives a false sense of safety, so the tracked set keeps silently growing; blame, diffs and merges are dominated by artefacts rather than code.",
+      "recommendation": "Untrack the generated tree (`git rm -r --cached results/`), keep the `.gitignore` entry, and publish run output as CI/release artifacts (or a separate results repo/branch) instead of on main. Add a CI guard that fails if a PR stages files under `results/`. Keep only the small curated set already mirrored in `examples/`.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P2",
+      "area": "HYGIENE",
+      "title": "Repository history is 94% auto-generated `bench:` commits (4,659 of 4,962)",
+      "evidence": [
+        "git rev-list --count b9167095 - 4,962 total commits",
+        "git log --format=%s b9167095 filtered to subjects starting `bench:` - 4,659 commits (94%)",
+        "ac83ffbc `bench: bench-live-linux-20261013-073159 (699 files)` - one commit per run folder",
+        "87847e32 `bench: bench-live-linux-20261013-024531-logs/summary-error.txt (...)` and siblings - one commit per single result file",
+        "17 commits of the `bench: <run> (N files)` form vs thousands of per-file subjects"
+      ],
+      "impact": "History, `git blame` and `git log -- path` are effectively unusable for the source tree, bisecting is slow, and the commit graph grows unbounded with machine output. The auto-committer is external (no workflow in the repo performs it), so the behaviour is undocumented and unowned.",
+      "recommendation": "Stop the per-file auto-commit push to main; batch/park run output outside main (artifact upload, dedicated branch, or results repo). If runs must be recorded in git, use a single squashed commit per run and exclude it from release/version derivation. Document the mechanism in AGENTS.md.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P2",
+      "area": "HYGIENE",
+      "title": "Duplicate nested results/results/ tree committed (116 files across 3 runs)",
+      "evidence": [
+        "git ls-tree -r b9167095 -- results/results/ - 116 tracked files",
+        "results/results/bench-live-linux-20261011-135440/, .../20261011-154845/, .../20261011-200043/ exist as exact-name duplicates of entries also created directly under results/",
+        "`results/results/` is produced when a collector writes into a results/ path while already rooted at results/"
+      ],
+      "impact": "A misleading second copy of the same runs inflates the already-large generated tree, breaks any per-run index/glob that assumes one directory depth, and points at a path-construction bug in the collector.",
+      "recommendation": "Delete the nested `results/results/` tree, and fix/guard the collector so it refuses to create a `results/results` path (e.g. resolve the output dir against the repo root and assert it does not already end in results/). Add a lint/test that fails if `results/results` exists.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P2",
+      "area": "HYGIENE",
+      "title": "README release/version drift: README advertises v1.1.0 while VERSION is 1.11.3",
+      "evidence": [
+        "README.md:12 - `**Release \\`v1.1.0\\`** - the version lives in VERSION ...` (at b9167095)",
+        "README.md:15 - `release line plus an automatic build: \\`1.1.0+<commit>\\`, ...`",
+        "README.md:17 - `name it too (\\`ISO <gpu> v1.1.0 #<run>\\`)`",
+        "VERSION contains `1.11.3` and commit b9167095 is `chore(release): VERSION 1.11.3`",
+        "AGENTS.md documents the live `1.1.0+3.abc1234` scheme, so the README text is a stale hand-edited copy"
+      ],
+      "impact": "The primary user-facing document states the wrong release, so operators cannot tell which build a checkout or release corresponds to; it also contradicts the repo's own 'version lives in VERSION' claim.",
+      "recommendation": "Replace the hard-coded README release string with either the current value kept in lockstep by release.yml, or a pointer that renders `VERSION`/`git describe`. Add a doc check that fails when README's release token disagrees with VERSION.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P2",
+      "area": "HYGIENE",
+      "title": "Documented stdlib test suite fails on Windows system Python (`_curses` missing)",
+      "evidence": [
+        "tests/test_presets.py:41 - `tui = _load(\"tui\", os.path.join(BENCH, \"tui.py\"))` imports the whole TUI module just to read PRESETS",
+        "bench/tui.py:15 - `import curses` (hard top-level import)",
+        "Reproduced: `python tests/run_all.py` (system CPython 3.12.10, Windows) ends `RESULT: FAIL (1)` with `test_presets: crashed (No module named '_curses')`",
+        "Reproduced: `.venv/Scripts/python.exe tests/run_all.py` ends `RESULT: PASS` (venv has windows-curses)",
+        "AGENTS.md documents `python tests/run_all.py  # RESULT: PASS expected (stdlib only)`"
+      ],
+      "impact": "Windows is a first-class platform for this toolkit, yet the 'required before every commit' command fails on a fresh checkout with the system interpreter. A contributor following AGENTS.md sees a red suite and cannot tell whether their change broke something.",
+      "recommendation": "Decouple the parity test from curses: make bench/tui.py import curses lazily (inside the TUI entry point) or expose PRESETS without importing curses, and/or skip test_presets' TUI leg gracefully on `except ImportError` with a clear message. Document the windows-curses prerequisite in AGENTS.md and bootstrap it in tests/harness.py.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "area": "HYGIENE",
+      "title": "Large monolithic modules with no internal split (benchreport.py 2,811 lines; app.js 1,822)",
+      "evidence": [
+        "bench/benchreport.py - 2,811 lines / 117,550 bytes (single shared client+reporting module)",
+        "server/web/app.js - 1,822 lines / 94,365 bytes",
+        "bench/tui.py - 1,445 lines; bench/gui.py - 1,424 lines; server/benchd.py - 1,417 lines",
+        "bench/Run-LinuxBench.sh - 929 lines",
+        "grep for module-level separation in benchreport.py shows constants, HTTP client, CSV parsing and report rendering in one file (CSV_ALIASES:54, DASH_FIELDS:190, parse at 2182/2733, render at 2766)"
+      ],
+      "impact": "Change locality is poor: a telemetry/CSV tweak, an HTTP change and report formatting all land in the same 2.8k-line file, raising review cost and regression risk, and one of the largest files is on the stdlib-only critical path.",
+      "recommendation": "Split benchreport.py into focused modules (fields/aliases, http client, csv parsing, report rendering) re-exported from benchreport for compatibility; do the same for the web dashboard JS. Keep the stdlib-only constraint and run tests/test_reporting.py after the split.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "area": "HYGIENE",
+      "title": "No CHANGELOG or ADRs; release notes are implicit in commit subjects",
+      "evidence": [
+        "git ls-tree -r --name-only b9167095 matched neither CHANGELOG* nor docs/adr/*",
+        ".github/workflows/release.yml:89-90 - the release job only `git add VERSION` + `git commit -m \"chore(release): VERSION ...\"`",
+        "AGENTS.md states the version/release is derived automatically from commit subjects (`feat:` -> minor, otherwise patch)"
+      ],
+      "impact": "There is no human-readable place to record breaking changes, behaviour changes, or decisions; users must diff commits to understand a release, and design rationale is lost as the auto-commit noise buries it.",
+      "recommendation": "Add a CHANGELOG.md (Keep a Changelog format) updated at release time, and a docs/adr/ (or docs/decisions/) directory for load-bearing choices such as stdlib-only, single-writer telemetry, and fail-soft control plane.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    },
+    {
+      "severity": "P3",
+      "area": "HYGIENE",
+      "title": "No type annotations and 238 broad `except Exception` handlers across the Python codebase",
+      "evidence": [
+        "git grep -c ') -> ' over tracked bench/*.py + server/*.py - only 3 annotated defs total across 35 tracked *.py files",
+        "git grep -c 'except Exception' - 238 occurrences; bench/benchreport.py 44, bench/tui.py 30, bench/gui.py 23, server/benchd.py 21",
+        "No use of the `logging` module; 111 `print(` calls in bench/*.py + server/*.py, plus ad-hoc self.log callbacks",
+        "No bare `except:` found (all are `except Exception`)"
+      ],
+      "impact": "Without annotations, refactoring the large modules is unsafe and IDE/static feedback is near-zero. Heavy broad-exception use (intentional for fail-soft in the control-plane client, per AGENTS.md) also silently swallows real bugs outside that path, and print-based logging makes runs hard to filter or redirect.",
+      "recommendation": "Adopt gradual typing (annotate public functions in benchreport.py, *_bench.py, benchd.py; keep runtime stdlib-only), and narrow broad handlers outside the documented fail-soft code paths. Route output through a tiny stdlib logging helper so verbosity/level can be controlled consistently.",
+      "confidence": "Medium",
+      "status": "open",
+      "owner": "@owner",
+      "target": "HYGIENE"
+    }
+  ],
+  "report": "# Repository Hygiene, Maintainability, and Code Health Audit\n\n## Audit Metadata\n\n- Audit name: repo-deep-dive (bench-test full-domain)\n- Run: 20261013-bench-test-domain21\n- Repository: `C:\\temp\\bench-test` (`MaineCyberTech/bench-test`), branch `main`\n- Commit SHA audited: `b9167095b08c2f45a814e88e09d88decbd0ea885` (VERSION 1.11.3)\n- Generated at: 2026-10-13\n- Auditor: domain subagent (21_repo_hygiene_maintainability)\n- Area code: HYGIENE\n- Output path (prompt convention): `docs/audits/{name}/{run}/21_repo_hygiene_maintainability.md`\n- Scope limitations:\n  - The checkout was **moving during the audit** (a parallel process advanced HEAD\n    from `72c18734` to `60ab90eb` while this ran). All evidence below is pinned to\n    the commit named in the brief, `b9167095`, read via `git show`/`git grep`/`git ls-tree`.\n  - No mutating commands were run against the target; the audit is read-only.\n  - Test execution (below) ran against the live checkout, which is why the working-tree\n    HEAD is recorded at run time rather than the pinned commit.\n\n## Scope\n\nReviewed for repository hygiene / maintainability: folder & file naming, duplicate/dead/\nunused code, generated & build artifacts, imports, large files, type safety, error handling,\nTODO/FIXME, logging consistency, config sprawl, competing patterns, package scripts,\ndependency boundaries, test utilities, docs drift, and changelog/ADRs.\n\nNot reviewed in depth (owned by other domains): auth/authz, secret scanning, supply chain,\nCI security posture, and runtime correctness of the benchmark itself.\n\n## Evidence Reviewed\n\n- Tracked tree at `b9167095`: 9,811 files total \u2014 **9,555 under `results/`**, 256 outside it.\n- `.gitignore`, `.gitattributes`, `AGENTS.md`, `README.md`, `VERSION`.\n- Source: `bench/**` (25 Python + PowerShell + 1 Bash runner), `server/**`, `tests/**`,\n  `packaging/**`, `live/**`, `docs/**`, `.github/workflows/*`.\n- History: `git log`, `git rev-list --count`, `git log --format=%s`.\n\n## Verification Performed\n\n| Evidence | Type | Why relevant | Notes |\n|---|---|---|---|\n| `git ls-tree -r b9167095 -- results/` | command output | Count/size of committed generated output | 9,555 files, 57,767,706 bytes |\n| `git ls-tree -r -l b9167095` (non-results) | command output | Source vs artifact split | non-results \u2248 1.1 MB; examples \u2248 16.7 MB |\n| `git rev-list --count b9167095` = 4,962 | command output | History size | \u2014 |\n| `git log --format=%s` filtered `^bench:` = 4,659 | command output | History composition | 94% auto-generated |\n| `git ls-tree -r --name-only` vs `CHANGELOG`/`adr` | command output | Changelog/ADR presence | none found |\n| `git ls-files --eol` (`.sh`, `.ps1`) | command output | Line-ending policy | matches `.gitattributes` |\n| `git ls-tree -r ... *.sh` modes | command output | Exec bits | all `100755` |\n| `git grep -n TODO/FIXME/XXX/HACK` | command output | TODO debt | none (only placeholder `XXX` in usage/example text) |\n| `python tests/run_all.py` | executed | Reproduce claimed PASS | **FAIL (1)** \u2014 `test_presets: crashed (No module named '_curses')` |\n| `.venv/Scripts/python.exe tests/run_all.py` | executed | Isolate cause | **RESULT: PASS** (venv has windows-curses) |\n| `git grep -c ') -> '`, `except Exception`, `print(` | command output | Typing / error handling / logging | 3 annotations, 238 broad excepts, 111 prints |\n| `git grep` for `rawlog` references | command output | Dead-file check | `rawlog.py` is referenced by README/live docs \u2192 not dead |\n\n## Executive Summary\n\nThe **code** in this repository is tidy: naming is consistent per language (PascalCase\nPowerShell, snake_case Python, lowercase launchers), imports are a clean acyclic layering with\n`benchreport.py` as the shared core, there are **no TODO/FIXME markers**, no bare `except:`,\nshell scripts are executable (`100755`) and line endings follow `.gitattributes`, and preset\nparity across GUI/TUI/web plus telemetry-field validity are enforced by tests.\n\nThe **repository** is not tidy. The dominant problem is generated output: `results/` is\ndeclared ignored in `.gitignore:2` yet **9,555 generated files (~55 MB) are tracked**, the\nhistory is **94% auto-generated `bench:` commits (4,659 of 4,962)**, a duplicate\n`results/results/` tree is committed, and committed run logs embed host fingerprints (CPU/GPU/\ndisk models). Regeneration is not enforced and nothing in CI rejects result output on `main`.\nSecondary issues: stale README release text (`v1.1.0` while `VERSION` is `1.11.3`), a documented\n\"stdlib-only\" test suite that fails on Windows system Python, very large unsplit modules, no\nCHANGELOG/ADRs, and no type annotations.\n\nRecommended next actions: (1) untrack `results/` and stop the per-file auto-committer;\n(2) delete `results/results/` and guard against it; (3) fix README version drift; (4) make the\nparity test independent of `curses`.\n\n## Inventory\n\n| Item | Path / symbol | Purpose | Current state | Risk | Notes |\n|---|---|---|---|---|---|\n| Generated runs | `results/**` | Committed benchmark output | 9,555 files tracked despite ignore | High | ~55 MB; grows per run |\n| Auto-committer | `bench:` commit series | Commits result files to main | 4,659 / 4,962 commits | High | per-file subjects |\n| Nested dup | `results/results/**` | Path-bug copy | 116 files, 3 runs | Medium | misleading |\n| README release | `README.md:12,15,17` | User-facing version | `v1.1.0` | Medium | VERSION is `1.11.3` |\n| Test entry | `tests/run_all.py` | Suite runner | FAIL on Windows system Python | Medium | `_curses` |\n| Big module | `bench/benchreport.py` | Shared core | 2,811 lines | Medium | no split |\n| Big module | `server/web/app.js` | Web dashboard | 1,822 lines | Low/Med | no split |\n| Changelog | \u2014 | Release notes | absent | Low | derived from commits |\n| Typing | `bench/*.py`, `server/*.py` | Static safety | 3 annotations / 35 files | Low | gradual typing absent |\n\n## Domain Scorecard\n\n| Category | Score | Evidence | Gap | Recommended action |\n|---|---:|---|---|---|\n| Folder/file naming | 4 | Consistent PascalCase `.ps1`, snake_case `.py`; single anomaly `results/results/` | Nested dup tree | Remove/guard `results/results` |\n| Duplicate/dead/unused code | 3 | Preset + field sync enforced by tests; telemetry field lists duplicated by design (`benchreport.CSV_ALIASES:54`, `telemetry_log.py:30`, `run_win.py:78`) | Cross-file field lists drift-prone | Generate/validate from one source |\n| Generated/build artifacts | 1 | 9,555 tracked under `results/`; ignore rule ineffective; no CI guard | Major, growing | Untrack + CI guard + artifacts |\n| Imports and circular deps | 4 | `benchreport` shared core imported by gui/tui/agent/import_results; no cycle found | Not exhaustively proven (no cycle tool) | Add a cheap import-cycle check |\n| Large files/components | 2 | `benchreport.py` 2,811; `app.js` 1,822; `tui.py` 1,445; `gui.py` 1,424; `benchd.py` 1,417 | No module split | Split along clean seams |\n| Type safety/any usage | 2 | 3 annotated defs / 35 Python files | No typing | Gradual typing on public APIs |\n| Error handling | 3 | 238 `except Exception`; intentional fail-soft per AGENTS.md; no bare `except:` | Over-broad off the fail-soft path | Narrow handlers |\n| TODO/FIXME | 5 | `git grep` found none (only example `XXX` placeholders) | \u2014 | Keep it clean |\n| Logging consistency | 3 | No `logging`; 111 `print(` + ad-hoc `self.log` | Hard to level/redirect | Small stdlib logging helper |\n| Config sprawl | 3 | `benchd.conf(.example)`, `bench-agent.conf.example`, `~/.config/bench-agent.{conf,json}`, `live/private/` \u2014 documented in AGENTS.md | Many locations | Document a precedence table |\n| Competing patterns | 3 | 3 preset copies (gui/tui/app.js) + 2 sampler field lists; parity tests exist | Manual triple-sync | Generate presets from one manifest |\n| Package scripts | 4 | `bench-*.cmd`, `packaging/build_app.py`, 3 workflows | No results-path guard | Add PR guard |\n\n## Detailed Review\n\n### Item: Generated result tree (`results/`)\n\n- Evidence: `.gitignore:2`; `git ls-tree -r b9167095 -- results/` \u2192 9,555 files / 57,767,706 bytes;\n  `results/.../sys-info.log:1` embeds host inventory; `AGENTS.md:59`.\n- What it does: stores every run's JSON/MD/CSV/logs in git.\n- How it appears to work: the ignore rule was added after the files were committed, so it stops\n  *new* files from being staged by casual `git add`, but tracked files remain and the external\n  auto-committer re-adds run folders anyway.\n- Missing controls: no CI guard; docs understate the volume (\"a few runs\").\n- Risks: bloat, slow clones, noisy history, exposed machine fingerprints on a public repo.\n- Recommended improvement: `git rm -r --cached results/`, publish runs as artifacts, add a guard.\n- Suggested tests: CI step failing when `results/**` is staged.\n\n### Item: History composition\n\n- Evidence: `git rev-list --count` = 4,962; `bench:`-prefixed subjects = 4,659; sample subjects\n  `ac83ffbc bench: ... (699 files)` and per-file `87847e32 bench: .../summary-error.txt (...)`.\n- Risks: `git blame`/`log --path` and bisect are unusable; unbounded growth.\n- Recommended improvement: one squashed commit per run, or push runs outside `main`.\n\n### Item: Duplicate nested tree\n\n- Evidence: `results/results/` (116 files, runs `20261011-135440/154845/200043`).\n- Recommended improvement: delete and assert the collector never writes `results/results`.\n\n### Item: README / VERSION drift\n\n- Evidence: `README.md:12,15,17` (`v1.1.0`, `1.1.0+<commit>`, `ISO <gpu> v1.1.0`); `VERSION`=1.11.3.\n- Recommended improvement: derive or synchronise the README release token; add a check.\n\n### Item: Test suite portability\n\n- Evidence: `tests/test_presets.py:41` imports `bench/tui.py`; `bench/tui.py:15 import curses`;\n  reproduced `RESULT: FAIL (1) \u2026 No module named '_curses'` (system Python 3.12.10, Windows) vs\n  `RESULT: PASS` under `.venv`.\n- Recommended improvement: lazy `curses` import / graceful skip; document windows-curses.\n\n## Scenario / Control Matrix\n\n| ID | Scenario or control | Evidence | Current control | Gap | Severity | Recommendation |\n|---|---|---|---|---|---|---|\n| HYGIENE-001 | Generated artifacts tracked | 9,555 tracked `results/` files | `.gitignore` only | Ineffective for tracked files | P1 | Untrack + CI guard |\n| HYGIENE-002 | History hygiene | 4,659 `bench:` commits | None | Per-file auto-commit | P2 | Batch/park runs |\n| HYGIENE-003 | Duplicate trees | `results/results/` 116 files | None | Path bug | P2 | Delete + assert |\n| HYGIENE-004 | Docs drift | `README.md:12,15,17` | None | Stale version | P2 | Synchronise/check |\n| HYGIENE-005 | Test portability | `tui.py:15`, reproduced FAIL | `.venv` workaround | curses hard dep | P2 | Lazy import/skip |\n| HYGIENE-006 | Large files | `benchreport.py` 2,811 lines | None | No split | P3 | Modularise |\n| HYGIENE-007 | Changelog/ADR | no CHANGELOG/adr | commit subjects | No human notes | P3 | Add CHANGELOG + ADRs |\n| HYGIENE-008 | Typing/error/logging | 3 annotations, 238 broad excepts, 111 prints | Fail-soft convention | No typing, broad handlers | P3 | Gradual typing + logging |\n| HYGIENE-009 | Naming | consistent per language | conventions | None material | \u2014 | \u2014 |\n| HYGIENE-010 | Imports | `benchreport` core | stdlib-only rule | no cycle tool | \u2014 | Add cycle check |\n| HYGIENE-011 | Config | documented locations | AGENTS.md | No precedence table | P3 | Document precedence |\n| HYGIENE-012 | Package scripts | `.cmd`, `build_app.py`, 3 workflows | CI | No results guard | P3 | Add guard |\n\n## Findings\n\n### Finding ID: HYGIENE-P1-001 - 9,555 generated result files (~55 MB) committed under results/\n\n- Severity: P1 \u00b7 Confidence: High \u00b7 Area: HYGIENE\n- Evidence: `.gitignore:2`; `git ls-tree -r b9167095 -- results/` (9,555 files / 57,767,706 bytes);\n  `results/bench-live-linux-20261011-135440/.../sys-info.log:1`; `AGENTS.md:59`.\n- What is happening: a `results/` ignore rule coexists with 9,555 tracked result files.\n- Why it matters: bloat, slow clones, misleading `.gitignore`, host fingerprint exposure.\n- Recommended fix: untrack `results/`, publish runs as artifacts, add a CI guard.\n- Effort: S \u00b7 Status: open\n\n### Finding ID: HYGIENE-P2-001 - History is 94% auto-generated `bench:` commits\n\n- Severity: P2 \u00b7 Confidence: High \u00b7 Area: HYGIENE\n- Evidence: 4,962 commits total, 4,659 `bench:` (e.g. `ac83ffbc`, `87847e32`).\n- Recommended fix: squash per run / park output off `main`; document the mechanism.\n- Effort: M \u00b7 Status: open\n\n### Finding ID: HYGIENE-P2-002 - Duplicate nested `results/results/` tree\n\n- Severity: P2 \u00b7 Confidence: High \u00b7 Area: HYGIENE\n- Evidence: 116 tracked files across 3 duplicated runs.\n- Recommended fix: delete; assert collector output path.\n- Effort: S \u00b7 Status: open\n\n### Finding ID: HYGIENE-P2-003 - README release drift (v1.1.0 vs VERSION 1.11.3)\n\n- Severity: P2 \u00b7 Confidence: High \u00b7 Area: HYGIENE\n- Evidence: `README.md:12,15,17`; `VERSION`=`1.11.3`.\n- Effort: S \u00b7 Status: open\n\n### Finding ID: HYGIENE-P2-004 - Stdlib-only test suite fails on Windows system Python\n\n- Severity: P2 \u00b7 Confidence: High \u00b7 Area: HYGIENE\n- Evidence: reproduced `RESULT: FAIL (1) \u2026 '_curses'`; `.venv` \u2192 PASS.\n- Effort: S \u00b7 Status: open\n\n### Finding ID: HYGIENE-P3-001..004\n\nLarge unsplit modules (`benchreport.py` 2,811 / `app.js` 1,822 / `tui.py` 1,445 / `gui.py` 1,424 /\n`benchd.py` 1,417); no CHANGELOG/ADRs; no type annotations with 238 broad `except Exception`\nand print-based logging. See JSON for full detail.\n\n## Risks\n\n| Risk | Severity | Likelihood | Impact | Evidence | Mitigation |\n|---|---|---|---|---|---|\n| Repo bloat / slow clone | High | High | Dev velocity | 55 MB results tracked | Untrack + artifacts |\n| Unusable history | High | High | Debuggability | 94% bench commits | Batch commits |\n| Machine fingerprint exposure | Medium | Medium | Privacy | `sys-info.log` | Don't commit logs |\n| Contributor confusion | Medium | Medium | Onboarding | README/version drift, Windows test FAIL | Fix docs + test |\n\n## Recommendations\n\n### Immediate / Release Blocking\n- Untrack `results/` and stop the per-file auto-committer (HYGIENE-P1-001, P2-001).\n- Delete `results/results/` (HYGIENE-P2-002).\n\n### This Week\n- Fix README release drift and add a check (HYGIENE-P2-003).\n- Make `test_presets` independent of `curses`; document windows-curses (HYGIENE-P2-004).\n\n### This Month\n- Split `benchreport.py` / `app.js` along clean seams (HYGIENE-P3-001).\n- Add a CHANGELOG + `docs/adr/` (HYGIENE-P3-002).\n\n### Later / Platform Evolution\n- Gradual typing on public APIs; stdlib logging helper; config precedence table.\n\n## Quick Wins\n\n| Quick win | Why it helps | Files likely involved | Validation |\n|---|---|---|---|\n| `git rm -r --cached results/` | Stops new result files being tracked | `.gitignore`, index | `git status` shows results untracked |\n| Delete `results/results/` | Removes misleading duplicate | `results/results/**` | tree no longer present |\n| Fix README release token | Correct user-facing version | `README.md:12,15,17` | matches `VERSION` |\n| Lazy `import curses` | Windows suite passes | `bench/tui.py:15` | `python tests/run_all.py` PASS |\n\n## Hardening Backlog\n\n| Backlog item | Priority | Owner suggestion | Effort | Dependency |\n|---|---|---|---|---|\n| Untrack generated results | P1 | Repo maintainer | S | \u2014 |\n| Batch/park run auto-commits | P2 | CI/ops | M | artifact storage |\n| Curve-collector path guard | P2 | bench maintainer | S | \u2014 |\n| README version check | P2 | docs owner | S | \u2014 |\n| TUI import decoupling | P2 | dashboards owner | S | \u2014 |\n| Module split | P3 | core maintainer | M | test coverage |\n\n## Suggested Tests\n\n- **CI policy test:** fail if `git diff --cached --name-only` matches `results/**`.\n- **Path guard test:** assert the collector never emits a `results/results` path.\n- **Docs test:** parse `README.md` release token and compare to `VERSION`.\n- **Portability test:** run `python tests/run_all.py` in CI on Windows *without* windows-curses to\n  prove the suite skips/degrades gracefully.\n- **Import-cycle test:** a small stdlib check that no `bench/*.py` module import cycle exists.\n\n## Suggested Documentation Updates\n\n- `README.md` \u2014 correct the release string; point at `VERSION`.\n- `AGENTS.md` \u2014 state the real `results/` policy (currently \"a few runs\"); document the\n  auto-commit behaviour and the windows-curses prerequisite for the test suite.\n- New `CHANGELOG.md` and `docs/adr/0001-*.md` (stdlib-only, single-writer telemetry, fail-soft).\n\n## Open Questions\n\n| Question | Why it matters | Evidence needed |\n|---|---|---|\n| Who/what performs the `bench:` auto-commits? | Owner + fix path | Script or workflow outside this repo (not present in the tracked tree) |\n| Are committed run logs intended to be public? | Privacy exposure | Maintainer intent / redaction policy |\n| Is `results/` history meant to remain in `main`? | Determines `git rm --cached` vs filter-repo | Maintainer decision |\n| Does the suite run in CI on Windows at all? | Windows is first-class | Workflow YAML (only 3 workflows, none run tests) |\n\n## Appendix\n\n- Command outputs summarised in *Verification Performed* above; raw values:\n  - total tracked files @ `b9167095`: 9,811 (results 9,555; non-results 256)\n  - results bytes: 57,767,706 (~55.1 MB); examples bytes: ~16.7 MB; source bytes: ~1.1 MB\n  - commits: 4,962 total; `bench:` 4,659; `bench: \u2026 (N files)` 17\n  - large files: `benchreport.py` 2,811, `app.js` 1,822, `tui.py` 1,445, `gui.py` 1,424, `benchd.py` 1,417\n  - typing: 3 annotated defs / 35 Python files; 238 `except Exception`; 111 `print(`; 0 bare `except:`\n  - `.sh` modes all `100755`; `.gitattributes` LF for sh/py/js/md, CRLF for ps1/cmd\n- mermaid (artifact flow):\n\n```mermaid\nflowchart LR\n  Run[bench run] --> Collector[collector writes results/]\n  Collector --> Nested[results/results/ bug]\n  Collector --> Auto[\"auto-committer (bench: commits)\"]\n  Auto --> Main[(main history: 94% bench commits)]\n  Ignore[\".gitignore: results/\"] -. ineffective for tracked files .-> Main\n```\n"
+}
