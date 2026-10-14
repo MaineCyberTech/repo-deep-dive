@@ -57,3 +57,24 @@ Still open (maintainer's call, not part of this stack): Dependabot bumps #44–#
 **Re-check before claiming any finding fixed:** rebase the audit pin onto current
 `main`, re-run `tools/deterministic_checks.py` + the target's `tests/run_all.py`,
 and confirm each finding's evidence against the current commit.
+
+## Post-stack follow-up (appended 2026-10-14, later)
+
+After the stack merged, the newly-added CI was made to actually pass, and the
+bake/onboarding path was finished:
+
+| Item | Change | PR |
+|---|---|---|
+| Dependabot bumps | #44–#48 merged (checkout v7, setup-python v7, upload-artifact v7, gitleaks-action v3, action-gh-release v3) | — |
+| Bake/onboarding | the client now honours a baked `BENCHD_JOIN_TOKEN`, so a release can onboard without baking the operator token (the workflows' bake guard refuses `BENCHD_TOKEN=`); live launcher allow-list + docs updated | #60 |
+| Linux CI | the Tests workflow had never completed a Linux run: venv deps (numpy/psutil) + xvfb + `--allow-skips`, Windows-only checks record a skip, POSIX-safe base-python assertion, deterministic SSE-overflow assertion, PowerShell check uses the interpreter it finds | #61 |
+| Repo hygiene | 4337 generated `results/` files (a live-ISO run, host logs) untracked again — the CI check that caught them is the one from this stack | #61 |
+| Secret scanning | gitleaks-action v3 needs a paid licence for orgs → replaced with the pinned, checksum-verified gitleaks CLI plus a scoped `.gitleaks.toml` for two false positives (a test placeholder and an actions/cache key) | #61 |
+| Supply chain | dependency-review made advisory (needs the repo's Dependency graph enabled — recorded NEEDS-HUMAN); SARIF upload bumped off the deprecated CodeQL v3 | #61 |
+
+Repository settings changed during the follow-up (owner identity, admin scope):
+**secret scanning**, **push protection** and **Dependabot security updates**
+enabled. `BENCH_AGENT_JOIN_CONF` created with a generated registration-only join
+token; **the lab `benchd` must set `BENCHD_JOIN_TOKEN` to the same value** before
+a baked artifact can register (owner action). Branch protection remains unset —
+recorded as NEEDS-HUMAN rather than imposed.
