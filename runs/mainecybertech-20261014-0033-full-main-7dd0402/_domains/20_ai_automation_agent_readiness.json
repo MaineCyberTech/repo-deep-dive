@@ -32,7 +32,7 @@
       "owner": "repo maintainer (AI readiness)",
       "target": "this month",
       "status": "partially-fixed",
-      "note": "re-verified at 7dd0402: two of the four recommendations landed - verify-prompts.js verify now runs in the shared PR/deploy test job (.github/actions/unit-tests/action.yml:168-174, validate.yml:148 keeps the deploy gate) and CODEOWNERS has explicit owners for .github/, supabase/migrations/, infra/ and docs (.github/CODEOWNERS:26-49). Residual: still no PR-size guard (grep changed_files|pr-size|max-files|net-lines across .github/ and scripts/ returns nothing); no committed-docs/openapi.yaml regenerate-and-diff step (scripts/openapi-audit.js compares code routes to spec.ts only); agent path boundaries remain CODEOWNERS review routing, not an allowlist.",
+      "note": "re-verified at 7dd0402: two of the four recommendations landed - verify-prompts.js verify now runs in the shared PR/deploy test job (.github/actions/unit-tests/action.yml:168-174, validate.yml:148 keeps the deploy gate) and CODEOWNERS has explicit owners for .github/, supabase/migrations/, infra/ and docs (.github/CODEOWNERS:30-50). Residual: still no PR-size guard (grep changed_files|pr-size|max-files|net-lines across .github/ and scripts/ returns nothing); no committed-docs/openapi.yaml regenerate-and-diff step (scripts/openapi-audit.js compares code routes to spec.ts only); agent path boundaries remain CODEOWNERS review routing, not an allowlist.",
       "area": "AI"
     },
     {

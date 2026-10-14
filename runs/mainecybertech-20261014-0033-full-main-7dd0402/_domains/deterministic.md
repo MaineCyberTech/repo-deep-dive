@@ -30,7 +30,7 @@ shows both were remediated operationally:
 | ID | Severity | Title | Status | Evidence |
 |---|---|---|---|---|
 | DET-P3-001 | P3 | [SEC] gitleaks not installed (secret scan skipped) | verified-fixed | secret-history-scan.yml:27-40,42-47; scripts/ci/verify-gitleaks-config.sh |
-| DET-P3-002 | P3 | [SUPPLY] 3 container image(s) without a digest pin | verified-fixed | deploy-do.yml:897-904; third-party-image-scan.yml:39-61; docker-compose.yml:74-80,82,160,233 |
+| DET-P3-002 | P3 | [SUPPLY] 3 container image(s) without a digest pin | verified-fixed | deploy-do.yml:897-904; third-party-image-scan.yml:51-61; docker-compose.yml:74-80,82,160,233 |
 
 No new DET findings: the tool's other check families (PORT, CI, DEP, GIT, DOC)
 produced no output at 7dd0402.

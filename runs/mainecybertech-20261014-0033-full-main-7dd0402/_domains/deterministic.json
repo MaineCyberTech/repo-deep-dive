@@ -22,7 +22,7 @@
       "owner": "@owner",
       "target": "DET",
       "status": "verified-fixed",
-      "note": "re-verified at 7dd0402: the deployed images are digest-pinned. deploy-do.yml:897-904 refuses to deploy when API_DIGEST/WORKER_DIGEST/WEB_DIGEST are missing and exports MCT_<SERVICE>_IMAGE with @sha256 refs (attestation-verified first); third-party-image-scan.yml:39-61 fails on any literal (non-$) image ref in infra/digitalocean/docker-compose.yml without @sha256 (all four third-party images carry digests). The compose tag fallbacks (docker-compose.yml:82,160,233) remain for manual operator runs and are documented at docker-compose.yml:74-80, so the deterministic static check keeps flagging them by design; they are not used by the deploy path.",
+      "note": "re-verified at 7dd0402: the deployed images are digest-pinned. deploy-do.yml:897-904 refuses to deploy when API_DIGEST/WORKER_DIGEST/WEB_DIGEST are missing and exports MCT_<SERVICE>_IMAGE with @sha256 refs (attestation-verified first); third-party-image-scan.yml:51-61 fails on any literal (non-$) image ref in infra/digitalocean/docker-compose.yml without @sha256 (all four third-party images carry digests). The compose tag fallbacks (docker-compose.yml:82,160,233) remain for manual operator runs and are documented at docker-compose.yml:74-80, so the deterministic static check keeps flagging them by design; they are not used by the deploy path.",
       "area": "DET"
     }
   ]
