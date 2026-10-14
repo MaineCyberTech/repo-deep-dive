@@ -1,0 +1,40 @@
+{
+  "run": "mainecybertech-20261014-0033-full-main-7dd0402",
+  "generated": "2026-10-14T00:40:57Z",
+  "sourceReports": 1,
+  "counts": {
+    "bySeverity": {
+      "P3": 2
+    },
+    "byArea": {
+      "DET": 2
+    },
+    "total": 2
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "SEC",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 14,
+      "detail": "Install gitleaks in CI to enable the secret scan.",
+      "evidence": []
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] 3 container image(s) without a digest pin",
+      "report": "lens_deterministic.md",
+      "line": 18,
+      "detail": "Pin images by digest (`image@sha256:...`) for reproducible, tamper-evident deploys.",
+      "evidence": [
+        "infra/digitalocean/docker-compose.yml:82 ${MCT_API_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:?IMAGE_TAG must be set}}",
+        "infra/digitalocean/docker-compose.yml:160 ${MCT_WORKER_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:?IMAGE_TAG must be set}}",
+        "infra/digitalocean/docker-compose.yml:233 ${MCT_WEB_IMAGE:-${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}}"
+      ]
+    }
+  ]
+}
