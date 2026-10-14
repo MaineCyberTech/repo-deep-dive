@@ -19,7 +19,7 @@
     "profile": "base",
     "readOnly": true,
     "secretsRedacted": true,
-    "generatedAt": "2026-10-14T01:27:44Z",
+    "generatedAt": "2026-10-14T08:36:10Z",
     "domains": [
       "deterministic",
       "00_audit_orchestrator",
