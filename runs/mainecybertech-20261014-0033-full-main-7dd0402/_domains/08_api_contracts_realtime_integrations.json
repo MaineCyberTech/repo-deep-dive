@@ -156,5 +156,5 @@
       "area": "API"
     }
   ],
-  "report": ""
+  "report": "Read-only re-verification at `7dd0402`; no live API calls. 10 of 14 previous API rows verified fixed, 4 partially fixed, 0 regressed, 1 new P3. Executed: `node scripts/openapi-audit.js` (453 live routes vs 695 spec entries, 0 MISSING, exit 0). Key code: `middleware/{rate-limit,idempotency,request-timeout,request-id}.ts`; `packages/sdk/src/client.ts:213-220,337-341`; `routes/{search,docs,admin,webhooks,dynamic-client-forms-builder}.ts`; `worker/tasks/{jira-sync,jsm-sync,stripe-reconcile,m365-calendar-sync}.ts`. Residuals: unguarded mutation routes in projects/assets/findings (API-P2-001), `jira-sync.ts:206` still returns ok:true with counted errors (API-P2-002), non-enveloped 429/408/idempotency responses vs docs (API-P3-001), OpenAPI not commit-bound + EXTRA warnings (API-P3-002). New: API-P3-008 (`/dynamic-forms/export.csv` returns JSON)."
 }

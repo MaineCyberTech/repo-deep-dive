@@ -196,5 +196,5 @@
       "area": "FILE"
     }
   ],
-  "report": ""
+  "report": "Read-only re-verification at `7dd0402`; no live Storage/bucket probing. 17 of 19 previous FILE rows verified fixed, 2 partially fixed, 0 regressed, 0 new. Executed: `bash scripts/exercise-storage-restore.sh` \u2192 PASS (6 checks). Key code: `routes/{documents,file-requests}.ts`, `lib/{upload-validation,preview-policy,malware-scan,csv,document-visibility}.ts`, `worker/tasks/orphan-cleanup.ts`; migrations 5302433/5302439. Residuals: malware scanning is an opt-in fail-closed hook (default no-op) and the documents bucket has no MIME allow-list (FILE-P2-003); `docs/ORG_BRANDING.md:65` and `docs/ARCHITECTURAL_ANALYSIS.md:274` still state stale types/sizes (FILE-P3-003)."
 }

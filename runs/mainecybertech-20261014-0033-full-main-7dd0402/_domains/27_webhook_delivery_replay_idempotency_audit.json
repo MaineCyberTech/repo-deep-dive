@@ -246,5 +246,5 @@
       "area": "WH"
     }
   ],
-  "report": ""
+  "report": "Read-only re-verification at `7dd0402`; no live webhook traffic. 22 of 23 previous WH rows verified fixed, 1 partially fixed, 0 regressed, 1 new P3. Executed: `promtool check rules` + `test rules` against `infra/digitalocean/prometheus.rules.yml` (22 rules SUCCESS). Key code: `lib/webhook-dispatcher.ts`, `worker/tasks/{webhook-dispatcher,webhook-retry}.ts`, `routes/{webhooks,webhook-management}.ts`, `lib/idempotency.ts`, `middleware/webhook-body.ts`, `lib/webhook-schemas.ts`; migrations 5302053/5302441/5302452/5302454. Residual: the M365 7-day replay claim is re-stored with the shared 24h TTL by `logWebhookDelivery` (WH-P2-001). New: WH-P3-010 (provider redelivery after the dedup TTL collides with the unique delivery key and 500s permanently)."
 }

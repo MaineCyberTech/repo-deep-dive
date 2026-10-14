@@ -216,5 +216,5 @@
       "area": "DATA"
     }
   ],
-  "report": ""
+  "report": "Read-only re-verification at `7dd0402` (worktree of `origin/main`); no database access. 16 of 20 previous DATA rows are verified fixed with executed guards, 4 remain partially fixed, 0 regressed, 1 new P3. Executed evidence: `node scripts/verify-rls.mjs` (140/140 tables RLS, 1031 policies, 0 failures), `node scripts/check-rls-predicate.mjs` (PASS, 30 migrations newer than 5302430), `sh scripts/ci/check-migration-transactions.sh` (PASS, 158 files), `node scripts/generate-db-types.js --check` (up to date, digest-bound), `node scripts/check-docs-counts.mjs` (OK). Key code: `apps/worker/src/tasks/{retention,orphan-cleanup}.ts` + `lib/{purge,retention-policy}.ts`; migrations 5302432/5302434/5302442/5302443/5302451/5302457. Residuals: notifications INSERT policy still lacks `status='approved'` (5302057:41-55); `store_quote_requests`/`store_leads`/`impersonation_log` still have no purge (docs/PRIVACY.md:56); prod backup capable but unexercised (drill ledger: no drill executed); migration version gaps undocumented. New: DATA-P3-007 (free-text governance status vs new CHECK \u2192 500)."
 }

@@ -176,5 +176,5 @@
       "area": "RLS"
     }
   ],
-  "report": ""
+  "report": "Read-only re-verification at `7dd0402`; no hosted-Supabase or local-Postgres replay. 12 of 16 previous RLS rows verified fixed, 4 partially fixed, 0 regressed, 1 new P3. Executed: `node scripts/verify-rls.mjs` (0 failures; 1 baseline role-gate warning), `node scripts/check-rls-predicate.mjs` (PASS), `node scripts/check-permission-catalog.mjs` (PASS: 198 route + 46 policy references vs 338 keys), `sh scripts/ci/check-permission-catalog.sh` (PASS + negative fixture), and `promtool check rules` + `promtool test rules` (docker prom/prometheus:v3.5.1 \u2014 22 rules SUCCESS, tests SUCCESS). Key migrations: 5302435/5302436/5302447/5302448/5302452/5302459. Residuals: service-role default + secret-defined allow-lists (RLS-P2-004), no anon-grant lint (RLS-P3-001), name-derived storage org helper (RLS-P3-003), duplicate scoped-client tests + unguarded matrix counts (RLS-P3-004). New: RLS-P3-008 (four live policies hardcode partial platform-role lists)."
 }
