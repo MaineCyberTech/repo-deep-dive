@@ -481,7 +481,7 @@ b882c3f85df03f116b2ca4c97f81080ab4e51cc988cbb9c43eb6101127870b37  ./runs/bench-t
 b97d29097dcd6bf9a75a34023b6cab4440367c195e11148dcf857eb828053b86  ./runs/bench-test-20261013-0819-full-main-b916709/follow_up_register.md
 355e33ddb378c6b328b1ab9ccc90d3a628f384522f8d37755e40d6daf3ed664d  ./runs/bench-test-20261013-0819-full-main-b916709/lens_deterministic.md
 99f3d6548f5af5410ccd72b5379b4f94ab07116491cdcffa3d71e399e36a7f77  ./runs/bench-test-20261013-0819-full-main-b916709/patch_plan.md
-2872335e70c732535ea6ce686411ebe290c5ef6a2f91cde3babeb48cf7935f78  ./runs/bench-test-20261013-0819-full-main-b916709/reconciliation.md
+8139b6827ed233444110e2fb1365f382aa8fe1fca768585eb10b5f3af7e23465  ./runs/bench-test-20261013-0819-full-main-b916709/reconciliation.md
 b97d29097dcd6bf9a75a34023b6cab4440367c195e11148dcf857eb828053b86  ./runs/bench-test-20261013-0819-full-main-b916709/risk_register.md
 91ac84bde283c77c90483e5597d2ab2d01af2bd73dc65c176803f16216a47bb3  ./runs/bench-test-20261013-0819-full-main-b916709/roadmap.md
 2ed3328c073a27e0ffa0c8a49cc3803fa9d59d2fb2507f4d897a8c763fb570a9  ./runs/bench-test-20261013-0819-full-main-b916709/verification_log.md
