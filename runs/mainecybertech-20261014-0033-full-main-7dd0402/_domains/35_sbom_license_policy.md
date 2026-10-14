@@ -7,7 +7,9 @@
 
 ## Executive Summary
 
-All 26 previous SBOM rows were re-verified at `7dd0402`: **26 verified-fixed** (two rows that were previously partially-fixed — SBOM-P1-003 version identity and SBOM-P2-001 artifact-only — are now closed by the release workflow + commit binding), plus **1 new P3**. The SBOM program is complete end to end: the lockfile CycloneDX SBOM carries licenses + a dependency graph and binds `<VERSION>+<commit>`, is validated before upload and attached to GitHub Releases; each app image gets a digest-bound image SBOM that is validated (floor + digest) and attested with both CycloneDX and SLSA predicates, and the deploy verifies both predicates and pulls by the verified digest; the four third-party runtime images get weekly scans + SBOMs; Actions dependencies are enumerated and SHA-pin-checked.
+All 26 previous SBOM rows were re-verified at `7dd0402`: **22 verified-fixed, 4 partially-fixed, plus 1 new P3**. The SBOM program is complete end to end on the build/deploy path: the lockfile CycloneDX SBOM carries licenses + a dependency graph and binds `<VERSION>+<commit>`, is validated before upload; each app image gets a digest-bound image SBOM that is validated (floor + digest) and attested with both CycloneDX and SLSA predicates, and the deploy verifies both predicates and pulls by the verified digest; the four third-party runtime images get weekly scans + SBOMs; Actions dependencies are enumerated and SHA-pin-checked.
+
+The four partially-fixed rows all share one cause: **the release attachment is wired but never delivered** — `release.yml` fails on every promotion with exit 141 (SIGPIPE at the release-notes step; live run 38490822732) and origin has 0 tags / 0 releases (see CI-P2-011). So commit binding and attestations are exercised, but no SBOM has ever been attached to a release.
 
 The new finding is a latent correctness bug in `scripts/validate-sbom.mjs`: with no `--digest`, its argument filter drops the first positional path, so a caller passing a custom SBOM path silently validates `./sbom.cdx.json` instead. Current CI callers are unaffected (the default name coincides, or `--digest` is passed), but the documented `[sbomPath]` usage is broken.
 
@@ -28,15 +30,15 @@ The new finding is a latent correctness bug in `scripts/validate-sbom.mjs`: with
 |---|---|---|---|---|
 | SBOM-P1-001 | P1 | SBOM lockfile-only, no image SBOM/attestation | verified-fixed | per-image Trivy CycloneDX + attest-sbom (deploy-do:240-274 etc.) |
 | SBOM-P1-002 | P1 | Unsigned images, no provenance | verified-fixed | attest-build-provenance + fail-closed verify |
-| SBOM-P1-003 | P1 | No version identity/tags/commit binding | verified-fixed | `VERSION`+commit in SBOM; release.yml tags; RELEASING.md:59-83 |
+| SBOM-P1-003 | P1 | No version identity/tags/commit binding | partially-fixed | `<VERSION>`+commit binding done (generate-sbom:328-330, reproduced); tags absent - release.yml fails every run (run 38490822732), 0 tags (CI-P2-011) |
 | SBOM-P1-004 | P1 | No license allow/deny policy | verified-fixed | dependency-review allow-list + full-tree license gate |
 | SBOM-P1-005 | P1 | SBOM lacks licenses/graph | verified-fixed | collect-licenses + dependency graph; validator floor |
-| SBOM-P2-001 | P2 | Artifact-only, not bound/attested | verified-fixed | commit-bound + release-attached + attested |
+| SBOM-P2-001 | P2 | Artifact-only, not bound/attested | partially-fixed | commit-bound + attested (exercised); release binding never delivered (release.yml fails, 0 releases) |
 | SBOM-P2-002 | P2 | No image SBOM / OS packages untracked | verified-fixed | Trivy image SBOMs per app + third-party images |
 | SBOM-P2-003 | P2 | docs/CI.md "Blocking" misstatement | verified-fixed | CI.md SBOM row now "Artifact-only (not a gate)" |
 | SBOM-P2-004 | P2 | No provenance/attestation | verified-fixed | same as SC-P2-002 |
 | SBOM-P2-005 | P2 | License policy not enforced | verified-fixed | same as SC-P2-003 |
-| SBOM-P2-006 | P2 | Not commit/release bound | verified-fixed | same as SC-P2-004 |
+| SBOM-P2-006 | P2 | Not commit/release bound | partially-fixed | commit + image binding done; release attachment never delivered (release.yml fails, 0 releases) |
 | SBOM-P2-007 | P2 | Dependabot backlog untriaged | verified-fixed | reminder + SLA; live queue uninspectable |
 | SBOM-P2-008 | P2 | `licenses.json` committed | verified-fixed | untracked + guard |
 | SBOM-P2-009 | P2 | Exceptions string-only; UNKNOWN fails open | verified-fixed | (license, package) matching + UNKNOWN fail-closed + fixtures |
@@ -46,7 +48,7 @@ The new finding is a latent correctness bug in `scripts/validate-sbom.mjs`: with
 | SBOM-P3-001 | P3 | Root ISC no rationale | verified-fixed | LICENSE_POLICY.md:82-88 |
 | SBOM-P3-002 | P3 | SBOM not validated before upload | verified-fixed | validate-sbom in sbom.yml:54-55 |
 | SBOM-P3-003 | P3 | Root ISC (dup) | verified-fixed | documented intentional |
-| SBOM-P3-004 | P3 | SBOM transient | verified-fixed | attached to Release |
+| SBOM-P3-004 | P3 | SBOM transient | partially-fixed | release.yml wired (:126-145) but fails every promotion; SBOM remains transient (CI-P2-011) |
 | SBOM-P3-005 | P3 | Image SBOMs never validated | verified-fixed | `--image --digest` before each attestation |
 | SBOM-P3-006 | P3 | Docs use broken licenses command | verified-fixed | collect-licenses.mjs everywhere |
 | SBOM-P3-007 | P3 | sharp exception mismatch | verified-fixed | policy + LICENSE_POLICY.md aligned (expires 2027-10-03) |

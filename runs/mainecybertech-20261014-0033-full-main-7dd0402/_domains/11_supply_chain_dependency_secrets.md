@@ -7,9 +7,9 @@
 
 ## Executive Summary
 
-All 26 previous SC rows were re-verified at `7dd0402`: **24 verified-fixed, 2 partially-fixed, 0 open, 0 regressed**. The supply-chain control set is broad and enforced in CI: the dependency audit policy blocks CRITICAL any scope / HIGH+ prod, the license gate enforces a full-tree allow/deny policy with package-scoped, expiry-bound exceptions (self-tested), every external action ref is SHA-pinned (125 refs, guard PASS), container images are digest-pinned and scanned, images carry both provenance and SBOM attestations verified fail-closed before deploy, secret scanning runs on diffs (PRs + pushes) and weekly over full history, and generated license/SBOM artifacts are untracked and guarded.
+All 26 previous SC rows were re-verified at `7dd0402`: **23 verified-fixed, 3 partially-fixed, 0 open, 0 regressed**. The supply-chain control set is broad and enforced in CI: the dependency audit policy blocks CRITICAL any scope / HIGH+ prod, the license gate enforces a full-tree allow/deny policy with package-scoped, expiry-bound exceptions (self-tested), every external action ref is SHA-pinned (125 refs, guard PASS), container images are digest-pinned and scanned, images carry both provenance and SBOM attestations verified fail-closed before deploy, secret scanning runs on diffs (PRs + pushes) and weekly over full history, and generated license/SBOM artifacts are untracked and guarded.
 
-Residuals: the diff secret scanner still does not know the platform's own token formats (dop_v1_/sbp_/glpat_/sk-proj-/npm_), and Dependabot security-update separation is a GitHub repo setting that cannot be inspected read-only.
+Residuals: the diff secret scanner still does not know the platform's own token formats (dop_v1_/sbp_/glpat_/sk-proj-/npm_); Dependabot security-update separation is a GitHub repo setting that cannot be inspected read-only; and the SBOM release attachment is wired but never delivered because `release.yml` fails on every promotion (exit 141, live run 38490822732 — see CI-P2-011), so SC-P3-006 is partially fixed.
 
 ## Verification Performed
 
@@ -45,7 +45,7 @@ Residuals: the diff secret scanner still does not know the platform's own token 
 | SC-P3-003 | P3 | Scanner pattern divergence .sh/.ps1 | verified-fixed | same 10 pattern classes |
 | SC-P3-004 | P3 | Unpinned images | verified-fixed | third-party digests pinned; scan fails unpinned literal refs |
 | SC-P3-005 | P3 | Dockerfile lint gaps | verified-fixed | hadolint gate wired; fixes in place |
-| SC-P3-006 | P3 | SBOM transient | verified-fixed | attached to GitHub Release |
+| SC-P3-006 | P3 | SBOM transient | partially-fixed | release.yml wired to attach the SBOM (:126-145) but fails every promotion (exit 141, run 38490822732); 0 releases — see CI-P2-011 |
 | SC-P3-007 | P3 | Secrets file on disk | verified-fixed | tracked-secret-file guard; none tracked |
 | SC-P3-008 | P3 | gitleaks false positives | verified-fixed | scoped allowlists + negative fixture |
 | SC-P3-009 | P3 | Scanner misses platform tokens | partially-fixed | patterns lack dop_v1_/sbp_/glpat_/sk-proj-/npm_ (action:14; scan-secrets.sh:13) |

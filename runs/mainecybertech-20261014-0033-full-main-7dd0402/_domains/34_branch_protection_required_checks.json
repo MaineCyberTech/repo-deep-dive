@@ -52,7 +52,7 @@
       "owner": "repo admin (owner decision)",
       "target": "this month",
       "status": "verified-fixed",
-      "note": "re-verified at 7dd0402: branch-protection-audit.yml bypass job (weekly + dispatch) lists merged PRs whose head check-runs missed required contexts and opens deduplicated [break-glass] issues (:94-186); docs/RUNBOOK_EMERGENCY_MERGE.md + .github/ISSUE_TEMPLATE/break_glass.yml; fixture self-test passes.",
+      "note": "re-verified at 7dd0402: branch-protection-audit.yml bypass job (weekly + dispatch) lists merged PRs whose head check-runs missed required contexts and opens deduplicated [break-glass] issues (:94-186); docs/RUNBOOK_EMERGENCY_MERGE.md + .github/ISSUE_TEMPLATE/break_glass.yml; fixture self-test passes. Unexercised: the workflow has 0 runs to date and there are 0 break-glass issues, so the trail has never actually been produced (see BP-P1-004).",
       "area": "BP"
     },
     {
@@ -62,7 +62,7 @@
       "owner": "repo admin (owner decision)",
       "target": "this month",
       "status": "verified-fixed",
-      "note": "re-verified at 7dd0402: branch-protection-audit.yml drift job compares committed JSON with live protection, fails + ntfy/Slack alert + uploads artifacts (:43-92); needs BRANCH_PROTECTION_READ_TOKEN (documented; fails closed with instructions until provisioned - operator prerequisite).",
+      "note": "re-verified at 7dd0402: branch-protection-audit.yml drift job compares committed JSON with live protection, fails + ntfy/Slack alert + uploads artifacts (:43-92); needs BRANCH_PROTECTION_READ_TOKEN (documented; fails closed with instructions). Unexercised: 0 workflow runs to date; the first run is operator-gated and would report the pre-existing divergence (see BP-P1-004).",
       "area": "BP"
     },
     {
@@ -153,6 +153,16 @@
       "target": "this quarter",
       "status": "verified-fixed",
       "note": "re-verified at 7dd0402: scripts/check-codeowners.mjs + scripts/ci/check-codeowners.sh (fixture PASS) wired in unit-tests action.yml:146-154; CODEOWNERS_READ_TOKEN optional with a documented syntax-only fallback; .github/CODEOWNERS documents the failure mode.",
+      "area": "BP"
+    },
+    {
+      "id": "BP-P1-004",
+      "severity": "P1",
+      "title": "PR #279 merged into main with required checks pending and zero reviews - live protection does not match the committed payloads (or an unrecorded bypass)",
+      "owner": "repo admin (owner decision)",
+      "target": "this week",
+      "status": "open",
+      "note": "live evidence at 7dd0402: PR #279 (docs/publish-reaudit @ 62a09bac) targeted main, had 0 reviews (GET /pulls/279/reviews = []), and was merged 2026-10-13T02:00:23Z while its required checks were still running - the required 'Test / test (20.x)' job (run 38334811453) started 02:00:21Z and only failed at 02:03:02Z. The committed main.json requires 1 approving review + a CODEOWNERS review + 8 status contexts with enforce_admins:true, so this merge is only possible if the live settings differ from the committed payload or a bypass occurred; no [break-glass] issue exists and branch-protection-audit.yml has 0 runs. Action: run scripts/branch-protection-audit.mjs --mode drift with an admin token, apply/reconcile the live settings, backfill a break-glass record for PR #279 if a bypass is confirmed, and provision BRANCH_PROTECTION_READ_TOKEN so the weekly audit runs.",
       "area": "BP"
     }
   ]

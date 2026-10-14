@@ -19,7 +19,7 @@ Re-verified all 23 DR findings from the previous run against `main@7dd0402`, plu
 
 ## Executive Summary
 
-The **repository-side DR program is now essentially complete**: encrypted and offsite-capable backups, paginated/verified storage mirrors, deep restore assertions, an independent staleness detector, a platform heartbeat that the worker actually alerts on, a prod-capable DB backup target, a versioned Terraform state bucket, and a tested state-restore script all exist at this commit. 16 of the 23 previous findings are `verified-fixed`, 7 are `partially-fixed`, and **DR-P0-001 remains `open`**.
+The **repository-side DR program is now essentially complete**: encrypted and offsite-capable backups, paginated/verified storage mirrors, deep restore assertions, an independent staleness detector, a platform heartbeat that the worker actually alerts on, a prod-capable DB backup target, a versioned Terraform state bucket, and a tested state-restore script all exist at this commit. Of the 23 previous findings, 16 are `verified-fixed`, 6 are `partially-fixed`, and **DR-P0-001 remains `open`**; three new findings were raised.
 
 The one blocking fact is unchanged and is now purely operational: **no backup has ever succeeded**. The latest `db-backup` run (2026-10-13, on the fixed code) still fails in `Run database backup script`; the latest `db-restore-test` failed at baseline load on the *pre-fix* commit. `backup-staleness-check.yml` is doing its job — it fails daily because nothing is fresh. Until the operator provisions the backup secrets and a green run is recorded, the platform has no long-term database backup, no storage mirror, and no validated RPO/RTO, and the drill ledger stays empty.
 
@@ -56,7 +56,7 @@ New findings this run: production **storage** backups have no prod target even t
 | DR-P3-006 | P3 | Backup staleness check still prefers the retired SCHEDULE_DISPATCH_TOKEN over GITHUB_TOKEN | **open (new)** | `backup-staleness-check.yml:50` vs matrix:157 |
 | DR-P3-007 | P3 | New DR drill plan's restore dependency table still documents the legacy full-URI S3_BACKUP_BUCKET | **open (new)** | `backup-restore-drill-plan.md:66` vs the S3_BUCKET/S3_PREFIX contract |
 
-Counts: 16 verified-fixed / 7 partially-fixed / 0 regressed / 3 open (1 carried P0 + 2 new P3 + 1 new P2; note DR-P2-009 is new, so 4 open rows total including it).
+Counts: 16 verified-fixed / 6 partially-fixed / 0 regressed / 4 open (DR-P0-001 carried plus the 3 new rows DR-P2-009, DR-P3-006, DR-P3-007).
 
 ## Recommendations
 

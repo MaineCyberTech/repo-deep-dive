@@ -42,7 +42,7 @@
       "owner": "platform/CI owner",
       "target": "this week",
       "status": "open",
-      "note": "reproduced at 7dd0402: node scripts/check-docs-links.mjs exits 1 - docs/audits/repo-deep-dive/mainecybertech-20261013-0126-fast-develop-905ed63 (audit_manifest.json present) is not referenced by docs/audits/README.md (last row :95 = 20261011 run) and lacks HISTORICAL.md. scripts/check-docs-links.mjs:128-153 (index coverage) and :155-177 (marker) both fail. The script runs in the required 'Test / test (20.x)' job (unit-tests action.yml:72-74) and in the deploy gate (validate.yml:88 -> validate.result must be 'success' in deploy-do.yml), so PRs and production deploys are blocked until the row + HISTORICAL.md are added. Introduced by 62a09bac (publish commit), promoted to main.",
+      "note": "reproduced at 7dd0402: node scripts/check-docs-links.mjs exits 1 - docs/audits/repo-deep-dive/mainecybertech-20261013-0126-fast-develop-905ed63 (audit_manifest.json present) is not referenced by docs/audits/README.md (last row :95 = 20261011 run) and lacks HISTORICAL.md. scripts/check-docs-links.mjs:128-153 (index coverage) and :155-177 (marker) both fail; the script runs in the required 'Test / test (20.x)' job (unit-tests action.yml:72-74) and in the deploy gate (validate.yml:88, and deploy-do requires validate.result == success). Live evidence: the publishing PR itself (docs/publish-reaudit @ 62a09bac, PR #279) failed the Test check in the unit-tests step (run 38334811453, job test (20.x)) and was merged anyway; the 7dd0402 promotion's deploy-do run (38490822901) was still queued at audit time and its validate gate will fail. Introduced by 62a09bac.",
       "area": "CI"
     },
     {
@@ -102,7 +102,7 @@
       "owner": "platform/CI owner",
       "target": "this month",
       "status": "verified-fixed",
-      "note": "re-verified at 7dd0402: chromatic.yml has no job-level continue-on-error and exitZeroOnChanges:false (:82); a broken Storybook build fails the job. Residual: still not a required check, and the Storybook webpack pin (5.101.2, package.json overrides; commit 673d76cb) landed at this commit but docs/CI.md:149-157 + chromatic.yml comments still describe the build as broken (see CI-P3-014).",
+      "note": "re-verified at 7dd0402: chromatic.yml has no job-level continue-on-error and exitZeroOnChanges:false (:82); a broken Storybook build fails the job. Live evidence: pre-pin main run 38334758801 failed at 'Build Storybook' (step 6); post-pin run 38481042052 (lucide-react PR with the webpack pin) passed 'Build Storybook' and failed only at the Chromatic step (visual changes/config; logs need auth). Residual: not a required check; docs/comments stale (CI-P3-014).",
       "area": "CI"
     },
     {
@@ -221,8 +221,8 @@
       "title": "No release/tagging workflow and no post-merge release artifact",
       "owner": "platform/CI owner",
       "target": "this quarter",
-      "status": "verified-fixed",
-      "note": "re-verified at 7dd0402: release.yml cuts an annotated tag v<VERSION>-<date>-<short-sha> + GitHub Release on main pushes (:19-21, :129-145), attaches the lockfile SBOM, idempotent per commit; VERSION=0.1.0.",
+      "status": "partially-fixed",
+      "note": "workflow implemented at 7dd0402 (release.yml: annotated tag + GitHub Release + SBOM, idempotent), but it FAILS on every promotion: live run 38490822732 (main @ 7dd0402) failed step 6 'Generate the release notes body' with exit code 141 (SIGPIPE from `git log ... | head -100` under set -o pipefail, no tags yet -> else-branch); origin has 0 tags and 0 releases (git ls-remote --tags, /releases). See new CI-P2-011.",
       "area": "CI"
     },
     {
@@ -282,7 +282,17 @@
       "owner": "platform/CI owner",
       "target": "this quarter",
       "status": "open",
-      "note": "at 7dd0402 package.json pnpm.overrides pins webpack 5.101.2 (mirrored pnpm-lock.yaml:32) and commit 673d76cb states this greens the Storybook/Chromatic build, but docs/CI.md:149-157 still says 'Known build break (TEST-P3-001) ... the red Chromatic job is the visible signal' and chromatic.yml:28-43 still says the build 'still fails'. The two states cannot both be current; re-verify the build and update the docs/comments. Underlying build fix is TEST-P3-001.",
+      "note": "at 7dd0402 package.json pnpm.overrides pins webpack 5.101.2 (pnpm-lock.yaml:32) and commit 673d76cb states this greens the Storybook build. Live evidence: pre-pin main run 38334758801 failed at step 6 'Build Storybook'; post-pin run 38481042052 (head 6c9c6dc, pin an ancestor) passed step 6 and failed only at the Chromatic diff step - so docs/CI.md:149-157 ('Known build break ... the red Chromatic job is the visible signal') and chromatic.yml:28-43 ('still fails') are stale. Update the docs to the measured state. Underlying build fix is TEST-P3-001.",
+      "area": "CI"
+    },
+    {
+      "id": "CI-P2-011",
+      "severity": "P2",
+      "title": "release.yml fails on every promotion (SIGPIPE exit 141), so no tag/release/SBOM attachment is produced",
+      "owner": "platform/CI owner",
+      "target": "this week",
+      "status": "open",
+      "note": "live run 38490822732 (Release on main @ 7dd0402, 2026-10-14T00:33Z) failed step 6 'Generate the release notes body' with exit code 141 (check-run annotation); cause: release.yml:100-104 runs `git log --no-merges --pretty=\"$fmt\" HEAD | head -100` under `set -euo pipefail` with no tags (prev empty), so git log receives SIGPIPE once head closes the pipe -> 141. Consequence: origin has 0 tags and 0 releases (git ls-remote --tags; /releases), the lockfile SBOM is never attached, and every promotion shows a red Release run. Fix: use `git log -n 100` (no pipe), or drop pipefail for that pipeline, or `|| true`; then re-run the release for 7dd0402. Validation: Release run green and `git ls-remote --tags` shows v0.1.0-<date>-7dd0402.",
       "area": "CI"
     }
   ]

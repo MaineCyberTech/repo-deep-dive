@@ -31,8 +31,8 @@
       "title": "No version identity: no tags, no product version, no commit binding in generated artifacts",
       "owner": "platform engineering (release owner)",
       "target": "this week",
-      "status": "verified-fixed",
-      "note": "fixed at 7dd0402: VERSION=0.1.0 is the source of truth; generate-sbom binds <VERSION>+<commit> (:328-330, :459-462); release.yml cuts annotated tags v<VERSION>-<date>-<short-sha> on main pushes; docs/RELEASING.md:59-83 documents the scheme. (Previously partially-fixed.)",
+      "status": "partially-fixed",
+      "note": "generated artifacts now bind <VERSION>+<commit> (generate-sbom.mjs:328-330, :459-462; reproduced locally: metadata.component.version + mct:productVersion/mct:commit), but no release tag exists (git ls-remote --tags = 0) because release.yml fails on every promotion (exit 141; live run 38490822732) - the tag half of this finding is undelivered. See CI-P2-011.",
       "area": "SBOM"
     },
     {
@@ -61,8 +61,8 @@
       "title": "SBOM is artifact-only: not release-bound, not commit-bound, not attested",
       "owner": "supply-chain owner",
       "target": "this month",
-      "status": "verified-fixed",
-      "note": "fixed at 7dd0402: commit-bound lockfile SBOM, release-attached (release.yml), digest-attested image SBOMs (see SBOM-P1-001/002/003). (Previously partially-fixed.)",
+      "status": "partially-fixed",
+      "note": "commit binding + attestations are fixed and exercised (dev deploys green; image SBOMs attested on deploy builds), but the release binding is wired and never delivered: release.yml fails on every promotion (run 38490822732) and origin has 0 releases. See CI-P2-011.",
       "area": "SBOM"
     },
     {
@@ -111,8 +111,8 @@
       "title": "SBOM is generated but not bound to a commit or attached to releases/images",
       "owner": "supply-chain owner",
       "target": "this month",
-      "status": "verified-fixed",
-      "note": "re-verified at 7dd0402: same as SC-P2-004.",
+      "status": "partially-fixed",
+      "note": "SBOMs are commit-bound and image SBOMs are digest-attested, but the release attachment has never happened: release.yml fails on every promotion (exit 141, run 38490822732) and origin has 0 releases. See CI-P2-011.",
       "area": "SBOM"
     },
     {
@@ -211,8 +211,8 @@
       "title": "SBOM is produced as a transient artifact, not bound to a release",
       "owner": "@owner",
       "target": "this quarter",
-      "status": "verified-fixed",
-      "note": "re-verified at 7dd0402: same as SC-P3-006 - attached to the GitHub Release.",
+      "status": "partially-fixed",
+      "note": "release.yml generates the lockfile SBOM in-job and attaches it on release creation (:126-145), but the workflow fails on every promotion (exit 141, run 38490822732) and origin has 0 releases - the SBOM remains transient until the release job is fixed (CI-P2-011).",
       "area": "SBOM"
     },
     {
