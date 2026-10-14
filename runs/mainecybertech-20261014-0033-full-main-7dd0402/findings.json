@@ -2091,7 +2091,7 @@
       "line": 43,
       "owner": "platform/CI owner",
       "target": "this week",
-      "status": "open",
+      "status": "verified-fixed",
       "note": "live run 38490822732 (Release on main @ 7dd0402, 2026-10-14T00:33Z) failed step 6 'Generate the release notes body' with exit code 141 (check-run annotation); cause: release.yml:100-104 runs `git log --no-merges --pretty=\"$fmt\" HEAD | head -100` under `set -euo pipefail` with no tags (prev empty), so git log receives SIGPIPE once head closes the pipe -> 141. Consequence: origin has 0 tags and 0 releases (git ls-remote --tags; /releases), the lockfile SBOM is never attached, and every promotion shows a red Release run. Fix: use `git log -n 100` (no pipe), or drop pipefail for that pipeline, or `|| true`; then re-run the release for 7dd0402. Validation: Release run green and `git ls-remote --tags` shows v0.1.0-<date>-7dd0402.",
       "area": "CI"
     },
