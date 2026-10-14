@@ -2217,11 +2217,11 @@ fd5eead7b071a16c27c9d3c0fd683dcececf5c2cf084d12705372ffad01d59e3  ./runs/mainecy
 c35de855542d19007941e923558c0e7be627d360d66d6ad6ce76264396546685  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/audit_manifest.json
 f70b2f34026d3acad4273985a689da34834bc7a789b32d8d79fb1fab15860ea6  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/coverage.md
 86ef12d022c63270b81bebf5e23bff11817101cf3b9b24d0e8d8925cee706270  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/deterministic-findings.json
-3c3cceb70d116777ed2bfbbaacec7c12a58225f0677b7a261385a2d4644a6c6a  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/findings.json
-e569dd7b60ed9b0c30ef7149b6332806ce4a374d463028d14963b295b2927977  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/follow_up_register.md
+bb67fa77cccbfb473195f7984ca1123436424208aecc6b58c6f9a2d0fcf02ef5  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/findings.json
+f7ef89ede1e865cfc809fb4bf78ebb2e6f4ebf7ad839741da0c0af0d98ebd355  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/follow_up_register.md
 48499866166e1e55690bc419a876e988a04e9862480cbcf066cfa0f2f0fc383c  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/lens_deterministic.md
 2b73e3e09856a563a15a5e9e792c054618d84f3b0a4745144c10763a117ac3c1  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/patch_plan.md
-e569dd7b60ed9b0c30ef7149b6332806ce4a374d463028d14963b295b2927977  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/risk_register.md
+f7ef89ede1e865cfc809fb4bf78ebb2e6f4ebf7ad839741da0c0af0d98ebd355  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/risk_register.md
 13b4460f959e019496e4c9d873052ece96c23a9c53a00fc84d410a67807962d3  ./runs/mainecybertech-20261014-0033-full-main-7dd0402/roadmap.md
 53ea972dba482a93f9b1e56a258fb34c93f3fb74029bbae4e5cb1c40690bc6e8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/01_repository_inventory.md
 0433784fa075d280e13110bc99e53ed64d69697556c0a2f75aeb803c01b9a5a2  ./runs/repo-deep-dive-20261003-0018-main-7bac320/02_architecture_runtime_topology.md
