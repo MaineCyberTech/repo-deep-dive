@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2748
+# files: 2750
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -22,6 +22,7 @@ f1a95f6e08e811f2a08787451017bf9242ae7eaeff9892a30d9fed9ee1fcacde  ./.github/work
 fc138c0e5a350cd76d7ea218b4d0758c85a7924fb9ccc22e046a60eaca0361e8  ./.github/workflows/verify-remediation.yml
 a7d6c5fd1d3d805737035729989ecb9f49259c3b8e979dec90e8fa98503f472e  ./.gitignore
 5437790eabbe0d70c990987a44f0972d5cc5a6c7b6c8028f008e51a4cd2d42d2  ./.gitleaks.toml
+c68f436916fee9fef29e44c069cf6ad01a9fa59cef9c73df26cf92fe556c24b3  ./.pre-commit-config.yaml
 ba7eee35d957142f7785aefcf9e62959d68572eab38b0c3b185195ed41d0a90d  ./AGENTS.md
 d9c187e6d2a9ee5dfba8ed5ce951fff66fbf63eb906220b815a4f0213ed7c81d  ./CHANGELOG.md
 c4dd58c3dffa1dd407b5acaddf402025659b1e211d1265ce4771b07e0a307f43  ./CONTRIBUTING.md
@@ -2675,6 +2676,7 @@ e2222251aa497ae088c72969d90223b580c6a8da70ff5f792fc88b484af55146  ./runs/snowrid
 3842ccd9bf9098c108b1fb47487d21017b0c684c0e7dc369dc806b72f86d7a0a  ./runs/snowride-20261005-full-main-38b34a9/verification_log.md
 262b651ed7d2f7bbd5126f772928897942bcd6f6cfb547697f8451860316589a  ./schemas/findings.schema.json
 54b9ba827b305542a56b4ed6454cc4bc5fd1b37c6595235f9883188ebcbb3893  ./schemas/org_pass.schema.json
+c64a20db9792e2a6f29aeb2b084c4676cfbd59326178c60cf661b5874122bd9c  ./scripts/check-no-dotenv.sh
 075c12d78d2ec45f70766b667b963721590f949c338639badf1a2d82432b6bf4  ./templates/audit_report_template.falcon.md
 0489aa34431a2bb958b181a4426d01d0a810b80365a0998628b5e270cb622d75  ./templates/audit_report_template.md
 424f1bcb63c4778a3fa13ccfa67d35150700e3104f1663a330cec7d960d018e9  ./templates/claim_sample_template.md
