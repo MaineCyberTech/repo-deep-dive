@@ -7,7 +7,7 @@
   "outputRoot": "docs/audits/{name}/{run}/",
   "run": "mainecybertech-20261103-0748-full-main-6b7aa1a",
   "scaffolded_at": "2026-11-03T07:48:30Z",
-  "scaffolded_by": "tools/full_domain.py",
+  "scaffolded_by": "tools/full_domain.py aggregate",
   "mode": "full",
   "scope": {
     "name": "mainecybertech",
@@ -19,7 +19,7 @@
     "profile": "base",
     "readOnly": true,
     "secretsRedacted": true,
-    "generatedAt": "2026-11-03T07:48:30Z",
+    "generatedAt": "2026-11-03T14:02:22Z",
     "domains": [
       "deterministic",
       "00_audit_orchestrator",
@@ -110,11 +110,58 @@
       "EXEC",
       "REL"
     ],
-    "releaseGate": "pending"
+    "releaseGate": "NO-GO"
   },
   "findings": {
-    "bySeverity": {},
-    "byArea": {},
-    "total": 0
+    "bySeverity": {
+      "P0": 8,
+      "P1": 98,
+      "P2": 339,
+      "P3": 328
+    },
+    "byArea": {
+      "ACM": 19,
+      "ADMIN": 18,
+      "AI": 13,
+      "AN": 13,
+      "API": 15,
+      "ARCH": 11,
+      "BILL": 21,
+      "BP": 16,
+      "CHAIN": 17,
+      "CI": 31,
+      "CTR": 19,
+      "DATA": 23,
+      "DET": 3,
+      "DOC": 25,
+      "DR": 27,
+      "EVOL": 13,
+      "FEAT": 15,
+      "FILE": 20,
+      "HYGIENE": 20,
+      "INFRA": 20,
+      "INV": 10,
+      "IR": 25,
+      "MOB": 12,
+      "MT": 15,
+      "NOTIF": 26,
+      "OBS": 28,
+      "ORCH": 3,
+      "PERF": 11,
+      "PRIV": 14,
+      "REL": 13,
+      "RES": 22,
+      "RLS": 18,
+      "SBOM": 29,
+      "SC": 27,
+      "SEARCH": 15,
+      "SEC": 46,
+      "SECRET": 18,
+      "TEST": 16,
+      "USE": 25,
+      "UX": 17,
+      "WH": 24
+    },
+    "total": 773
   }
 }
