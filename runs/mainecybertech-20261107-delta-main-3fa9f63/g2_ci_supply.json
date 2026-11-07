@@ -1,0 +1,173 @@
+{
+  "area": "G2",
+  "findings": [
+    {
+      "id": "CI-P1-005",
+      "severity": "P1",
+      "title": "NEW: required E2E check is red at the promotion head (Start Supabase fails)",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: E2E run 42345667661 on PR #377 head a58e171 completed success at 2026-11-07T06:22:46Z. Steps 'Restore the Supabase image cache' (06:09:24-06:09:59) and 'Load the cached Supabase images' (06:09:59-06:12:04) succeeded; step 10 'Start Supabase' succeeded (06:12:04-06:12:43); Playwright ran green (06:16:21-06:22:43). The 'e2e (20.x)' check on a58e171 is success and PR #377 merged at 06:23:44Z after it. The prior red run was 41598757709.",
+      "remediation": "No action. Keep the v2 cache key, CLI 2.122.1, partial-archive guard and explicit cache save (e2e.yml:56,87-112,168-194); re-check the first scheduled/PR run after any Supabase CLI bump."
+    },
+    {
+      "id": "SBOM-P1-006",
+      "severity": "P1",
+      "title": "NEW: PSF-2.0 is allowed by the full-tree gate but not the PR dependency-review gate or docs",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/workflows/dependency-review.yml:28 and docs/LICENSE_POLICY.md:25 now include PSF-2.0, matching security/license-policy.json:20. The required 'review' check (Dependency Review) on PR #377 head a58e171 completed success at 2026-11-07T06:09:53Z (run 42345667680).",
+      "remediation": "No action. The only residual is the duplicated allow-list block in docs/LICENSE_POLICY.md (see SBOM-P3-012)."
+    },
+    {
+      "id": "CTR-P2-007",
+      "severity": "P2",
+      "title": "NEW: global .trivyignore suppresses fixable HIGH CVEs in the new node-exporter image",
+      "status": "partially-fixed",
+      "evidence": "partially fixed at 3fa9f63: the global .trivyignore is gone and .github/workflows/third-party-image-scan.yml:70-83,114 now selects .trivyignore.d/<image> per image, so caddy/alertmanager exceptions no longer cover node-exporter. But .trivyignore.d/node-exporter:22-35 still lists the same 14 fixable HIGH CVEs for the unchanged pinned digest (infra/digitalocean/docker-compose.yml:276), and the file header (:16-21) explicitly keeps them suppressed. Reproduced with Trivy 0.76.2 on prom/node-exporter@sha256:1b4e4438...: without an ignore file 16 HIGH findings / 15 unique CVEs; with .trivyignore.d/node-exporter only CVE-2026-78661 remains (new since the Nov 3 DB), so the 14 old CVEs are still suppressed. The next scheduled scan will be red only because of the new CVE, not because the 14 were fixed.",
+      "remediation": "Keep the per-image scoping, but treat the 14 node-exporter exceptions as an explicit accepted risk with an owner and the existing 2026-12-01 expiry, and track the upstream rebuild (Go >= 1.26.10); alternatively build/pin a node-exporter image with the fixed toolchain. Do not describe the node-exporter scan as clean for this digest."
+    },
+    {
+      "id": "CTR-P3-006",
+      "severity": "P3",
+      "title": "infra/digitalocean operator docs and `.env.example` drift from the deployed stack",
+      "status": "partially-fixed",
+      "evidence": "partially fixed at 3fa9f63: infra/digitalocean/README.md:14-19 now lists the five services with prometheus v3.15.1, alertmanager v0.29.0 and node-exporter, matching infra/digitalocean/docker-compose.yml:276,342,390,449. However README.md:14 still says redis:7.4.11-alpine while compose pins redis:7-alpine (docker-compose.yml:35),. docs/CI.md:58-59 still lists node-exporter instead of the deploy-gated node-exporter-probe (deploy-do.yml:1100), and docs/MONITORING_AND_ALERTING.md:235-243 keeps a second, stale seven-service health table without node-exporter-probe next to the corrected table at :224-233.",
+      "remediation": "Remove the duplicated stale health table, change the CI health list to node-exporter-probe, and align the redis image tag with compose."
+    },
+    {
+      "id": "INFRA-P2-003",
+      "severity": "P2",
+      "title": "Operations documentation contradicts the current pipeline and configuration",
+      "status": "partially-fixed",
+      "evidence": "partially fixed at 3fa9f63: the main README version/service table, the five-image scan docs and the promtool pin are fixed (infra/digitalocean/README.md:14-19, docs/CI.md:33, docs/SBOM_PROCESS.md:97, .github/actions/prometheus-rules/action.yml:19). Residual contradictions: docs/MONITORING_AND_ALERTING.md:235-243 is a duplicated pre-fix health table omitting node-exporter-probe; docs/CI.md:58-59 names node-exporter instead of node-exporter-probe (deploy-do.yml:1100); README.md:14 still says redis:7.4.11-alpine vs compose redis:7-alpine (docker-compose.yml:35).",
+      "remediation": "Delete the stale duplicate table, correct the CI health service list, and align the redis tag. Re-run scripts/check-docs-links.mjs after the edits."
+    },
+    {
+      "id": "INFRA-P3-011",
+      "severity": "P3",
+      "title": "NEW: promtool CI gate pins Prometheus v3.5.1 while production runs v3.15.1",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/actions/prometheus-rules/action.yml:19 pins prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2, exactly matching infra/digitalocean/docker-compose.yml:342. The shared unit-tests job ran the prometheus-rules action successfully in run 42345667642 (step 'Run ./.github/actions/prometheus-rules' success).",
+      "remediation": "No action. Bump the digest in both places together when the next Prometheus patch/minor lands."
+    },
+    {
+      "id": "DET-P3-003",
+      "severity": "P3",
+      "title": "[SUPPLY] third-party image scan header still says four images and omits node-exporter",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/workflows/third-party-image-scan.yml:3-5 and :158 now say five images and name node-exporter; the resolver output locally is the five unique digest-pinned refs caddy, alertmanager, node-exporter, prometheus and redis (docker-compose.yml:35,276,342,390,449). docs/CI.md:33 and docs/SBOM_PROCESS.md:97-106 also say five.",
+      "remediation": "No action. Keep the header/notify text in sync if a sixth third-party image is added."
+    },
+    {
+      "id": "EVOL-P3-010",
+      "severity": "P3",
+      "title": "Supabase CLI pin in CI (2.107.0) no longer matches the lockfile (2.122.1) or package.json (^2.120.0)",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/workflows/e2e.yml:56 sets SUPABASE_CLI_VERSION to 2.122.1 and uses it at :87, :112 and :194; .github/workflows/supabase-migrations.yml:62-64 installs supabase@2.122.1; pnpm-lock.yaml:6802 and :14854 resolve 2.122.1, package.json:51 declares ^2.120.0, and docs/CI.md:17 says pinned CLI 2.122.1.",
+      "remediation": "No action. Keep the three references (e2e env, migrations install, docs) updated in the same PR as the next CLI bump."
+    },
+    {
+      "id": "DATA-P2-011",
+      "severity": "P2",
+      "title": "Preflight script aborts on its first check, so the duplicate-migration gate never runs and is not wired to CI",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: scripts/preflight-check.sh:12-24 increments with PASS=$((PASS + 1)) and the Dockerfile predicates at :31-37 use command substitution; running `bash scripts/preflight-check.sh` in the worktree completed '16 passed, 0 failed, 1 skipped' (exit 0), including 'No duplicate migration timestamps' (:48-51). .github/actions/unit-tests/action.yml:152-158 runs the script in the shared PR/deploy test job, and the unit-tests step was green in run 42345667642.",
+      "remediation": "No action. Keep the preflight script inside the shared unit-tests action so it remains a gate."
+    },
+    {
+      "id": "TEST-P2-011",
+      "severity": "P2",
+      "title": "E2E Supabase image cache is not a reliable cold-start path: a cache hit loads, then `supabase start` still fails before Playwright",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: e2e.yml:82-112 uses the v2 key supabase-images-${runner.os}-2.122.1-v2, checks the loaded archive has >=12 matching repositories (:117-131) and fails loudly on a partial tar; e2e.yml:168-194 saves the tar immediately after a successful start. In run 42345667661 the restore (06:09:24-06:09:59) and load (06:09:59-06:12:04) steps succeeded, 'Start Supabase' succeeded (06:12:04-06:12:43), the save steps were correctly skipped on the cache hit, and Playwright passed.",
+      "remediation": "No action. Bump the trailing generation in the cache key whenever the CLI image set changes without a CLI version bump."
+    },
+    {
+      "id": "TEST-P2-010",
+      "severity": "P2",
+      "title": "Promotion PRs merge before required checks, so the promoted commit has no green Test artifact (PR #333 recurred)",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: PR #377 (head a58e171 -> main) was created 2026-11-07T05:31:38Z and merged 06:23:44Z; all eight required contexts on the head completed success before the merge: test (20.x) 06:10:49, security-scan 06:09:05, secrets-scan 06:08:34, lint (20.x) 06:09:04, typecheck 06:09:13, e2e (20.x) 06:22:46, Dependency Review review 06:09:53 and CodeQL Analyze (javascript-typescript) 06:11:26. The promoted artifact therefore has a green Test/E2E run. Caveat: the PR still merged with 0 reviews, tracked as BP-P1-004.",
+      "remediation": "No action for the check-timing defect. Keep the promotion wait-for-green process; the reviewer bypass is tracked under BP-P1-004."
+    },
+    {
+      "id": "BP-P1-004",
+      "severity": "P1",
+      "title": "PR #279 merged into main with required checks pending and zero reviews - live protection does not match the committed payloads (or an unrecorded bypass)",
+      "status": "still-open",
+      "evidence": "still-open at 3fa9f63: PR #377 'Promote develop -> main (Nov 7: SSO, backups, majors, container CVE fixes)' merged 2026-11-07T06:23:44Z with zero reviews (GET /repos/MaineCyberTech/mainecybertech/pulls/377/reviews returned []), while .github/branch-protection/main.json:3-19 requires 1 approving review, CODEOWNERS review and enforce_admins:true. PR #376 (develop) merged at 05:01:40Z with only github-actions[bot]'s approval and no human review. Scheduled branch-protection-audit runs 41491379135 (Nov 2), 40340906384 (Oct 26) and 39273950100 (Oct 19) all failed. Live protection still does not match the committed payload (or an unrecorded bypass remains).",
+      "remediation": "Repo admin: reconcile the live main/develop protection with .github/branch-protection/*.json and record any break-glass bypass in an issue. No workflow change can enforce the reviewer rules."
+    },
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "Production application deploys have no working manual-approval gate",
+      "status": "still-open",
+      "evidence": "still operator-gated at 3fa9f63: every prod-mutating job attaches the prod-approval environment, but docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:9-16 and docs/RELEASING.md:141-154 still state that required reviewers are not configured, so the prod jobs run without pausing. No repo-side change in 6b7aa1a..3fa9f63.",
+      "remediation": "Operator: add 1+ required reviewers to the prod-approval environment in GitHub. The repository cannot set environment reviewers."
+    },
+    {
+      "id": "CI-P1-003",
+      "severity": "P1",
+      "title": "Production deploy path cannot run; prod environment lacks secrets and protection rules",
+      "status": "still-open",
+      "evidence": "still operator-gated at 3fa9f63: docs/RELEASING.md:193-199 and docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:204-236 state that prod-approval lacks SUPABASE_*/JWT_SECRET/migration secrets, DO_API_TOKEN returns 401, and prod has no DROPLET_IP fallback. No repo-side change in the delta.",
+      "remediation": "Operator: provision the prod-approval secrets/vars and fix or replace the DO API token; see RELEASING.md for the full list."
+    },
+    {
+      "id": "CI-P2-012",
+      "severity": "P2",
+      "title": "AI-review caller pins a SHA but the reusable workflow executes reviewer code from mutable main with all repository secrets",
+      "status": "open",
+      "evidence": ".github/workflows/ai-review.yml:25 pins MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@d401040c9777a63195396cbf177eec78192284d2, but that workflow checks the reviewer repository out at `ref: main` (MaineCyberTech/ai-reviewer@d401040c:.github/workflows/ai-review.yml:58-64) and then executes .ai-reviewer/.github/scripts/ai_review.py and the prompt from that checkout (:83-87). ai-reviewer main advanced from d401040c (2026-11-06T17:03Z) to 80872e5 (2026-11-06T19:32Z), so the pin does not control the executed code. The caller also passes `secrets: inherit` (.github/workflows/ai-review.yml:26), making every repository secret - not just AI_REVIEW_ENDPOINT/AI_REVIEW_API_KEY/AI_REVIEW_MODEL (AGENTS.md:109-111) - available to that mutable checkout.",
+      "remediation": "Checkout the reviewer at the same 40-character SHA (or vendor the script/prompt in this repo) instead of `ref: main`, and pass only the three AI_REVIEW_* secrets explicitly instead of `secrets: inherit`. Re-pin and review the new SHA in the PR that updates it."
+    },
+    {
+      "id": "CI-P2-013",
+      "severity": "P2",
+      "title": "Bot approval fails open when `gh pr checks --required` errors, approving without verified required checks",
+      "status": "open",
+      "evidence": "MaineCyberTech/ai-reviewer@d401040c:.github/workflows/bot-approval.yml:61-81: both the wait loop (:62) and the final gate (:76) run `checks=\"$(gh pr checks \"$PR\" --required --json name,state)\" || checks='[]'`; on any command failure (API/rate limit, auth, or no resolvable required contexts) checks becomes [] and pending is 0, and the workflow proceeds to POST /repos/$REPO/pulls/$PR/reviews with event=APPROVE (:83-85). The caller grants the needed token at .github/workflows/bot-approval.yml:9-12. The control is therefore fail-open exactly when the check query is untrustworthy.",
+      "remediation": "Treat a non-zero `gh pr checks` exit, empty output or unparsable JSON as a hard refusal; require a non-empty set of required contexts for the protected branch and only approve after a fresh successful query."
+    },
+    {
+      "id": "CI-P3-016",
+      "severity": "P3",
+      "title": "Dependabot Node-major hold is applied only to the root docker config, not the three app Dockerfile directories",
+      "status": "open",
+      "evidence": ".github/dependabot.yml:55-59 ignores `node` semver-major updates only for directory \"/\", while the separate docker entries for /apps/api (:64-72), /apps/web (:74-82) and /apps/worker (:84-92) have no ignore block. The held Node 25/26 majors in issue #361 were exactly those directories (closed PRs #266 /apps/api, #268 /apps/web, #269 /apps/worker), and all three Dockerfiles still start FROM node:20-alpine (apps/api/Dockerfile:1, apps/web/Dockerfile:1, apps/worker/Dockerfile:1). Dependabot will recreate those major PRs on the next weekly run.",
+      "remediation": "Add the same `dependency-name: node` / `version-update:semver-major` ignore to each app docker entry (or fold them into a single config if Dependabot supports the layout) and keep the #361 table in sync."
+    },
+    {
+      "id": "CI-P3-017",
+      "severity": "P3",
+      "title": "AI review fails on Dependabot PRs because required secrets are unavailable, creating red checks and blocking the bot-approval path",
+      "status": "open",
+      "evidence": ".github/workflows/ai-review.yml:5-7 triggers on every pull_request, including Dependabot. The callee declares AI_REVIEW_ENDPOINT and AI_REVIEW_API_KEY as required (MaineCyberTech/ai-reviewer@d401040c:.github/workflows/ai-review.yml:16-22) and exits when they are empty (:75-78), but Dependabot-triggered runs do not receive repository Actions secrets. Observed 2026-11-07: ai-review run 42346875347 for Dependabot PR #379 failed with the workflow annotation 'Secret AI_REVIEW_ENDPOINT is required, but not provided while calling' and 'Secret AI_REVIEW_API_KEY is required, but not provided while calling'; run 42346888919 (PR #382) also failed and runs 42346879642/42346884197 were cancelled. No AI-review comment was posted on #379-#382, so bot-approval (which requires that comment) cannot approve any of them.",
+      "remediation": "Skip Dependabot (and fork) PRs at the caller job level, or add the AI_REVIEW_* values as Dependabot secrets. If the review is truly advisory, treat missing secrets as a skipped job rather than a red check."
+    },
+    {
+      "id": "CI-P3-018",
+      "severity": "P3",
+      "title": "Bot approval accepts any historical AI-review comment, so a review from an earlier push can satisfy the gate",
+      "status": "open",
+      "evidence": "MaineCyberTech/ai-reviewer@d401040c:.github/workflows/bot-approval.yml:54-59 only checks that some comment by github-actions[bot] contains 'AI review (advisory)'; it does not compare the comment's commit or time to the current PR head, and it does not require the latest ai-review run to have succeeded. The caller now triggers on synchronize (.github/workflows/ai-review.yml:7), so a failed or cancelled review on the latest push leaves the previous comment in place and the approval gate still passes. No current exploit was observed, but the gate proves a review exists, not that it covers the approved SHA.",
+      "remediation": "Have ai-review include the head SHA in the comment and have bot-approval require the parsed SHA to equal the PR head and the latest ai-review check to be green before approving."
+    },
+    {
+      "id": "EVOL-P2-003",
+      "severity": "P2",
+      "title": "tailwind-merge 3.x is installed against Tailwind CSS 3.4, so class-conflict merging uses Tailwind v4 semantics",
+      "status": "open",
+      "evidence": "packages/ui/package.json:32 and apps/web/package.json:32 declare tailwind-merge ^3.7.0 while apps/web/package.json:54 keeps tailwindcss ^3.4.19; packages/ui/src/lib/cn.ts:5 calls twMerge for all shared components. The tailwind-merge v3.7.0 README states 'Supports Tailwind v4.0 up to v4.3 (if you use Tailwind v3, use tailwind-merge v2.6.0)'. Reproduced with the 3.7.0 bundle: twMerge('outline-none','outline') returns both classes, and the shadow/rounded class renames mean merged output semantics differ from Tailwind 3.",
+      "remediation": "Pin tailwind-merge to 2.6.x while Tailwind remains on v3, or complete the Tailwind v4 migration before keeping tailwind-merge 3.x. Add a cn() unit fixture covering the v3 override names."
+    },
+    {
+      "id": "SBOM-P3-012",
+      "severity": "P3",
+      "title": "docs/LICENSE_POLICY.md now lists the allowed-license block twice after the PSF-2.0 edit",
+      "status": "open",
+      "evidence": "docs/LICENSE_POLICY.md:22-29 contains the allowed list twice: lines 23-26 end with UPL-1.0, then lines 28-29 repeat CC-BY-4.0 through UPL-1.0. The duplicate was introduced by the PSF-2.0 fix (commit 5601b97e) when the new full list was inserted above the old continuation. Enforcement is correct (security/license-policy.json:20 and .github/workflows/dependency-review.yml:28 both include PSF-2.0), so this is documentation-only.",
+      "remediation": "Delete the duplicated lines 28-29 and re-run the docs link/count guard."
+    }
+  ]
+}

@@ -1,0 +1,481 @@
+{
+  "run": "mainecybertech-20261107-delta-main-3fa9f63",
+  "repo": "mainecybertech",
+  "branch": "main",
+  "sha": "3fa9f636c887fd28698852d37daa5dcef9593f60",
+  "mode": "delta",
+  "created": "2026-11-07T06:38:38Z",
+  "previous_run": "mainecybertech-20261103-0748-full-main-6b7aa1a",
+  "coverage": [
+    "g1_security",
+    "g2_ci_supply",
+    "g3_backups_infra"
+  ],
+  "counts": {
+    "total": 50,
+    "by_status": {
+      "verified-fixed": 22,
+      "partially-fixed": 6,
+      "open": 19,
+      "still-open": 3
+    },
+    "by_severity": {
+      "P1": 12,
+      "P2": 17,
+      "P3": 19,
+      "P0": 2
+    }
+  },
+  "findings": [
+    {
+      "id": "SEC-P1-011",
+      "severity": "P1",
+      "title": "Client-visibility filtering is bypassed on comments/timeline side-channel endpoints",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636 (read-only). Each nested comments/timeline route now (a) loads the parent with its visibility column and 404s when the parent is not client-visible, then (b) filters module_comments to is_internal=false for client members: approvals.ts:465 and :539 (parent check), :475 (is_internal); assets.ts:361 and :430, :371; findings.ts:464 and :536, :473; proposals.ts:1015 and :1089, :1025. The detail endpoints keep the same predicate (approvals.ts:189, assets.ts:162, findings.ts:164, proposals.ts:145). Regression coverage: apps/api/src/__tests__/client-visibility-sidechannels.test.ts:145-200 (internal parent -> 404 across each path; client-visible parent -> comments query gets .eq('is_internal', false)). Not executed here (node_modules absent); code and tests are present at this commit. Residual (not a re-open): module_timeline_events rows are still returned for a client-visible parent because that table has no per-event internal flag; only status/workflow events are written there.",
+      "remediation": "No action required for the finding. Optional follow-up: add an is_internal/visibility column to module_timeline_events if any timeline event may ever carry internal-only text.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P2-019",
+      "severity": "P2",
+      "title": "File-request upload listing and signed URLs skip the parent request's visibility check",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: apps/api/src/routes/file-requests.ts:407 (GET /:id/uploads) and :444 (GET /:id/uploads/:uploadId/signed-url) both load the parent request's visibility and call isClientVisible before listing or signing; the signed-URL route also keeps the upload row bound to request.id and the resolved org (:452-458). The detail endpoint keeps the same rule (:380). Both routes now also carry requirePermission('file-requests','view') (:394, :421). Regression tests: apps/api/src/__tests__/file-requests.test.ts:477-524 (internal parent hides uploads and signed URLs; client-visible parent still lists).",
+      "remediation": "No action required.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P2-020",
+      "severity": "P2",
+      "title": "Client roles granted ai:view can read every AI draft output in the organization",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: apps/api/src/routes/ai.ts:31-35 adds assertInternalDraftReader (isClientMember -> 403) and it is awaited in GET /ai/drafts (:555) and GET /ai/drafts/:id (:581); the review/write routes keep ai:edit/create gates (:531, :596). The ai:view grant to client roles is unchanged and intentional (supabase/migrations/5302463_client_portal_ai_and_visibility.sql:22-33). Regression tests: apps/api/src/__tests__/ai.test.ts:236-253 (client role denied on list and detail). The separate triage-draft surface is covered as SEC-P3-016.",
+      "remediation": "No action required for ai_draft_outputs.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P3-014",
+      "severity": "P3",
+      "title": "Client-visibility helper fails open and exempts API-key requests",
+      "status": "partially-fixed",
+      "evidence": "Re-verified at main@3fa9f636. Fail-open half is fixed: apps/api/src/lib/client-visibility.ts:100 throws on the membership query error (previously swallowed) and :107-110 now sets result=true (client-scoped / visibility filter applied) instead of the staff view, logging the regression. The second half is unchanged: :85-92 still returns false (staff view) for any req.apiKey request. The exemption is now documented as a system/integration path (:81-88) and is bounded today because api-keys:manage is an admin-scope permission (supabase/migrations/5302118_permission_matrix_full_catalog.sql:306-307) and the client-role grant loop only grants scope in ('portal','both') (:407-413), so client roles cannot mint keys; the route is also permission-gated (apps/api/src/routes/api-keys.ts:65). It remains a latent bypass if a client-scoped key or a custom role with api-keys:manage is ever introduced.",
+      "remediation": "Replace the blanket req.apiKey -> staff-view return with the key's own role/tenant scope (e.g. resolve the key creator's membership or store a client/system flag on api_keys), and add a test that a client-capable key cannot see internal rows. Until then, keep api-keys:* out of every client/custom role.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P3-015",
+      "severity": "P3",
+      "title": "GET /ai/triage is the only AI route without an ai:view gate",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: apps/api/src/routes/ai.ts:336 now mounts requirePermission('ai','view') on GET /ai/triage, matching the other AI reads (:364, :553, :579). The route is therefore reached only by callers holding ai:view (which includes client roles by design; see SEC-P3-016 for the data-scope consequence).",
+      "remediation": "No action required for the missing gate itself.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "MT-P1-005",
+      "severity": "P1",
+      "title": "A cross-tenant admin membership widens admin scope to orgs where the user is only a client/member",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: apps/api/src/lib/admin-scope.ts:66-95 now derives adminOrgIds only from rows whose role key is cross-tenant and, for a non-super-admin admin, confines the scope to the request-pinned org or adminOrgIds (never every membership); allTenants still requires the profiles.is_super_admin flag AND a cross-tenant role (:76-82). apps/api/src/middleware/org-access.ts:143-162 pins an unpinned tenant admin to adminMemberships[0] and only treats a super-admin profile with an admin membership as org-agnostic; otherwise it pins to the admin org (:153-162). apps/api/src/middleware/admin.ts:49-58 rejects an explicit org unless the caller is super_admin or admin in that org. routes/search.ts:78-97 uses the same adminOrgIds set. Regression tests: apps/api/src/__tests__/admin-scope-cross-org.test.ts:38-117, apps/api/src/__tests__/middleware-org-access.test.ts:353, apps/api/src/__tests__/search-tenant-scope.test.ts:191. The non-admin branch intentionally still returns all approved orgs (:97-99) so client exports keep working; it is only reachable behind requireAdmin for admin surfaces.",
+      "remediation": "No action required.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "ACM-P2-009",
+      "severity": "P2",
+      "title": "Module read endpoints are org-scoped but not permission-gated (catalog view grants are UI-only)",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: every primary module read now carries requirePermission(module,'view'): assets.ts:44/75/108/143, approvals.ts:52/95/122/165, findings.ts:51/84/118/143, proposals.ts:48/81/111, qbr.ts:22/47, service-catalog.ts:20/43, file-requests.ts:343/370 (and :394/:421 nested), domain-monitors.ts:41/70/100/157, vendors.ts:29/62 and :183. Vendor contracts are no longer served under the admin-only 'vendors' module: the routes use the client-scope 'vendor-contracts'/'vendor-contacts' permissions (supabase/migrations/5302118:260-267) and still apply client visibility (vendors.ts:47, :74). Regression coverage was extended in the #335 batch (client-visibility-sidechannels.test.ts, file-requests.test.ts).",
+      "remediation": "No action required.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "RLS-P3-009",
+      "severity": "P3",
+      "title": "notifications INSERT policy allows any authenticated user to write a self-addressed row into an arbitrary organization",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: supabase/migrations/5302466_notifications_insert_membership_scope.sql:19-36 recreates notifications_insert_system_or_admin so the self branch requires user_id = auth.uid() AND (organization_id is null OR public.is_org_member(organization_id)); the admin/platform branch is unchanged. is_org_member filters status='approved' (supabase/migrations/5302100_fix_rls_membership_status.sql:14-19) and its search_path is pinned (supabase/migrations/5302112_fix_rls_approved_membership.sql:20). node scripts/verify-rls.mjs reports 140/140 tables RLS-enabled, 1,036 policies, 0 failures / 0 warnings at this commit. Migration is wrapped in begin/commit and covered by apps/api/src/__tests__/rls-policy-fix-migrations.test.ts:164-178.",
+      "remediation": "No action required.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "PRIV-P2-010",
+      "severity": "P2",
+      "title": "Direct anon INSERT on store_quotes bypasses the consent gate, validation and rate limits",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: supabase/migrations/5302465_revoke_anon_store_quotes_insert.sql:16-17 drops policy anon_insert_quotes and revokes INSERT from anon. The only INSERT grant to anon was supabase/migrations/5302434_anon_privilege_least_privilege.sql:74 (earlier version), which this migration now removes; no later migration re-grants store_quotes write access (grep of supabase/migrations shows 5302465 as the last file touching the table). The authenticated path keeps its approved-membership predicate (5302448:19-23) and POST /store/quotes remains the consent-enforcing write path (:17-21 of 5302449). Covered by apps/api/src/__tests__/rls-policy-fix-migrations.test.ts:140-162.",
+      "remediation": "No action required.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "ADMIN-P2-010",
+      "severity": "P2",
+      "title": "Proposal client decisions can be recorded or overwritten by internal staff (no client-role or immutability check)",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at main@3fa9f636: apps/api/src/routes/proposals.ts:813-823 now requires the proposal to be approved and published/client-visible; :825-830 rejects any caller that is not a client member (isClientMember -> 403); :832-835 returns 409 when metadata.clientDecision already exists, so a second caller cannot flip it. The new audited reset path is staff-only and org-scoped via router-level requireOrgAccess + loadOwned (proposals.ts:886-912). Tests: apps/api/src/__tests__/proposals.test.ts:368-401 (staff rejected, client allowed once, overwrite refused).",
+      "remediation": "No action required.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P1-012",
+      "severity": "P1",
+      "title": "NEW: client roles can still read internal comments on tickets and project tasks (is_internal is not enforced on the API or the RLS policy)",
+      "status": "open",
+      "evidence": "NEW at main@3fa9f636, discovered while re-verifying SEC-P1-011; the defect predates the delta but is in the same class and was not covered by the Nov 3 finding. (1) GET /tickets/:id embeds every comment row with `.select(\"*, ticket_comments(*)\")` without an is_internal predicate (apps/api/src/routes/tickets.ts:143); GET /tickets/:id/comments returns all rows with only a ticket-org check (tickets.ts:356-378, query at :369-373); neither route carries requirePermission('tickets','view') or an isClientMember filter. (2) GET /projects/:id/tasks/comments applies `.eq('is_internal', false)` only when the caller voluntarily passes ?is_internal=false (apps/api/src/routes/projects.ts:845-847); omitting the parameter returns internal notes, and the route has no permission/client gate (:830-851). Client roles hold tickets:view and projects:view (catalog scope 'both', supabase/migrations/5302118_permission_matrix_full_catalog.sql:30,38; client_admin/client_user grant loop at :407-430), and the mct_session cookie is scoped to the parent domain so a client can call the API directly. Intent is unambiguous: the portal UI filters internal rows client-side (apps/web/app/(portal)/portal/support/[ticketId]/page.tsx:172) and the admin ticket form has an 'Internal only' checkbox (apps/web/app/(admin)/admin/tickets/[ticketId]/page.tsx:562). The DB is not a second line of defence: the ticket_comments SELECT policy is org-membership only (supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql:1188-1195). Secondary: POST /tickets/:id/comments accepts isInternal from any caller with tickets:edit (tickets.ts:398-405), so a client_admin can also forge an internal-only note.",
+      "remediation": "Add a client-aware gate to the ticket and project-task comment reads: require tickets:view / projects:view, and when isClientMember(req) add `.eq('is_internal', false)` (also replace the embedded ticket_comments(*) select with an explicit filtered sub-select, or drop it from GET /tickets/:id and keep the dedicated comments endpoint). Force is_internal=false (or 403) for client callers on the comment POST routes. Add an `is_internal = false OR is_staff(organization_id)` predicate to the ticket_comments/project_task_comments SELECT RLS policies as defence in depth. Regression tests: a client token must not see an is_internal=true row via either route or via the embedded detail payload.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P3-016",
+      "severity": "P3",
+      "title": "NEW: GET /ai/triage returns every triage draft in the org (raw descriptions and first-response drafts) to client roles holding ai:view",
+      "status": "open",
+      "evidence": "NEW at main@3fa9f636. supabase/migrations/5302463_client_portal_ai_and_visibility.sql:22-33 grants ai:view to client_admin/client_user/client-viewer/client-billing by design. GET /ai/triage (apps/api/src/routes/ai.ts:336-357) lists ticket_triage_drafts for the injected organization with no created_by, status or per-client filter, and the table has no visibility column (supabase/migrations/5302065_ticket_triage.sql:4-21). The portal AI Triage page renders the same rows, including raw_description and suggested fields, for any approved membership (apps/web/app/(portal)/portal/ai-triage/page.tsx:27-60), which contradicts the documented contract 'Client: triage analysis + copilot on own tickets' (docs/modules/ai-tools.md:44). ai_draft_outputs is correctly staff-only (SEC-P2-020), so this is the remaining member of the same AI-output surface. Impact is bounded to the client's own tenant (the rows are for that org's tickets), hence P3 rather than P2.",
+      "remediation": "For client members, filter the list to `created_by = req.authUser.userId` (or add a visibility/client_id column and filter on it), or move the client surface to a dedicated GET /ai/triage/mine endpoint and keep GET /ai/triage staff-only. Add a test that a client token only sees triage drafts it created.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P3-017",
+      "severity": "P3",
+      "title": "NEW: SSO callback forwards the caller's entire cookie jar (including mct_session and csrf_token) to the API when only the PKCE verifier is needed",
+      "status": "open",
+      "evidence": "NEW at main@3fa9f636 (SSO feature, commits 9d2311e2/306b0ff8). apps/web/app/auth/callback/route.ts:24-27 posts `cookies: request.headers.get(\"cookie\") || \"\"` to /api/v1/auth/callback. The API uses that blob only to extract the `sb-<ref>-auth-token-code-verifier` cookie (apps/api/src/routes/auth.ts:223-229, :249-253); it never needs mct_session, csrf_token or mct_active_org. The session JWT therefore crosses the web->API service boundary inside a JSON body on every login/reset callback. No concrete sink was found at this commit (the API request logger and error handler do not log request bodies, apps/api/src/middleware/request-id.ts, middleware/error.ts:46-52, and Sentry runs beforeSend=scrubSentryEvent with sendDefaultPii=false, apps/api/src/lib/sentry.ts:16-17), so this is least-privilege hygiene, not a proven leak.",
+      "remediation": "Parse the Cookie header in the web route and forward only the `sb-<ref>-auth-token-code-verifier` value (or accept a dedicated `code_verifier` field, which the API already supports at auth.ts:234-250). Do not put mct_session/csrf_token in the request body.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "SEC-P3-018",
+      "severity": "P3",
+      "title": "NEW: the SSO PKCE start route and the verifier-missing/negative callback paths have no regression tests",
+      "status": "open",
+      "evidence": "NEW at main@3fa9f636. apps/api/src/routes/auth.ts:796-824 (/auth/sso) has no test: grep for 'sso' under apps/api/src/__tests__ and apps/web/__tests__ returns no test for the route or for ssoLoginAction. The added callback suite (apps/api/src/__tests__/auth.test.ts:603-655) covers only the happy path (grant_type=pkce + verifier cookie), a generic 401 on a failed exchange, and the required-auth_code 400; it never asserts that a missing or mismatched code_verifier is rejected, so a future change that drops PKCE binding (e.g. exchanging without the verifier) would not fail CI. No test covers apps/web/lib/auth/auth-actions.ts:45-64 setting the verifier cookie before redirecting.",
+      "remediation": "Add tests for: missing verifier + valid-looking code -> 401 and no access token; mismatched verifier -> 401; /auth/sso returns redirect_to = `${APP_BASE_URL}/auth/callback`, code_challenge_method=S256 and a cookieName derived from SUPABASE_URL; ssoLoginAction sets the cookie with httpOnly and maxAge before redirect. This is an assurance gap, not an exploitable defect.",
+      "lens": "g1_security"
+    },
+    {
+      "id": "CI-P1-005",
+      "severity": "P1",
+      "title": "NEW: required E2E check is red at the promotion head (Start Supabase fails)",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: E2E run 42345667661 on PR #377 head a58e171 completed success at 2026-11-07T06:22:46Z. Steps 'Restore the Supabase image cache' (06:09:24-06:09:59) and 'Load the cached Supabase images' (06:09:59-06:12:04) succeeded; step 10 'Start Supabase' succeeded (06:12:04-06:12:43); Playwright ran green (06:16:21-06:22:43). The 'e2e (20.x)' check on a58e171 is success and PR #377 merged at 06:23:44Z after it. The prior red run was 41598757709.",
+      "remediation": "No action. Keep the v2 cache key, CLI 2.122.1, partial-archive guard and explicit cache save (e2e.yml:56,87-112,168-194); re-check the first scheduled/PR run after any Supabase CLI bump.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "SBOM-P1-006",
+      "severity": "P1",
+      "title": "NEW: PSF-2.0 is allowed by the full-tree gate but not the PR dependency-review gate or docs",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/workflows/dependency-review.yml:28 and docs/LICENSE_POLICY.md:25 now include PSF-2.0, matching security/license-policy.json:20. The required 'review' check (Dependency Review) on PR #377 head a58e171 completed success at 2026-11-07T06:09:53Z (run 42345667680).",
+      "remediation": "No action. The only residual is the duplicated allow-list block in docs/LICENSE_POLICY.md (see SBOM-P3-012).",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CTR-P2-007",
+      "severity": "P2",
+      "title": "NEW: global .trivyignore suppresses fixable HIGH CVEs in the new node-exporter image",
+      "status": "partially-fixed",
+      "evidence": "partially fixed at 3fa9f63: the global .trivyignore is gone and .github/workflows/third-party-image-scan.yml:70-83,114 now selects .trivyignore.d/<image> per image, so caddy/alertmanager exceptions no longer cover node-exporter. But .trivyignore.d/node-exporter:22-35 still lists the same 14 fixable HIGH CVEs for the unchanged pinned digest (infra/digitalocean/docker-compose.yml:276), and the file header (:16-21) explicitly keeps them suppressed. Reproduced with Trivy 0.76.2 on prom/node-exporter@sha256:1b4e4438...: without an ignore file 16 HIGH findings / 15 unique CVEs; with .trivyignore.d/node-exporter only CVE-2026-78661 remains (new since the Nov 3 DB), so the 14 old CVEs are still suppressed. The next scheduled scan will be red only because of the new CVE, not because the 14 were fixed.",
+      "remediation": "Keep the per-image scoping, but treat the 14 node-exporter exceptions as an explicit accepted risk with an owner and the existing 2026-12-01 expiry, and track the upstream rebuild (Go >= 1.26.10); alternatively build/pin a node-exporter image with the fixed toolchain. Do not describe the node-exporter scan as clean for this digest.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CTR-P3-006",
+      "severity": "P3",
+      "title": "infra/digitalocean operator docs and `.env.example` drift from the deployed stack",
+      "status": "partially-fixed",
+      "evidence": "partially fixed at 3fa9f63: infra/digitalocean/README.md:14-19 now lists the five services with prometheus v3.15.1, alertmanager v0.29.0 and node-exporter, matching infra/digitalocean/docker-compose.yml:276,342,390,449. However README.md:14 still says redis:7.4.11-alpine while compose pins redis:7-alpine (docker-compose.yml:35),. docs/CI.md:58-59 still lists node-exporter instead of the deploy-gated node-exporter-probe (deploy-do.yml:1100), and docs/MONITORING_AND_ALERTING.md:235-243 keeps a second, stale seven-service health table without node-exporter-probe next to the corrected table at :224-233.",
+      "remediation": "Remove the duplicated stale health table, change the CI health list to node-exporter-probe, and align the redis image tag with compose.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "INFRA-P2-003",
+      "severity": "P2",
+      "title": "Operations documentation contradicts the current pipeline and configuration",
+      "status": "partially-fixed",
+      "evidence": "partially fixed at 3fa9f63: the main README version/service table, the five-image scan docs and the promtool pin are fixed (infra/digitalocean/README.md:14-19, docs/CI.md:33, docs/SBOM_PROCESS.md:97, .github/actions/prometheus-rules/action.yml:19). Residual contradictions: docs/MONITORING_AND_ALERTING.md:235-243 is a duplicated pre-fix health table omitting node-exporter-probe; docs/CI.md:58-59 names node-exporter instead of node-exporter-probe (deploy-do.yml:1100); README.md:14 still says redis:7.4.11-alpine vs compose redis:7-alpine (docker-compose.yml:35).",
+      "remediation": "Delete the stale duplicate table, correct the CI health service list, and align the redis tag. Re-run scripts/check-docs-links.mjs after the edits.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "INFRA-P3-011",
+      "severity": "P3",
+      "title": "NEW: promtool CI gate pins Prometheus v3.5.1 while production runs v3.15.1",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/actions/prometheus-rules/action.yml:19 pins prom/prometheus:v3.15.1@sha256:fa3302279710be2f21a8301ec17a8b4f2301fd829bd113839b3b6b02b6f191a2, exactly matching infra/digitalocean/docker-compose.yml:342. The shared unit-tests job ran the prometheus-rules action successfully in run 42345667642 (step 'Run ./.github/actions/prometheus-rules' success).",
+      "remediation": "No action. Bump the digest in both places together when the next Prometheus patch/minor lands.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "DET-P3-003",
+      "severity": "P3",
+      "title": "[SUPPLY] third-party image scan header still says four images and omits node-exporter",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/workflows/third-party-image-scan.yml:3-5 and :158 now say five images and name node-exporter; the resolver output locally is the five unique digest-pinned refs caddy, alertmanager, node-exporter, prometheus and redis (docker-compose.yml:35,276,342,390,449). docs/CI.md:33 and docs/SBOM_PROCESS.md:97-106 also say five.",
+      "remediation": "No action. Keep the header/notify text in sync if a sixth third-party image is added.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "EVOL-P3-010",
+      "severity": "P3",
+      "title": "Supabase CLI pin in CI (2.107.0) no longer matches the lockfile (2.122.1) or package.json (^2.120.0)",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: .github/workflows/e2e.yml:56 sets SUPABASE_CLI_VERSION to 2.122.1 and uses it at :87, :112 and :194; .github/workflows/supabase-migrations.yml:62-64 installs supabase@2.122.1; pnpm-lock.yaml:6802 and :14854 resolve 2.122.1, package.json:51 declares ^2.120.0, and docs/CI.md:17 says pinned CLI 2.122.1.",
+      "remediation": "No action. Keep the three references (e2e env, migrations install, docs) updated in the same PR as the next CLI bump.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "DATA-P2-011",
+      "severity": "P2",
+      "title": "Preflight script aborts on its first check, so the duplicate-migration gate never runs and is not wired to CI",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: scripts/preflight-check.sh:12-24 increments with PASS=$((PASS + 1)) and the Dockerfile predicates at :31-37 use command substitution; running `bash scripts/preflight-check.sh` in the worktree completed '16 passed, 0 failed, 1 skipped' (exit 0), including 'No duplicate migration timestamps' (:48-51). .github/actions/unit-tests/action.yml:152-158 runs the script in the shared PR/deploy test job, and the unit-tests step was green in run 42345667642.",
+      "remediation": "No action. Keep the preflight script inside the shared unit-tests action so it remains a gate.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "TEST-P2-011",
+      "severity": "P2",
+      "title": "E2E Supabase image cache is not a reliable cold-start path: a cache hit loads, then `supabase start` still fails before Playwright",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: e2e.yml:82-112 uses the v2 key supabase-images-${runner.os}-2.122.1-v2, checks the loaded archive has >=12 matching repositories (:117-131) and fails loudly on a partial tar; e2e.yml:168-194 saves the tar immediately after a successful start. In run 42345667661 the restore (06:09:24-06:09:59) and load (06:09:59-06:12:04) steps succeeded, 'Start Supabase' succeeded (06:12:04-06:12:43), the save steps were correctly skipped on the cache hit, and Playwright passed.",
+      "remediation": "No action. Bump the trailing generation in the cache key whenever the CLI image set changes without a CLI version bump.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "TEST-P2-010",
+      "severity": "P2",
+      "title": "Promotion PRs merge before required checks, so the promoted commit has no green Test artifact (PR #333 recurred)",
+      "status": "verified-fixed",
+      "evidence": "re-verified at 3fa9f63: PR #377 (head a58e171 -> main) was created 2026-11-07T05:31:38Z and merged 06:23:44Z; all eight required contexts on the head completed success before the merge: test (20.x) 06:10:49, security-scan 06:09:05, secrets-scan 06:08:34, lint (20.x) 06:09:04, typecheck 06:09:13, e2e (20.x) 06:22:46, Dependency Review review 06:09:53 and CodeQL Analyze (javascript-typescript) 06:11:26. The promoted artifact therefore has a green Test/E2E run. Caveat: the PR still merged with 0 reviews, tracked as BP-P1-004.",
+      "remediation": "No action for the check-timing defect. Keep the promotion wait-for-green process; the reviewer bypass is tracked under BP-P1-004.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "BP-P1-004",
+      "severity": "P1",
+      "title": "PR #279 merged into main with required checks pending and zero reviews - live protection does not match the committed payloads (or an unrecorded bypass)",
+      "status": "still-open",
+      "evidence": "still-open at 3fa9f63: PR #377 'Promote develop -> main (Nov 7: SSO, backups, majors, container CVE fixes)' merged 2026-11-07T06:23:44Z with zero reviews (GET /repos/MaineCyberTech/mainecybertech/pulls/377/reviews returned []), while .github/branch-protection/main.json:3-19 requires 1 approving review, CODEOWNERS review and enforce_admins:true. PR #376 (develop) merged at 05:01:40Z with only github-actions[bot]'s approval and no human review. Scheduled branch-protection-audit runs 41491379135 (Nov 2), 40340906384 (Oct 26) and 39273950100 (Oct 19) all failed. Live protection still does not match the committed payload (or an unrecorded bypass remains).",
+      "remediation": "Repo admin: reconcile the live main/develop protection with .github/branch-protection/*.json and record any break-glass bypass in an issue. No workflow change can enforce the reviewer rules.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "Production application deploys have no working manual-approval gate",
+      "status": "still-open",
+      "evidence": "still operator-gated at 3fa9f63: every prod-mutating job attaches the prod-approval environment, but docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:9-16 and docs/RELEASING.md:141-154 still state that required reviewers are not configured, so the prod jobs run without pausing. No repo-side change in 6b7aa1a..3fa9f63.",
+      "remediation": "Operator: add 1+ required reviewers to the prod-approval environment in GitHub. The repository cannot set environment reviewers.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CI-P1-003",
+      "severity": "P1",
+      "title": "Production deploy path cannot run; prod environment lacks secrets and protection rules",
+      "status": "still-open",
+      "evidence": "still operator-gated at 3fa9f63: docs/RELEASING.md:193-199 and docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:204-236 state that prod-approval lacks SUPABASE_*/JWT_SECRET/migration secrets, DO_API_TOKEN returns 401, and prod has no DROPLET_IP fallback. No repo-side change in the delta.",
+      "remediation": "Operator: provision the prod-approval secrets/vars and fix or replace the DO API token; see RELEASING.md for the full list.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CI-P2-012",
+      "severity": "P2",
+      "title": "AI-review caller pins a SHA but the reusable workflow executes reviewer code from mutable main with all repository secrets",
+      "status": "open",
+      "evidence": ".github/workflows/ai-review.yml:25 pins MaineCyberTech/ai-reviewer/.github/workflows/ai-review.yml@d401040c9777a63195396cbf177eec78192284d2, but that workflow checks the reviewer repository out at `ref: main` (MaineCyberTech/ai-reviewer@d401040c:.github/workflows/ai-review.yml:58-64) and then executes .ai-reviewer/.github/scripts/ai_review.py and the prompt from that checkout (:83-87). ai-reviewer main advanced from d401040c (2026-11-06T17:03Z) to 80872e5 (2026-11-06T19:32Z), so the pin does not control the executed code. The caller also passes `secrets: inherit` (.github/workflows/ai-review.yml:26), making every repository secret - not just AI_REVIEW_ENDPOINT/AI_REVIEW_API_KEY/AI_REVIEW_MODEL (AGENTS.md:109-111) - available to that mutable checkout.",
+      "remediation": "Checkout the reviewer at the same 40-character SHA (or vendor the script/prompt in this repo) instead of `ref: main`, and pass only the three AI_REVIEW_* secrets explicitly instead of `secrets: inherit`. Re-pin and review the new SHA in the PR that updates it.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CI-P2-013",
+      "severity": "P2",
+      "title": "Bot approval fails open when `gh pr checks --required` errors, approving without verified required checks",
+      "status": "open",
+      "evidence": "MaineCyberTech/ai-reviewer@d401040c:.github/workflows/bot-approval.yml:61-81: both the wait loop (:62) and the final gate (:76) run `checks=\"$(gh pr checks \"$PR\" --required --json name,state)\" || checks='[]'`; on any command failure (API/rate limit, auth, or no resolvable required contexts) checks becomes [] and pending is 0, and the workflow proceeds to POST /repos/$REPO/pulls/$PR/reviews with event=APPROVE (:83-85). The caller grants the needed token at .github/workflows/bot-approval.yml:9-12. The control is therefore fail-open exactly when the check query is untrustworthy.",
+      "remediation": "Treat a non-zero `gh pr checks` exit, empty output or unparsable JSON as a hard refusal; require a non-empty set of required contexts for the protected branch and only approve after a fresh successful query.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CI-P3-016",
+      "severity": "P3",
+      "title": "Dependabot Node-major hold is applied only to the root docker config, not the three app Dockerfile directories",
+      "status": "open",
+      "evidence": ".github/dependabot.yml:55-59 ignores `node` semver-major updates only for directory \"/\", while the separate docker entries for /apps/api (:64-72), /apps/web (:74-82) and /apps/worker (:84-92) have no ignore block. The held Node 25/26 majors in issue #361 were exactly those directories (closed PRs #266 /apps/api, #268 /apps/web, #269 /apps/worker), and all three Dockerfiles still start FROM node:20-alpine (apps/api/Dockerfile:1, apps/web/Dockerfile:1, apps/worker/Dockerfile:1). Dependabot will recreate those major PRs on the next weekly run.",
+      "remediation": "Add the same `dependency-name: node` / `version-update:semver-major` ignore to each app docker entry (or fold them into a single config if Dependabot supports the layout) and keep the #361 table in sync.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CI-P3-017",
+      "severity": "P3",
+      "title": "AI review fails on Dependabot PRs because required secrets are unavailable, creating red checks and blocking the bot-approval path",
+      "status": "open",
+      "evidence": ".github/workflows/ai-review.yml:5-7 triggers on every pull_request, including Dependabot. The callee declares AI_REVIEW_ENDPOINT and AI_REVIEW_API_KEY as required (MaineCyberTech/ai-reviewer@d401040c:.github/workflows/ai-review.yml:16-22) and exits when they are empty (:75-78), but Dependabot-triggered runs do not receive repository Actions secrets. Observed 2026-11-07: ai-review run 42346875347 for Dependabot PR #379 failed with the workflow annotation 'Secret AI_REVIEW_ENDPOINT is required, but not provided while calling' and 'Secret AI_REVIEW_API_KEY is required, but not provided while calling'; run 42346888919 (PR #382) also failed and runs 42346879642/42346884197 were cancelled. No AI-review comment was posted on #379-#382, so bot-approval (which requires that comment) cannot approve any of them.",
+      "remediation": "Skip Dependabot (and fork) PRs at the caller job level, or add the AI_REVIEW_* values as Dependabot secrets. If the review is truly advisory, treat missing secrets as a skipped job rather than a red check.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "CI-P3-018",
+      "severity": "P3",
+      "title": "Bot approval accepts any historical AI-review comment, so a review from an earlier push can satisfy the gate",
+      "status": "open",
+      "evidence": "MaineCyberTech/ai-reviewer@d401040c:.github/workflows/bot-approval.yml:54-59 only checks that some comment by github-actions[bot] contains 'AI review (advisory)'; it does not compare the comment's commit or time to the current PR head, and it does not require the latest ai-review run to have succeeded. The caller now triggers on synchronize (.github/workflows/ai-review.yml:7), so a failed or cancelled review on the latest push leaves the previous comment in place and the approval gate still passes. No current exploit was observed, but the gate proves a review exists, not that it covers the approved SHA.",
+      "remediation": "Have ai-review include the head SHA in the comment and have bot-approval require the parsed SHA to equal the PR head and the latest ai-review check to be green before approving.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "EVOL-P2-003",
+      "severity": "P2",
+      "title": "tailwind-merge 3.x is installed against Tailwind CSS 3.4, so class-conflict merging uses Tailwind v4 semantics",
+      "status": "open",
+      "evidence": "packages/ui/package.json:32 and apps/web/package.json:32 declare tailwind-merge ^3.7.0 while apps/web/package.json:54 keeps tailwindcss ^3.4.19; packages/ui/src/lib/cn.ts:5 calls twMerge for all shared components. The tailwind-merge v3.7.0 README states 'Supports Tailwind v4.0 up to v4.3 (if you use Tailwind v3, use tailwind-merge v2.6.0)'. Reproduced with the 3.7.0 bundle: twMerge('outline-none','outline') returns both classes, and the shadow/rounded class renames mean merged output semantics differ from Tailwind 3.",
+      "remediation": "Pin tailwind-merge to 2.6.x while Tailwind remains on v3, or complete the Tailwind v4 migration before keeping tailwind-merge 3.x. Add a cn() unit fixture covering the v3 override names.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "SBOM-P3-012",
+      "severity": "P3",
+      "title": "docs/LICENSE_POLICY.md now lists the allowed-license block twice after the PSF-2.0 edit",
+      "status": "open",
+      "evidence": "docs/LICENSE_POLICY.md:22-29 contains the allowed list twice: lines 23-26 end with UPL-1.0, then lines 28-29 repeat CC-BY-4.0 through UPL-1.0. The duplicate was introduced by the PSF-2.0 fix (commit 5601b97e) when the new full list was inserted above the old continuation. Enforcement is correct (security/license-policy.json:20 and .github/workflows/dependency-review.yml:28 both include PSF-2.0), so this is documentation-only.",
+      "remediation": "Delete the duplicated lines 28-29 and re-run the docs link/count guard.",
+      "lens": "g2_ci_supply"
+    },
+    {
+      "id": "DR-P0-001",
+      "severity": "P0",
+      "title": "No successful backup has ever run: all four backup/restore workflows still have zero green runs, including the new Garage-primary path",
+      "status": "open",
+      "evidence": "Re-verified at main@3fa9f636 with the public GitHub Actions API (read-only, no logs): `status=success` returns total_count 0 for db-backup, storage-backup, db-restore-test and storage-restore-test. Latest main db-backup run 42212650616 (2026-11-06T11:45Z, main@15393691) failed the 'Run database backup script' step 0 s after it started (11:46:04), which matches the missing-URL guard at scripts/backup-database.sh:67-70. The new Garage path is directly exercised and still fails: on 2026-11-07 three manual storage-backup dispatches on develop all failed — 42338975431 (04:33Z, 9c0485e6, before #375), 42343086424 (05:31Z, 65eba79f, empty-dev allowance present) and 42345678702 (06:08Z, a58e171c, Garage primary) — each failing the script step in 1-4 s (42345678702 ran on the lab `ci-runner`). No run exists at 3fa9f636 yet. The documented dev destination is Raven Garage at 192.168.222.120:3900 with the offsite credentials (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:135-137; scripts/backup-database.sh:41-56). Operator blockers remain exactly as briefed: SUPABASE_DB_URL missing/stale, Garage access key not accepted by the service, and no non-empty restore drill (drill ledger still all `planned`, docs/runbooks/backup-restore-drill-ledger.md:12-24).",
+      "remediation": "Operator actions, not code: provision a current SUPABASE_DB_URL (and the prod rows in prod-backup/prod-approval), fix the Garage key/secret so the lab runner's upload succeeds, then dispatch db-backup, storage-backup, db-restore-test and storage-restore-test once from main and attach the run URLs to the drill ledger. Do not close this on code inspection: require at least one green db-backup + one green db-restore-test with a non-empty archive, and a green storage backup + storage restore test.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P1-003",
+      "severity": "P1",
+      "title": "Restore-test backup location contract (S3_BUCKET/S3_PREFIX) is documented and shared by write/read paths",
+      "status": "verified-fixed",
+      "evidence": "The contract is documented at docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:125-146 and in the script headers (scripts/backup-database.sh:5-12, scripts/restore-database.sh:7-11, scripts/backup-storage.sh:6-9). Both restore workflows now call the same discovery helper (db-restore-test.yml:89-111; storage-restore-test.yml:70-89), which normalises a legacy `s3://bucket[/prefix]` value, rebuilds the key once without double-prefixing and emits `backup_file`/`backup_uri` (scripts/ci/find-latest-backup.sh:37-67). The old inline `aws s3 ls | sort | tail -1` duplication is gone. Note: the orchestrator brief labels DR-P1-003 'offsite + encryption'; in the Nov 3 register that subject is DR-P1-004, which is re-verified separately below.",
+      "remediation": "None for this contract. Keep the helper as the single read path when new restore workflows are added.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P1-004",
+      "severity": "P1",
+      "title": "Encryption is now enforced, but the offsite/second-destination copy is optional, skipped in the documented dev config, and never verified",
+      "status": "partially-fixed",
+      "evidence": "Encryption: both backup workflows set REQUIRE_BACKUP_ENCRYPTION=1 (db-backup.yml:109-115; storage-backup.yml:99-103) and both scripts encrypt the gzipped dump/archive with openssl AES-256-CBC/PBKDF2 before upload, deleting the plaintext (scripts/backup-database.sh:108-129; scripts/backup-storage.sh:172-184); both restore paths fail closed on a `.enc` object without the key and decrypt with it (db-restore-test.yml:127-151; scripts/restore-storage.sh:97-109). Offsite: the copy only runs when `S3_OFFSITE_BUCKET` is non-empty (scripts/backup-database.sh:152-159; scripts/backup-storage.sh:206-210), and the scripts now clear that variable whenever bucket+endpoint match the primary (backup-database.sh:49-56; backup-storage.sh:47-54). The documented dev configuration promotes Garage to primary and says the duplicate copy is skipped (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:135-137), so the current documented state is a single destination; no successful run has produced even the primary object (DR-P0-001). There is also no post-copy `head-object`/listing, so 'Offsite copy complete' only reflects the `aws s3 cp` exit status (backup-database.sh:158; backup-storage.sh:209-210). The docs still tell the operator to 'confirm an encrypted object lands in both buckets' (docs/RTO_RPO.md:50-57), which the promoted-Garage config no longer does by default.",
+      "remediation": "Decide the intended DR topology: either keep two distinct destinations (different bucket and/or endpoint) and fail the job when the offsite copy is configured but absent, or document that Garage is the single copy and delete the offsite claim. Add a `aws s3api head-object` (size/ETag) check after both uploads and record the destination object keys in the run summary. Do not accept 'copy complete' on the CLI exit code alone.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P2-001",
+      "severity": "P2",
+      "title": "Storage backup listing pagination, partial-download count and archive-integrity gates remain in place",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at 3fa9f636: scripts/backup-storage.sh pages the Storage list endpoint until a short page (84-102), walks folders recursively, counts listed vs downloaded objects and refuses a mismatch (128-144), refuses a zero-object mirror unless the explicit dev-only flag is set (133-139), and VERIFY_BACKUP checks a readable tar containing MANIFEST.txt (162-170); storage-backup.yml sets VERIFY_BACKUP=1 (line 103). The prior defect (silent 1000-object truncation / silent zero-object archive) is fixed for the default/prod path. The new ALLOW_EMPTY_STORAGE=1 dev path deliberately reintroduces a manifest-only archive; its monitoring consequence is tracked as DR-P2-010, not as a regression of this row.",
+      "remediation": "None for the default path. If the empty-dev allowance is kept, make the resulting archive distinguishable in the run output and never count it as a data-bearing backup (see DR-P2-010).",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P3-008",
+      "severity": "P3",
+      "title": "Restore discovery now distinguishes 'cannot list the bucket' from 'bucket reachable but empty', with a negative fixture in CI",
+      "status": "verified-fixed",
+      "evidence": "scripts/ci/find-latest-backup.sh:45-54 captures the `aws s3 ls` failure, prints a redacted `::error::` naming the bucket/prefix, endpoint, credential presence and AWS exit code, and exits; :56-60 gives a separate message for a reachable-but-empty prefix. The negative fixtures cover a synthetic exit 254, an empty prefix and a successful newest-object pick (scripts/ci/test-find-latest-backup.sh:44-76), and the self-test plus shellcheck are wired into the shared CI action (.github/actions/shellcheck/action.yml:20-39). Both restore workflows call the helper (db-restore-test.yml:111; storage-restore-test.yml:89).",
+      "remediation": "None. The remaining restore failure is reachability/credentials (DR-P0-001 / DR-P1-008), and the helper will now name the exact cause.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "IR-P2-011",
+      "severity": "P2",
+      "title": "The first (and only) alert-path exercise failed and the IR evidence table still records no exercise",
+      "status": "open",
+      "evidence": "The public API still shows exactly one alert-path-exercise run — 41323651243 on 2026-11-01 (main@4199ce8c) — and it failed at step 'Exercise alert delivery on the droplet'; the preceding direct ntfy relay check succeeded, so the failure is in the droplet-side Alertmanager exercise, not the channel. There has been no run since. docs/ALERT_PATH_EXERCISE.md:102-106 still has `_none recorded yet_` in the evidence table, and the scheduled next attempt is 2026-12-01. The missed-heartbeat drill is still unrecorded (docs/ALERT_PATH_EXERCISE.md:84-100).",
+      "remediation": "Identify the failing precondition from the failed run (DROPLET_IP/DO_API_TOKEN resolution, SSH/DO_SSH_HOST_KEY, or the Alertmanager endpoint), rerun on dev, confirm the ntfy notification and the Watchdog heartbeat, then record the run URL, operator and observation in the evidence table. Keep the monthly schedule; add a runbook step for a failed exercise so it cannot sit unowned.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "IR-P0-003",
+      "severity": "P0",
+      "title": "The off-box dead-man's switch is configured and fail-closed, but the external heartbeat URL is still unset and never drilled",
+      "status": "partially-fixed",
+      "evidence": "The mechanism remains: Watchdog routes to a dedicated external receiver every 5 min (infra/digitalocean/alertmanager.tmpl.yml:86-100,145-152) and prod deploys fail closed when ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty (deploy-do.yml:870-889). The repo still states the URL is unset — docs/INCIDENT_RESPONSE.md:154-161, docs/DATA_BREACH_RESPONSE.md:145-156 and :464-467 — and there is no observed missed-heartbeat drill (docs/ALERT_PATH_EXERCISE.md:84-106). The only alert-path exercise run failed (IR-P2-011).",
+      "remediation": "Provision ALERTMANAGER_WATCHDOG_WEBHOOK_URL (external, off-droplet) in the prod environment; run the documented stop-Alertmanager drill past the provider grace period; record who was paged and the detection time in docs/ALERT_PATH_EXERCISE.md. Until then, a total monitoring/droplet loss is still not detected off-box.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "OBS-P1-002",
+      "severity": "P1",
+      "title": "Prod deploy health gate now uses the app-host API read and asserts the JSON success envelope instead of the retired api host",
+      "status": "verified-fixed",
+      "evidence": "deploy-do.yml:92-111 sets `PUBLIC_API_CHECK_URL=https://app.mainecybertech.com/api/v1/store/products` for prod (dev keeps the working api host) and exports it from the setup job (deploy-do.yml:50-55). The Health check step polls that URL and, for prod, requires `.success == true`, not only HTTP 200 (deploy-do.yml:1184-1195). docs/MONITORING_AND_ALERTING.md:186-195 now describes the same gate. The code fix is present at 3fa9f636; no prod deploy has completed since the promotion (deploy run 42346818866 was still in progress at audit time), so the gate is verified by inspection, not by a live prod deploy.",
+      "remediation": "None. When the next prod deploy runs, record the green health-gate step as the artifact.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "OBS-P3-008",
+      "severity": "P3",
+      "title": "node-exporter is now inside service-down alerting and is gated by a real HTTP/filesystem probe",
+      "status": "verified-fixed",
+      "evidence": "MCTServiceDown matches `up{job=~\"mct-api|mct-worker|node-exporter\"}` (infra/digitalocean/prometheus.rules.yml:11-22) and a dedicated MCTNodeExporterDown rule fires at 5 m (:24-34). promtool case 53 asserts both alerts (prometheus.rules.test.yml:824-852). The scratch-based exporter no longer self-healthchecks; a digest-pinned sibling `node-exporter-probe` scrapes :9100 and requires a `node_filesystem_size_bytes{mountpoint=\"/\"}` series (docker-compose.yml:306-340), and deploy-do gates on `node-exporter-probe` (deploy-do.yml:1092-1100).",
+      "remediation": "None. (Minor doc drift is recorded under OBS-P3-009.)",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P1-008",
+      "severity": "P1",
+      "title": "Restore-test workflows hard-code ubuntu-latest and cannot reach the private Garage endpoint the backup workflows now use",
+      "status": "open",
+      "evidence": "The configurable runner added in #370/#378 is applied only to the two backup workflows: db-backup.yml:53 and storage-backup.yml:56 use `runs-on: ${{ fromJSON(vars.BACKUP_RUNNER_LABELS || '[\"ubuntu-latest\"]') }}`, and the recent backup dispatches prove the variable is set to the lab runners (job 42345678702 ran on `ci-runner`, labels self-hosted/Linux/X64/lab/lab-docker; 42343086424 on `lab-runner-2`). Both restore workflows still hard-code `runs-on: ubuntu-latest` (db-restore-test.yml:46; storage-restore-test.yml:55) while reading the same repository `S3_ENDPOINT` (db-restore-test.yml:105; storage-restore-test.yml:83), which the secrets matrix documents as the private `http://192.168.222.120:3900` Garage endpoint for dev (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:135-137) and warns that a GitHub-hosted runner cannot reach (line 188). The matrix scopes BACKUP_RUNNER_LABELS to db-backup/storage-backup only (line 189). No restore-test run has happened since the switch (zero db/storage restore-test runs since 2026-11-02), so the first scheduled Monday run on the promoted main cannot reach the documented endpoint and will fail to list the bucket before any restore assertion, unless the endpoint/runner is changed to a reachable path in the same change.",
+      "remediation": "Use the same runner expression (or a dedicated `RESTORE_RUNNER_LABELS`) in db-restore-test.yml and storage-restore-test.yml, or provide a publicly reachable/relayed endpoint for restore reads. Add a fast preflight that resolves the newest object (or `head-object`) so an unreachable endpoint fails with the same actionable diagnostic as DR-P3-008. Then prove both restore tests green against the Garage archive.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P2-010",
+      "severity": "P2",
+      "title": "The dev empty-mirror allowance records a zero-object archive as a successful backup, which the branch-agnostic staleness alarm counts as fresh and the storage restore test is guaranteed to reject",
+      "status": "open",
+      "evidence": "storage-backup.yml:104-106 sets `ALLOW_EMPTY_STORAGE=1` for every run that is not a prod dispatch or a PROD_BACKUP_ENABLED schedule; scripts/backup-storage.sh:133-139 then writes a manifest-only archive (`object_count: 0`) and the job succeeds, while the restore verifier explicitly refuses any archive with zero object files (scripts/restore-storage.sh:130-133). The independent staleness check does not filter by branch, environment or event — it asks `gh run list --status success --limit 1` across all branches (backup-staleness-check.yml:60-84) — so a dev manifest-only success (or any dev success) satisfies the 30 h 'storage backup' freshness gate for the whole repo, including the prod-backup schedule. The direct prod guard is intact (a prod dispatch or PROD_BACKUP_ENABLED schedule gets `0`), but prod assurance is weakened through the shared success signal. Once a manifest-only archive is the newest object, the next storage-restore-test will select it and fail.",
+      "remediation": "Make emptiness explicit in the success signal: either keep the job red in dev until real data exists, or emit a distinct outcome (e.g. a `manifest-only` annotation/step output) that the staleness check excludes from 'success'. Filter the staleness query by the environment/branch that the prod schedule uses (or by a dedicated `backup-source=prod` marker) so a dev run can never satisfy the prod freshness gate. Do not let a zero-object archive become the newest object the restore test selects.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P2-011",
+      "severity": "P2",
+      "title": "Backup jobs run on persistent lab runners but leave plaintext dumps/downloaded user objects in the workspace when any step fails",
+      "status": "open",
+      "evidence": "The backup jobs now run on the self-hosted lab runners (db-backup.yml:53; storage-backup.yml:56; run 42345678702 used `ci-runner`). Both scripts clean up only on the success path: scripts/backup-database.sh deletes the plaintext dump only after encryption (:121) and the encrypted object only at the end (:162-163); any pg_dump/verify/encryption/upload/prune failure aborts under `set -e` and leaves `./backups/supabase-dump-*.sql.gz[.enc]` behind. scripts/backup-storage.sh stages downloaded user files under `./storage-backups/<timestamp>/` (:56-69), removes the plaintext tar immediately after encryption (:173-177) but removes the staging directory and encrypted archive only after both uploads (:212); an upload/offsite-copy/prune failure leaves the plaintext staging tree. Neither workflow has an `if: always()` cleanup step (db-backup.yml:55-152; storage-backup.yml:58-133), and neither directory is gitignored, so the files sit in the repo workspace on the runner until the next checkout of this repo cleans them. That is a full plaintext DB dump / user-file set readable by co-tenant processes on a shared lab host after a failure.",
+      "remediation": "Put staging under `$RUNNER_TEMP` and add an `EXIT` trap to each script that removes its own staging directory and archive (backup-database.sh: `$BACKUP_DIR`/`$LOCAL_PATH`/`$UPLOAD_PATH`; backup-storage.sh: `$STAGE_DIR`/`$ARCHIVE_PATH`/`$UPLOAD_PATH`) so cleanup runs on any exit. Add an `if: always()` cleanup step to both workflows as a second layer, and verify on the lab runner that a deliberately failed run leaves no dump/object files behind.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P3-009",
+      "severity": "P3",
+      "title": "Backup retention deletes objects in place with no versioning, object lock or immutability on either destination",
+      "status": "open",
+      "evidence": "Both scripts prune with `s3api list-objects-v2` + `s3api delete-object` (scripts/backup-database.sh:166-184; scripts/backup-storage.sh:214-231) and retain only 30 days (`RETENTION_DAYS`, backup-database.sh:33; backup-storage.sh:57). No repo-managed bucket has versioning/object-lock for backups: Terraform only versions the Terraform-state bucket (infra/terraform/digitalocean/state-bucket.tf:28-34), and docs/RTO_RPO.md:24-26 documents 30-day retention but no immutability. A bad run, a stolen write key, or a mistaken S3_BUCKET/S3_PREFIX can therefore permanently delete the backup history; there is no tested 'deleted backup' recovery path.",
+      "remediation": "Enable bucket versioning and a governance/compliance object-lock or lifecycle retention on both backup destinations, and document the recovery procedure (restore a prior object version). Add a drill that deletes a test object and proves it can be recovered, and keep the prune path unable to bypass the lock.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "DR-P3-010",
+      "severity": "P3",
+      "title": "The offsite-copy skip ignores S3_OFFSITE_PREFIX, so a same-bucket/different-prefix second copy is dropped; the copy is never verified",
+      "status": "open",
+      "evidence": "The skip is decided only by bucket+endpoint equality (scripts/backup-database.sh:49-56; scripts/backup-storage.sh:47-54) and then clears `S3_OFFSITE_BUCKET`, even when `S3_OFFSITE_PREFIX` (documented at docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:142-146) differs from `S3_PREFIX`. A legitimate configuration that keeps a second copy under a different prefix in the same bucket is therefore skipped with a 'skipping duplicate copy' message and the offsite prefix is never pruned or written. When the copy does run, the script prints 'Offsite copy complete' immediately after `aws s3 cp` (backup-database.sh:152-158; backup-storage.sh:206-210) with no `head-object`/listing check, so a no-op or wrong-endpoint copy is not detected.",
+      "remediation": "Include `S3_OFFSITE_PREFIX` in the skip predicate (or only skip when bucket, prefix and endpoint all match) and do not clear the bucket variable in the different-prefix case. After each copy, `aws s3api head-object` the destination key and compare size/ETag, failing the job if the object is absent; record both destination keys in the run summary.",
+      "lens": "g3_backups_infra"
+    },
+    {
+      "id": "OBS-P3-009",
+      "severity": "P3",
+      "title": "Monitoring doc carries a duplicated stale health-check table and describes the deploy gate as node-exporter rather than node-exporter-probe",
+      "status": "open",
+      "evidence": "docs/MONITORING_AND_ALERTING.md:224-233 is the current health-check table (including node-exporter-probe), immediately followed by a second, stale table at :235-243 that omits node-exporter-probe and duplicates every other row. The duplication was introduced in the Nov 3 P3 batch (commit 27cc92a7) and remains at 3fa9f636. Separately, docs/CI.md:57-60 says the deploy prunes only after 'node-exporter' is healthy, while the workflow gates `node-exporter-probe` (deploy-do.yml:1100). The docs no longer match the code and a reader sees two different container-health inventories.",
+      "remediation": "Delete the stale second table at docs/MONITORING_AND_ALERTING.md:235-243 and correct docs/CI.md:58-59 to name node-exporter-probe. Consider a docs check that rejects adjacent duplicate tables/rows in the monitoring runbook.",
+      "lens": "g3_backups_infra"
+    }
+  ]
+}
