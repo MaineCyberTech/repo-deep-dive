@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2886
+# files: 2896
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -373,7 +373,7 @@ fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/2026100
 6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
 a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
-0e16b085871f1205348ea366e1d18bec4cc92da2ae91a836a0edf5ea6cbd614e  ./runs/INDEX.md
+e2e1ef30d8e516cdc55ca9c5157cd200a231b8e1862aff1d179ac06c0065ca5d  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 40bec1c6610fc37de257fae4eeade2dd0610d836da3cc5e171b76118c8f89064  ./runs/bench-test-20261007-1731-main-4ecee97/EXECUTIVE_SUMMARY.md
 c3ba715b06e74f994c6be4f7367ea7ab711c9584c93a1a61eeb2858d46d246f6  ./runs/bench-test-20261007-1731-main-4ecee97/INDEX.md
@@ -2360,6 +2360,16 @@ d2a047512835381b5b8b8b5fb5e6076e791474cce0d7a9aee5b91463366d71fd  ./runs/mainecy
 2befdb294959294b35d58a7f3a74e8835673def1c1b0f1bb29814dd9c30e4920  ./runs/mainecybertech-20261103-0748-full-main-6b7aa1a/patch_plan.md
 5393f6ebab843088e825fd1f21596095c64e6d5092371a9611e8d49a72d1d045  ./runs/mainecybertech-20261103-0748-full-main-6b7aa1a/risk_register.md
 ef11d055c15647d452b5eb06d80a1c1e7a0aaabe3cbc8f8ddecafb8c647fed3c  ./runs/mainecybertech-20261103-0748-full-main-6b7aa1a/roadmap.md
+ffa64d6bf554d3429c5f7e60b15cadee76320a6a469db182202ba10080b057f4  ./runs/mainecybertech-20261107-delta-main-3fa9f63/README.md
+7055ea4b05a5c2693b573fac28be389741ea09d34c42f9974d2edb7bd0d52f7e  ./runs/mainecybertech-20261107-delta-main-3fa9f63/SUMMARY.md
+c99ffc16dde48d5fbcff2596cd48a7c46959b941f7f4792eccb36f1d28a64cfa  ./runs/mainecybertech-20261107-delta-main-3fa9f63/delta_register.md
+8a53e6c251e9fe46f01b5adee5f18a02bc51acef5aa330ea597ab360e43819c1  ./runs/mainecybertech-20261107-delta-main-3fa9f63/findings.json
+f054c1a7fd8fc8983343e14f374859e653d1286c646e81e8623d80a82859be3d  ./runs/mainecybertech-20261107-delta-main-3fa9f63/g1_security.json
+b3413f877754c4cbbd7e063ea358fad69ef36bd84a511ef84c7c0566d618fc08  ./runs/mainecybertech-20261107-delta-main-3fa9f63/g1_security.md
+644270ca926f9a2c772cd67e23496369aa979f08d88773e43ed48399796a6f39  ./runs/mainecybertech-20261107-delta-main-3fa9f63/g2_ci_supply.json
+c992b3a8934c21d7b935f1e3f89dc1aa04af8fc4ae7000ab4a97fb366a7900a8  ./runs/mainecybertech-20261107-delta-main-3fa9f63/g2_ci_supply.md
+1661e0793c858c459faaef96ef4d964af39be38ccb45c025931180ded02e6d00  ./runs/mainecybertech-20261107-delta-main-3fa9f63/g3_backups_infra.json
+f39d2ac00bc5272c9fe7737663189bb63bcc8060d9a5a3ec99ad351fca957ed6  ./runs/mainecybertech-20261107-delta-main-3fa9f63/g3_backups_infra.md
 53ea972dba482a93f9b1e56a258fb34c93f3fb74029bbae4e5cb1c40690bc6e8  ./runs/repo-deep-dive-20261003-0018-main-7bac320/01_repository_inventory.md
 0433784fa075d280e13110bc99e53ed64d69697556c0a2f75aeb803c01b9a5a2  ./runs/repo-deep-dive-20261003-0018-main-7bac320/02_architecture_runtime_topology.md
 16ff374ec50ad2e9e4c1ded7057baff426ba3e8d248d6901024bc57e8397d8a4  ./runs/repo-deep-dive-20261003-0018-main-7bac320/03_feature_implementation_map.md
