@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2896
+# files: 2904
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -373,7 +373,7 @@ fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/2026100
 6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
 a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
-e2e1ef30d8e516cdc55ca9c5157cd200a231b8e1862aff1d179ac06c0065ca5d  ./runs/INDEX.md
+4c7f65ed1e6553e08e6b4cfb17a511377d55d630621744369c858bd457dfb6b0  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 40bec1c6610fc37de257fae4eeade2dd0610d836da3cc5e171b76118c8f89064  ./runs/bench-test-20261007-1731-main-4ecee97/EXECUTIVE_SUMMARY.md
 c3ba715b06e74f994c6be4f7367ea7ab711c9584c93a1a61eeb2858d46d246f6  ./runs/bench-test-20261007-1731-main-4ecee97/INDEX.md
@@ -966,6 +966,14 @@ f81e1668d2026440ce869860c4f3ac22011d42a41477e2f1fad3a7800d2e5565  ./runs/chat-20
 8ba4ad866ebded6e1470d25ed33e8b7181fc4b8ee14f65b02abf30183995c98f  ./runs/chat-20261004-full-develop-a62e44a/roadmap.md
 e5fed669a68012ff9c3e45170f4752f9ea32589f4383e3f5e58ca77c144a5219  ./runs/chat-20261004-full-develop-a62e44a/sbom_license_policy_recommendation.md
 16e4299eb22b733e4156453a1c840d9b4057f8829c1ab034cfec8ac60f9edc5a  ./runs/chat-20261004-full-develop-a62e44a/secret_rotation_runbook.md
+f131f913a7a2a7921e82620ded1f590d4266ab658a2c82d34e99a322c50f044b  ./runs/chat-20261107-verify-develop-49bf424/README.md
+1a32b93fa6fa3f82f521044d7ed3cabe51e3175188d05fa66ba932e311071fd8  ./runs/chat-20261107-verify-develop-49bf424/SUMMARY.md
+8ae75f174c2b526bdee84fe5f8cacc30d24ed6e6e14fc9ff00f26e836f52f056  ./runs/chat-20261107-verify-develop-49bf424/findings.json
+35c97da2463e0af4b9e4d857af9840a9cb5829c23f0137410c88b44d9fb5fe42  ./runs/chat-20261107-verify-develop-49bf424/g1_security_backend.json
+c0614b1a53f99ae43afdeab4fd6c818bcd6006c44f2f13fddf6d1094c01b82ba  ./runs/chat-20261107-verify-develop-49bf424/g1_security_backend.md
+896059bf4472895584f7d0c198b02317365b4b5a9076d13c64aafb2c7ff37cd0  ./runs/chat-20261107-verify-develop-49bf424/g2_ci_infra_product.json
+bd3f0b59fbdd2f7dad34975397cfec8bcbdeb53e1e88139a05d16c3cf3929778  ./runs/chat-20261107-verify-develop-49bf424/g2_ci_infra_product.md
+07396d918b7da0fc6fe79d7e2be390b6ea8d31a6b5e29672b0f0b27b25a154a2  ./runs/chat-20261107-verify-develop-49bf424/verify_register.md
 e4560c346c42ce0f85e89785a25bdbdf72182ab0972f6e742ca2ff6f4f7a0cbe  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/01_repository_inventory.md
 7c699a03bb9f24205c2cd9c0484602a212a9bd507afa97ded337235bac9b47c6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/02_architecture_runtime_topology.md
 709725674f51cdae3579808af778c2b677ee6e4042d4a00b37b45a28e883ff26  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/03_feature_implementation_map.md
