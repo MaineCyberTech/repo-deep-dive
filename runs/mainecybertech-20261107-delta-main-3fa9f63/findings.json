@@ -15,9 +15,9 @@
     "total": 50,
     "by_status": {
       "verified-fixed": 35,
-      "partially-fixed": 6,
+      "partially-fixed": 7,
       "still-open": 3,
-      "open": 6
+      "open": 5
     },
     "by_severity": {
       "P1": 12,
@@ -346,9 +346,9 @@
       "id": "DR-P0-001",
       "severity": "P0",
       "title": "No successful backup has ever run: all four backup/restore workflows still have zero green runs, including the new Garage-primary path",
-      "status": "open",
+      "status": "partially-fixed",
       "evidence": "Re-verified at main@3fa9f636 with the public GitHub Actions API (read-only, no logs): `status=success` returns total_count 0 for db-backup, storage-backup, db-restore-test and storage-restore-test. Latest main db-backup run 42212650616 (2026-11-06T11:45Z, main@15393691) failed the 'Run database backup script' step 0 s after it started (11:46:04), which matches the missing-URL guard at scripts/backup-database.sh:67-70. The new Garage path is directly exercised and still fails: on 2026-11-07 three manual storage-backup dispatches on develop all failed — 42338975431 (04:33Z, 9c0485e6, before #375), 42343086424 (05:31Z, 65eba79f, empty-dev allowance present) and 42345678702 (06:08Z, a58e171c, Garage primary) — each failing the script step in 1-4 s (42345678702 ran on the lab `ci-runner`). No run exists at 3fa9f636 yet. The documented dev destination is Raven Garage at 192.168.222.120:3900 with the offsite credentials (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:135-137; scripts/backup-database.sh:41-56). Operator blockers remain exactly as briefed: SUPABASE_DB_URL missing/stale, Garage access key not accepted by the service, and no non-empty restore drill (drill ledger still all `planned`, docs/runbooks/backup-restore-drill-ledger.md:12-24).",
-      "remediation": "Operator actions, not code: provision a current SUPABASE_DB_URL (and the prod rows in prod-backup/prod-approval), fix the Garage key/secret so the lab runner's upload succeeds, then dispatch db-backup, storage-backup, db-restore-test and storage-restore-test once from main and attach the run URLs to the drill ledger. Do not close this on code inspection: require at least one green db-backup + one green db-restore-test with a non-empty archive, and a green storage backup + storage restore test.",
+      "remediation": "storage-backup verified end-to-end 2026-11-07 (runs 42356362156, 42415467689; encrypted object in s3://mct-mainecybertech/storage-backups/); DB backup still has no successful run — SUPABASE_DB_URL not provisioned",
       "lens": "g3_backups_infra"
     },
     {

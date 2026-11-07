@@ -63,3 +63,9 @@ Scope: changes since the Nov 3 full audit + re-verification of the unresolved it
 - **OBS-P3-009** -> verified-fixed (#383)
 - **CI-P2-012** -> verified-fixed (ai-reviewer#2 + #385)
 - **CI-P2-013** -> verified-fixed (ai-reviewer#2 + #385)
+
+## Backup verification (2026-11-07)
+
+Storage-backup is green end-to-end (runs 42356362156, 42415467689; encrypted
+archive in Garage). `DR-P0-001` is now partially-fixed; the DB backup still
+needs `SUPABASE_DB_URL`.

@@ -2,7 +2,7 @@
 
 | ID | Sev | Status | Title |
 |---|---|---|---|
-| DR-P0-001 | P0 | open | No successful backup has ever run: all four backup/restore workflows still have zero green runs, including the |
+| DR-P0-001 | P0 | partially-fixed | No successful backup has ever run: all four backup/restore workflows still have zero green runs, including the |
 | IR-P0-003 | P0 | partially-fixed | The off-box dead-man's switch is configured and fail-closed, but the external heartbeat URL is still unset and |
 | BP-P1-004 | P1 | still-open | PR #279 merged into main with required checks pending and zero reviews - live protection does not match the co |
 | CI-P1-001 | P1 | still-open | Production application deploys have no working manual-approval gate |
