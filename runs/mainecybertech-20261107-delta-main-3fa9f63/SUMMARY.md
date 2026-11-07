@@ -47,3 +47,19 @@ Scope: changes since the Nov 3 full audit + re-verification of the unresolved it
 - `DR-P0-001`: `SUPABASE_DB_URL` missing/stale, Garage access key unknown, no non-empty restore drill.
 - `BP-P1-004`, `CI-P1-001`, `CI-P1-003`: branch protection and prod environment/reviewers.
 - `IR-P2-011`: alert-path exercise still not green.
+
+## Remediation (2026-11-07)
+
+- **SEC-P1-012** -> verified-fixed (#384)
+- **SEC-P3-016** -> verified-fixed (#384)
+- **SEC-P3-017** -> verified-fixed (#384)
+- **SEC-P3-018** -> verified-fixed (#384)
+- **DR-P1-008** -> verified-fixed (#383)
+- **DR-P2-010** -> verified-fixed (#383)
+- **DR-P2-011** -> verified-fixed (#383)
+- **CI-P3-016** -> verified-fixed (#383)
+- **EVOL-P2-003** -> verified-fixed (#383)
+- **SBOM-P3-012** -> verified-fixed (#383)
+- **OBS-P3-009** -> verified-fixed (#383)
+- **CI-P2-012** -> verified-fixed (ai-reviewer#2 + #385)
+- **CI-P2-013** -> verified-fixed (ai-reviewer#2 + #385)
