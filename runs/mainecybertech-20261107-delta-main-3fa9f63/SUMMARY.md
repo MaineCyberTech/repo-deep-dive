@@ -69,3 +69,9 @@ Scope: changes since the Nov 3 full audit + re-verification of the unresolved it
 Storage-backup is green end-to-end (runs 42356362156, 42415467689; encrypted
 archive in Garage). `DR-P0-001` is now partially-fixed; the DB backup still
 needs `SUPABASE_DB_URL`.
+
+## Final remediation (2026-11-07)
+
+- `CI-P3-017`, `CI-P3-018` -> verified-fixed (ai-reviewer#3 + #390)
+- `DR-P3-010` -> verified-fixed (#389)
+

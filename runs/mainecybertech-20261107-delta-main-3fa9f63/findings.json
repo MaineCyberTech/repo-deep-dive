@@ -14,10 +14,10 @@
   "counts": {
     "total": 50,
     "by_status": {
-      "verified-fixed": 35,
+      "verified-fixed": 38,
       "partially-fixed": 7,
       "still-open": 3,
-      "open": 5
+      "open": 2
     },
     "by_severity": {
       "P1": 12,
@@ -310,18 +310,18 @@
       "id": "CI-P3-017",
       "severity": "P3",
       "title": "AI review fails on Dependabot PRs because required secrets are unavailable, creating red checks and blocking the bot-approval path",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": ".github/workflows/ai-review.yml:5-7 triggers on every pull_request, including Dependabot. The callee declares AI_REVIEW_ENDPOINT and AI_REVIEW_API_KEY as required (MaineCyberTech/ai-reviewer@d401040c:.github/workflows/ai-review.yml:16-22) and exits when they are empty (:75-78), but Dependabot-triggered runs do not receive repository Actions secrets. Observed 2026-11-07: ai-review run 42346875347 for Dependabot PR #379 failed with the workflow annotation 'Secret AI_REVIEW_ENDPOINT is required, but not provided while calling' and 'Secret AI_REVIEW_API_KEY is required, but not provided while calling'; run 42346888919 (PR #382) also failed and runs 42346879642/42346884197 were cancelled. No AI-review comment was posted on #379-#382, so bot-approval (which requires that comment) cannot approve any of them.",
-      "remediation": "Skip Dependabot (and fork) PRs at the caller job level, or add the AI_REVIEW_* values as Dependabot secrets. If the review is truly advisory, treat missing secrets as a skipped job rather than a red check.",
+      "remediation": "remediated 2026-11-07 via ai-reviewer#3 + #390 (optional secrets; Dependabot skips cleanly)",
       "lens": "g2_ci_supply"
     },
     {
       "id": "CI-P3-018",
       "severity": "P3",
       "title": "Bot approval accepts any historical AI-review comment, so a review from an earlier push can satisfy the gate",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "MaineCyberTech/ai-reviewer@d401040c:.github/workflows/bot-approval.yml:54-59 only checks that some comment by github-actions[bot] contains 'AI review (advisory)'; it does not compare the comment's commit or time to the current PR head, and it does not require the latest ai-review run to have succeeded. The caller now triggers on synchronize (.github/workflows/ai-review.yml:7), so a failed or cancelled review on the latest push leaves the previous comment in place and the approval gate still passes. No current exploit was observed, but the gate proves a review exists, not that it covers the approved SHA.",
-      "remediation": "Have ai-review include the head SHA in the comment and have bot-approval require the parsed SHA to equal the PR head and the latest ai-review check to be green before approving.",
+      "remediation": "remediated 2026-11-07 via ai-reviewer#3 + #390 (approval requires current head evidence)",
       "lens": "g2_ci_supply"
     },
     {
@@ -463,9 +463,9 @@
       "id": "DR-P3-010",
       "severity": "P3",
       "title": "The offsite-copy skip ignores S3_OFFSITE_PREFIX, so a same-bucket/different-prefix second copy is dropped; the copy is never verified",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "The skip is decided only by bucket+endpoint equality (scripts/backup-database.sh:49-56; scripts/backup-storage.sh:47-54) and then clears `S3_OFFSITE_BUCKET`, even when `S3_OFFSITE_PREFIX` (documented at docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:142-146) differs from `S3_PREFIX`. A legitimate configuration that keeps a second copy under a different prefix in the same bucket is therefore skipped with a 'skipping duplicate copy' message and the offsite prefix is never pruned or written. When the copy does run, the script prints 'Offsite copy complete' immediately after `aws s3 cp` (backup-database.sh:152-158; backup-storage.sh:206-210) with no `head-object`/listing check, so a no-op or wrong-endpoint copy is not detected.",
-      "remediation": "Include `S3_OFFSITE_PREFIX` in the skip predicate (or only skip when bucket, prefix and endpoint all match) and do not clear the bucket variable in the different-prefix case. After each copy, `aws s3api head-object` the destination key and compare size/ETag, failing the job if the object is absent; record both destination keys in the run summary.",
+      "remediation": "remediated 2026-11-07 via #389 (offsite prefix comparison + head-object verification)",
       "lens": "g3_backups_infra"
     },
     {

@@ -34,13 +34,13 @@
 | TEST-P2-010 | P2 | verified-fixed | Promotion PRs merge before required checks, so the promoted commit has no green Test artifact (PR #333 recurre |
 | TEST-P2-011 | P2 | verified-fixed | E2E Supabase image cache is not a reliable cold-start path: a cache hit loads, then `supabase start` still fai |
 | CI-P3-016 | P3 | verified-fixed | Dependabot Node-major hold is applied only to the root docker config, not the three app Dockerfile directories |
-| CI-P3-017 | P3 | open | AI review fails on Dependabot PRs because required secrets are unavailable, creating red checks and blocking t |
-| CI-P3-018 | P3 | open | Bot approval accepts any historical AI-review comment, so a review from an earlier push can satisfy the gate |
+| CI-P3-017 | P3 | verified-fixed | AI review fails on Dependabot PRs because required secrets are unavailable, creating red checks and blocking t |
+| CI-P3-018 | P3 | verified-fixed | Bot approval accepts any historical AI-review comment, so a review from an earlier push can satisfy the gate |
 | CTR-P3-006 | P3 | partially-fixed | infra/digitalocean operator docs and `.env.example` drift from the deployed stack |
 | DET-P3-003 | P3 | verified-fixed | [SUPPLY] third-party image scan header still says four images and omits node-exporter |
 | DR-P3-008 | P3 | verified-fixed | Restore discovery now distinguishes 'cannot list the bucket' from 'bucket reachable but empty', with a negativ |
 | DR-P3-009 | P3 | open | Backup retention deletes objects in place with no versioning, object lock or immutability on either destinatio |
-| DR-P3-010 | P3 | open | The offsite-copy skip ignores S3_OFFSITE_PREFIX, so a same-bucket/different-prefix second copy is dropped; the |
+| DR-P3-010 | P3 | verified-fixed | The offsite-copy skip ignores S3_OFFSITE_PREFIX, so a same-bucket/different-prefix second copy is dropped; the |
 | EVOL-P3-010 | P3 | verified-fixed | Supabase CLI pin in CI (2.107.0) no longer matches the lockfile (2.122.1) or package.json (^2.120.0) |
 | INFRA-P3-011 | P3 | verified-fixed | NEW: promtool CI gate pins Prometheus v3.5.1 while production runs v3.15.1 |
 | OBS-P3-008 | P3 | verified-fixed | node-exporter is now inside service-down alerting and is gated by a real HTTP/filesystem probe |
