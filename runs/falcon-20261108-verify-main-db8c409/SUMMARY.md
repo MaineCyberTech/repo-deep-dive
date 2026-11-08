@@ -29,3 +29,7 @@ Three-lens re-verification of the Oct 14 verify plus new issues in touched areas
 
 ## New findings
 
+## Remediation (2026-11-08)
+
+PR #72 (security/config) and #71 (pack/docs/CI) merged; publication equality PASS, `validate` green with evidence-optional. Live operator apply remains for the Kestrel gateway/console rebind, nft/container pins, and the independent watcher reinstall. `EVOL-P1-001` (falcon-edge tooling) and `ORCH-P2-003` remain open.
+

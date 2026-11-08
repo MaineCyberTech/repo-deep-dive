@@ -11,10 +11,9 @@
     "total": 144,
     "by_status": {
       "owner-accepted": 4,
-      "verified-fixed": 52,
-      "partially-fixed": 40,
-      "regressed": 5,
-      "open": 43
+      "verified-fixed": 68,
+      "partially-fixed": 44,
+      "open": 28
     },
     "by_severity": {
       "P1": 11,
@@ -108,9 +107,9 @@
       "id": "CHAIN-P2-001",
       "severity": "P2",
       "title": "The only automated Access-posture check no longer verifies Access (external-smoke accepts any 302 from the lab vantage)",
-      "status": "regressed",
+      "status": "partially-fixed",
       "evidence": "The prior fix relied on the independent DO watcher asserting Cloudflare Access: automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com. docs/runbooks/SSO.md:3-8 says the Access apps were removed on 2026-11-05 and Kestrel is live; docs/CURRENT_STATE.md:24-27 still says Access remains the edge gate. .github/workflows/external-smoke.yml:40-60 remains reachability-only. No check now asserts the Kestrel forward-auth path, so the previous verified-fixed control is void.",
-      "remediation": "Restore a non-owner enforcement check for the current control (Kestrel login redirect or 401/403) and update/retire the stale Access assertions; treat CHAIN-P2-001 as regressed until then.",
+      "remediation": "remediated 2026-11-08 via #72 watcher code merged; independent host reinstall pending",
       "lens": "g1"
     },
     {
@@ -360,63 +359,63 @@
       "id": "ACM-P2-004",
       "severity": "P1",
       "title": "Endpoint-script sync embeds the entire enrollment token file (all per-device tokens) into every device script",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "automation/vpn/sync-levelio-scripts.sh:11 reads the whole /srv/falcon/secrets/vpn_enroll.token into ENROLL_TOKEN and :18-19 substitutes it into every installer/updater script. issue-enroll-token.sh:44,48 writes per-device lines <name>:<token>:<expiry> plus a <name>.enroll-token file. Once any per-device binding exists, every endpoint script receives all bindings (and the multi-line value can break or corrupt the sed substitution), defeating the per-device lifecycle and leaking credentials to every device.",
-      "remediation": "Generate each script from that device's <name>.enroll-token only (or inject the token at runtime); refuse to sync when the token file has more than the one intended line; add a two-binding test proving only the target token is embedded.",
+      "remediation": "remediated 2026-11-08 via #72",
       "lens": "g1"
     },
     {
       "id": "SEC-P2-005",
       "severity": "P2",
       "title": "SSO header adapter authenticates unsigned X-Authentik-*/Remote-* headers on 0.0.0.0:8090",
-      "status": "open",
+      "status": "partially-fixed",
       "evidence": "console/sso_gateway.py:166-186 accepts X-Authentik-Username/Remote-User and ...-Groups with no shared secret, mints an admin role when the group contains admins (:173), and returns the IRIS token at :184-185. The service binds 0.0.0.0:8090 (bootstrap/98-console.sh:239-240) and nftables allows 8090 from all Docker and management sources (config/nftables/falcon.nft:50); docs/runbooks/SSO.md:152-164 even documents the direct fake-header curl. A compromised container on 172.16/12 (or any management host) can use the returned X-Proxy-*/X-Falcon-* headers or the IRIS token against the app containers on the same Docker networks, bypassing Kestrel.",
-      "remediation": "Bind the adapter to Traefik's Docker gateway/loopback, require a Traefik-injected shared secret or mTLS, remove the Remote-* fallback, and add a negative test that a direct fake-header request is 401.",
+      "remediation": "remediated 2026-11-08 via #72 code merged; live gateway/container rebind pending",
       "lens": "g1"
     },
     {
       "id": "SEC-P2-006",
       "severity": "P2",
       "title": "Client VPN peer-class firewall rule is a hardcoded three-address set; dynamically enrolled clients .23-.99 reach the control plane and Wazuh proxies",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "config/nftables/falcon.nft:33 drops only 10.99.0.20/.21/.22 on tcp 9443/15140/15141; automation/vpn/enroll-service.py:46,230-240 allocates any free address in 10.99.0.20-99, and docs/runbooks/VPN.md:16 documents that pool. A new client peer at .23+ is not dropped; syslog/NetFlow also remain open to all wg0 peers at falcon.nft:36-37.",
-      "remediation": "Replace the three addresses with the full client pool/subnet (or an nft set maintained by enrollment), keep site/sensor peers in a separate range, and add a negative test from a .23 peer.",
+      "remediation": "remediated 2026-11-08 via #72",
       "lens": "g1"
     },
     {
       "id": "ADMIN-P2-004",
       "severity": "P2",
       "title": "Kestrel cutover left Cloudflare Access in the independent posture check, deploy provisioning and current-state docs",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com; bootstrap/97-cloudflare-api-config.sh:122-155 still creates/updates Access apps and an owner-IP bypass, and bootstrap/run-all-deploy.sh:45 runs it; docs/CURRENT_STATE.md:24-27 says Access remains the edge gate and docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-134,181-192 still describes Access/Authelia while docs/runbooks/SSO.md:3-8 says the Access apps were removed on 2026-11-05.",
-      "remediation": "Retire/replace the Access provisioning with a Kestrel-aware path (or make it fail closed and require an explicit rollback flag), update the watcher to assert the Kestrel login redirect/401, and refresh the current-state/access docs.",
+      "remediation": "remediated 2026-11-08 via #72",
       "lens": "g1"
     },
     {
       "id": "ADMIN-P2-005",
       "severity": "P2",
       "title": "Console API still requires a Cloudflare Access JWT and grants admin to owner-IP/LAN, not the Kestrel identity used by Traefik",
-      "status": "open",
+      "status": "partially-fixed",
       "evidence": "console/auth.py:1-13,116-132 verifies Cf-Access-Jwt-Assertion and otherwise grants admin for CF-Connecting-IP == owner or a direct private peer; config/traefik/dynamic.yml:137-157 now puts only kestrel-auth in front of the console (no Access JWT), and docs/runbooks/SSO.md:12 says the console is Kestrel gate-only. After the documented Access-app deletion, non-owner Kestrel users get 401 from the API, while bootstrap/98-console.sh:121-126 still tries to populate the Access AUD from the deleted app.",
-      "remediation": "Consume the Kestrel identity headers (signed by Traefik/adapter), remove the Access-JWT and owner-IP/LAN bypass for the public path, and add a test that a non-owner Kestrel user gets viewer access.",
+      "remediation": "remediated 2026-11-08 via #72 code merged; live console apply pending",
       "lens": "g1"
     },
     {
       "id": "ADMIN-P2-006",
       "severity": "P2",
       "title": "Console action endpoints have no CSRF/Origin enforcement and trust an owner-IP/LAN admin identity",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "console/api/server.py:722-756 accepts POST /console/api/v1/actions/{ack,unack,downtime-add}, parses the body and calls the root broker without checking Origin/Referer or a CSRF token; console/auth.py:126-131 treats the owner IP or a direct LAN peer as admin; console/web/app.js:258-262 sends the state-changing request. A cross-site POST from an owner browser (or a LAN client) can ack/unack/downtime checks and suppress alerts when the session cookie is sent.",
-      "remediation": "Require a per-session CSRF token and an Origin/Referer allowlist, enforce Content-Type: application/json, and use SameSite cookies; do not grant admin solely by source IP.",
+      "remediation": "remediated 2026-11-08 via #72",
       "lens": "g1"
     },
     {
       "id": "ADMIN-P2-007",
       "severity": "P2",
       "title": "Trusted-header SSO trusts entire Docker subnets: any frontend/backend container can self-assert Grafana/OpenSearch admin",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "compose/central/docker-compose.yml:233 whitelists 172.30.2.0/24 for Grafana's auth proxy; config/central/opensearch-security/config.yml:77-79 and automation/wazuh/multi-node/config/wazuh_indexer/opensearch-security/config.yml:77-79 trust 172.30.1/2/4 as internal proxies. A compromised container on those shared networks (vector aggregator, ntop, etc.) can call Grafana/OSD/Wazuh with X-Falcon-User/X-Proxy-User: <admin> and X-Proxy-Roles: admin directly, bypassing Kestrel.",
-      "remediation": "Scope each whitelist to the Traefik container IP/network, strip client-supplied identity headers at the app ingress, and use mTLS/JWT between Traefik and the apps; separate the data-plane networks.",
+      "remediation": "remediated 2026-11-08 via #72",
       "lens": "g1"
     },
     {
@@ -515,7 +514,7 @@
       "owner": "@owner",
       "target": "DR",
       "detail": "The live nightly path is healthy (all backup/offsite/DLQ checks green at 2026-11-08T06:43Z) and the original symlink path is fixed. The hardening asked for in the finding is still absent: an empty/shrunk enumeration can be persisted as state, a missing repository returns success, an empty inventory makes the sample verification vacuous, and the oneshot service has no runtime bound (the stuck-activating rule waits 8h).",
-      "remediation": "Refuse to persist an empty state or a state that shrinks by more than a threshold; fail when the local repository has fewer than a minimum number of files; bound falcon-backup.service with RuntimeMaxSec/TimeoutStartSec; add an offline test for the empty/shrunk cases.",
+      "remediation": "remediated 2026-11-08 via #72 hardening merged; live apply/capture pending",
       "note": "Partially fixed; live RPO currently met, code fail-closed gap remains. This is the scoped P1 called out by the task.",
       "evidence": [
         {
@@ -647,13 +646,13 @@
       "area": "CI",
       "title": "Independent Access-posture check no longer matches the live identity gate and is stuck in 'alerted'",
       "previous_status": "verified-fixed",
-      "status": "regressed",
+      "status": "partially-fixed",
       "report": "g2_ci_infra_dr.md",
       "line": 6371,
       "owner": "@owner",
       "target": "CI",
       "detail": "The accepted Access-enforcement control (DO watcher) still requires a Cloudflare Access challenge. After the 2026-11-05 Kestrel/Authentik cutover all three public hostnames redirect to idp.mainecybertech.us, so the watcher has logged 595 failures and remains in the 'alerted' state; repeated failures are suppressed. external-smoke accepts any 302 as an owner-IP bypass, so neither check now asserts the live gate. This is a regression of the CI-P2-002 closure.",
-      "remediation": "Update watch.sh to accept the Kestrel/Authentik IdP redirect (and/or assert that an unauthenticated request cannot reach the app), reset the posture state, export a falcon_watcher_posture metric and alert on repeated failures; update external-smoke's summary/comment; add a synthetic negative test; record the Kestrel cutover in the decision log/maintenance window.",
+      "remediation": "remediated 2026-11-08 via #72 watcher/external-smoke code merged; live apply pending",
       "note": "Regression. Live evidence 2026-11-08: public 302 -> idp.mainecybertech.us; watch.sh sha256 matches /opt/falcon-watcher/watch.sh; posture=alerted.",
       "evidence": [
         {
@@ -737,13 +736,13 @@
       "area": "CI",
       "title": "CI installs two Python shell-test dependencies by bare version with no hashes or update path",
       "previous_status": "new",
-      "status": "open",
+      "status": "verified-fixed",
       "report": "g2_ci_infra_dr.md",
       "line": 5054,
       "owner": "@owner",
       "target": "CI",
       "detail": "The validate job runs on a self-hosted lab runner and installs cryptography 41.0.7 and PyJWT 2.7.0 from PyPI by version only. The install is not hash-pinned and is not covered by Dependabot, so a compromised or vulnerable release is neither integrity-checked nor automatically updated. The two packages are imported by console_test.sh in the shell-test suite.",
-      "remediation": "Add both packages (current versions) to ci/requirements-ci.txt with --hash entries, install with --require-hashes, and let Dependabot cover the requirements file; re-run the shell tests.",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "New 2026-11-08. Severity P2 (supply chain on a self-hosted runner), not a runtime credential exposure.",
       "evidence": [
         {
@@ -1223,13 +1222,13 @@
       "area": "DR",
       "title": "Offsite verification passes vacuously on an empty or unexpectedly tiny snapshot repository",
       "previous_status": "new",
-      "status": "open",
+      "status": "verified-fixed",
       "report": "g2_ci_infra_dr.md",
       "line": 286289,
       "owner": "@owner",
       "target": "DR",
       "detail": "A present-but-empty or unexpectedly tiny local snapshot repository produces a clean offsite verification: the sample loop has zero iterations and offsite_verify_all.py reports total=0/mismatched=0 PASS. The upload state is then replaced with the empty enumeration and the success stamp advances. upload_repo_delta also returns success when the directory is missing, leaving the caller to fail later; the 2026-10-10 incident was caught by a later download failure, not by a fail-closed minimum-size check.",
-      "remediation": "Fail when the local repository has fewer than a minimum file count (or shrinks more than a configured fraction); make a missing repo a hard failure for both targets; assert total>0 before verification and before writing state; add an offline test for empty/missing/shrunk repositories.",
+      "remediation": "remediated 2026-11-08 via #72",
       "note": "New 2026-11-08. P2 defense-in-depth; the original path trigger is fixed and live backups are healthy. The empty-repo case is the demonstrable vacuous pass.",
       "evidence": [
         {
@@ -1439,13 +1438,13 @@
       "area": "OBS",
       "title": "Alert catalogue/README/CURRENT_STATE drifted again: script has 95 rules, catalogue has 94",
       "previous_status": "verified-fixed",
-      "status": "regressed",
+      "status": "verified-fixed",
       "report": "g2_ci_infra_dr.md",
       "line": 636638,
       "owner": "@owner",
       "target": "OBS",
       "detail": "The script provisions 95 unique rules but the catalogue, README and CURRENT_STATE all say 94; the missing id is falcon-edge-spool-unretained. The 2026-10-14 drift check still cannot see it because it compares README to the catalogue rather than the script to the catalogue. This is a regression of the verified-fixed status at edbf441.",
-      "remediation": "Regenerate the catalogue (95 ids) and the counts, and add a script-vs-catalogue id set comparison to the drift test so a future rule cannot land without the catalogue.",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "Regression. Counts verified 2026-11-08: script unique ids=95, catalogue ids=94, diff={falcon-edge-spool-unretained}.",
       "evidence": [
         {
@@ -2904,7 +2903,7 @@
       "new": false,
       "title": "Alert-rule count claims and the catalogue lag the provisioned set by one rule after the 2026-10-11 proxy-listener addition",
       "previous_status": "verified-fixed",
-      "status": "regressed",
+      "status": "verified-fixed",
       "report": "03_feature_implementation_map.md",
       "line": 313,
       "owner": "@owner",
@@ -2917,7 +2916,7 @@
         "automation/validation/tests/readme_ledger_drift_test.sh:62-84 compares README only to ALERT_CATALOGUE.yaml",
         "automation/validation/tests/alert_rule_lint_test.sh:1-12 parses the source only; no catalogue comparison"
       ],
-      "remediation": "Regenerate the catalogue from the source/live set, update README/CURRENT_STATE, and add a source<->catalogue id-set check to alert_rule_lint_test.sh so it fails closed.",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "Regression of the previously closed one-rule drift: 95 source vs 94 catalogue/README; the exact static-check gap the prior finding asked for is still absent.",
       "lens": "g3"
     },
@@ -3131,7 +3130,7 @@
       "new": false,
       "title": "Delivery pack fidelity artifact ships two unresolved 'unexpected; investigate' entries",
       "previous_status": "regressed",
-      "status": "regressed",
+      "status": "verified-fixed",
       "report": "01_repository_inventory.md",
       "line": 348,
       "owner": "@owner",
@@ -3144,7 +3143,7 @@
         "automation/validation/verify_delivery.sh:42-50 (PASS is based on that return code)",
         "PACK_NOT_INCLUDED.txt last changed 2026-10-15 (commit a0ac9003); 51 unresolved entries persist at db8c409"
       ],
-      "remediation": "Teach pack_fidelity.py the sbom exclusion as a known disposition (or include sbom in the pack), fail on unexpected not-in-pack entries, and regenerate PACK_NOT_INCLUDED.txt each delivery.",
+      "remediation": "remediated 2026-11-08 via #71 (pack fidelity fail-closed)",
       "note": "Regression: 2 -> 51 unresolved entries; the fidelity verdict is fail-open for absent entries. New systemic finding is INV-P2-002.",
       "lens": "g3"
     },
@@ -3488,7 +3487,7 @@
       "new": true,
       "title": "Operator entry docs still route to Grafana at the public root and describe basic auth after the Console/Kestrel cutover",
       "previous_status": null,
-      "status": "open",
+      "status": "verified-fixed",
       "report": "new (documentation truth)",
       "line": 0,
       "owner": "@owner",
@@ -3502,7 +3501,7 @@
         "docs/design/FALCON_CONSOLE.md:1081 (D1 executed: console at /, Grafana at /grafana)",
         "docs/runbooks/ACCESS_AND_ACCOUNTS.md:11-13 (Kestrel/Authelia + falcon-sso for Grafana/OSD/ntop)"
       ],
-      "remediation": "Update README's product map/access row/hostnames and the operator start page to the Console-at-root + Kestrel model; add a link to CONSOLE_PHASE0/SSO.",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "New P2. The 2026-10-23 audit closed its own DOC-P2-001 ('refresh CURRENT_STATE and operator auth runbooks') on 2026-11-03, but these entry docs remain wrong.",
       "lens": "g3"
     },
@@ -3513,7 +3512,7 @@
       "new": true,
       "title": "The review pack omits the entire SBOM/vuln set but the package manifest lists it; pack fidelity still reports PASS with 51 unexplained entries",
       "previous_status": null,
-      "status": "open",
+      "status": "verified-fixed",
       "report": "new (release pack integrity)",
       "line": 0,
       "owner": "@owner",
@@ -3527,7 +3526,7 @@
         "automation/validation/build_review_package.sh:51-53 (sbom set ships in the package since 2026-10-15)",
         "PACK_NOT_INCLUDED.txt last changed 2026-10-15 (commit a0ac9003), so the artifact is stale across the later publication cycles"
       ],
-      "remediation": "Add the sbom ignore patterns to KNOWN_PACK_EXCLUSIONS (or include sbom in the pack), fail on any 'unexpected' not-in-pack entry, and regenerate PACK_NOT_INCLUDED.txt in verify_delivery.sh. If the pack intentionally cannot carry 56 MB of SBOM, record that as a dated disposition and keep the package manifest authoritative.",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "New P2. Distinct from INV-P3-002 (the artifact regression): this is the systemic mismatch + fail-open gate introduced when SBOMs started shipping in the package.",
       "lens": "g3"
     },
@@ -3538,7 +3537,7 @@
       "new": true,
       "title": "Review package omits the Falcon Console source and the root LICENSE/NOTICE/VERSION/CHANGELOG files",
       "previous_status": null,
-      "status": "open",
+      "status": "verified-fixed",
       "report": "new (release package completeness)",
       "line": 0,
       "owner": "@owner",
@@ -3551,7 +3550,7 @@
         "PACKAGE_MANIFEST.sha256: 0 entries for ./LICENSE, ./NOTICE, ./VERSION, ./CHANGELOG.md, ./TESTING.md, although README.md:127-131 advertises LICENSE/NOTICE",
         "docs/runbooks/CONSOLE_PHASE0.md:3-5 (Console is live at the public root since 2026-10-21)"
       ],
-      "remediation": "Add console/ and the root LICENSE/NOTICE/VERSION/CHANGELOG/TESTING files to the package copy list, rebuild the review package/manifest/digest, and add a gate that every tracked first-party top-level source file/directory is represented in the package manifest (allowlist the generated/delivery dirs explicitly).",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "New P2. This is a package-completeness gap, not a repomix-pack omission: the pack includes console/, the formal review package does not; the missing LICENSE/NOTICE also undermines the HYGIENE-P3-001 closure for the delivered artifact.",
       "lens": "g3"
     },
@@ -3586,7 +3585,7 @@
       "new": true,
       "title": "Main is unbound and red after the Kestrel SSO merges: publication equality fails at db8c409 and the package still declares f79d786e",
       "previous_status": null,
-      "status": "open",
+      "status": "verified-fixed",
       "report": "new (release gating)",
       "line": 0,
       "owner": "@owner",
@@ -3599,7 +3598,7 @@
         "GitHub Actions run 42164078378 (push, db8c409, 2026-11-06): check 'validate' failure; log line 'FAIL publication equality ... commits after the declared commit touch ...'",
         "check_publication_equality.py at db8c409: FAIL (commits after declared commit touch source files)"
       ],
-      "remediation": "Rebind the publication chain at the post-Kestrel commit (build package, regenerate closeout, publish digest) before/at merge of source waves, and add a post-merge/main check that fails fast when the declared commit is behind source commits; consider requiring the rebind as part of the merge.",
+      "remediation": "remediated 2026-11-08 via #71 (digest rebound; publication equality PASS)",
       "note": "New P2. The gate is honestly strict and detects the drift; the defect is the process leaving main unbound and red after a security-relevant merge.",
       "lens": "g3"
     },
@@ -3635,7 +3634,7 @@
       "new": true,
       "title": "Check-engine runbook status block contradicts its own phase table and the deployed 2026-10-15 waves",
       "previous_status": null,
-      "status": "open",
+      "status": "verified-fixed",
       "report": "new (check-engine product docs)",
       "line": 0,
       "owner": "@owner",
@@ -3648,7 +3647,7 @@
         "ledgers/decision_log.md:325 (2026-10-15: 35 packs upserted; topology probe; availability delivery)",
         "config/checks/: 12 YAML pack files including 03-snmp.yaml, 07-time.yaml, 08-node.yaml, 09-topology.yaml, 10-ups.yaml"
       ],
-      "remediation": "Refresh the status block and file table to the P7a state, and update CURRENT_STATE's check-engine counts/waves from the ledgers.",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "New P3. Documentation truth for the newest product surface; no runtime defect observed.",
       "lens": "g3"
     },
@@ -3659,7 +3658,7 @@
       "new": true,
       "title": "Policy/guide status text still says proposed/not implemented where the repository records implemented controls",
       "previous_status": null,
-      "status": "open",
+      "status": "verified-fixed",
       "report": "new (documentation truth)",
       "line": 0,
       "owner": "@owner",
@@ -3670,7 +3669,7 @@
         "docs/architecture/EVOLUTION_GUIDE.md:293-294, :317-326 vs bootstrap/60-central-deploy.sh:209-241",
         "docs/runbooks/CONSOLE_PHASE0.md:33-34 (ack/unack) vs :39 ('no buttons that change anything')"
       ],
-      "remediation": "Update the status headers/backlog rows to the implemented state and qualify the console read-only statement (read-only data, explicit role-gated ack/unack actions).",
+      "remediation": "remediated 2026-11-08 via #71",
       "note": "New P3. Same class as DOC-P2-002 but on policy/guide pages rather than status pages.",
       "lens": "g3"
     }

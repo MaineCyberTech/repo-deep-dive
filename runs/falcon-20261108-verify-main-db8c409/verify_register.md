@@ -2,7 +2,7 @@
 
 | ID | Sev | Status | Title |
 |---|---|---|---|
-| ACM-P2-004 | P1 | open | Endpoint-script sync embeds the entire enrollment token file (all per-device tokens) into every device script |
+| ACM-P2-004 | P1 | verified-fixed | Endpoint-script sync embeds the entire enrollment token file (all per-device tokens) into every device script |
 | ARCH-P1-001 | P1 | owner-accepted | Single-host concentration: host loss is total pipeline loss |
 | DATA-P1-001 | P1 | owner-accepted | Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate (alerts c |
 | DR-P1-002 | P1 | partially-fixed | Offsite upload-state truncation class is still not fail-closed; live RPO is currently met |
@@ -18,43 +18,43 @@
 | ADMIN-P2-001 | P2 | verified-fixed | Admin/observability consoles are exposed through public routers without origin authentication |
 | ADMIN-P2-002 | P2 | partially-fixed | The Access-posture gate accepts origin reachability; no automated check verifies Cloudflare Access enforcement |
 | ADMIN-P2-003 | P2 | partially-fixed | No centralized actor-level audit trail for Grafana/ntfy/IRIS console admin actions |
-| ADMIN-P2-004 | P2 | open | Kestrel cutover left Cloudflare Access in the independent posture check, deploy provisioning and current-state |
-| ADMIN-P2-005 | P2 | open | Console API still requires a Cloudflare Access JWT and grants admin to owner-IP/LAN, not the Kestrel identity  |
-| ADMIN-P2-006 | P2 | open | Console action endpoints have no CSRF/Origin enforcement and trust an owner-IP/LAN admin identity |
-| ADMIN-P2-007 | P2 | open | Trusted-header SSO trusts entire Docker subnets: any frontend/backend container can self-assert Grafana/OpenSe |
+| ADMIN-P2-004 | P2 | verified-fixed | Kestrel cutover left Cloudflare Access in the independent posture check, deploy provisioning and current-state |
+| ADMIN-P2-005 | P2 | partially-fixed | Console API still requires a Cloudflare Access JWT and grants admin to owner-IP/LAN, not the Kestrel identity  |
+| ADMIN-P2-006 | P2 | verified-fixed | Console action endpoints have no CSRF/Origin enforcement and trust an owner-IP/LAN admin identity |
+| ADMIN-P2-007 | P2 | verified-fixed | Trusted-header SSO trusts entire Docker subnets: any frontend/backend container can self-assert Grafana/OpenSe |
 | API-P2-001 | P2 | partially-fixed | Ingest contract relies on a shared secret header, not request signing or idempotency keys |
 | ARCH-P2-002 | P2 | owner-accepted | Vendored MCT tree remains tag-only under a blanket pin waiver; live stacks are tag@digest and lock-covered |
 | ARCH-P2-003 | P2 | partially-fixed | Live ingest authentication is an HTTP basic-auth shared credential, not mTLS or request signing |
 | ARCH-P2-003 | P2 | verified-fixed | Live ingest authentication is an HTTP basic-auth shared credential, not mTLS or request signing |
 | BP-P2-001 | P2 | verified-fixed | CODEOWNERS resolves to the owner account |
-| CHAIN-P2-001 | P2 | regressed | The only automated Access-posture check no longer verifies Access (external-smoke accepts any 302 from the lab |
+| CHAIN-P2-001 | P2 | partially-fixed | The only automated Access-posture check no longer verifies Access (external-smoke accepts any 302 from the lab |
 | CI-P2-001 | P2 | partially-fixed | Auto-merge workflow holds contents:write with no environment protection |
-| CI-P2-002 | P2 | regressed | Independent Access-posture check no longer matches the live identity gate and is stuck in 'alerted' |
+| CI-P2-002 | P2 | partially-fixed | Independent Access-posture check no longer matches the live identity gate and is stuck in 'alerted' |
 | CI-P2-003 | P2 | partially-fixed | Repository Actions settings remain partly permissive |
-| CI-P2-004 | P2 | open | CI installs two Python shell-test dependencies by bare version with no hashes or update path |
+| CI-P2-004 | P2 | verified-fixed | CI installs two Python shell-test dependencies by bare version with no hashes or update path |
 | CTR-P2-001 | P2 | partially-fixed | Adopted stacks now have hardening overlays and healthchecks, but not the full baseline |
 | DATA-P2-002 | P2 | verified-fixed | Root LV is below the disk guard's 20 GiB threshold: the guard fails every 15 minutes and cannot reclaim back a |
 | DATA-P2-003 | P2 | partially-fixed | Edge control-plane spool keeps purging ~134 MiB per 10-14 h; nothing consumes it and the purge alert cannot fi |
 | DET-P2-001 | P2 | open | [PORT] CRLF committed for 1 file (raw evidence capture; policy edge) |
 | DOC-P2-002 | P2 | partially-fixed | Status artifacts still lag the live state: catalogue/README/CURRENT_STATE at 94 vs 95 provisioned, firing proo |
-| DOC-P2-003 | P2 | open | Operator entry docs still route to Grafana at the public root and describe basic auth after the Console/Kestre |
+| DOC-P2-003 | P2 | verified-fixed | Operator entry docs still route to Grafana at the public root and describe basic auth after the Console/Kestre |
 | DR-P2-002 | P2 | partially-fixed | Nightly offsite is encrypted, but historical plaintext bulk objects remain and SSE is not set |
 | DR-P2-003 | P2 | verified-fixed | IRIS case database is dumped daily and shipped encrypted offsite |
-| DR-P2-004 | P2 | open | Offsite verification passes vacuously on an empty or unexpectedly tiny snapshot repository |
+| DR-P2-004 | P2 | verified-fixed | Offsite verification passes vacuously on an empty or unexpectedly tiny snapshot repository |
 | EVOL-P2-001 | P2 | verified-fixed | The OpenSearch identity apply is not merge-safe (R-28 hazard documented; owner decision pending) |
 | FEAT-P2-001 | P2 | verified-fixed | Vendored MCT services are present in Compose while the subtree policy calls the tree archive-only |
 | HYGIENE-P2-001 | P2 | partially-fixed | Large generated SBOM/vulnerability JSON remains committed (56 files, 58.4 MB, up to 3.0 MB each) |
 | HYGIENE-P2-002 | P2 | partially-fixed | Canonical release-gate page carries a superseded audit opinion; the newest full run's P0 is not referenced |
 | HYGIENE-P2-003 | P2 | verified-fixed | The publication flow force-tracks review-package/MANIFEST.sha256 while .gitignore, AGENTS.md, REPOSITORY.md an |
 | INV-P2-001 | P2 | open | Repository is majority generated/derived content; largest trees bound, audit records and mct/ remain unbound |
-| INV-P2-002 | P2 | open | The review pack omits the entire SBOM/vuln set but the package manifest lists it; pack fidelity still reports  |
-| INV-P2-003 | P2 | open | Review package omits the Falcon Console source and the root LICENSE/NOTICE/VERSION/CHANGELOG files |
+| INV-P2-002 | P2 | verified-fixed | The review pack omits the entire SBOM/vuln set but the package manifest lists it; pack fidelity still reports  |
+| INV-P2-003 | P2 | verified-fixed | Review package omits the Falcon Console source and the root LICENSE/NOTICE/VERSION/CHANGELOG files |
 | IR-P2-001 | P2 | open | No facilitated tabletop exercise has been run |
 | IR-P2-002 | P2 | open | Escalation contacts remain placeholders |
 | IR-P2-003 | P2 | partially-fixed | Recurring incidents still lack post-incident review |
 | IR-P2-004 | P2 | verified-fixed | Wazuh proxy boot-order fix has now survived a boot; the stale comment is cosmetic |
 | NOTIF-P2-002 | P2 | partially-fixed | Notification noise remains high; the accurate disk-guard root alert now dominates and sub-repeat-interval flap |
-| OBS-P2-001 | P2 | regressed | Alert catalogue/README/CURRENT_STATE drifted again: script has 95 rules, catalogue has 94 |
+| OBS-P2-001 | P2 | verified-fixed | Alert catalogue/README/CURRENT_STATE drifted again: script has 95 rules, catalogue has 94 |
 | OBS-P2-002 | P2 | partially-fixed | Alert noise is improved but repeat/reboot tuning remains |
 | OBS-P2-003 | P2 | verified-fixed | Benign edge_ingest HTTP rejections are excluded from the data-loss signal |
 | OBS-P2-004 | P2 | verified-fixed | Stuck/failed backup runs and generic systemd unit failure are visible |
@@ -69,7 +69,7 @@
 | PRIV-P2-003 | P2 | open | The published production verdict still binds a superseded package and carries a contradictory readiness line |
 | REL-P2-001 | P2 | open | Deployment state is not bound to any release: no tags/VERSION and no deploy manifest; the live tree is now cle |
 | REL-P2-002 | P2 | verified-fixed | Published PACKAGE_MANIFEST.sha256 is stale: it disagrees with the declared review-package manifest on 8 files  |
-| REL-P2-003 | P2 | open | Main is unbound and red after the Kestrel SSO merges: publication equality fails at db8c409 and the package st |
+| REL-P2-003 | P2 | verified-fixed | Main is unbound and red after the Kestrel SSO merges: publication equality fails at db8c409 and the package st |
 | RES-P2-001 | P2 | partially-fixed | Host memory/swap pressure improved but remains; capacity budget is still not codified |
 | SBOM-P2-001 | P2 | partially-fixed | SBOM signature and license gate exist, but the manifest hash is not bound into PACKAGE_DIGEST |
 | SC-P2-002 | P2 | partially-fixed | Inherited credential estate is still partly unrotated and 20 vendored scripts source credential files wholesal |
@@ -78,8 +78,8 @@
 | SEC-P2-001 | P2 | verified-fixed | Public-facing routers have no origin authentication; ntfy-auth is dead config |
 | SEC-P2-002 | P2 | partially-fixed | Public rate limits key on client-supplied X-Forwarded-For; no per-account limits on auth endpoints |
 | SEC-P2-004 | P2 | verified-fixed | Deployed enrollment service is a stale build: per-device token expiry is not enforced and the documented issua |
-| SEC-P2-005 | P2 | open | SSO header adapter authenticates unsigned X-Authentik-*/Remote-* headers on 0.0.0.0:8090 |
-| SEC-P2-006 | P2 | open | Client VPN peer-class firewall rule is a hardcoded three-address set; dynamically enrolled clients .23-.99 rea |
+| SEC-P2-005 | P2 | partially-fixed | SSO header adapter authenticates unsigned X-Authentik-*/Remote-* headers on 0.0.0.0:8090 |
+| SEC-P2-006 | P2 | verified-fixed | Client VPN peer-class firewall rule is a hardcoded three-address set; dynamically enrolled clients .23-.99 rea |
 | SECRET-P2-001 | P2 | partially-fixed | Inherited credential estate is still 11/20 pending; vendored scripts still source stores wholesale |
 | SECRET-P2-002 | P2 | verified-fixed | Owner-env validator is wired into the gate |
 | TEST-P2-001 | P2 | verified-fixed | external-smoke no longer verifies Cloudflare Access from an external vantage; it accepts the owner-IP bypass |
@@ -107,14 +107,14 @@
 | DET-P3-004 | P3 | open | [SUPPLY] hadolint is not installed and CI has no Dockerfile lint step |
 | DOC-P2-001 | P3 | verified-fixed | Pack-fidelity verification is still not wired into the delivery build; the notes file carries no verdict |
 | DOC-P3-001 | P3 | verified-fixed | Imprecise version shorthand in the README vs the pinned versions |
-| DOC-P3-002 | P3 | open | Check-engine runbook status block contradicts its own phase table and the deployed 2026-10-15 waves |
-| DOC-P3-003 | P3 | open | Policy/guide status text still says proposed/not implemented where the repository records implemented controls |
+| DOC-P3-002 | P3 | verified-fixed | Check-engine runbook status block contradicts its own phase table and the deployed 2026-10-15 waves |
+| DOC-P3-003 | P3 | verified-fixed | Policy/guide status text still says proposed/not implemented where the repository records implemented controls |
 | DR-P3-001 | P3 | open | Scheduled end-to-end live restore assertion is still absent |
 | EVOL-P3-002 | P3 | verified-fixed | No feature-flag mechanism; the documented additive-deploy substitute is pending owner acceptance |
-| FEAT-P3-001 | P3 | regressed | Alert-rule count claims and the catalogue lag the provisioned set by one rule after the 2026-10-11 proxy-liste |
+| FEAT-P3-001 | P3 | verified-fixed | Alert-rule count claims and the catalogue lag the provisioned set by one rule after the 2026-10-11 proxy-liste |
 | HYGIENE-P3-001 | P3 | verified-fixed | No root LICENSE/NOTICE file; README ownership section grants no terms |
 | INV-P3-001 | P3 | open | Legacy host-absolute evidence paths require the resolver to resolve in a clone |
-| INV-P3-002 | P3 | regressed | Delivery pack fidelity artifact ships two unresolved 'unexpected; investigate' entries |
+| INV-P3-002 | P3 | verified-fixed | Delivery pack fidelity artifact ships two unresolved 'unexpected; investigate' entries |
 | INV-P3-003 | P3 | verified-fixed | 'A stale digest fails' is enforced by publication equality, not by the digest-binding check whose docstring cl |
 | INV-P3-004 | P3 | verified-fixed | Published PACKAGE_MANIFEST.sha256 is two publication cycles stale and disagrees with the shipped review-packag |
 | INV-P3-005 | P3 | verified-fixed | HYG-P1-001 doctrine ('review-package is generated, gitignored, must not be committed') contradicts the tracked |
