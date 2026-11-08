@@ -1,0 +1,3678 @@
+{
+  "run": "falcon-20261108-verify-main-db8c409",
+  "repo": "falcon",
+  "branch": "main",
+  "sha": "db8c40970083a98e50dbae8038971ec2ac6bc252",
+  "mode": "verify",
+  "profile": "delta",
+  "created": "2026-11-08T06:49:19Z",
+  "previous_run": "falcon-20261014-verify-main-edbf441",
+  "counts": {
+    "total": 144,
+    "by_status": {
+      "owner-accepted": 4,
+      "verified-fixed": 52,
+      "partially-fixed": 40,
+      "regressed": 5,
+      "open": 43
+    },
+    "by_severity": {
+      "P1": 11,
+      "P2": 71,
+      "P3": 62
+    }
+  },
+  "findings": [
+    {
+      "id": "DATA-P1-001",
+      "severity": "P1",
+      "title": "Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate (alerts class not ISM-managed)",
+      "status": "owner-accepted",
+      "evidence": "Retention is now codified: automation/wazuh/ism_retention_apply.sh:38-50 creates wazuh-retention (90 d + ism_template for wazuh-alerts-4.x-*) and wazuh-monitoring-retention (30 d + template for monitoring/statistics); RETENTION_MATRIX.md:19-31 records the owner decision. The repository still cannot reproduce the live claim: docs/runbooks/SCHEMA_AND_RETENTION.md:65 says the Wazuh indexer is 'not managed here', and no read-only checker compares all Wazuh ISM classes against the declared matrix (retention_sweep_check.sh:45-52 only checks central falcon-* patterns).",
+      "remediation": "Keep the owner acceptance for the IRIS deletion window; refresh SCHEMA_AND_RETENTION.md:65 and add a read-only Wazuh ISM-vs-matrix coverage check with an accelerated deletion test.",
+      "lens": "g1"
+    },
+    {
+      "id": "PRIV-P1-001",
+      "severity": "P1",
+      "title": "Wazuh indexer and IRIS case data still have no retention or deletion window (owner-gated)",
+      "status": "verified-fixed",
+      "evidence": "RETENTION_MATRIX.md:50 records the IRIS 365 d owner decision and the read-only review tool; automation/validation/iris_retention_review.sh:1-12 lists past-window cases. Wazuh windows are codified at automation/wazuh/ism_retention_apply.sh:38-50 (90 d alerts, 30 d monitoring/statistics, with templates).",
+      "remediation": "Residual only: IRIS deletion remains manual/approved; add a per-class accelerated deletion test (no regression found).",
+      "lens": "g1"
+    },
+    {
+      "id": "WH-P1-001",
+      "severity": "P1",
+      "title": "OpenSearch sink drops failed batches with no dead-letter/replay path (detection now closed and live-verified)",
+      "status": "partially-fixed",
+      "evidence": "config/vector/aggregator.yaml:132-171 adds a 512 MiB disk buffer, end-to-end acknowledgements and 20 retries/1 h, but the only DLQ input is route_valid.invalid (:166-171). There is still no sink-failure journal, no reroute_dropped path and no capture for non-retriable mapping/4xx rejects, so a rejected batch is observed (bootstrap/90-alerting.sh:241-247) but not preserved. automation/validation/write_rejection_test.sh:52-60 exercises an index-read-only window, not a forced non-retriable mapping rejection.",
+      "remediation": "Add a durable sink-failure journal + replay (or a proxy/sidecar that captures 4xx rejects) and a forced-mapping-rejection drill proving every failed batch is captured and replayable.",
+      "lens": "g1"
+    },
+    {
+      "id": "ACM-P2-001",
+      "severity": "P2",
+      "title": "Live client-VPN enrollment credential is a single shared token with no expiry; per-device lifecycle implemented but unused",
+      "status": "partially-fixed",
+      "evidence": "automation/vpn/enroll-service.py:60-113 supports <name>:<token>[:expiry] and rejects expired bindings; automation/vpn/issue-enroll-token.sh:26-50 issues 24 h default per-device tokens and writes <name>.enroll-token. But the closure path still cannot prove the bare line is gone: automation/validation/enrollment_closure_check.sh:84-93 only compares the deployed file hash, docs/security/ENROLLMENT_CLOSURE.md:15 still describes one shared token baked into endpoint scripts, and automation/vpn/sync-levelio-scripts.sh:11 embeds the whole token file into every endpoint script (new ACM-P2-004). Impact while the bare token is live: authorize() accepts the shared token for any name not in `named` (:102-113) and existing_peer() replaces a block with the same name (:135-141,228-240), so a holder can re-enroll an unbound site/sensor name and take over its tunnel address.",
+      "remediation": "Fix the bulk-token substitution first; then issue per-device bindings for every active device, rotate/remove the bare line, and make enrollment_closure_check fail on a bare token or expired binding; bind tokens to device identity (not only a client-chosen name).",
+      "lens": "g1"
+    },
+    {
+      "id": "ACM-P2-003",
+      "severity": "P2",
+      "title": "Deployed enrollment service does not enforce per-device token expiry; issuance tool and deployed enforcement disagree (no deployed-artifact binding)",
+      "status": "verified-fixed",
+      "evidence": "automation/validation/enrollment_closure_check.sh:84-93 compares /opt/falcon/vpn-enroll/enroll-service.py to the repo copy; automation/vpn/enroll-service.py:60-113 implements expiry parsing and a 403 for expired/malformed bindings; config/systemd/falcon-enrollment-closure.timer runs the daily check.",
+      "remediation": "None for the deployed-drift finding; keep the daily hash check and bump the service version on behavior changes.",
+      "lens": "g1"
+    },
+    {
+      "id": "ADMIN-P2-001",
+      "severity": "P2",
+      "title": "Admin/observability consoles are exposed through public routers without origin authentication",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:137-204 puts kestrel-auth on every public console/observability router (falcon root/console, /grafana, /dash, /ntop, iris, soc). The only unauthenticated public routes are the /ntop exact-path redirect and the token-gated enroll service. docs/runbooks/SSO.md:3-18 records the live Kestrel cutover.",
+      "remediation": "None; keep the forward-auth gate and add a negative test that each public host redirects/rejects an unauthenticated request.",
+      "lens": "g1"
+    },
+    {
+      "id": "ADMIN-P2-002",
+      "severity": "P2",
+      "title": "The Access-posture gate accepts origin reachability; no automated check verifies Cloudflare Access enforcement anymore",
+      "status": "partially-fixed",
+      "evidence": "automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com; .github/workflows/external-smoke.yml:40-60 is explicitly reachability-only and now accepts 200/401/403. docs/runbooks/SSO.md:3-8 says the Cloudflare Access apps were removed on 2026-11-05 and Kestrel is the identity source, so the independent watcher now asserts a retired control; no Kestrel/idp assertion exists.",
+      "remediation": "Change the independent watcher to assert the Kestrel login redirect (idp.mainecybertech.us) or a 401/403 without a session, and keep the lab smoke as availability-only.",
+      "lens": "g1"
+    },
+    {
+      "id": "ADMIN-P2-003",
+      "severity": "P2",
+      "title": "No centralized actor-level audit trail for Grafana/ntfy/IRIS console admin actions",
+      "status": "partially-fixed",
+      "evidence": "config/logrotate/falcon-traefik:1-20 codifies daily/50M/keep-7 rotation; console/actions_broker.py:31-37,102 appends actor/action JSONL for ack/unack/downtime. Container stdout/stderr is still local-only by design (docs/runbooks/WAZUH_INTEGRATION.md:163-180) and config/vector/aggregator.yaml:13-18 has no container-log source; Grafana/ntfy/IRIS admin actions still have no centralized actor-level stream.",
+      "remediation": "Ship a filtered container/admin-action stream into Wazuh/OpenSearch and add actor-level detection; keep the Traefik rotation and broker log.",
+      "lens": "g1"
+    },
+    {
+      "id": "API-P2-001",
+      "severity": "P2",
+      "title": "Ingest contract relies on a shared secret header, not request signing or idempotency keys",
+      "status": "partially-fixed",
+      "evidence": "config/vector/aggregator.yaml:22-44 adds mutual TLS (verify_certificate: true) and keeps HTTP basic auth; config/vector/edge.yaml:241-256 uses the shared falcon-vector-edge credential and one client certificate. There is still no per-request HMAC/nonce or idempotency key (no such implementation in config/vector), so a holder can replay/inject and retries can duplicate.",
+      "remediation": "Add an HMAC/timestamp/nonce (or per-sensor certificate identity) and a deterministic document id/idempotency key; keep basic auth as a second factor.",
+      "lens": "g1"
+    },
+    {
+      "id": "CHAIN-P2-001",
+      "severity": "P2",
+      "title": "The only automated Access-posture check no longer verifies Access (external-smoke accepts any 302 from the lab vantage)",
+      "status": "regressed",
+      "evidence": "The prior fix relied on the independent DO watcher asserting Cloudflare Access: automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com. docs/runbooks/SSO.md:3-8 says the Access apps were removed on 2026-11-05 and Kestrel is live; docs/CURRENT_STATE.md:24-27 still says Access remains the edge gate. .github/workflows/external-smoke.yml:40-60 remains reachability-only. No check now asserts the Kestrel forward-auth path, so the previous verified-fixed control is void.",
+      "remediation": "Restore a non-owner enforcement check for the current control (Kestrel login redirect or 401/403) and update/retire the stale Access assertions; treat CHAIN-P2-001 as regressed until then.",
+      "lens": "g1"
+    },
+    {
+      "id": "DATA-P2-002",
+      "severity": "P2",
+      "title": "Root LV is below the disk guard's 20 GiB threshold: the guard fails every 15 minutes and cannot reclaim back above it (69 GiB snapshot repo on root)",
+      "status": "verified-fixed",
+      "evidence": "automation/validation/disk_guard.sh:23-27 keeps the 24 GiB data / 20 GiB root thresholds and keep-2; bootstrap/85-backup-job.sh:68-75 keeps the newest two local snapshots; compose/central/docker-compose.yml:79 still bind-mounts /var/lib/falcon-snapshots/opensearch on the root LV. The code state matches the fixed configuration; no live free-space re-measure was possible in this read-only pass.",
+      "remediation": "No code remediation; continue monitoring root free and keep the snapshot count at 2.",
+      "lens": "g1"
+    },
+    {
+      "id": "DATA-P2-003",
+      "severity": "P2",
+      "title": "Edge control-plane spool keeps purging ~134 MiB per 10-14 h; nothing consumes it and the purge alert cannot fire at that rate",
+      "status": "partially-fixed",
+      "evidence": "The spool is still write-only: automation/validation/disk_guard.sh:69-87 deletes vector-*.ndjson* older than 7 days, and bootstrap/90-alerting.sh:632-638 alerts when >24 files or a >256 MiB/6 h purge burst. No consumer/drain path exists in this repository, so the 128 MiB rotation still overwrites the previous .1 file; the new retention only bounds disk use.",
+      "remediation": "Either implement a drain+delete consumer with acknowledged delivery, or record the write-only acceptance and lower the alert to an expected-cadence check; archive a bounded copy if the data is needed.",
+      "lens": "g1"
+    },
+    {
+      "id": "NOTIF-P2-002",
+      "severity": "P2",
+      "title": "Notification noise remains high; the accurate disk-guard root alert now dominates and sub-repeat-interval flapping persists",
+      "status": "partially-fixed",
+      "evidence": "automation/validation/disk_guard.sh:107-128 now throttles the guard alert (6 h default); automation/alerting/ntfy_relay.py:68-70,382-400,521-528 implements same-title dedupe and a regression test exists (automation/validation/tests/ntfy_relay_dedupe_test.py). However DEDUPE_SECONDS defaults to 0 and config/systemd/falcon-alert-relay.service:9 has no MON_RELAY_DEDUPE_SECONDS (the 300 s setting is a live drop-in per ledgers/decision_log.md:305); no 7-day accounting re-run is recorded.",
+      "remediation": "Codify the dedupe/quiet settings in the unit or an EnvironmentFile, enable a non-zero window, and record the 7-day noise measurement.",
+      "lens": "g1"
+    },
+    {
+      "id": "PRIV-P2-001",
+      "severity": "P2",
+      "title": "The vendored MCT client/vendor layer still has no privacy-classification boundary in this repository",
+      "status": "verified-fixed",
+      "evidence": "docs/privacy/DATA_GOVERNANCE.md:56-63 records the vendored MCT boundary (archive-only; new client-data processing needs classification/retention/review); RETENTION_MATRIX.md:50 covers the live IRIS 365 d entry.",
+      "remediation": "None; add the MCT_CONSOLIDATION cross-reference when the vendored layer is next touched.",
+      "lens": "g1"
+    },
+    {
+      "id": "PRIV-P2-003",
+      "severity": "P2",
+      "title": "The published production verdict still binds a superseded package and carries a contradictory readiness line",
+      "status": "open",
+      "evidence": "docs/phase9/review/PRODUCTION_VERDICT.md:8-26 still binds c312ab7 / 1,168 entries and :37 says NOT_SUPPORTED; PACKAGE_DIGEST.txt:2-7 now binds f79d786 / 4,394 entries with production_readiness=APPROVED. The cycle note (:10-11) still cites e74fd7b/3,834.",
+      "remediation": "Rebind the verdict identity block to the current digest, regenerate the readiness line from the ledgers, and extend tests/digest_verdict_consistency_test.sh to the verdict fields.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEARCH-P2-001",
+      "severity": "P2",
+      "title": "Retention gaps remain on the Wazuh indexer alerts class and IRIS; RETENTION_MATRIX.md is stale",
+      "status": "partially-fixed",
+      "evidence": "automation/wazuh/ism_retention_apply.sh:38-50 codifies alerts 90 d and monitoring/statistics 30 d with ism_template entries, but its header (:9) leaves wazuh-states-retention/wazuh-archives-14d/security-auditlog-retention on existing policies with no template, so a new states/archives index is unmanaged. docs/runbooks/SCHEMA_AND_RETENTION.md:65 still says the Wazuh indexer is 'not managed here' while RETENTION_MATRIX.md:23-27 claims coverage.",
+      "remediation": "Add ism_template entries for wazuh-states-* and wazuh-archives-* (or document the deliberate exception), and refresh SCHEMA_AND_RETENTION.md:65.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEARCH-P2-002",
+      "severity": "P2",
+      "title": "OpenSearch snapshot repository still on the root LV; root free is below the guard threshold and the guard now fails every 15 minutes",
+      "status": "verified-fixed",
+      "evidence": "Same control as DATA-P2-002: compose/central/docker-compose.yml:79 still mounts the snapshot repo on root, but disk_guard.sh:23-27 / keep-2 and bootstrap/85-backup-job.sh:68-75 keep the fixed configuration. The 20261014 run recorded 45 GiB root free and guard exit 0; no live re-measure was possible here.",
+      "remediation": "No remediation; keep the 2-snapshot cap and monitor root free.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "Public-facing routers have no origin authentication; ntfy-auth is dead config",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:26-28 removes the dead ntfy-auth middleware and :137-204 puts kestrel-auth on every public admin/observability router. docs/runbooks/SSO.md:3-18 records the cutover; the only public non-admin route is the token-gated enroll service.",
+      "remediation": "None; keep an unauthenticated-request test per public host.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Public rate limits key on client-supplied X-Forwarded-For; no per-account limits on auth endpoints",
+      "status": "partially-fixed",
+      "evidence": "config/traefik/dynamic.yml:36-54 now keys the public/login limiters on CF-Connecting-IP and adds a 1/s login limiter. The header is still client-supplied for direct-to-origin requests (config/nftables/falcon.nft:47-48 allows 80/443 from the lab subnets), automation/vpn/enroll-service.py:17-19,116-121 still collapses to one fleet-wide bucket behind Traefik, and OSD/Wazuh/IRIS still have no per-account lockout.",
+      "remediation": "Trust the header only from the cloudflared/tunnel source, add per-account lockout/backoff, and give enrollment a per-device bucket.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEC-P2-004",
+      "severity": "P2",
+      "title": "Deployed enrollment service is a stale build: per-device token expiry is not enforced and the documented issuance flow is rejected",
+      "status": "verified-fixed",
+      "evidence": "automation/validation/enrollment_closure_check.sh:84-93 compares the deployed service to the repo; automation/vpn/enroll-service.py:60-113 enforces per-device expiry; config/systemd/falcon-enrollment-closure.timer runs it daily.",
+      "remediation": "None; keep the deployed-hash check.",
+      "lens": "g1"
+    },
+    {
+      "id": "ACM-P3-001",
+      "severity": "P3",
+      "title": "No consolidated access-control matrix; authorization remains per-service and distributed across four documents",
+      "status": "open",
+      "evidence": "No consolidated artifact exists: `find . -iname '*access*matrix*'` returns only audit/evidence copies. Authorization remains distributed across docs/architecture/PORT_PROTOCOL_MATRIX.md:1-40, docs/runbooks/ACCESS_AND_ACCOUNTS.md:1-20, docs/architecture/IDENTITY_AND_SECRETS.md and docs/architecture/TRUST_BOUNDARIES.md; the new Kestrel/console role mapping is not in one matrix.",
+      "remediation": "Publish docs/security/ACCESS_CONTROL_MATRIX.md generated from the four sources, including the Kestrel/console role mapping.",
+      "lens": "g1"
+    },
+    {
+      "id": "ACM-P3-002",
+      "severity": "P3",
+      "title": "Documented Cloudflare Access policy state does not match live behavior: the falcon app has no owner-IP bypass (and two dead apps remain)",
+      "status": "open",
+      "evidence": "docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-134 still says each Access app carries an owner-IP bypass; :181-192 says the live path is Authelia at auth.mainecybertech.us/192.168.222.220:9091. docs/runbooks/SSO.md:3-8,30-33 says Access apps were removed on 2026-11-05 and Kestrel/Authentik is live at idp.mainecybertech.us/192.168.222.224:9000. docs/CURRENT_STATE.md:24-27 also still says Access remains the edge gate.",
+      "remediation": "Rewrite ACCESS_AND_ACCOUNTS sections 6-8 and CURRENT_STATE to the Kestrel state; keep the historical Access section clearly marked as rollback-only.",
+      "lens": "g1"
+    },
+    {
+      "id": "AI-P3-001",
+      "severity": "P3",
+      "title": "Agent/audit-run pointers are stale: the lifecycle runbook still calls the closed 2026-09-30 run 'the current run' and AGENTS.md/README point at it as the full-domain reference",
+      "status": "partially-fixed",
+      "evidence": "AGENTS.md:138-139, README.md:10-12 and docs/runbooks/AUDIT_RUN_LIFECYCLE.md:40-41 still name falcon-20261014-verify-main-edbf441 as the latest verification; there is no pointer to this 2026-11-08 run and no doc-drift test.",
+      "remediation": "Update the three pointers and add a check that the newest run ID is referenced.",
+      "lens": "g1"
+    },
+    {
+      "id": "AI-P3-002",
+      "severity": "P3",
+      "title": "No AI-provenance policy and no per-tool agent instruction coverage",
+      "status": "partially-fixed",
+      "evidence": "AGENTS.md:142-144 has the provenance rule, but no CLAUDE.md/.cursorrules/copilot-instructions.md/GEMINI.md exists (find returns none) and .github/pull_request_template.md is still 32 lines with no authorship/provenance field.",
+      "remediation": "Add pointer files and a PR provenance field; keep the independent-review rule.",
+      "lens": "g1"
+    },
+    {
+      "id": "API-P3-002",
+      "severity": "P3",
+      "title": "Public-access deploy script still names the retired dash.falcon/ntfy.falcon hostnames in its operator guidance",
+      "status": "verified-fixed",
+      "evidence": "bootstrap/97-cloudflare-api-config.sh:36 sets HOSTS=(falcon iris enroll) and :64 marks dash.falcon/ntfy.falcon retired; the fallback text matches.",
+      "remediation": "None for this finding (the script's Access provisioning is tracked as ADMIN-P2-004).",
+      "lens": "g1"
+    },
+    {
+      "id": "CHAIN-P3-001",
+      "severity": "P3",
+      "title": "Anonymous origin -> admin console exposure, plus latent docker.sock mounts in the vendored Shuffle compose",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:137-204 now gates every public console router with kestrel-auth; mct/compose/docker-compose.shuffle.yml:48-51,90-93 has the docker.sock mounts commented out and the container drift check reports no running socket mounts. The Shuffle stack remains archive-only.",
+      "remediation": "None; keep Shuffle archive-only.",
+      "lens": "g1"
+    },
+    {
+      "id": "CHAIN-P3-002",
+      "severity": "P3",
+      "title": "No automated live-vs-repo drift check for the exposure edges; the applied wg0 narrowing can regress silently",
+      "status": "open",
+      "evidence": "automation/validation/post_reboot_verify.sh:25-30 checks only the default-deny policy and stale tables; bootstrap/32-inbound-mode.sh:52-71 reconciles only the policy word. No check compares the live nftables ruleset to config/nftables/falcon.nft; automation/validation/tunnel_drift_check.sh covers the Cloudflare tunnel, not nft.",
+      "remediation": "Add a read-only normalized live-vs-repo nftables diff and a metric/alert on the existing timer pattern.",
+      "lens": "g1"
+    },
+    {
+      "id": "DATA-P3-004",
+      "severity": "P3",
+      "title": "Nightly backup leaves an unencrypted config archive beside the encrypted one and never removes it",
+      "status": "verified-fixed",
+      "evidence": "bootstrap/85-backup-job.sh:78-89 creates config-YYYYMMDD.tar.gz, encrypts to .enc and removes the plaintext on success (`rm -f \"$cfg\"`); the failure path keeps it 0600.",
+      "remediation": "None.",
+      "lens": "g1"
+    },
+    {
+      "id": "DATA-P3-005",
+      "severity": "P3",
+      "title": "Retention documentation drift: snapshot cadence/keep count disagree and the Wazuh indexer backup job is not in the matrix",
+      "status": "partially-fixed",
+      "evidence": "RETENTION_MATRIX.md:19-31 still has no row for the Wazuh indexer snapshot job even though automation/validation/wazuh_indexer_backup.sh:42 keeps 14; docs/runbooks/SCHEMA_AND_RETENTION.md:65 still says the Wazuh indexer is not managed here.",
+      "remediation": "Add the Wazuh indexer snapshot class (job, keep 14, timer) to both retention docs and refresh the stale pointer.",
+      "lens": "g1"
+    },
+    {
+      "id": "NOTIF-P2-001",
+      "severity": "P3",
+      "title": "ntfy-auth Traefik middleware is still dead config; ntfy-native deny-all remains the only access control",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:26-28 has only the removal comment; no router references ntfy-auth; the lab ntfy is internal-only (:125-134). Residual dead material: /srv/falcon/secrets/ntfy_htpasswd is still mounted (compose/central/docker-compose.yml:36) and generated (bootstrap/50-secrets.sh:87-97), and two runbooks still describe it.",
+      "remediation": "None for the dead middleware; delete the unused htpasswd mount/secret and stale runbook text as hygiene.",
+      "lens": "g1"
+    },
+    {
+      "id": "NOTIF-P3-003",
+      "severity": "P3",
+      "title": "Retired public lab-ntfy hostname still referenced in ledgers and the 97 deploy fallback text",
+      "status": "partially-fixed",
+      "evidence": "bootstrap/97-cloudflare-api-config.sh:64 and docs/architecture/PORT_PROTOCOL_MATRIX.md:38 have the corrected falcon/iris/enroll wording, but ledgers/exception_register.md:29 (EX-20) and ledgers/risk_register.md:31 (R-24) still name falcon-ntfy.mainecybertech.us.",
+      "remediation": "Annotate the two historical ledger rows as retired/historical; do not rewrite the records.",
+      "lens": "g1"
+    },
+    {
+      "id": "PRIV-P3-001",
+      "severity": "P3",
+      "title": "Owner/legal privacy inputs and the 'synthetic-only' wording remain outstanding",
+      "status": "open",
+      "evidence": "docs/privacy/DATA_GOVERNANCE.md:47-54 still lists owner/legal inputs (entity/DPA/jurisdiction and device scope); docs/phase9/OWNER_ACTIONS.md A6/C3 remain open. The 'synthetic-only' wording is fixed at docs/architecture/DATA_FLOW_AND_CLASSIFICATION.md:4.",
+      "remediation": "Complete A6/C3 owner/legal inputs and record the device/site scope; otherwise explicitly accept the lab-scope limitation.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEARCH-P3-001",
+      "severity": "P3",
+      "title": "Legacy falcon-eve indices keep divergent mappings; consumer queries silently under-return",
+      "status": "verified-fixed",
+      "evidence": "config/opensearch/falcon-eve-template.json:8,672 pins dynamic:false and event_time; automation/validation/mapping_drift_check.py exists and the 20261014 evidence reports legacy drift 0/16 after the 14 d retention expiry. No legacy indices remain in the current window.",
+      "remediation": "None; keep the mapping-drift metric.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEC-P3-004",
+      "severity": "P3",
+      "title": "wg0 tunnel has no peer-class separation; every peer (including client endpoints) can reach the edge control plane and Wazuh proxies",
+      "status": "open",
+      "evidence": "config/nftables/falcon.nft:33 drops only 10.99.0.20/.21/.22 to 9443/15140/15141, while automation/vpn/enroll-service.py:46,230-240 allocates 10.99.0.20-99 and docs/runbooks/VPN.md:16 documents that pool; :36-37 still accepts syslog/NetFlow from every wg0 peer. The hardcoded set is already stale (.20 retired) and does not cover .23-.99.",
+      "remediation": "Drop the whole client pool (or a dedicated client subnet) on those ports, keep site/sensor ranges separate, and add a negative test from a .23+ peer.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEC-P3-005",
+      "severity": "P3",
+      "title": "Console session cookies are not marked Secure (central OSD explicit cookie.secure: false; Grafana/Wazuh default)",
+      "status": "verified-fixed",
+      "evidence": "config/central/opensearch_dashboards.yml:3-5 sets opensearch_security.cookie.secure: true; automation/wazuh/multi-node/config/wazuh_dashboard/opensearch_dashboards.yml:17-19 sets it true; compose/central/docker-compose.yml:238 sets GF_SECURITY_COOKIE_SECURE=true.",
+      "remediation": "None.",
+      "lens": "g1"
+    },
+    {
+      "id": "WH-P3-001",
+      "severity": "P3",
+      "title": "No replay/idempotency protection or tests on the notification path (ntfy); Shuffle path retired",
+      "status": "partially-fixed",
+      "evidence": "automation/alerting/ntfy_relay.py:22-34 still documents replay as an accepted residual (no signature/nonce); automation/validation/tests/ntfy_relay_dedupe_test.py now covers same-title duplicate delivery, and the retired Shuffle smoke script is gone. No replay test exists.",
+      "remediation": "Add a replay test that documents/limits the accepted behavior, or add a message id/idempotency key.",
+      "lens": "g1"
+    },
+    {
+      "id": "ARCH-P2-003",
+      "severity": "P2",
+      "title": "Live ingest authentication is an HTTP basic-auth shared credential, not mTLS or request signing",
+      "status": "partially-fixed",
+      "evidence": "config/vector/aggregator.yaml:22-44 adds mutual TLS with verify_certificate: true and keeps basic auth; config/vector/edge.yaml:241-256 uses one shared client certificate. There is still no per-device certificate identity or request signing/replay key; automation/validation/gen_ingest_certs.sh:43-49 issues one CN=vector-edge-probe certificate.",
+      "remediation": "Issue per-sensor client certificates bound to sensor_id, or add request signing; keep the shared basic secret only as a second factor.",
+      "lens": "g1"
+    },
+    {
+      "id": "ACM-P2-004",
+      "severity": "P1",
+      "title": "Endpoint-script sync embeds the entire enrollment token file (all per-device tokens) into every device script",
+      "status": "open",
+      "evidence": "automation/vpn/sync-levelio-scripts.sh:11 reads the whole /srv/falcon/secrets/vpn_enroll.token into ENROLL_TOKEN and :18-19 substitutes it into every installer/updater script. issue-enroll-token.sh:44,48 writes per-device lines <name>:<token>:<expiry> plus a <name>.enroll-token file. Once any per-device binding exists, every endpoint script receives all bindings (and the multi-line value can break or corrupt the sed substitution), defeating the per-device lifecycle and leaking credentials to every device.",
+      "remediation": "Generate each script from that device's <name>.enroll-token only (or inject the token at runtime); refuse to sync when the token file has more than the one intended line; add a two-binding test proving only the target token is embedded.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEC-P2-005",
+      "severity": "P2",
+      "title": "SSO header adapter authenticates unsigned X-Authentik-*/Remote-* headers on 0.0.0.0:8090",
+      "status": "open",
+      "evidence": "console/sso_gateway.py:166-186 accepts X-Authentik-Username/Remote-User and ...-Groups with no shared secret, mints an admin role when the group contains admins (:173), and returns the IRIS token at :184-185. The service binds 0.0.0.0:8090 (bootstrap/98-console.sh:239-240) and nftables allows 8090 from all Docker and management sources (config/nftables/falcon.nft:50); docs/runbooks/SSO.md:152-164 even documents the direct fake-header curl. A compromised container on 172.16/12 (or any management host) can use the returned X-Proxy-*/X-Falcon-* headers or the IRIS token against the app containers on the same Docker networks, bypassing Kestrel.",
+      "remediation": "Bind the adapter to Traefik's Docker gateway/loopback, require a Traefik-injected shared secret or mTLS, remove the Remote-* fallback, and add a negative test that a direct fake-header request is 401.",
+      "lens": "g1"
+    },
+    {
+      "id": "SEC-P2-006",
+      "severity": "P2",
+      "title": "Client VPN peer-class firewall rule is a hardcoded three-address set; dynamically enrolled clients .23-.99 reach the control plane and Wazuh proxies",
+      "status": "open",
+      "evidence": "config/nftables/falcon.nft:33 drops only 10.99.0.20/.21/.22 on tcp 9443/15140/15141; automation/vpn/enroll-service.py:46,230-240 allocates any free address in 10.99.0.20-99, and docs/runbooks/VPN.md:16 documents that pool. A new client peer at .23+ is not dropped; syslog/NetFlow also remain open to all wg0 peers at falcon.nft:36-37.",
+      "remediation": "Replace the three addresses with the full client pool/subnet (or an nft set maintained by enrollment), keep site/sensor peers in a separate range, and add a negative test from a .23 peer.",
+      "lens": "g1"
+    },
+    {
+      "id": "ADMIN-P2-004",
+      "severity": "P2",
+      "title": "Kestrel cutover left Cloudflare Access in the independent posture check, deploy provisioning and current-state docs",
+      "status": "open",
+      "evidence": "automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com; bootstrap/97-cloudflare-api-config.sh:122-155 still creates/updates Access apps and an owner-IP bypass, and bootstrap/run-all-deploy.sh:45 runs it; docs/CURRENT_STATE.md:24-27 says Access remains the edge gate and docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-134,181-192 still describes Access/Authelia while docs/runbooks/SSO.md:3-8 says the Access apps were removed on 2026-11-05.",
+      "remediation": "Retire/replace the Access provisioning with a Kestrel-aware path (or make it fail closed and require an explicit rollback flag), update the watcher to assert the Kestrel login redirect/401, and refresh the current-state/access docs.",
+      "lens": "g1"
+    },
+    {
+      "id": "ADMIN-P2-005",
+      "severity": "P2",
+      "title": "Console API still requires a Cloudflare Access JWT and grants admin to owner-IP/LAN, not the Kestrel identity used by Traefik",
+      "status": "open",
+      "evidence": "console/auth.py:1-13,116-132 verifies Cf-Access-Jwt-Assertion and otherwise grants admin for CF-Connecting-IP == owner or a direct private peer; config/traefik/dynamic.yml:137-157 now puts only kestrel-auth in front of the console (no Access JWT), and docs/runbooks/SSO.md:12 says the console is Kestrel gate-only. After the documented Access-app deletion, non-owner Kestrel users get 401 from the API, while bootstrap/98-console.sh:121-126 still tries to populate the Access AUD from the deleted app.",
+      "remediation": "Consume the Kestrel identity headers (signed by Traefik/adapter), remove the Access-JWT and owner-IP/LAN bypass for the public path, and add a test that a non-owner Kestrel user gets viewer access.",
+      "lens": "g1"
+    },
+    {
+      "id": "ADMIN-P2-006",
+      "severity": "P2",
+      "title": "Console action endpoints have no CSRF/Origin enforcement and trust an owner-IP/LAN admin identity",
+      "status": "open",
+      "evidence": "console/api/server.py:722-756 accepts POST /console/api/v1/actions/{ack,unack,downtime-add}, parses the body and calls the root broker without checking Origin/Referer or a CSRF token; console/auth.py:126-131 treats the owner IP or a direct LAN peer as admin; console/web/app.js:258-262 sends the state-changing request. A cross-site POST from an owner browser (or a LAN client) can ack/unack/downtime checks and suppress alerts when the session cookie is sent.",
+      "remediation": "Require a per-session CSRF token and an Origin/Referer allowlist, enforce Content-Type: application/json, and use SameSite cookies; do not grant admin solely by source IP.",
+      "lens": "g1"
+    },
+    {
+      "id": "ADMIN-P2-007",
+      "severity": "P2",
+      "title": "Trusted-header SSO trusts entire Docker subnets: any frontend/backend container can self-assert Grafana/OpenSearch admin",
+      "status": "open",
+      "evidence": "compose/central/docker-compose.yml:233 whitelists 172.30.2.0/24 for Grafana's auth proxy; config/central/opensearch-security/config.yml:77-79 and automation/wazuh/multi-node/config/wazuh_indexer/opensearch-security/config.yml:77-79 trust 172.30.1/2/4 as internal proxies. A compromised container on those shared networks (vector aggregator, ntop, etc.) can call Grafana/OSD/Wazuh with X-Falcon-User/X-Proxy-User: <admin> and X-Proxy-Roles: admin directly, bypassing Kestrel.",
+      "remediation": "Scope each whitelist to the Traefik container IP/network, strip client-supplied identity headers at the app ingress, and use mTLS/JWT between Traefik and the apps; separate the data-plane networks.",
+      "lens": "g1"
+    },
+    {
+      "id": "RES-P1-002",
+      "severity": "P1",
+      "area": "RES",
+      "title": "Root LV is above the disk-guard threshold; guard/alert state is healthy",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 2327,
+      "owner": "@owner",
+      "target": "RES",
+      "detail": "Root free was 38.8 GB at 06:35Z, comfortably above the 20 GiB guard threshold; no root/disk alert is active. The earlier 19.6 GiB incident condition is not present.",
+      "remediation": "None; keep the capacity watch and the keep-2 policy.",
+      "note": "Verified fixed with live evidence.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/disk_guard.sh",
+          "line": "23-27",
+          "note": "data 24 GiB / root 20 GiB thresholds; keep 2 snapshots"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/85-backup-job.sh",
+          "line": "68-76",
+          "note": "keep-2 local snapshot retention"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/host",
+          "observed": "root free 38,846,361,600 B (36.2 GiB), used 74.3%; /srv/falcon free 82,846,453,760 B (60.6% used); 2026-11-08T06:35Z",
+          "at": "2026-11-08T06:43Z"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/checks",
+          "observed": "Root volume free space low=ok; Root disk projected full=ok; Disk space low=ok; Disk space critical=ok",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "RES-P2-002",
+      "severity": "P1",
+      "area": "RES",
+      "title": "Wazuh VPN proxy socket boot race is fixed and has survived a boot",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 1016,
+      "owner": "@owner",
+      "target": "RES",
+      "detail": "The sockets use IP_FREEBIND and multi-user.target, and the live listener check is green after the 2026-11-05 boot. The historical sockets.target ordering cycle is gone.",
+      "remediation": "None; keep the boot-order check wired into post_reboot_verify.sh.",
+      "note": "Verified fixed with post-fix boot evidence.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "config/systemd/falcon-wazuh-agent-proxy.socket",
+          "line": "10-16",
+          "note": "ListenStream 10.99.0.1:15140; FreeBind=yes; WantedBy=multi-user.target"
+        },
+        {
+          "source": "repo",
+          "file": "config/systemd/falcon-wazuh-enroll-proxy.socket",
+          "line": "10-16",
+          "note": "ListenStream 10.99.0.1:15141; FreeBind=yes; WantedBy=multi-user.target"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/boot_order_check.sh",
+          "line": "38-58",
+          "note": "boot-order check includes the sockets and container-ensure"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/checks",
+          "observed": "'Wazuh VPN proxy listener down' state=ok; host uptime 200,710 s (boot 2026-11-05 22:50Z, after the 2026-10-11 fix)",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DR-P1-002",
+      "severity": "P1",
+      "area": "DR",
+      "title": "Offsite upload-state truncation class is still not fail-closed; live RPO is currently met",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 286289,
+      "owner": "@owner",
+      "target": "DR",
+      "detail": "The live nightly path is healthy (all backup/offsite/DLQ checks green at 2026-11-08T06:43Z) and the original symlink path is fixed. The hardening asked for in the finding is still absent: an empty/shrunk enumeration can be persisted as state, a missing repository returns success, an empty inventory makes the sample verification vacuous, and the oneshot service has no runtime bound (the stuck-activating rule waits 8h).",
+      "remediation": "Refuse to persist an empty state or a state that shrinks by more than a threshold; fail when the local repository has fewer than a minimum number of files; bound falcon-backup.service with RuntimeMaxSec/TimeoutStartSec; add an offline test for the empty/shrunk cases.",
+      "note": "Partially fixed; live RPO currently met, code fail-closed gap remains. This is the scoped P1 called out by the task.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "286-289",
+          "note": "missing local_root returns 0 (fail-open)"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "305-312",
+          "note": "enumerates files; total computed but never checked for 0"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "408-414",
+          "note": "state is replaced unconditionally after the upload"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "570-575",
+          "note": "inventory + 3-file sample; an empty inventory loops zero times and returns 0"
+        },
+        {
+          "source": "repo",
+          "file": "config/systemd/falcon-backup.service",
+          "line": "6-15",
+          "note": "oneshot; TimeoutStopSec=900 only, no RuntimeMaxSec/TimeoutStartSec"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "705-707",
+          "note": "stuck-activating alert only after 8h"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/checks",
+          "observed": "Backup stale=ok, Offsite backup stale=ok, Offsite backup retries exhausted=ok, Backup unit failed=ok, Backup run stuck activating=ok",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P1-002",
+      "severity": "P1",
+      "area": "PERF",
+      "title": "Root LV incident condition is cleared; guard and projection rules are healthy",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 2327,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The live root LV is above the guard threshold and no disk alert is active. The 2026-10-11 regression is not present.",
+      "remediation": "None; keep the capacity watch.",
+      "note": "Verified fixed with live evidence.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/disk_guard.sh",
+          "line": "23-27",
+          "note": "24 GiB data / 20 GiB root thresholds; keep-2"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "563-570,689-691",
+          "note": "24h projections + root-free rule"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/host; /console/api/v1/checks",
+          "observed": "root free 36.2 GiB; Disk space low/critical, Root volume free low, Root disk projected full all ok",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "area": "CI",
+      "title": "Auto-merge workflow holds contents:write with no environment protection",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 1719,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "The workflow still declares contents:write and pull-requests:write, runs on the self-hosted lab runner and has no GitHub environment/required reviewers. The TOCTOU half is fixed: it resolves headRefOid and merges with --match-head-commit. The label gate remains the only human disposition.",
+      "remediation": "Reduce the token to the scopes gh pr merge/list/view actually need; add an environment with required reviewers when the plan permits, or convert the merge to an owner-run dispatch; exercise the label gate once and capture both skip and merge behavior.",
+      "note": "Partially fixed: head pin present (dependabot-merge.yml:54); write scopes and env-less job unchanged. No code regression.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows/dependabot-merge.yml",
+          "line": "17-19",
+          "note": "contents:write + pull-requests:write"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/dependabot-merge.yml",
+          "line": "49-54",
+          "note": "head commit pinned with --match-head-commit"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/dependabot-merge.yml",
+          "line": "28-31",
+          "note": "self-hosted lab job, no environment:"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/BRANCH_PROTECTION.md",
+          "line": "93-104",
+          "note": "label gate is the compensating control; required review is plan-blocked"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "area": "CI",
+      "title": "Independent Access-posture check no longer matches the live identity gate and is stuck in 'alerted'",
+      "previous_status": "verified-fixed",
+      "status": "regressed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 6371,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "The accepted Access-enforcement control (DO watcher) still requires a Cloudflare Access challenge. After the 2026-11-05 Kestrel/Authentik cutover all three public hostnames redirect to idp.mainecybertech.us, so the watcher has logged 595 failures and remains in the 'alerted' state; repeated failures are suppressed. external-smoke accepts any 302 as an owner-IP bypass, so neither check now asserts the live gate. This is a regression of the CI-P2-002 closure.",
+      "remediation": "Update watch.sh to accept the Kestrel/Authentik IdP redirect (and/or assert that an unauthenticated request cannot reach the app), reset the posture state, export a falcon_watcher_posture metric and alert on repeated failures; update external-smoke's summary/comment; add a synthetic negative test; record the Kestrel cutover in the decision log/maintenance window.",
+      "note": "Regression. Live evidence 2026-11-08: public 302 -> idp.mainecybertech.us; watch.sh sha256 matches /opt/falcon-watcher/watch.sh; posture=alerted.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/alerting/do_watcher/watch.sh",
+          "line": "63-71",
+          "note": "check_access requires 302 -> cloudflareaccess.com; any other 302 is a posture failure"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/external-smoke.yml",
+          "line": "5-12",
+          "note": "external-smoke deliberately delegates Access enforcement to the DO watcher"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/SSO.md",
+          "line": "1-12",
+          "note": "Kestrel Identity is live; Cloudflare Access apps were removed 2026-11-05"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/ACCESS_AND_ACCOUNTS.md",
+          "line": "168-170",
+          "note": "stale statement that the DO watcher still requires cloudflareaccess.com"
+        },
+        {
+          "source": "live",
+          "command": "tail /var/log/falcon-watcher.log; cat /var/lib/falcon-watcher/posture; curl -D- https://falcon.mainecybertech.us/",
+          "observed": "Public hostnames now 302 to https://idp.mainecybertech.us (Authentik); 595 Kestrel posture failures logged; posture state file = 'alerted'; every run logs 'posture already alerted'.",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "area": "CI",
+      "title": "Repository Actions settings remain partly permissive",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 1718,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "The dangerous default (write token / Actions can approve PRs) was fixed live on 2026-10-12. The remaining settings are allowed_actions='all' and sha_pinning_required=false. All three committed workflows declare their own permissions, so the residual is latent rather than currently exercised.",
+      "remediation": "Set allowed_actions=selected and sha_pinning_required=true (or record a dated owner acceptance); add an API-settings inventory check so drift is visible.",
+      "note": "Partially fixed; live settings were not re-checkable offline this pass. No repo-side change since edbf441.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "17-18",
+          "note": "each committed workflow declares contents:read"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/external-smoke.yml",
+          "line": "20-21",
+          "note": "contents:read"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/dependabot-merge.yml",
+          "line": "17-19",
+          "note": "the only write-token workflow; declares its own scopes"
+        },
+        {
+          "source": "live",
+          "command": "prior live /actions/permissions (2026-10-14); not re-queryable from this verify host",
+          "observed": "workflow defaults read/false (fixed); allowed_actions='all' and sha_pinning_required=false remain",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P2-004",
+      "severity": "P2",
+      "area": "CI",
+      "title": "CI installs two Python shell-test dependencies by bare version with no hashes or update path",
+      "previous_status": "new",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 5054,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "The validate job runs on a self-hosted lab runner and installs cryptography 41.0.7 and PyJWT 2.7.0 from PyPI by version only. The install is not hash-pinned and is not covered by Dependabot, so a compromised or vulnerable release is neither integrity-checked nor automatically updated. The two packages are imported by console_test.sh in the shell-test suite.",
+      "remediation": "Add both packages (current versions) to ci/requirements-ci.txt with --hash entries, install with --require-hashes, and let Dependabot cover the requirements file; re-run the shell tests.",
+      "note": "New 2026-11-08. Severity P2 (supply chain on a self-hosted runner), not a runtime credential exposure.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "50-54",
+          "note": "pip install cryptography==41.0.7 PyJWT==2.7.0, no --require-hashes"
+        },
+        {
+          "source": "repo",
+          "file": "ci/requirements-ci.txt",
+          "line": "1-8",
+          "note": "only pyyaml and zizmor are hash-pinned"
+        },
+        {
+          "source": "repo",
+          "file": ".github/dependabot.yml",
+          "line": "9-15",
+          "note": "Dependabot watches only /ci/requirements-ci.txt, not the inline pins"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/CI_CD_INCIDENT_PLAYBOOK.md",
+          "line": "272-274",
+          "note": "claims Python deps are hash-pinned (not true for these two)"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "BP-P2-001",
+      "severity": "P2",
+      "area": "BP",
+      "title": "CODEOWNERS resolves to the owner account",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 114,
+      "owner": "@owner",
+      "target": "BP",
+      "detail": "Every CODEOWNERS entry resolves to the owner user account. Branch protection remains plan-blocked, so CODEOWNERS is advisory.",
+      "remediation": "None; revisit if the owner account changes or a team is created.",
+      "note": "Verified fixed; live API not re-queried this pass.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/CODEOWNERS",
+          "line": "1-14",
+          "note": "all entries use @HenryTru0518; the unresolvable org handle is gone"
+        },
+        {
+          "source": "live",
+          "command": "prior live codeowners/errors (2026-10-14)",
+          "observed": "{\"errors\":[]} (was 6 Unknown owner)",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SC-P2-002",
+      "severity": "P2",
+      "area": "SC",
+      "title": "Inherited credential estate is still partly unrotated and 20 vendored scripts source credential files wholesale",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 1213,
+      "owner": "@owner",
+      "target": "SC",
+      "detail": "The register has advanced to 9/20 (2 ROTATED + 7 DONE), but 11 owner-console rotations remain. Twenty tracked mct/scripts + mct/deploy-scripts files still combine set -a with a wholesale credential source; env_key.sh is used 0 times under mct/. The documentation still says 28 scripts and the register header still says 20/20 PENDING.",
+      "remediation": "Execute the 11 owner rotations with name-only captures; migrate the 20 vendored scripts to single-key reads at the next MCT import or an owner-approved patch wave; correct the counts and header.",
+      "note": "Partially fixed; no progress since edbf441 (still 9 rotated / 11 pending).",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/security/CREDENTIAL_ROTATION_REGISTER.md",
+          "line": "12-13",
+          "note": "header still says 20/20 PENDING"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/CREDENTIAL_ROTATION_REGISTER.md",
+          "line": "16-40",
+          "note": "9 rows ROTATED/DONE; 11 PENDING"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/INHERITED_CREDENTIAL_ROTATION.md",
+          "line": "20,76-79",
+          "note": "says 28 vendored scripts; actual tracked set is 20 files with set -a"
+        },
+        {
+          "source": "repo",
+          "file": "mct/scripts/p39-iris-delivery-check.sh",
+          "line": "1-20",
+          "note": "example of set -a + wholesale credential source"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SBOM-P2-001",
+      "severity": "P2",
+      "area": "SBOM",
+      "title": "SBOM signature and license gate exist, but the manifest hash is not bound into PACKAGE_DIGEST",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 13,
+      "owner": "@owner",
+      "target": "SBOM",
+      "detail": "The SBOM manifest signature verifies (ssh-keygen check-novalidate = Good) and the license allow-list gate runs in CI. The manifest hash is still not bound in PACKAGE_DIGEST.txt, D1 remains 'OWNER DECISION REQUIRED', and the publication verifier's 'signed archive' wording still overstates what it checks.",
+      "remediation": "Add sbom_manifest_sha256 to PACKAGE_DIGEST.txt and bind it in publish_digests.sh; record D1 as implemented; reword the signed-archive check as SHA-256-only unless a signature is verified.",
+      "note": "Partially fixed; core signing/license controls are live, binding/decision-record residual remains.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "sbom/SBOM_MANIFEST.sha256.sig",
+          "line": "1-3",
+          "note": "ssh-ed25519 signature, namespace falcon-sbom"
+        },
+        {
+          "source": "repo",
+          "file": "ci/validate.py",
+          "line": "605-616",
+          "note": "verifies the ed25519 signature with falcon-sbom-signing"
+        },
+        {
+          "source": "repo",
+          "file": "ci/validate.py",
+          "line": "704-733",
+          "note": "sbom-licenses check over pins/licenses.allow"
+        },
+        {
+          "source": "repo",
+          "file": "PACKAGE_DIGEST.txt",
+          "line": "1-24",
+          "note": "no sbom_manifest_sha256 field"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md",
+          "line": "173",
+          "note": "D1 still OWNER DECISION REQUIRED"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/verify_publication_chain.sh",
+          "line": "112-129",
+          "note": "labels the 2026-09-29 archives 'signed' but checks only SHA-256"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CTR-P2-001",
+      "severity": "P2",
+      "area": "CTR",
+      "title": "Adopted stacks now have hardening overlays and healthchecks, but not the full baseline",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 3042,
+      "owner": "@owner",
+      "target": "CTR",
+      "detail": "Healthchecks and no-new-privileges are now codified for IRIS/Wazuh/OpenCanary and the forwarder carries --user/--cap-drop/health-cmd. The overlays are opt-in -f files, not the default compose path or a deploy-script argument; cap_drop and non-root users remain absent on the adopted IRIS/Wazuh services. The live healthcheck checks are green.",
+      "remediation": "Wire the hardening overlays into the deployment path (default compose invocation or deploy script), add cap_drop/non-root where supported, and add a compose-config test asserting every adopted service has a healthcheck and no-new-privileges.",
+      "note": "Partially fixed (was open at edbf441): repo overlays + live healthchecks landed 2026-10-14/15; default-path and cap_drop/non-root gaps remain.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "compose/mct/docker-compose.opencanary.yml",
+          "line": "30-42",
+          "note": "no-new-privileges + mem cap + procfs healthcheck"
+        },
+        {
+          "source": "repo",
+          "file": "compose/mct/iris-web/docker-compose.hardening.yml",
+          "line": "1-58",
+          "note": "IRIS: healthchecks + no-new-privileges + memory caps (opt-in -f overlay)"
+        },
+        {
+          "source": "repo",
+          "file": "automation/wazuh/multi-node/docker-compose.hardening.yml",
+          "line": "1-80",
+          "note": "Wazuh: healthchecks + no-new-privileges + memory caps (opt-in -f overlay)"
+        },
+        {
+          "source": "repo",
+          "file": "automation/wazuh/forwarder-install.sh",
+          "line": "38-46",
+          "note": "--user, --security-opt no-new-privileges, --cap-drop ALL, health-cmd"
+        },
+        {
+          "source": "repo",
+          "file": "compose/mct/iris-web/docker-compose.base.yml",
+          "line": "18-35",
+          "note": "base IRIS services still have no security_opt/healthcheck"
+        },
+        {
+          "source": "repo",
+          "file": "automation/wazuh/multi-node/docker-compose.yml",
+          "line": "3-8",
+          "note": "base Wazuh services still bare; overlay must be applied"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/checks",
+          "observed": "'Container healthcheck failing', 'Container unhealthy', 'Container configuration drift' all state=ok (2026-11-08T06:43Z)",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SECRET-P2-001",
+      "severity": "P2",
+      "area": "SECRET",
+      "title": "Inherited credential estate is still 11/20 pending; vendored scripts still source stores wholesale",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 1240,
+      "owner": "@owner",
+      "target": "SECRET",
+      "detail": "Nine of twenty credential classes are dispositioned (2 ROTATED + 7 DONE), eleven owner-console rotations remain. Twenty vendored scripts still export whole credential files into their process environment; env_key.sh has zero uses under mct/.",
+      "remediation": "Owner executes the 11 rotations with name-only captures; migrate the vendored scripts to single-key reads; correct the doc count.",
+      "note": "Partially fixed; unchanged since edbf441.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/security/CREDENTIAL_ROTATION_REGISTER.md",
+          "line": "12-40",
+          "note": "header 20/20 PENDING; table 9 rotated/DONE, 11 PENDING"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/check_rotation_register.py",
+          "line": "1-20",
+          "note": "validator output: items=20 rotated=9 pending=11"
+        },
+        {
+          "source": "repo",
+          "file": "mct/scripts/full-stack-healthcheck.sh",
+          "line": "16",
+          "note": "example set -a + wholesale source"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/INHERITED_CREDENTIAL_ROTATION.md",
+          "line": "20,76-79",
+          "note": "doc says 28 scripts; actual 20 files with set -a"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SECRET-P2-002",
+      "severity": "P2",
+      "area": "SECRET",
+      "title": "Owner-env validator is wired into the gate",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 736753,
+      "owner": "@owner",
+      "target": "SECRET",
+      "detail": "The validator is wired into ci/validate.py and the documented key set matches the live owner file as of the last live verification. The current verify host has no /home/user/.env, so the live check was skipped here.",
+      "remediation": "None; keep the validator in the gate and refresh the inventory when a key is added.",
+      "note": "Verified fixed (repo + prior live); live re-check not possible from this host.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "ci/validate.py",
+          "line": "736-753",
+          "note": "check_owner_env wired into the check list"
+        },
+        {
+          "source": "repo",
+          "file": ".env.example",
+          "line": "16-22",
+          "note": "documents do_api/unifi_cert_sha256/sensor_sudo/pi_password"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/OWNER_ENV_INVENTORY.md",
+          "line": "47-53",
+          "note": "inventory updated"
+        },
+        {
+          "source": "live",
+          "command": "prior live check_owner_env.py --strict (2026-10-14)",
+          "observed": "11 keys/expected 11/0600/0 unknown -> PASS",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DET-P2-001",
+      "severity": "P2",
+      "area": "DET",
+      "title": "[PORT] CRLF committed for 1 file (raw evidence capture; policy edge)",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 112,
+      "owner": "@owner",
+      "target": "DET",
+      "detail": "The only CRLF blob is a raw evidence capture that the line-ending policy intentionally exempts (*.out -text). It has no CI or execution impact; the machine lens will keep flagging it until a dated waiver is recorded.",
+      "remediation": "Record a dated waiver in the audit register (or normalize the capture and re-hash/re-index it, which is not worth doing for a byte-exact capture).",
+      "note": "Open as a policy edge; not a code defect. The file is unchanged since f23ecff.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "evidence/raw/REVIEW-FIX/20261013T053408Z_ci-p3-002-stale-workflow-cleanup.out",
+          "line": "1-12",
+          "note": "12 CRLF lines; file is an ASCII capture"
+        },
+        {
+          "source": "repo",
+          "file": ".gitattributes",
+          "line": "32-34",
+          "note": "*.out -text deliberately exempts raw captures"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/pack_fidelity.py",
+          "line": "43",
+          "note": "pack comparison canonicalises CRLF"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "RES-P2-001",
+      "severity": "P2",
+      "area": "RES",
+      "title": "Host memory/swap pressure improved but remains; capacity budget is still not codified",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 616,
+      "owner": "@owner",
+      "target": "RES",
+      "detail": "Live memory available is 42.5% and swap 59.8%, below the alert bars; no OOM since 2026-10-09. The memory caps are now codified in the hardening overlays and the envelope has a current refresh section, but there is still no host-sized memory budget and the pressure is real.",
+      "remediation": "Add a measured per-service memory budget for the 16.9 GB host, keep the caps in the default deploy path, and re-measure after a week.",
+      "note": "Partially fixed (was open): caps codified + envelope refreshed; pressure and budget residual remain.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/phase5/PERFORMANCE_ENVELOPE.md",
+          "line": "6-16",
+          "note": "2026-10-14 refresh: 48h avg memory 32.79%, swap 51.76%; residual says limits not codified"
+        },
+        {
+          "source": "repo",
+          "file": "compose/mct/iris-web/docker-compose.hardening.yml",
+          "line": "1-58",
+          "note": "IRIS memory caps + no-new-privileges now codified"
+        },
+        {
+          "source": "repo",
+          "file": "automation/wazuh/multi-node/docker-compose.hardening.yml",
+          "line": "1-80",
+          "note": "Wazuh memory caps + no-new-privileges now codified"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "386-397,543-548",
+          "note": "memory <20%/15m and swap >75%/30m alert bars"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/host",
+          "observed": "memory available 42.5% (7,182,778,368 B free of 16,905,478,144); textfile swap 59.83%; 2026-11-08T06:35Z",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DR-P2-002",
+      "severity": "P2",
+      "area": "DR",
+      "title": "Nightly offsite is encrypted, but historical plaintext bulk objects remain and SSE is not set",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 98107,
+      "owner": "@owner",
+      "target": "DR",
+      "detail": "The nightly bulk upload now goes through the rclone crypt remote and was verified end-to-end on 2026-10-13. The pre-migration plaintext objects are still in the bucket (the runbook's step 4 is owner-gated), no bucket/object SSE is configured, and a manual 80 run without OFFSITE_CRYPT still writes plaintext.",
+      "remediation": "Complete the owner-approved plaintext retirement; enable SSE on the bucket/objects as defense in depth; make OFFSITE_CRYPT=1 the script default or refuse plaintext without an explicit override; add a decrypt-from-escrow drill.",
+      "note": "Partially fixed; ongoing writes encrypted, historical plaintext/SSE residual remains.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "bootstrap/85-backup-job.sh",
+          "line": "98-107",
+          "note": "nightly calls 80 with OFFSITE_CRYPT=1"
+        },
+        {
+          "source": "repo",
+          "file": "config/systemd/falcon-backup.service",
+          "line": "6-8",
+          "note": "Environment=OFFSITE_CRYPT=1"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "500-501",
+          "note": "manual default is still plaintext spaces:<bucket> if OFFSITE_CRYPT is unset"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/OFFSITE_ENCRYPTION_MIGRATION.md",
+          "line": "28-34",
+          "note": "step 4: retire plaintext once owner approves; still pending"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "504-521",
+          "note": "rclone config has no SSE settings"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DR-P2-003",
+      "severity": "P2",
+      "area": "DR",
+      "title": "IRIS case database is dumped daily and shipped encrypted offsite",
+      "previous_status": "partially-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 4245,
+      "owner": "@owner",
+      "target": "DR",
+      "detail": "The IRIS database is included in the daily new-services archive, retained locally for 7 days and shipped encrypted offsite; the coverage matrix and RESTORE.md now agree. Residual: pg_dump is fail-soft and the critical-item gate does not explicitly require the .iris-db file.",
+      "remediation": "Add the .iris-db-<stamp>.sql entry to the critical-item check (or fail the archive when pg_dump produced nothing) and record a restore drill using the dump.",
+      "note": "Verified fixed (status flip from partially-fixed); residual fail-soft is tracked in the note.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/backup_new_services.sh",
+          "line": "42-45",
+          "note": "daily pg_dump into .iris-db-<stamp>.sql"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase7/runbooks/RESTORE.md",
+          "line": "350",
+          "note": "IRIS case DB yes; daily pg_dump + offsite encrypted; DR-P2-003 closed 2026-10-14"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/RETENTION_MATRIX.md",
+          "line": "50",
+          "note": "365 d window; pg_dump note; offsite shipped encrypted and verified"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "596-616",
+          "note": "new-services archives are uploaded encrypted and SHA-256 verified"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DR-P2-004",
+      "severity": "P2",
+      "area": "DR",
+      "title": "Offsite verification passes vacuously on an empty or unexpectedly tiny snapshot repository",
+      "previous_status": "new",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 286289,
+      "owner": "@owner",
+      "target": "DR",
+      "detail": "A present-but-empty or unexpectedly tiny local snapshot repository produces a clean offsite verification: the sample loop has zero iterations and offsite_verify_all.py reports total=0/mismatched=0 PASS. The upload state is then replaced with the empty enumeration and the success stamp advances. upload_repo_delta also returns success when the directory is missing, leaving the caller to fail later; the 2026-10-10 incident was caught by a later download failure, not by a fail-closed minimum-size check.",
+      "remediation": "Fail when the local repository has fewer than a minimum file count (or shrinks more than a configured fraction); make a missing repo a hard failure for both targets; assert total>0 before verification and before writing state; add an offline test for empty/missing/shrunk repositories.",
+      "note": "New 2026-11-08. P2 defense-in-depth; the original path trigger is fixed and live backups are healthy. The empty-repo case is the demonstrable vacuous pass.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "286-289",
+          "note": "a missing repository logs WARN and returns success"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "305-312",
+          "note": "total file count is computed but not guarded"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "570-575",
+          "note": "sample verification loops over an empty inventory and returns 0"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "659-665",
+          "note": "full verification is passed the same (possibly empty) local root"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/offsite_verify_all.py",
+          "line": "78-92",
+          "note": "enumerate_local(empty) -> total=0, mismatched=0, PASS"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/80-offsite-backup.sh",
+          "line": "408-414",
+          "note": "empty state is written and the success stamp can advance"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "IR-P2-001",
+      "severity": "P2",
+      "area": "IR",
+      "title": "No facilitated tabletop exercise has been run",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 3,
+      "owner": "@owner",
+      "target": "IR",
+      "detail": "The 10-scenario catalogue and Scenario 5 kit exist, but no facilitated session or signed record exists. Scenario 5 (total monitoring/alerting loss) remains unexercised.",
+      "remediation": "Schedule and record a facilitated owner + responder + independent reviewer session, starting with Scenario 5; measure out-of-band latency; repeat quarterly.",
+      "note": "Open; owner-gated.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/phase9/exercises/TABLETOP_PACKAGE.md",
+          "line": "3",
+          "note": "package delivered 2026-10-01; no facilitated exercise has been run"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase9/exercises/records/README.md",
+          "line": "3-6",
+          "note": "no exercise has been run and no record exists"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase9/exercises/records/TABLETOP_KIT.md",
+          "line": "3",
+          "note": "facilitation kit only; IR-P0-001 remains OPEN"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase9/OWNER_ACTIONS.md",
+          "line": "46",
+          "note": "B1 facilitated session with owner + JPB still required"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "IR-P2-002",
+      "severity": "P2",
+      "area": "IR",
+      "title": "Escalation contacts remain placeholders",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 12222640,
+      "owner": "@owner",
+      "target": "IR",
+      "detail": "Every escalation role/contact/out-of-band field is still OWNER-INPUT and the verification log is empty. The documented path cannot be followed by a second responder.",
+      "remediation": "Fill the contact table in owner custody, verify at least one out-of-band channel end to end, and record the verification log.",
+      "note": "Open; owner-gated.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/security/ESCALATION_CONTACTS_TEMPLATE.md",
+          "line": "12-22,26-40",
+          "note": "13 roles x 6 fields all OWNER-INPUT"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/ESCALATION_CONTACTS_TEMPLATE.md",
+          "line": "42-46",
+          "note": "channel verification log empty"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase9/OWNER_ACTIONS.md",
+          "line": "37",
+          "note": "A8 escalation contacts pending"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "IR-P2-003",
+      "severity": "P2",
+      "area": "IR",
+      "title": "Recurring incidents still lack post-incident review",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 268,
+      "owner": "@owner",
+      "target": "IR",
+      "detail": "Incident rows are kept in the decision log, but there is still no dedicated post-incident review for the recurring events (Oct 20 power outage, Nov 2 outage, Nov 5 Kestrel cutover/reboot) and no monthly recurrence review. The 2026-09-23 postmortem remains the only full example.",
+      "remediation": "Run and record a post-incident review for each material event (timeline, root cause, impact, follow-ups); add a monthly recurrence review of incident/alert history.",
+      "note": "Partially fixed; records exist, PIR/monthly review absent.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "ledgers/decision_log.md",
+          "line": "268",
+          "note": "Oct 10-11 post-incident record exists"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase7/runbooks/INCIDENT_RESPONSE.md",
+          "line": "274-279",
+          "note": "postmortem close-out checklist exists"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase9/INCIDENT_2026-09-23_PYTHON_INTERPRETER.md",
+          "line": "1-20",
+          "note": "last full postmortem format example"
+        },
+        {
+          "source": "repo",
+          "file": "ledgers/decision_log.md",
+          "line": "366",
+          "note": "last decision-log row 2026-11-03; no PIR for the Oct 20 outage, Nov 2 outage or Nov 5 Kestrel cutover"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "IR-P2-004",
+      "severity": "P2",
+      "area": "IR",
+      "title": "Wazuh proxy boot-order fix has now survived a boot; the stale comment is cosmetic",
+      "previous_status": "partially-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 203,
+      "owner": "@owner",
+      "target": "IR",
+      "detail": "The 2026-10-11 FreeBind fix has now survived a host boot (2026-11-05) and the live listener check is green; the runbook correction is in place. The only residual is the stale 2026-09-30 comment in post_reboot_verify.sh/boot_check_readonly.sh and the lack of a captured boot-order run for this boot.",
+      "remediation": "Correct the two stale comments and capture a boot-order check on the next reboot.",
+      "note": "Verified fixed (status flip); cosmetic comment residual.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/runbooks/VPN.md",
+          "line": "203",
+          "note": "documents the 2026-10-11 FreeBind fix and that the 2026-09-30 ordering fix did not survive"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/post_reboot_verify.sh",
+          "line": "106-108",
+          "note": "comment still says '2026-09-30 fix'"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/boot_check_readonly.sh",
+          "line": "88",
+          "note": "same stale comment"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/checks; curl /console/api/v1/host",
+          "observed": "'Wazuh VPN proxy listener down'=ok; uptime 200,710 s -> boot 2026-11-05 22:50Z, after the fix",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "OBS-P2-001",
+      "severity": "P2",
+      "area": "OBS",
+      "title": "Alert catalogue/README/CURRENT_STATE drifted again: script has 95 rules, catalogue has 94",
+      "previous_status": "verified-fixed",
+      "status": "regressed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 636638,
+      "owner": "@owner",
+      "target": "OBS",
+      "detail": "The script provisions 95 unique rules but the catalogue, README and CURRENT_STATE all say 94; the missing id is falcon-edge-spool-unretained. The 2026-10-14 drift check still cannot see it because it compares README to the catalogue rather than the script to the catalogue. This is a regression of the verified-fixed status at edbf441.",
+      "remediation": "Regenerate the catalogue (95 ids) and the counts, and add a script-vs-catalogue id set comparison to the drift test so a future rule cannot land without the catalogue.",
+      "note": "Regression. Counts verified 2026-11-08: script unique ids=95, catalogue ids=94, diff={falcon-edge-spool-unretained}.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "636-638",
+          "note": "new rule falcon-edge-spool-unretained (PERF-P3-009, 2026-10-14)"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase9/ALERT_CATALOGUE.yaml",
+          "line": "1-6",
+          "note": "94 ids; falcon-edge-spool-unretained absent"
+        },
+        {
+          "source": "repo",
+          "file": "README.md",
+          "line": "33",
+          "note": "94 alert rules"
+        },
+        {
+          "source": "repo",
+          "file": "docs/CURRENT_STATE.md",
+          "line": "169",
+          "note": "94 rules live"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/build_alert_catalogue.py",
+          "line": "4-7",
+          "note": "claims the catalogue cannot drift from what is deployed"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/tests/alert_rule_lint_test.sh",
+          "line": "1-20",
+          "note": "static lint only; no script-vs-catalogue id comparison"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "OBS-P2-002",
+      "severity": "P2",
+      "area": "OBS",
+      "title": "Alert noise is improved but repeat/reboot tuning remains",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 3134110122,
+      "owner": "@owner",
+      "target": "OBS",
+      "detail": "The disk-guard root storm is over and the guard now throttles persistent conditions to 6 h. The Suricata restart rule is still not reboot-aware, repeat_interval remains 4 h, and the documented 7-day noise accounting has not been re-run.",
+      "remediation": "Make the Suricata rule reboot-aware (or annotate planned reboots), re-tune repeat_interval/grouping, and re-run the 7-day accounting.",
+      "note": "Partially fixed; no regression.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/disk_guard.sh",
+          "line": "31-34,110-122",
+          "note": "disk-guard alert throttle: default 6 h"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "438-440",
+          "note": "Suricata restart rule still fires on an uptime reset"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "148",
+          "note": "repeat_interval still 4h"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/CAPACITY_AND_TELEMETRY.md",
+          "line": "178-183",
+          "note": "maintenance-window procedure"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "OBS-P2-003",
+      "severity": "P2",
+      "area": "OBS",
+      "title": "Benign edge_ingest HTTP rejections are excluded from the data-loss signal",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 96102,
+      "owner": "@owner",
+      "target": "OBS",
+      "detail": "The exclusion and separate metric are intact; no discarded-events alert has fired since 2026-10-11.",
+      "remediation": "None.",
+      "note": "Verified fixed.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/export_monitor_metrics.sh",
+          "line": "96-102",
+          "note": "edge_ingest errors exported separately and subtracted from all_errors"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/export_monitor_metrics.sh",
+          "line": "567-569",
+          "note": "falcon_pipeline_edge_ingest_errors_total exported"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "OBS-P2-004",
+      "severity": "P2",
+      "area": "OBS",
+      "title": "Stuck/failed backup runs and generic systemd unit failure are visible",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 110112564566,
+      "owner": "@owner",
+      "target": "OBS",
+      "detail": "The backup unit state metric and both rules are live; the check engine adds a generic systemd failed-units check. The backup/stuck checks are green.",
+      "remediation": "Add RuntimeMaxSec to falcon-backup.service (see DR-P1-002 residual).",
+      "note": "Verified fixed; runtime-bound residual tracked in DR-P1-002.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/export_monitor_metrics.sh",
+          "line": "110-112,564-566",
+          "note": "falcon_backup_service_state exported"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "701-707",
+          "note": "Backup unit failed (5m) and stuck-activating (8h) rules"
+        },
+        {
+          "source": "repo",
+          "file": "config/checks/00-platform.yaml",
+          "line": "13-17",
+          "note": "generic 'Systemd units failed' check"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/checks",
+          "observed": "Backup unit failed=ok, Backup run stuck activating=ok, Systemd units failed=ok",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P2-001",
+      "severity": "P2",
+      "area": "PERF",
+      "title": "Memory/swap pressure remains; caps and envelope were refreshed",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 616,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "Caps are now codified and the envelope has a current refresh, but live memory available (42.5%) and swap (59.8%) show persistent pressure and there is no host-sized memory budget.",
+      "remediation": "Add a measured per-service budget for the 16.9 GB host and keep the caps in the default deploy path.",
+      "note": "Partially fixed (was open).",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/phase5/PERFORMANCE_ENVELOPE.md",
+          "line": "6-16",
+          "note": "current refresh section; residual says limits were not codified"
+        },
+        {
+          "source": "repo",
+          "file": "compose/mct/iris-web/docker-compose.hardening.yml",
+          "line": "1-58",
+          "note": "IRIS caps codified"
+        },
+        {
+          "source": "repo",
+          "file": "automation/wazuh/multi-node/docker-compose.hardening.yml",
+          "line": "1-80",
+          "note": "Wazuh caps codified"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "386-397,543-548",
+          "note": "memory/swap alerts"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/host",
+          "observed": "memory available 42.5%; swap 59.83%",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P2-002",
+      "severity": "P2",
+      "area": "PERF",
+      "title": "Data-LV guard/alert thresholds sit above the OpenSearch watermarks",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 2325,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The guard acts at 24 GiB free and the warning at 30 GiB, both before the 224 GiB volume's flood-stage watermark; the documentation matches.",
+      "remediation": "None.",
+      "note": "Verified fixed.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/disk_guard.sh",
+          "line": "23-25",
+          "note": "guard 24 GiB data / 20 GiB root"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "559-561",
+          "note": "warning below 30 GiB"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/CAPACITY_AND_TELEMETRY.md",
+          "line": "39-50",
+          "note": "documents 24/30 GiB + keep-2"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/host",
+          "observed": "/srv/falcon free 82.8 GB, 60.6% used; Data volume free low=ok, Data volume projected full=ok",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P2-006",
+      "severity": "P2",
+      "area": "PERF",
+      "title": "Stale migration bundle is archived off the root LV with a review date",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 45,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The 21.7 GiB bundle was moved to /srv/falcon/archive/wz-migration (cmp-verified) and has a 2027-01-31 review date; it is off the root LV. No live re-check of the archive was possible from this host.",
+      "remediation": "Keep the review date; decide retention at 2027-01-31.",
+      "note": "Verified fixed; live archive not re-checked.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/runbooks/CAPACITY_AND_TELEMETRY.md",
+          "line": "45",
+          "note": "/srv/falcon/archive/wz-migration, review by 2027-01-31"
+        },
+        {
+          "source": "repo",
+          "file": "automation/wazuh/migration/README.md",
+          "line": "17-19",
+          "note": "22 GB bundle provenance + SHA-256"
+        },
+        {
+          "source": "repo",
+          "file": "ledgers/decision_log.md",
+          "line": "324",
+          "note": "2026-10-15 disk survey: archive/wz-migration 22G on the data LV"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P2-007",
+      "severity": "P2",
+      "area": "PERF",
+      "title": "Projection and root-free rules now cover the actual constraint",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 563570,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The projection rules use a 24 h window and the root-free rule evaluates the guard's own 20 GiB threshold; all three checks are green.",
+      "remediation": "None.",
+      "note": "Verified fixed.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "563-570",
+          "note": "24h projection windows for root/data"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "689-691",
+          "note": "falcon-disk-root-free-low < 20 GiB/15m"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/checks",
+          "observed": "Root disk projected full=ok; Data volume projected full=ok; Root volume free space low=ok",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "area": "CI",
+      "title": "Hosted-runner fallback is gone and scheduled/queued CI failures are watched",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 112,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "The dead hosted-runner fallback is removed; the watchdog runs every 15 minutes and exports falcon_ci_* metrics; fork PRs are skipped with a visible 'skipped' state.",
+      "remediation": "None; keep the watchdog metric and alert coverage.",
+      "note": "Verified fixed.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "config/systemd/falcon-ci-watchdog.timer",
+          "line": "1-12",
+          "note": "15-minute watchdog timer"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "31-32",
+          "note": "fork PRs skip; no ubuntu-latest fallback"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/coverage",
+          "observed": "CI watchdog textfile age 247s, status fresh (2026-11-08T06:34Z)",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P3-002",
+      "severity": "P3",
+      "area": "CI",
+      "title": "Stale workflow registrations no longer exist",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 13,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "The three orphan registrations were retired; the repository tree contains exactly three workflow files.",
+      "remediation": "None; optionally add an API-vs-tree inventory assertion.",
+      "note": "Verified fixed; live API not re-queried this pass.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows",
+          "line": "1-3",
+          "note": "only validate.yml, external-smoke.yml, dependabot-merge.yml are tracked"
+        },
+        {
+          "source": "live",
+          "command": "prior live /actions/workflows (2026-10-14)",
+          "observed": "total_count=5: the 3 tracked files plus 2 dynamic Dependabot workflows; lab-probe/lab-pwsh-probe/testnuc-runner-verify gone",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P3-003",
+      "severity": "P3",
+      "area": "CI",
+      "title": "CI/CD incident playbook section 8 matches the pinned-tool state",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 266279,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "The playbook no longer claims only gitleaks is pinned or that validate was never exercised; it points at CI_TOOL_PINS.md and captured runs.",
+      "remediation": "None for the pin text; see CI-P2-004 for the two inline Python installs that are not hashed.",
+      "note": "Verified fixed.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/security/CI_CD_INCIDENT_PLAYBOOK.md",
+          "line": "266-279",
+          "note": "section 8 records the CI-P3-003 closure, CI_TOOL_PINS.md and captured green runs"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "47-116",
+          "note": "tool downloads are SHA-256 verified; Python CI requirements are hash-pinned"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CI-P3-004",
+      "severity": "P3",
+      "area": "CI",
+      "title": "Review package is still documented as a CI/release artifact but no CI job builds it",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 122,
+      "owner": "@owner",
+      "target": "CI",
+      "detail": "No workflow builds, attests or publishes the review package; the delivery remains a manual lab build bound by committed manifests. README still carries the stronger claim.",
+      "remediation": "Either add a CI/release job that builds and uploads the package with attestations, or correct README to the manual lab-build path and link the manifest binding.",
+      "note": "Open; no change since edbf441.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "README.md",
+          "line": "122",
+          "note": "says the package is delivered as a CI/release artifact"
+        },
+        {
+          "source": "repo",
+          "file": "REPOSITORY.md",
+          "line": "53",
+          "note": "correctly says CI does not currently build it (CI-P3-004)"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows",
+          "line": "1-3",
+          "note": "no workflow references build_review_package/upload-artifact/id-token/attest"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "BP-P3-001",
+      "severity": "P3",
+      "area": "BP",
+      "title": "Dependabot auto-merge compensating control still has never been exercised",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 4357,
+      "owner": "@owner",
+      "target": "BP",
+      "detail": "The label exists and gh is now installed on the lab runners, but no Dependabot PR has ever been opened or merged. The skip-without-label, merge-with-label and broken-gh failure modes remain unexercised.",
+      "remediation": "Stage a Dependabot PR (or a fixture) and capture both behaviors; record the exercise date in the enforcement matrix.",
+      "note": "Open; no evidence of an exercise since edbf441.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows/dependabot-merge.yml",
+          "line": "43-57",
+          "note": "label check then gh pr checks then merge"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/BRANCH_PROTECTION.md",
+          "line": "93-104",
+          "note": "the gate is described as live"
+        },
+        {
+          "source": "repo",
+          "file": "ledgers/decision_log.md",
+          "line": "269",
+          "note": "label created 2026-10-11"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SC-P3-001",
+      "severity": "P3",
+      "area": "SC",
+      "title": "Published package manifest equals the bound review-package manifest",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 1420,
+      "owner": "@owner",
+      "target": "SC",
+      "detail": "The shipped root manifest is byte-identical to the declared package manifest and the digest binds the same hash.",
+      "remediation": "None; keep publish_digests.sh in the publication flow.",
+      "note": "Verified fixed.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/publish_digests.sh",
+          "line": "14-20",
+          "note": "copies review-package/MANIFEST.sha256 to PACKAGE_MANIFEST.sha256 and writes review_package_manifest_sha256"
+        },
+        {
+          "source": "repo",
+          "file": "PACKAGE_DIGEST.txt",
+          "line": "6-7",
+          "note": "review_package_manifest_sha256=fd9ee76a...; entries=4394"
+        },
+        {
+          "source": "live",
+          "command": "sha256sum PACKAGE_MANIFEST.sha256 review-package/MANIFEST.sha256",
+          "observed": "both fd9ee76a68a078293a3b4dfcbdaf1a1b52332bd61df26f42d7a6231626c96c5b; 4394 lines each; diff empty",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SC-P3-002",
+      "severity": "P3",
+      "area": "SC",
+      "title": "Dependabot security updates are enabled",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 115,
+      "owner": "@owner",
+      "target": "SC",
+      "detail": "Automated security-fix PRs are enabled at the repository level; the pip ecosystem covers ci/requirements-ci.txt.",
+      "remediation": "None; see CI-P2-004 for the two inline CI packages outside the requirements file.",
+      "note": "Verified fixed; live API not re-queried this pass.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/dependabot.yml",
+          "line": "1-15",
+          "note": "github-actions + pip ecosystems"
+        },
+        {
+          "source": "live",
+          "command": "prior live /automated-security-fixes (2026-10-14)",
+          "observed": "{\"enabled\":true,\"paused\":false}; /dependabot/alerts?state=open = 0",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SBOM-P3-001",
+      "severity": "P3",
+      "area": "SBOM",
+      "title": "Review package now ships the SBOM set",
+      "previous_status": "open",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 3953,
+      "owner": "@owner",
+      "target": "SBOM",
+      "detail": "The delivered package manifest contains the SBOM/vuln set; a pack-only reviewer can inspect it.",
+      "remediation": "None; keep the package rebuild and manifest rebind in the publication flow.",
+      "note": "Verified fixed (status flip from open).",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/build_review_package.sh",
+          "line": "39-53",
+          "note": "copies sbom/ and no longer deletes *.cdx.json (D2 option (a))"
+        },
+        {
+          "source": "repo",
+          "file": "review-package/MANIFEST.sha256",
+          "line": "sbom/",
+          "note": "56 sbom/ entries (25 cdx.json + vuln JSON + manifest)"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md",
+          "line": "174",
+          "note": "D2 RESOLVED 2026-10-15 option (a)"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SBOM-P3-002",
+      "severity": "P3",
+      "area": "SBOM",
+      "title": "SBOM enforcement document still contradicts the CI gate",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 8283,
+      "owner": "@owner",
+      "target": "SBOM",
+      "detail": "The document contains an append-only correction but the original 'stays off' paragraph and D3 remain stale; a reader can still conclude the vulnerability gate is disabled. The live gate passes with all 25 images scanned and no pending waivers.",
+      "remediation": "Append-only update the 2026-10-02 paragraph and D3 to the 2026-10-15 state (25/25 scanned, no pending waivers); keep the correction trail.",
+      "note": "Partially fixed; correction exists but the contradictory text remains.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md",
+          "line": "82-83",
+          "note": "still says --require-vuln stays off; 12/24 unscanned"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md",
+          "line": "88-91",
+          "note": "correction says the CI step now runs --require-vuln with waivers"
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md",
+          "line": "175",
+          "note": "D3 still DEFERRED - documented trigger"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "129-132",
+          "note": "runs --require-vuln --vuln-waivers"
+        },
+        {
+          "source": "live",
+          "command": "bash automation/validation/sbom_coverage_check.sh --require-vuln --vuln-waivers pins/supply-chain-waivers.json",
+          "observed": "pinned=25 covered=25 missing=0 vuln_scans=25 vuln_pending=0 -> PASS",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CTR-P3-001",
+      "severity": "P3",
+      "area": "CTR",
+      "title": "Vendored MCT compose no longer mounts docker.sock but still carries unpinned refs under a blanket waiver",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 48539093,
+      "owner": "@owner",
+      "target": "CTR",
+      "detail": "The host-root-equivalent docker.sock mounts are removed. The vendored tree still contains unpinned/floating image refs, now explicitly archive-only and covered by the owner-visible expiring waiver; the vendor manifest is checked in CI.",
+      "remediation": "Keep the socket mounts off; keep the waiver scoped/expiring; record the archive-only acceptance in the exception register.",
+      "note": "Partially fixed; remaining unpinned refs are owner-accepted for the archive-only tree until 2026-12-31.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "mct/compose/docker-compose.shuffle.yml",
+          "line": "48-53,90-93",
+          "note": "docker.sock mounts commented out (CTR-P3-001/CHAIN-P3-001)"
+        },
+        {
+          "source": "repo",
+          "file": "pins/supply-chain-waivers.json",
+          "line": "1-20",
+          "note": "mct/compose ref:* waiver, review_by 2026-12-31"
+        },
+        {
+          "source": "repo",
+          "file": "mct/compose/VENDOR_MANIFEST.sha256",
+          "line": "1-5",
+          "note": "vendor-drift manifest exists"
+        },
+        {
+          "source": "repo",
+          "file": "mct/VENDORING.md",
+          "line": "1-20",
+          "note": "archive-only boundary; owner decision 2026-10-15"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "CTR-P3-002",
+      "severity": "P3",
+      "area": "CTR",
+      "title": "Local OpenSearch image installs the S3 plugin as root with no artifact checksum; rebuild mismatch is warn-only",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 14,
+      "owner": "@owner",
+      "target": "CTR",
+      "detail": "The plugin install is not pinned to the recorded artifact hash and runs as root in the build layer. A rebuild that differs from the pinned local image only logs a warning.",
+      "remediation": "Download the plugin zip, verify sha256 060a1bef..., install from the verified local file, and make a rebuild/digest mismatch fail closed (or require an explicit override).",
+      "note": "Open; no change.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "compose/central/opensearch-s3.Dockerfile",
+          "line": "1-4",
+          "note": "FROM digest-pinned; USER root; opensearch-plugin install --batch repository-s3; USER 1000"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/60-central-deploy.sh",
+          "line": "53-69",
+          "note": "plugin URL/sha256 only in a comment; rebuilt image ID mismatch is WARN"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SECRET-P3-001",
+      "severity": "P3",
+      "area": "SECRET",
+      "title": "Rotation register and vendored checklist still name pre-consolidation IRIS/MCT paths",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 38,
+      "owner": "@owner",
+      "target": "SECRET",
+      "detail": "The consolidated live stores are /srv/falcon/secrets/{mct,iris-web}.env, but the register row 19 and the vendored checklist still name the old /opt paths, so --live verification of those rows cannot be produced as written.",
+      "remediation": "Annotate row 19 and the vendored checklist with the consolidated store paths (or a migration note); keep the vendored file unchanged per VENDORING P2 if that is the policy.",
+      "note": "Open; unchanged.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/security/CREDENTIAL_ROTATION_REGISTER.md",
+          "line": "38",
+          "note": "row 19 says only 'IRIS .env'"
+        },
+        {
+          "source": "repo",
+          "file": "mct/runbooks/credential-rotation-checklist.md",
+          "line": "42-49",
+          "note": "rows 13/16/18/19/20 still name /opt/mct-security-stack/..."
+        },
+        {
+          "source": "repo",
+          "file": "docs/security/CREDENTIAL_ROTATION_REGISTER.md",
+          "line": "32-37",
+          "note": "rows 13/18 annotated with consolidated paths; 19 not"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "SECRET-P3-002",
+      "severity": "P3",
+      "area": "SECRET",
+      "title": "Break-glass custody is still procedural only (OD-04 pending)",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 58,
+      "owner": "@owner",
+      "target": "SECRET",
+      "detail": "The procedure (custodians, sealed value, two-person rule, post-use rotation, annual review) is written but unchecked; no custodian, sealed credential or rehearsal is recorded.",
+      "remediation": "Owner names custodians, seals the credential outside the host, runs the tabletop, and records the decision row.",
+      "note": "Open; owner-gated.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/security/BREAK_GLASS_CUSTODY.md",
+          "line": "5-8",
+          "note": "OD-04 PENDING; today only root via sudo with the value in /home/user/.env"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase0/OWNER_DECISIONS.json",
+          "line": "33-36",
+          "note": "OD-04 status PENDING"
+        },
+        {
+          "source": "repo",
+          "file": "ledgers/decision_log.md",
+          "line": "1-366",
+          "note": "no custodian/sealed-credential/rehearsal row found"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "area": "DET",
+      "title": "[SEC] gitleaks is not installed on the host running the deterministic lens",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 99108,
+      "owner": "@owner",
+      "target": "DET",
+      "detail": "CI has gitleaks coverage, but the host-side deterministic lens still reports the secret scan skipped because the binary is absent. This is an environment gap, not a repository regression.",
+      "remediation": "Install the pinned gitleaks binary in the deterministic job image, or record the host-side skip as expected in the lens configuration.",
+      "note": "Open (environmental); CI coverage intact.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "99-108",
+          "note": "CI downloads gitleaks v8.30.1 with a pinned SHA-256 and runs it"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/gitleaks_history_check.sh",
+          "line": "20-35",
+          "note": "history scan fails closed when the binary is missing"
+        },
+        {
+          "source": "live",
+          "command": "command -v gitleaks",
+          "observed": "not found on this verify host; ci/validate.py --only secret-scan PASS because that check runs automation/validation/secret_scan.py, not gitleaks",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DET-P3-003",
+      "severity": "P3",
+      "area": "DET",
+      "title": "[SUPPLY] 30 container image refs without a digest pin (vendored/archive-only trees)",
+      "previous_status": "open",
+      "status": "owner-accepted",
+      "report": "g2_ci_infra_dr.md",
+      "line": 130,
+      "owner": "@owner",
+      "target": "DET",
+      "detail": "The unpinned refs are confined to the archive-only vendored MCT tree and a generation-only Wazuh helper. The owner decision (2026-10-15) accepts this state under an expiring waiver; the vendor-drift manifest and digest gates still pass.",
+      "remediation": "Keep the waiver visible and expiring; re-evaluate at the next MCT import or before 2026-12-31; do not deploy the vendored tree.",
+      "note": "Owner-accepted (was open). Count is 30 refs at HEAD vs 29 at edbf441; all covered by the same waivers.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "mct/compose/docker-compose.shuffle.yml",
+          "line": "1-30",
+          "note": "opensearchproject/opensearch:3.2.0 and other tag refs"
+        },
+        {
+          "source": "repo",
+          "file": "mct/compose/docker-compose.greenbone.yml",
+          "line": "1-80",
+          "note": "Greenbone stable/latest tags"
+        },
+        {
+          "source": "repo",
+          "file": "automation/wazuh/multi-node/generate-indexer-certs.yml",
+          "line": "1-10",
+          "note": "wazuh/wazuh-certs-generator:0.0.4"
+        },
+        {
+          "source": "repo",
+          "file": "pins/supply-chain-waivers.json",
+          "line": "1-40",
+          "note": "mct/compose and automation/wazuh waivers, review_by 2026-12-31"
+        },
+        {
+          "source": "repo",
+          "file": "mct/VENDORING.md",
+          "line": "1-20",
+          "note": "archive-only boundary + owner decision 2026-10-15"
+        },
+        {
+          "source": "live",
+          "command": "grep image: ... | grep -v @sha256",
+          "observed": "30 refs outside pins/images.lock; all under the two waivers; pin/digest/vendor gates PASS",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DET-P3-004",
+      "severity": "P3",
+      "area": "DET",
+      "title": "[SUPPLY] hadolint is not installed and CI has no Dockerfile lint step",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 99119,
+      "owner": "@owner",
+      "target": "DET",
+      "detail": "Dockerfile lint remains a coverage gap. The two Dockerfiles in the tree (OpenSearch S3 build, plus vendored) are not linted in CI.",
+      "remediation": "Install hadolint in CI (pinned SHA-256) and lint compose/central/opensearch-s3.Dockerfile and any tracked Dockerfiles.",
+      "note": "Open (environmental/CI coverage).",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "99-119",
+          "note": "actionlint/shellcheck/ruff/gitleaks/zizmor only"
+        },
+        {
+          "source": "live",
+          "command": "command -v hadolint",
+          "observed": "not found on this verify host",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "RES-P3-001",
+      "severity": "P3",
+      "area": "RES",
+      "title": "Failure-injection coverage still omits the failure modes that actually occurred",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 11,
+      "owner": "@owner",
+      "target": "RES",
+      "detail": "The suite still lacks bounded injections for aggregator OOM, host memory pressure, boot-order/socket failure and root-LV exhaustion - the four classes that hit the lab in 2026-10/11.",
+      "remediation": "Add one bounded injection per class, each asserting detection and recovery and recording a stamp.",
+      "note": "Open; unchanged.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/tests/",
+          "line": "1-1",
+          "note": "no aggregator-OOM, host-memory, boot-order/socket or root-LV injection test"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/tests/checks_platform_test.sh",
+          "line": "1-20",
+          "note": "only platform probe coverage"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "RES-P3-002",
+      "severity": "P3",
+      "area": "RES",
+      "title": "Post-reboot verification is still manual and the 2026-11-05 boot has no record",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 13,
+      "owner": "@owner",
+      "target": "RES",
+      "detail": "There is no boot-time post-reboot verification unit. A host boot on 2026-11-05 22:50Z (after the Kestrel cutover window) has no decision-log/maintenance-window row and no captured post-reboot check.",
+      "remediation": "Wire post_reboot_verify.sh (or a bounded read-only subset) to a boot-time oneshot and record the result; add a maintenance-window/decision-log row for the Kestrel cutover and the boot.",
+      "note": "Open; recurrence of the IR-P2-005 class after a new boot.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/post_reboot_verify.sh",
+          "line": "1-3",
+          "note": "manual root script"
+        },
+        {
+          "source": "repo",
+          "file": "config/systemd/",
+          "line": "1-1",
+          "note": "no falcon-post-reboot unit/timer; boot-time recovery is only container-ensure"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/OPERATOR_START_HERE.md",
+          "line": "102",
+          "note": "manual post-reboot step"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/host",
+          "observed": "uptime 200,710 s -> boot 2026-11-05 22:50Z; last decision-log entry 2026-11-03; CHANGELOG/VERSION still 2026.10.14/2026.10.11",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "DR-P3-001",
+      "severity": "P3",
+      "area": "DR",
+      "title": "Scheduled end-to-end live restore assertion is still absent",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 1114,
+      "owner": "@owner",
+      "target": "DR",
+      "detail": "The offline assertion runs in CI, but no systemd timer runs a live restore/drill and the last live rehearsal remains 2026-10-01.",
+      "remediation": "Add a monthly timer that runs the offline assertion plus a bounded live rehearsal with a success stamp and staleness rule.",
+      "note": "Open; unchanged.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/restore_assertion.sh",
+          "line": "1-114",
+          "note": "offline encrypted archive -> verify -> decrypt -> extract assertion"
+        },
+        {
+          "source": "repo",
+          "file": "ci/validate.py",
+          "line": "445-459",
+          "note": "CI-wired only"
+        },
+        {
+          "source": "repo",
+          "file": "config/systemd/",
+          "line": "1-1",
+          "note": "no restore/drill unit or timer"
+        },
+        {
+          "source": "repo",
+          "file": "docs/phase7/runbooks/RESTORE.md",
+          "line": "298-303",
+          "note": "last live rehearsal 2026-10-01"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "IR-P2-005",
+      "severity": "P3",
+      "area": "IR",
+      "title": "The 2026-10-11 reboot/post-reboot verification is recorded",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 268,
+      "owner": "@owner",
+      "target": "IR",
+      "detail": "The Oct 11 reboot, the socket outage and the root-LV loop are recorded with the 59/0 post-reboot result. Residual: no dedicated evidence capture for the 59/0 run.",
+      "remediation": "Capture the next post-reboot run; use the same record format.",
+      "note": "Verified fixed; no capture artifact residual.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "ledgers/decision_log.md",
+          "line": "268",
+          "note": "post-incident records: kernel reboot, sockets, offsite state, root-LV loop; post-reboot 59/0"
+        },
+        {
+          "source": "repo",
+          "file": "CHANGELOG.md",
+          "line": "64",
+          "note": "2026-10-11 window records the decision-log/post-reboot 59/0 result"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "OBS-P3-001",
+      "severity": "P3",
+      "area": "OBS",
+      "title": "Console Prometheus-backed sections are blank after the 2026-11-05 reboot",
+      "previous_status": "new",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 45,
+      "owner": "@owner",
+      "target": "OBS",
+      "detail": "The console's Prometheus-backed capacity/pipeline/infrastructure/trends sections are empty while the textfile/OpenSearch-backed checks and security counts still work. The service resolves container IPs only at start and has no Docker dependency; that design is consistent with a stale/empty Prometheus URL after a container recreate or start-order change. The exact root cause was not observable without lab-host access. Grafana and the alert rules are unaffected.",
+      "remediation": "Resolve the source URLs at each request or on a short timer (or use a stable Docker DNS/published endpoint); add After/Requires docker.service; export a console source-freshness metric and alert on it.",
+      "note": "New 2026-11-08. P3 operator-console degradation; Grafana/alerting remain the authoritative surfaces.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "config/systemd/falcon-console.service",
+          "line": "4-5",
+          "note": "After=network-online.target only; no docker.service ordering"
+        },
+        {
+          "source": "repo",
+          "file": "automation/console/resolve_sources.sh",
+          "line": "1-26",
+          "note": "resolves Prometheus/OpenSearch container IPs once at service start"
+        },
+        {
+          "source": "repo",
+          "file": "console/metrics.py",
+          "line": "179-204",
+          "note": "collect_prom marks the section unavailable when no values/targets return"
+        },
+        {
+          "source": "live",
+          "command": "curl /console/api/v1/overview; curl /console/api/v1/capacity",
+          "observed": "meta warning 'prometheus queries returned no data'; data_free/root_free/backup_age/offsite_age/wazuh_backup_age/cold_copy_age all null; pipeline/infrastructure/trends empty (2026-11-08T06:43Z)",
+          "at": "2026-11-08T06:43Z"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P3-001",
+      "severity": "P3",
+      "area": "PERF",
+      "title": "Performance envelope refreshed, but the capacity model, unit costs and budgets are stale",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 616,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The operating envelope has a 2026-10-14 refresh section, but the storage model still describes the Phase-0 74/60 GiB plan, the cost register has no unit costs, and no ingest-lag/snapshot/exporter/root-free budgets exist.",
+      "remediation": "Refresh STORAGE_CAPACITY_MODEL to the current 171 GiB root/224 GiB data layout; fill the unit-cost/budget cells; add the missing performance budgets.",
+      "note": "Partially fixed; envelope only.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "docs/phase5/PERFORMANCE_ENVELOPE.md",
+          "line": "6-16",
+          "note": "2026-10-14 refresh with current numbers"
+        },
+        {
+          "source": "repo",
+          "file": "docs/architecture/STORAGE_CAPACITY_MODEL.md",
+          "line": "7-21",
+          "note": "still the Phase-0 74 GiB/60 GiB plan"
+        },
+        {
+          "source": "repo",
+          "file": "docs/runbooks/CAPACITY_AND_TELEMETRY.md",
+          "line": "75-81",
+          "note": "cost register cells still owner: invoice; no budgets"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P3-002",
+      "severity": "P3",
+      "area": "PERF",
+      "title": "Whole-cluster monitoring queries still run every 120 s with no exporter runtime budget",
+      "previous_status": "open",
+      "status": "open",
+      "report": "g2_ci_infra_dr.md",
+      "line": 6,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The exporter still runs whole-cluster aggregations on the single-node cluster every 120 s and publishes no self-runtime metric or budget.",
+      "remediation": "Publish the exporter duration/query cost and add a budget alert; consider narrowing the whole-index latest query.",
+      "note": "Open; cadence is 120 s (not 60 s), but the budget gap remains.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "config/systemd/falcon-metrics.timer",
+          "line": "6",
+          "note": "OnUnitActiveSec=120"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/export_monitor_metrics.sh",
+          "line": "206-233",
+          "note": "per-feed filters aggregation; latest is over the whole index"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/export_monitor_metrics.sh",
+          "line": "50-59",
+          "note": "runtime source metrics only; no exporter self-runtime"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P3-008",
+      "severity": "P3",
+      "area": "PERF",
+      "title": "CI tool and Python dependency caching is in place",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 4345,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The validate workflow caches pip and the pinned tool tarballs; the cache steps are still present.",
+      "remediation": "None.",
+      "note": "Verified fixed.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "43-45",
+          "note": "setup-python pip cache"
+        },
+        {
+          "source": "repo",
+          "file": ".github/workflows/validate.yml",
+          "line": "56-61",
+          "note": "actions/cache for pinned tool tarballs"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "PERF-P3-009",
+      "severity": "P3",
+      "area": "PERF",
+      "title": "Edge spool now has 7-day retention, but its data-loss meaning and consumer remain unverified",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "g2_ci_infra_dr.md",
+      "line": 6987,
+      "owner": "@owner",
+      "target": "PERF",
+      "detail": "The spool is now bounded centrally (7 days) and a not-pruned rule exists; no live consumer of the spool is configured and the purge counter's data-loss meaning is still unverified. The new rule is also the source of the OBS-P2-001 catalogue drift.",
+      "remediation": "Confirm whether an edge-side consumer exists; if not, retire the spool or document it as dead-letter; keep the retention/rule.",
+      "note": "Partially fixed (was open): retention + rule added 2026-10-14; consumer/meaning residual.",
+      "evidence": [
+        {
+          "source": "repo",
+          "file": "automation/validation/disk_guard.sh",
+          "line": "69-87",
+          "note": "7-day central spool retention"
+        },
+        {
+          "source": "repo",
+          "file": "bootstrap/90-alerting.sh",
+          "line": "636-638",
+          "note": "new falcon-edge-spool-unretained rule (>24 files/6h)"
+        },
+        {
+          "source": "repo",
+          "file": "automation/validation/edge_spool_metrics.sh",
+          "line": "1-28",
+          "note": "purge/rotation counters; no consumer"
+        }
+      ],
+      "lens": "g2"
+    },
+    {
+      "id": "ARCH-P1-001",
+      "severity": "P1",
+      "area": "ARCH",
+      "new": false,
+      "title": "Single-host concentration: host loss is total pipeline loss",
+      "previous_status": "owner-accepted",
+      "status": "owner-accepted",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 461,
+      "owner": "@owner",
+      "target": "ARCH",
+      "detail": "All capture, storage, metrics, alerting and delivery still run on one Ubuntu 24.04 KVM host with no warm standby; host loss remains total monitoring loss (the edge buffers ~2 GiB, then blocks). No standby or tested RTO/RPO artifact was added in the 399 commits since edbf441.",
+      "evidence": [
+        "docs/phase8/review-package-extras/OWNER_ACCEPTANCE.md:21 accepts OD-09/OD-10 (14-day retention, RPO 24 h, RTO <=1 h config / <=4 h data)",
+        "docs/CURRENT_STATE.md:1-3 and README.md:6 still describe a single Ubuntu 24.04 KVM host; no warm-standby service/tree exists",
+        "docs/audits/repo-deep-dive/20261023-1725-repo-deepdive-main-cdc1910/RELEASE_GATE.md:22 lists single-host concentration as an inherited owner-gated risk"
+      ],
+      "remediation": "Warm standby or a tested RTO/RPO acceptance artifact; the existing acceptance remains owner-gated.",
+      "note": "Carried unchanged. Owner-accepted (OD-09/OD-10); no standby commit between edbf441 and db8c409.",
+      "lens": "g3"
+    },
+    {
+      "id": "ARCH-P2-002",
+      "severity": "P2",
+      "area": "ARCH",
+      "new": false,
+      "title": "Vendored MCT tree remains tag-only under a blanket pin waiver; live stacks are tag@digest and lock-covered",
+      "previous_status": "open",
+      "status": "owner-accepted",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 462,
+      "owner": "@owner",
+      "target": "ARCH",
+      "detail": "First-party compose is fully digest-pinned (19/19 refs) and pins/images.lock has 25 entries, but the vendored mct/compose tree still carries 37 refs: 8 pinned / 29 unpinned / 12 floating. The blanket waivers remain root=mct/compose ref=* with review_by 2026-12-31. The 2026-10-15 owner decision explicitly accepts the 29 unpinned refs (pinning impossible for licensed/unavailable images) and makes the tree archive-only, backed by mct/compose/VENDOR_MANIFEST.sha256 and the vendor-drift gate; container_drift_check.sh no longer declares mct/compose.",
+      "evidence": [
+        "mct/compose/*.yml: 37 image refs, 8 digest-pinned, 29 unpinned, 12 floating (recounted at db8c409)",
+        "pins/supply-chain-waivers.json:3-11 and :14-22: compose_digest + compose_pin waivers root=mct/compose ref=* review_by 2026-12-31",
+        "mct/VENDORING.md:62-77 records the owner decision, archive-only boundary and P4 implementation",
+        "ledgers/decision_log.md:316 (2026-10-15T00:11Z) records the archive-only decision and the accepted expiring waiver",
+        "ci/validate.py:198 pin gate covers compose, mct/compose and automation/wazuh; :773-790 vendor-drift check",
+        "automation/validation/container_drift_check.sh:150-152 no longer declares mct/compose"
+      ],
+      "remediation": "Keep the archive-only boundary and expiry enforced; at the next import record the upstream commit and either digest-pin each staged ref or scope the waiver per ref. Remove the stale 'policy proposed / P4 unimplemented' status text (DOC-P3-003).",
+      "note": "Reclassified from open to owner-accepted: the residual unpinned refs are now an explicit, expiring owner waiver plus an archive-only control. The blanket ref:* waiver still means a revived mct/compose service would pass the pin gate without per-ref review; that residual is latent until 2026-12-31.",
+      "lens": "g3"
+    },
+    {
+      "id": "ARCH-P2-003",
+      "severity": "P2",
+      "area": "ARCH",
+      "new": false,
+      "title": "Live ingest authentication is an HTTP basic-auth shared credential, not mTLS or request signing",
+      "previous_status": "open",
+      "status": "verified-fixed",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 463,
+      "owner": "@owner",
+      "target": "ARCH",
+      "detail": "The edge->aggregator hop now uses mutual TLS plus HTTP basic as a second factor. The aggregator's edge_ingest source enables TLS with ca_file and verify_certificate: true; the probe sink presents CN=vector-edge-probe client material over https://vector-aggregator:6000. Certificates are generated by automation/validation/gen_ingest_certs.sh and mounted read-only into both containers. Evidence captures a handshake failure without a client certificate and success with one.",
+      "evidence": [
+        "config/vector/aggregator.yaml:17-35 (tls.enabled, crt/key/ca files, verify_certificate: true) and :36-39 (basic auth second factor)",
+        "config/vector/edge.yaml:239-252 (https URI, client cert/key + CA, verify_certificate)",
+        "compose/central/docker-compose.yml:153-159 and compose/probe/docker-compose.yml:61-67 mount the ingest material",
+        "automation/validation/gen_ingest_certs.sh:1-58 generates the dedicated CA, server and client certificates",
+        "evidence/raw/REVIEW-FIX/20261014T232947Z_ingest-mtls.out: handshake failure without a client certificate, success with it",
+        "docs/architecture/PORT_PROTOCOL_MATRIX.md:27 (N-08) now documents mTLS + basic auth"
+      ],
+      "remediation": "None for the auth mechanism. Update the live validation clients that still POST plain HTTP (TEST-P2-002).",
+      "note": "Fixed after edbf441 by the 2026-10-14 ingest-mTLS change; live evidence confirms rejection without a client certificate.",
+      "lens": "g3"
+    },
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "area": "ARCH",
+      "new": false,
+      "title": "Port matrix describes ingest auth as a shared secret header while the implementation is HTTP basic auth",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 464,
+      "owner": "@owner",
+      "target": "ARCH",
+      "detail": "The N-08 row now names mutual TLS + HTTP basic (second factor) and references ARCH-P2-003/API-P2-001; the separate 'shared secret header' wording is gone.",
+      "evidence": [
+        "docs/architecture/PORT_PROTOCOL_MATRIX.md:27"
+      ],
+      "remediation": "None.",
+      "note": "Still correct after the mTLS change.",
+      "lens": "g3"
+    },
+    {
+      "id": "ARCH-P3-002",
+      "severity": "P3",
+      "area": "ARCH",
+      "new": false,
+      "title": "Container-level memory and policy-restart alerting for central services is still absent",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 465,
+      "owner": "@owner",
+      "target": "ARCH",
+      "detail": "Container memory and restart rules remain provisioned in bootstrap/90-alerting.sh (falcon-container-mem-high, falcon-container-restarts), with container drift/unhealthy/stale rules alongside them.",
+      "evidence": [
+        "bootstrap/90-alerting.sh:711-718 (falcon-container-mem-high, falcon-container-restarts)",
+        "bootstrap/90-alerting.sh:407-421 (container unhealthy/drift/stale rules)"
+      ],
+      "remediation": "None.",
+      "note": "Rules and metrics unchanged; prior live proof at 2026-10-11 still applies.",
+      "lens": "g3"
+    },
+    {
+      "id": "EVOL-P1-001",
+      "severity": "P1",
+      "area": "EVOL",
+      "new": false,
+      "title": "Cross-repo shared tooling has drifted and still has no pin/hash enforcement",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "19_platform_evolution_extensibility.md",
+      "line": 215,
+      "owner": "@owner",
+      "target": "EVOL",
+      "detail": "The falcon half is enforced: automation/shared-tooling.lock lists 6 shared files, automation/validation/shared_tooling_check.sh verifies them, and ci/validate.py runs it (CI PASS). The cross-repo half is still missing: the edge repository (MaineCyberTech/falcon-edge, main 42e849a, 2026-11-03) has no automation/shared-tooling.lock and no shared_tooling_check.sh (GitHub contents API: 404 for both). Its capture.sh (sha256 1284e0ec..., lock expects 13a3bfe8...) now reads only the sudo key, but still records RC=${PIPESTATUS[0]} on the sudo path (line 93) and its redaction filter (line 52) still omits the falcon- ntfy topic. Its secret scanner remains a separate implementation. SHARED_TOOLING_POLICY.md:1-4 still says 'nothing implemented cross-repo'.",
+      "evidence": [
+        "automation/shared-tooling.lock:1-30 (6 files + sha256)",
+        "automation/validation/shared_tooling_check.sh:1-30",
+        "ci/validate.py:689-701 and :818 (shared-tooling check wired; CI log 2026-11-06: 'PASS shared tooling')",
+        "GitHub contents API, MaineCyberTech/falcon-edge@42e849a: automation/shared-tooling.lock -> 404; automation/validation/shared_tooling_check.sh -> 404",
+        "edge automation/evidence/capture.sh sha256 1284e0ec... vs locked 13a3bfe81a73...; line 93 RC=${PIPESTATUS[0]}; line 52 redaction lacks falcon- topics",
+        "docs/architecture/SHARED_TOOLING_POLICY.md:1-4 still 'proposed ... nothing implemented cross-repo'"
+      ],
+      "remediation": "Land the same lock + check in falcon-edge, adopt falcon's capture wrapper fixes (PIPESTATUS[1], falcon- topic redaction), and unify or cross-check the scanner pattern sets; refresh the policy status.",
+      "note": "Falcon side persists; edge side still absent at 2026-11-03. The edge wrapper has partially converged (single-key read) but the two named defects remain.",
+      "lens": "g3"
+    },
+    {
+      "id": "EVOL-P1-002",
+      "severity": "P1",
+      "area": "EVOL",
+      "new": false,
+      "title": "MCT vendoring policy is proposed but not enforced; the pin gate remains blind to mct/compose",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "19_platform_evolution_extensibility.md",
+      "line": 216,
+      "owner": "@owner",
+      "target": "EVOL",
+      "detail": "Enforcement is in place: the pin gate covers compose, mct/compose and automation/wazuh with expiring waivers, ci/validate.py has a vendor-drift check over mct/compose/VENDOR_MANIFEST.sha256, and the owner decisions (E-2a/E-2b) are recorded. The upstream commit is still unrecorded, which is deferred to the next import by policy.",
+      "evidence": [
+        "ci/validate.py:198 (pin-gate roots include mct/compose), :773-790 (vendor-drift check), :816 (dispatcher)",
+        "mct/compose/VENDOR_MANIFEST.sha256 (6 compose files, sha256 each)",
+        "mct/VENDORING.md:71-77 (P4 decided and implemented 2026-10-15)",
+        "ledgers/decision_log.md:316 (owner-approved archive-only + P4)",
+        "CI log 2026-11-06: PASS vendor drift; PASS compose image pinning (waivers active)"
+      ],
+      "remediation": "Record the upstream commit at the next import. Fix the stale status header/§5/§7 text (DOC-P3-003).",
+      "note": "Enforcement leg remains fixed; residual is documentation/status text and the future import pin.",
+      "lens": "g3"
+    },
+    {
+      "id": "EVOL-P2-001",
+      "severity": "P2",
+      "area": "EVOL",
+      "new": false,
+      "title": "The OpenSearch identity apply is not merge-safe (R-28 hazard documented; owner decision pending)",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "19_platform_evolution_extensibility.md",
+      "line": 217,
+      "owner": "@owner",
+      "target": "EVOL",
+      "detail": "The merge-safe carry-over is still implemented: before the securityadmin apply, bootstrap/60 reads the live internal-user set, appends undeclared users (with hashes/roles) to the temporary internal_users.yml, and only then applies it. The residual is test coverage (no undeclared-user fixture) and stale guide text.",
+      "evidence": [
+        "bootstrap/60-central-deploy.sh:209-241 (carry-over of undeclared internal users before the apply)",
+        "bootstrap/60-central-deploy.sh:241-243 (securityadmin apply)",
+        "docs/architecture/EVOLUTION_GUIDE.md:317-326 still says the merge-safe follow-up is 'not done here'"
+      ],
+      "remediation": "Add an undeclared-user regression fixture and refresh EVOLUTION_GUIDE §8 (DOC-P3-003).",
+      "note": "Implementation persists; no regression. Residual docs/test only.",
+      "lens": "g3"
+    },
+    {
+      "id": "EVOL-P3-002",
+      "severity": "P3",
+      "area": "EVOL",
+      "new": false,
+      "title": "No feature-flag mechanism; the documented additive-deploy substitute is pending owner acceptance",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "19_platform_evolution_extensibility.md",
+      "line": 218,
+      "owner": "@owner",
+      "target": "EVOL",
+      "detail": "The additive-deploy substitute remains documented in EVOLUTION_GUIDE §9 and the owner acceptance is recorded in the decision log.",
+      "evidence": [
+        "ledgers/decision_log.md:271 records 'EVOL-P3-002 additive-deploy substitute accepted'",
+        "docs/architecture/EVOLUTION_GUIDE.md:346-362 (§9 additive deploy + staged rollout + idempotent rollback)"
+      ],
+      "remediation": "None; optionally mark the backlog row as accepted.",
+      "note": "Acceptance persists; backlog table still omits the marker (minor).",
+      "lens": "g3"
+    },
+    {
+      "id": "FEAT-P2-001",
+      "severity": "P2",
+      "area": "FEAT",
+      "new": false,
+      "title": "Vendored MCT services are present in Compose while the subtree policy calls the tree archive-only",
+      "previous_status": "open",
+      "status": "verified-fixed",
+      "report": "03_feature_implementation_map.md",
+      "line": 312,
+      "owner": "@owner",
+      "target": "FEAT",
+      "detail": "The archive-only policy is now enforced at the two places the finding named: container_drift_check.sh no longer declares mct/compose as a deployable root, and a committed vendor manifest + vendor-drift gate makes silent edits visible. The policy and the prior run state that no mct/compose container is live (this pass did not re-measure the live container set); the tree remains staged.",
+      "evidence": [
+        "automation/validation/container_drift_check.sh:150-152 (DECLARED_ROOTS excludes mct/compose; comment cites FEAT-P2-001)",
+        "mct/VENDORING.md:62-77 (archive-only boundary; P4 manifest/drift gate)",
+        "ci/validate.py:773-790 (vendor-drift fails on an edited mct/compose file)",
+        "ledgers/decision_log.md:316 (archive-only decision)"
+      ],
+      "remediation": "None for the latent path; keep the archive-only declaration if a staged service is ever revived.",
+      "note": "Both named controls are now in place; previously open only because DECLARED_ROOTS still listed mct/compose.",
+      "lens": "g3"
+    },
+    {
+      "id": "FEAT-P3-001",
+      "severity": "P3",
+      "area": "FEAT",
+      "new": false,
+      "title": "Alert-rule count claims and the catalogue lag the provisioned set by one rule after the 2026-10-11 proxy-listener addition",
+      "previous_status": "verified-fixed",
+      "status": "regressed",
+      "report": "03_feature_implementation_map.md",
+      "line": 313,
+      "owner": "@owner",
+      "target": "FEAT",
+      "detail": "The same one-rule class has recurred. bootstrap/90-alerting.sh now has 95 write_rule UIDs (including falcon-edge-spool-unretained at line 636, added 2026-10-14), while docs/phase9/ALERT_CATALOGUE.yaml has 94 ids and README.md:33 / docs/CURRENT_STATE.md:169 still say 94. The catalogue was last regenerated 2026-10-13 (commit 73f2d8ea) before the new rule; README's drift test compares README to the catalogue only, so the source->catalogue gap passes.",
+      "evidence": [
+        "bootstrap/90-alerting.sh:636 (falcon-edge-spool-unretained; 95 write_rule total)",
+        "docs/phase9/ALERT_CATALOGUE.yaml:2-5, 94 ids; last catalogue commit 73f2d8ea 2026-10-13",
+        "README.md:33 '94 alert rules'; docs/CURRENT_STATE.md:169 '94 rules live'",
+        "automation/validation/tests/readme_ledger_drift_test.sh:62-84 compares README only to ALERT_CATALOGUE.yaml",
+        "automation/validation/tests/alert_rule_lint_test.sh:1-12 parses the source only; no catalogue comparison"
+      ],
+      "remediation": "Regenerate the catalogue from the source/live set, update README/CURRENT_STATE, and add a source<->catalogue id-set check to alert_rule_lint_test.sh so it fails closed.",
+      "note": "Regression of the previously closed one-rule drift: 95 source vs 94 catalogue/README; the exact static-check gap the prior finding asked for is still absent.",
+      "lens": "g3"
+    },
+    {
+      "id": "DOC-P2-001",
+      "severity": "P3",
+      "area": "DOC",
+      "new": false,
+      "title": "Pack-fidelity verification is still not wired into the delivery build; the notes file carries no verdict",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "16_documentation_devex_operator_readiness.md",
+      "line": 205,
+      "owner": "@owner",
+      "target": "DOC",
+      "detail": "verify_delivery.sh still runs pack_fidelity.py fail-closed on content mismatches; PACK_VERIFICATION_NOTES.txt now opens with a verdict line, and the verification doc records the wiring as implemented.",
+      "evidence": [
+        "automation/validation/verify_delivery.sh:42-50 (pack_fidelity called; nonzero increments delivery failures)",
+        "PACK_VERIFICATION_NOTES.txt:1-3 (verdict header)",
+        "docs/security/RELEASE_PACK_VERIFICATION.md:81-84 ('implemented ... notes file now carries a verdict header')"
+      ],
+      "remediation": "None for the wiring; the missing-entry class is tracked as INV-P2-002.",
+      "note": "Wiring persists. Caveat: pack_fidelity returns 0 when entries are merely absent from the pack, so 'unexpected' omissions do not fail the archive (new INV-P2-002).",
+      "lens": "g3"
+    },
+    {
+      "id": "DOC-P2-002",
+      "severity": "P2",
+      "area": "DOC",
+      "new": false,
+      "title": "Status artifacts still lag the live state: catalogue/README/CURRENT_STATE at 94 vs 95 provisioned, firing proofs at 75/77, evolution-guide block at 2026-10-11",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "16_documentation_devex_operator_readiness.md",
+      "line": 204,
+      "owner": "@owner",
+      "target": "DOC",
+      "detail": "The catalogue was regenerated at 94 on 2026-10-13, but bootstrap/90-alerting.sh now has 95 write_rule UIDs (falcon-edge-spool-unretained added 2026-10-14). ALERT_CATALOGUE.yaml has 94 ids, README.md:33 and CURRENT_STATE.md:169 say 94, while the source has 95. ALERT_FIRING_PROOFS.md:21 still says 75 of 77 (and line 475/482 says the live set is 93). EVOLUTION_GUIDE.md §7 is still a 2026-10-11 snapshot. The README drift test compares README to the catalogue only, so the source gap is invisible.",
+      "evidence": [
+        "bootstrap/90-alerting.sh:636 (falcon-edge-spool-unretained; 95 write_rule calls)",
+        "docs/phase9/ALERT_CATALOGUE.yaml:1-5 (94 ids; header claims it is generated from live and cannot drift)",
+        "README.md:33 (94); docs/CURRENT_STATE.md:169 (94)",
+        "docs/phase9/ALERT_FIRING_PROOFS.md:21 (75 of 77), :475, :482 (live set stated as 93)",
+        "docs/architecture/EVOLUTION_GUIDE.md:274-284 ('Current state ... 2026-10-11')",
+        "automation/validation/tests/readme_ledger_drift_test.sh:62-84 (README<->catalogue only)"
+      ],
+      "remediation": "Regenerate catalogue + firing proofs from the 95-rule set; refresh README/CURRENT_STATE/EVOLUTION_GUIDE; add a source<->catalogue equality check.",
+      "note": "Still partial: the drift-test mechanism exists but compares the wrong pair; the count regression is also FEAT-P3-001.",
+      "lens": "g3"
+    },
+    {
+      "id": "DOC-P3-001",
+      "severity": "P3",
+      "area": "DOC",
+      "new": false,
+      "title": "Imprecise version shorthand in the README vs the pinned versions",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "16_documentation_devex_operator_readiness.md",
+      "line": 206,
+      "owner": "@owner",
+      "target": "DOC",
+      "detail": "README still states exact pinned versions: Suricata 8.0.7 and OpenSearch 2.19.6.",
+      "evidence": [
+        "README.md:30 (Suricata 8.0.7); README.md:32 (OpenSearch 2.19.6)",
+        "pins/images.lock (jasonish/suricata:8.0.7, opensearchproject/opensearch:2.19.6)"
+      ],
+      "remediation": "None.",
+      "note": "Unchanged and still exact.",
+      "lens": "g3"
+    },
+    {
+      "id": "HYGIENE-P2-001",
+      "severity": "P2",
+      "area": "HYGIENE",
+      "new": false,
+      "title": "Large generated SBOM/vulnerability JSON remains committed (56 files, 58.4 MB, up to 3.0 MB each)",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 293,
+      "owner": "@owner",
+      "target": "HYGIENE",
+      "detail": "The committed SBOM/vuln set has grown from 42 files / 29.6 MB to 56 files / 58,397,686 bytes (56 MB), including 26 vulnerability JSONs (~39 MB); the largest file is still opensearchproject_opensearch-dashboards_2.19.6.cdx.json at 3,064,465 B. A 60-day sbom-freshness gate now exists (last manifest change 22 days old in the 2026-11-06 CI run), but nothing moves or compresses the payload, and the review package now ships the SBOM set (owner decision D2, 2026-10-15).",
+      "evidence": [
+        "sbom/: 56 tracked files, 58,397,686 bytes; sbom/vuln: 26 files, ~39 MB; largest 3,064,465 B",
+        "ci/validate.py:666-686 (sbom-freshness, SBOM_MAX_AGE_DAYS=60); CI 2026-11-06: 'PASS sbom freshness (manifest 22d <= 60d)'",
+        "docs/security/SBOM_COVERAGE_AND_PROVENANCE.md:158-160 (freshness gate implemented 2026-10-15)",
+        "automation/validation/build_review_package.sh:51-53 (SBOM set ships in the review package, D2 option (a))"
+      ],
+      "remediation": "Move the SBOM/vuln payload to release-artifact storage or compress it, or record a dated owner acceptance of the committed size; keep the freshness gate.",
+      "note": "Freshness leg fixed; the size leg worsened by ~28.8 MB since edbf441. The payload is now also delivered in the review package.",
+      "lens": "g3"
+    },
+    {
+      "id": "HYGIENE-P2-002",
+      "severity": "P2",
+      "area": "HYGIENE",
+      "new": false,
+      "title": "Canonical release-gate page carries a superseded audit opinion; the newest full run's P0 is not referenced",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 294,
+      "owner": "@owner",
+      "target": "HYGIENE",
+      "detail": "docs/RELEASE_GATE.md:15-17 still names the 2026-10-11 full run and the 2026-10-14 post-merge verification as 'current'; :51 still heads the current audit opinion with the 2026-10-03 run (20b5e57) and its P0 x1/P1 x7 roll-up. The newer in-repo 2026-10-23 deep-dive (P0 x0, GO WITH CONDITIONS, NO-GO clean rebuild) is referenced only in docs/CURRENT_STATE.md:36, not on the gate page or README. README.md:8-12 still says 'Current state (2026-10-14)'.",
+      "evidence": [
+        "docs/RELEASE_GATE.md:15-17 (newest runs pointer stops at 2026-10-11/2026-10-14)",
+        "docs/RELEASE_GATE.md:51-58 ('Current audit opinion (run 20261003-0018..., commit 20b5e57)')",
+        "docs/audits/repo-deep-dive/20261023-1725-repo-deepdive-main-cdc1910/RELEASE_GATE.md:1-13 (P0 0; GO WITH CONDITIONS; NO-GO clean rebuild)",
+        "docs/CURRENT_STATE.md:36 (only reference to the 20261023 audit); README.md:8-12 (2026-10-14)"
+      ],
+      "remediation": "Point the current-opinion section at the 2026-10-23 run (with its remediation update) and refresh README's current-state block; add a doc-drift test that compares the gate's 'current' pointer to the newest run folder.",
+      "note": "Still partial: a newer audit is now published but the canonical gate page was not refreshed.",
+      "lens": "g3"
+    },
+    {
+      "id": "HYGIENE-P2-003",
+      "severity": "P2",
+      "area": "HYGIENE",
+      "new": false,
+      "title": "The publication flow force-tracks review-package/MANIFEST.sha256 while .gitignore, AGENTS.md, REPOSITORY.md and build_review_package.sh say the review package must not be committed; the file is load-bearing for the declared-commit gates",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 295,
+      "owner": "@owner",
+      "target": "HYGIENE",
+      "detail": "The doctrine now documents the single force-added manifest as the declared-commit anchor, and the tracked file remains the publication anchor. The residual fail-open is unchanged: check_publication_equality.py skips the ancestry restriction when review-package/ is absent.",
+      "evidence": [
+        ".gitignore:24-29; AGENTS.md:61-62; REPOSITORY.md:33,54; automation/validation/build_review_package.sh:9-14",
+        "git ls-files review-package/ -> review-package/MANIFEST.sha256",
+        "automation/validation/check_publication_equality.py:213-214 (skip when the manifest is absent)"
+      ],
+      "remediation": "Add a test that the declared-commit binding cannot be skipped silently (residual).",
+      "note": "Doctrine fix persists; absent-manifest skip remains fail-open and untested.",
+      "lens": "g3"
+    },
+    {
+      "id": "HYGIENE-P3-001",
+      "severity": "P3",
+      "area": "HYGIENE",
+      "new": false,
+      "title": "No root LICENSE/NOTICE file; README ownership section grants no terms",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 296,
+      "owner": "@owner",
+      "target": "HYGIENE",
+      "detail": "LICENSE (GPLv2) and NOTICE are tracked, and the README ownership section now links both.",
+      "evidence": [
+        "LICENSE (15,174 B) and NOTICE (995 B) tracked at db8c409",
+        "README.md:127-131 (License / ownership links LICENSE and NOTICE)"
+      ],
+      "remediation": "None.",
+      "note": "Links added since the prior run; no residual.",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P2-001",
+      "severity": "P2",
+      "area": "INV",
+      "new": false,
+      "title": "Repository is majority generated/derived content; largest trees bound, audit records and mct/ remain unbound",
+      "previous_status": "open",
+      "status": "open",
+      "report": "01_repository_inventory.md",
+      "line": 346,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "At db8c409 the tree is 4,433 files / 88 MB; evidence/ is 2,619 files / 16 MB and sbom/ is 56 files / 56 MB, i.e. ~60% of files and ~82% of bytes are generated. evidence/MANIFEST.sha256 and sbom/SBOM_MANIFEST.sha256 bind those two trees, but check_generated_drift.py's DEFAULT_MANIFESTS is still only evidence/MANIFEST.sha256; docs/audits/ has only a structural lifecycle check; mct/ has a manifest only for mct/compose (not the other ~800 files); PACKAGE_MANIFEST is a copy bound by the publication chain.",
+      "evidence": [
+        "git ls-files: 4,433 files; du -sh . (excluding .git): 88 MB",
+        "evidence/: 2,619 files / 16 MB; sbom/: 56 files / 56 MB",
+        "automation/validation/check_generated_drift.py:37 (DEFAULT_MANIFESTS = ('evidence/MANIFEST.sha256',))",
+        "docs/audits/: 218 files / 2.9 MB; lifecycle check only (automation/validation/audit_run_lifecycle.sh)",
+        "mct/: 858 files / 4.1 MB; mct/compose/VENDOR_MANIFEST.sha256 covers only the 6/7 compose files"
+      ],
+      "remediation": "Bind the committed run folders and the whole mct/ import (or a declared subset) to manifests; consider moving sbom/ to release storage (HYGIENE-P2-001).",
+      "note": "No change to the generated-majority ratio; the binding gap for docs/audits and most of mct/ persists.",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P3-001",
+      "severity": "P3",
+      "area": "INV",
+      "new": false,
+      "title": "Legacy host-absolute evidence paths require the resolver to resolve in a clone",
+      "previous_status": "open",
+      "status": "open",
+      "report": "01_repository_inventory.md",
+      "line": 347,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "check_evidence_index.py still skips 264 legacy '../monitoring-build/...' rows instead of resolving them; at db8c409 it reports 1,302 metas/rows, 1,031 host-absolute resolved, 264 legacy skipped. New captures now reference in-repo artifacts (7 verified), but the legacy class is unchanged.",
+      "evidence": [
+        "automation/validation/check_evidence_index.py:112-130, :162-164 (legacy rows counted and skipped)",
+        "local run: PASS evidence_index (1302 metas, 1302 rows, 1031 host-absolute resolved, 264 legacy skipped)",
+        "REPOSITORY.md:63-74 documents the resolver, but it is not applied centrally"
+      ],
+      "remediation": "Resolve legacy rows centrally (resolve-then-check) or rewrite the index paths in an append-only migration.",
+      "note": "264 skipped is unchanged since edbf441.",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P3-002",
+      "severity": "P3",
+      "area": "INV",
+      "new": false,
+      "title": "Delivery pack fidelity artifact ships two unresolved 'unexpected; investigate' entries",
+      "previous_status": "regressed",
+      "status": "regressed",
+      "report": "01_repository_inventory.md",
+      "line": 348,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "The class has grown from two entries to 51. PACK_NOT_INCLUDED.txt:4 keeps the known ANSI-capture entry, and :5-55 list 51 sbom/*.cdx.json and sbom/vuln/*.json files as 'not-in-pack (unexpected; investigate)'. The files exist in the tree and in the review-package manifest; make-repomix.sh explicitly excludes them, but pack_fidelity.py does not know that, and it returns 0 as long as content mismatches are zero, so the delivery verdict still says PASS.",
+      "evidence": [
+        "PACK_NOT_INCLUDED.txt:4 (known ANSI capture), :5-55 (51 sbom entries 'unexpected; investigate')",
+        "automation/validation/make-repomix.sh:19-22 (ignore='review-package/**,sbom/*.cdx.json,sbom/vuln/**,...')",
+        "automation/validation/pack_fidelity.py:95-110 (writes 'unexpected; investigate') and :117 (returns 0 unless content mismatches)",
+        "automation/validation/verify_delivery.sh:42-50 (PASS is based on that return code)",
+        "PACK_NOT_INCLUDED.txt last changed 2026-10-15 (commit a0ac9003); 51 unresolved entries persist at db8c409"
+      ],
+      "remediation": "Teach pack_fidelity.py the sbom exclusion as a known disposition (or include sbom in the pack), fail on unexpected not-in-pack entries, and regenerate PACK_NOT_INCLUDED.txt each delivery.",
+      "note": "Regression: 2 -> 51 unresolved entries; the fidelity verdict is fail-open for absent entries. New systemic finding is INV-P2-002.",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P3-003",
+      "severity": "P3",
+      "area": "INV",
+      "new": false,
+      "title": "'A stale digest fails' is enforced by publication equality, not by the digest-binding check whose docstring claims it",
+      "previous_status": "open",
+      "status": "verified-fixed",
+      "report": "01_repository_inventory.md",
+      "line": 349,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "The wording is corrected: check_digest_binding.py now says it binds the shipped manifests and explicitly delegates freshness/ancestry to check_publication_equality.py; ci/validate.py's digest-binding docstring says the same.",
+      "evidence": [
+        "automation/validation/check_digest_binding.py:8-14",
+        "ci/validate.py:555-565 (freshness/ancestry delegated to check_publication_equality.py)"
+      ],
+      "remediation": "None.",
+      "note": "Docstring/claim corrected since edbf441.",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P3-004",
+      "severity": "P3",
+      "area": "INV",
+      "new": false,
+      "title": "Published PACKAGE_MANIFEST.sha256 is two publication cycles stale and disagrees with the shipped review-package manifest; no check binds it",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "01_repository_inventory.md",
+      "line": 350,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "PACKAGE_MANIFEST.sha256 and review-package/MANIFEST.sha256 are byte-identical at db8c409 (both sha256 fd9ee76a..., 4,394 entries), and publish_digests.sh still copies the shipped manifest into the published copy on every bind.",
+      "evidence": [
+        "sha256sum PACKAGE_MANIFEST.sha256 review-package/MANIFEST.sha256 -> fd9ee76a... for both; wc -l -> 4,394 each",
+        "automation/validation/publish_digests.sh:15-20 (copy-on-bind)",
+        "automation/validation/check_publication_equality.py: manifest/hash equality checks pass"
+      ],
+      "remediation": "None; consider a standalone equality assertion for the published copy (residual).",
+      "note": "Equality persists; the only equality-gate failure is the ancestry rule after the Kestrel commits (REL-P2-003).",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P3-005",
+      "severity": "P3",
+      "area": "INV",
+      "new": false,
+      "title": "HYG-P1-001 doctrine ('review-package is generated, gitignored, must not be committed') contradicts the tracked review-package/MANIFEST.sha256",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "01_repository_inventory.md",
+      "line": 351,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "The declared-manifest exception is now documented in EVOLUTION_GUIDE step 7 as well as .gitignore/AGENTS.md/REPOSITORY.md/build_review_package.sh.",
+      "evidence": [
+        "docs/architecture/EVOLUTION_GUIDE.md:93 (declared-manifest exception in step 7)",
+        ".gitignore:24-29; AGENTS.md:61-62; REPOSITORY.md:33,54; automation/validation/build_review_package.sh:9-14"
+      ],
+      "remediation": "None.",
+      "note": "Doctrine now consistent; no residual on this item.",
+      "lens": "g3"
+    },
+    {
+      "id": "ORCH-P2-001",
+      "severity": "P2",
+      "area": "ORCH",
+      "new": false,
+      "title": "Committed 2026-10-05 full-run record contradicts the canonical gate and omits the domain evidence",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "00_audit_orchestrator.md",
+      "line": 354,
+      "owner": "@owner",
+      "target": "ORCH",
+      "detail": "The 2026-10-05 record is still internally wrong: RELEASE_GATE.md says 'GO WITH CONDITIONS' with P0 x1/P1 x7 while the shared rule makes any P0 NO-GO; findings.json keeps all 34 findings open and the profile is 'focused-security-supply-chain-ci' with no per-domain reports; no dated reconciliation note exists. A newer 2026-10-23 deep-dive gate (P0 x0) is now published in docs/audits/, so the repository no longer ends at the P0-bearing record, but the newest full-domain in-repo record is still this 2026-10-05 run.",
+      "evidence": [
+        "docs/audits/repo-deep-dive/20261005-0354-full-main-e267ce1/RELEASE_GATE.md:3-5 ('GO WITH CONDITIONS', P0 x1, P1 x7)",
+        "docs/audits/repo-deep-dive/20261005-0354-full-main-e267ce1/findings.json (34 findings, all status open; counts P0 1/P1 7)",
+        "docs/audits/repo-deep-dive/20261005-0354-full-main-e267ce1/audit_manifest.json: profile focused-security-supply-chain-ci, no per-domain reports",
+        "no reconciliation/superseded note in the folder (grep empty)",
+        "docs/audits/repo-deep-dive/20261023-1725-repo-deepdive-main-cdc1910/RELEASE_GATE.md (newer P0 x0 focused run)",
+        "ci/validate.py has no docs/audits publish gate for P0-bearing run verdicts"
+      ],
+      "remediation": "Append a dated reconciliation note to the 2026-10-05 folder (never rewrite it) and add a publish-time check that a P0-bearing run cannot emit GO/GO WITH CONDITIONS while unresolved.",
+      "note": "Partially fixed: a newer focused run is published, but the wrong 2026-10-05 record and the missing publish gate remain.",
+      "lens": "g3"
+    },
+    {
+      "id": "ORCH-P2-002",
+      "severity": "P2",
+      "area": "ORCH",
+      "new": false,
+      "title": "full_domain.py hardcodes profile=base and records area codes as lenses; falcon-lab coverage is not representable",
+      "previous_status": "partially-fixed",
+      "status": "partially-fixed",
+      "report": "00_audit_orchestrator.md",
+      "line": 355,
+      "owner": "@owner",
+      "target": "ORCH",
+      "detail": "The pack driver now accepts --profile and records the label, but the manifest still emits 'lenses': [d['area'] for d in domains] (43 area codes) and no lens ids/targets/status/waves. tools/check_run.sh only requires the five falcon-lab extra reports when profile == 'falcon-lab'; the newest falcon manifests are still profile=base, promptCount=42, lenses=43.",
+      "evidence": [
+        "tools/full_domain.py:200-225 (manifest_for; 'lenses': [d['area'] for d in domains] at :224)",
+        "tools/full_domain.py:718-721 (--profile option, default base)",
+        "tools/check_run.sh:41-52 (falcon-lab extras gated on profile)",
+        "/root/repo-deep-dive/runs/falcon-20261011-0416-full-f5cb7c9, falcon-20261012-verify-main-3623d2e, falcon-20261014-verify-main-edbf441 audit_manifest.json: profile base, promptCount 42, lenses 43"
+      ],
+      "remediation": "Emit the falcon-lab manifest shape (lens ids/targets/status, waves, prompt status) and validate it; or record an explicit, documented scope reduction in every run.",
+      "note": "Profile label added; the manifest shape and validation remain base-only.",
+      "lens": "g3"
+    },
+    {
+      "id": "ORCH-P3-001",
+      "severity": "P3",
+      "area": "ORCH",
+      "new": false,
+      "title": "Run id does not start with the timestamp required by the consumer repo's lifecycle check",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "00_audit_orchestrator.md",
+      "line": 356,
+      "owner": "@owner",
+      "target": "ORCH",
+      "detail": "The consumer lifecycle regex still accepts an optional repo prefix before the timestamp, and the current run id passes.",
+      "evidence": [
+        "automation/validation/audit_run_lifecycle.sh:120-124 (optional repo prefix; ^([a-z0-9][a-z0-9-]*-)?[0-9]{8}-[0-9]{4}-)",
+        "local run: check_failures=0 for all 7 committed run folders"
+      ],
+      "remediation": "None.",
+      "note": "Unchanged and still passing.",
+      "lens": "g3"
+    },
+    {
+      "id": "ORCH-P3-002",
+      "severity": "P3",
+      "area": "ORCH",
+      "new": false,
+      "title": "Domain report and findings array disagree on a finding status inside the same 20261009 run artifact",
+      "previous_status": "open",
+      "status": "open",
+      "report": "00_audit_orchestrator.md",
+      "line": 357,
+      "owner": "@owner",
+      "target": "ORCH",
+      "detail": "The 2026-10-09 domain report still says 'ARCH-P2-001 ... (verified fixed)' with 'Status: verified-fixed', while the same file's findings array and both follow-up registers record ARCH-P2-001 as open. No dated reconciliation note exists and tools/check_run.sh still has no report-vs-array cross-check.",
+      "evidence": [
+        "/root/repo-deep-dive/runs/falcon-20261009-2117-full-08e20d1/_domains/02_architecture_runtime_topology.json: report says verified-fixed; findings array status open",
+        "/root/repo-deep-dive/runs/falcon-20261009-2117-full-08e20d1/findings.json: ARCH-P2-001 status open",
+        "tools/check_run.sh: no report-vs-findings-array status cross-check"
+      ],
+      "remediation": "Append a dated reconciliation note and add the report-vs-array cross-check to check_run.sh.",
+      "note": "Unchanged since edbf441.",
+      "lens": "g3"
+    },
+    {
+      "id": "REL-P2-001",
+      "severity": "P2",
+      "area": "REL",
+      "new": false,
+      "title": "Deployment state is not bound to any release: no tags/VERSION and no deploy manifest; the live tree is now clean at main HEAD",
+      "previous_status": "open",
+      "status": "open",
+      "report": "40_release_notes_changelog_generator.md",
+      "line": 366,
+      "owner": "@owner",
+      "target": "REL",
+      "detail": "VERSION remains 2026.10.11 and the only tag is v2026.10.11 (dff362c0ec), now 489 commits behind db8c409. No deploy manifest or deployed-commit record exists (grep docs/ledgers -> none). Deployment identity is still a mutable branch HEAD; the publication digest binds the package at f79d786e, not the deployment.",
+      "evidence": [
+        "VERSION: 2026.10.11",
+        "GitHub tags API: only v2026.10.11 (tag dff362c0ec); compare dff362c..db8c409 ahead_by=489",
+        "docs/security/BRANCH_PROTECTION.md:59 says 'releases are tags on main'; no new tag",
+        "no deploy manifest / deployed-commit record in docs/, ledgers/, REPOSITORY.md, README.md (grep)",
+        "PACKAGE_DIGEST.txt:2-4 declares package commit f79d786e (2026-11-03), not a deployment identity"
+      ],
+      "remediation": "Record the deployed commit per deploy (deploy manifest or decision-log entry) and tag releases at the delivered commit; bump VERSION.",
+      "note": "Still open; tag lag grew from 90 to 489 commits since edbf441.",
+      "lens": "g3"
+    },
+    {
+      "id": "REL-P2-002",
+      "severity": "P2",
+      "area": "REL",
+      "new": false,
+      "title": "Published PACKAGE_MANIFEST.sha256 is stale: it disagrees with the declared review-package manifest on 8 files and no gate compares them",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "40_release_notes_changelog_generator.md",
+      "line": 367,
+      "owner": "@owner",
+      "target": "REL",
+      "detail": "The published and shipped manifests are still byte-identical (fd9ee76a..., 4,394 entries), and publish_digests.sh copies the shipped manifest on every bind.",
+      "evidence": [
+        "sha256sum PACKAGE_MANIFEST.sha256 review-package/MANIFEST.sha256: both fd9ee76a...",
+        "automation/validation/publish_digests.sh:15-20",
+        "automation/validation/check_publication_equality.py: review_package_manifest_sha256/entries checks pass"
+      ],
+      "remediation": "None; optionally add a standalone equality assertion.",
+      "note": "Equality persists; the manifest itself is not the cause of the current publication-equality failure (REL-P2-003).",
+      "lens": "g3"
+    },
+    {
+      "id": "REL-P3-001",
+      "severity": "P3",
+      "area": "REL",
+      "new": false,
+      "title": "No root CHANGELOG/release-notes generator; the 2026-10-04..11 window is undocumented",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "40_release_notes_changelog_generator.md",
+      "line": 368,
+      "owner": "@owner",
+      "target": "REL",
+      "detail": "A generator now exists (automation/validation/gen_changelog.py) and CHANGELOG.md documents through 2026.10.14, but the 2026-10-15..11-05 window (including the 2026-10-23 audit, P1 remediation, P2 docs and the Kestrel SSO cutover) is undocumented, and generation is not wired into CI.",
+      "evidence": [
+        "automation/validation/gen_changelog.py exists (--since helper)",
+        "CHANGELOG.md:7 last window '## 2026.10.14'; no 2026.10.15+ entries",
+        "grep automation/ ci/ .github/ for gen_changelog: no CI wiring"
+      ],
+      "remediation": "Generate and publish the 2026-10-15..11-05 window and wire gen_changelog.py into the release flow.",
+      "note": "Generator leg fixed; coverage still stale.",
+      "lens": "g3"
+    },
+    {
+      "id": "REL-P3-002",
+      "severity": "P3",
+      "area": "REL",
+      "new": false,
+      "title": "Releases are not versioned: no tags, no VERSION file; binding artifacts overwrite in place",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "40_release_notes_changelog_generator.md",
+      "line": 369,
+      "owner": "@owner",
+      "target": "REL",
+      "detail": "VERSION and an annotated tag exist; the remaining staleness (no bump/tag since 2026.10.11) is tracked under REL-P2-001.",
+      "evidence": [
+        "VERSION: 2026.10.11; tag v2026.10.11 exists",
+        "docs/security/BRANCH_PROTECTION.md:59 matches the tag policy"
+      ],
+      "remediation": "None beyond REL-P2-001.",
+      "note": "Mechanism fixed; tag freshness is a REL-P2-001 residual.",
+      "lens": "g3"
+    },
+    {
+      "id": "REL-P3-003",
+      "severity": "P3",
+      "area": "REL",
+      "new": false,
+      "title": "The delivered package embeds a closeout bound to the previous publication cycle while the digest declares the manifest commit; the equality gate reads the working tree only",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "40_release_notes_changelog_generator.md",
+      "line": 370,
+      "owner": "@owner",
+      "target": "REL",
+      "detail": "The two-regen flow and a packaged-closeout assertion now exist, but the assertion still permits a package closeout up to 8 commits behind HEAD and compares against HEAD, not the digest's declared commit. The current package manifest (declared f79d786e) hashes closeout/FINAL_RESPONSE.json = 75e3ef6..., which names 7c447ac (the prior records commit), not f79d786e; the working-tree closeout names f79d786e. The delivered package therefore still embeds a previous-cycle closeout.",
+      "evidence": [
+        "PACKAGE_DIGEST.txt:2-4 (declared commit f79d786e)",
+        "review-package/MANIFEST.sha256:314 (closeout/FINAL_RESPONSE.json = 75e3ef6...); the file at f79d786e names commit 7c447ac",
+        "closeout/FINAL_RESPONSE.json at HEAD names f79d786e (sha256 fbfc5bac...)",
+        "automation/validation/verify_delivery.sh:55-70 (assertion allows distance <= 8 and compares to HEAD, not the declared commit)",
+        "CHANGELOG.md:12-14 claims REL-P3-003 fixed by the two-regen flow"
+      ],
+      "remediation": "Regenerate the closeout before building the package (or rebuild the manifest after) and assert packaged-closeout commit == declared commit; tighten the distance from 8 to 0.",
+      "note": "Partially fixed: assertion added, but the shipped package still lags the declared commit and the gate permits it.",
+      "lens": "g3"
+    },
+    {
+      "id": "TEST-P2-001",
+      "severity": "P2",
+      "area": "TEST",
+      "new": false,
+      "title": "external-smoke no longer verifies Cloudflare Access from an external vantage; it accepts the owner-IP bypass",
+      "previous_status": "verified-fixed",
+      "status": "verified-fixed",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 288,
+      "owner": "@owner",
+      "target": "TEST",
+      "detail": "The workflow now states explicitly that it runs on the lab runner and asserts reachability only; Access enforcement is asserted from the non-owner vantage by the independent site-host watcher. The watcher exists and performs the cloudflareaccess.com redirect check.",
+      "evidence": [
+        ".github/workflows/external-smoke.yml:3-12, :27-31 (vantage note; lab runner; DO watcher owns enforcement)",
+        "automation/alerting/do_watcher/watch.sh:58-67 (non-owner vantage; Cloudflare Access redirect assertion)"
+      ],
+      "remediation": "None.",
+      "note": "Fix persists; no regression from the added 401/403/200 acceptance.",
+      "lens": "g3"
+    },
+    {
+      "id": "TEST-P3-001",
+      "severity": "P3",
+      "area": "TEST",
+      "new": false,
+      "title": "CI evidence-integrity check verifies zero captures; all meta files reference off-repo artifact paths",
+      "previous_status": "open",
+      "status": "partially-fixed",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 289,
+      "owner": "@owner",
+      "target": "TEST",
+      "detail": "The CI check now verifies 7 in-repo captures (up from 0), but 1,295 of 1,302 metas still point at lab-absolute paths and are skipped under FALCON_EVIDENCE_OPTIONAL=1. The check states the skip explicitly; there is still no split check that verifies the committed manifest in CI.",
+      "evidence": [
+        "CI run 42164078378 (db8c409): 'PASS evidence integrity (7 captures, 1295 external skipped in CI)'",
+        "ci/validate.py:246-267 (skip outside-repo artifacts when OPTIONAL_EVIDENCE=1)",
+        ".github/workflows/validate.yml:133 (FALCON_EVIDENCE_OPTIONAL=1)"
+      ],
+      "remediation": "Split the check: CI verifies the committed evidence/MANIFEST.sha256 hashes; the lab verifies meta raw artifacts. Or state the residual explicitly in the check output/doc.",
+      "note": "Improved from 0 to 7 in-repo captures; the precision/claim gap remains for 1,295 rows.",
+      "lens": "g3"
+    },
+    {
+      "id": "TEST-P3-002",
+      "severity": "P3",
+      "area": "TEST",
+      "new": false,
+      "title": "The test-requires skip marker is only honored in the first 15 lines; validate_gate_test.sh's marker is dead",
+      "previous_status": "open",
+      "status": "open",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 290,
+      "owner": "@owner",
+      "target": "TEST",
+      "detail": "The reader still loads only the first 15 lines (ci/validate.py:493); the line-26 marker in validate_gate_test.sh is fixture content, not the suite's own marker. A genuinely root/docker-requiring suite whose marker is later would run instead of skipping.",
+      "evidence": [
+        "ci/validate.py:493 (readlines()[:15]) and :497 (marker regex)",
+        "automation/validation/tests/validate_gate_test.sh:26 (marker inside the skip fixture)",
+        "CI 2026-11-06: validate_gate_test PASS; container_ensure_live_test correctly SKIPped (marker in first 15 lines)"
+      ],
+      "remediation": "Scan the header comment block (or the whole file) for the marker.",
+      "note": "Unchanged; harmless in the current suite, general late-marker risk remains.",
+      "lens": "g3"
+    },
+    {
+      "id": "DOC-P2-003",
+      "severity": "P2",
+      "area": "DOC",
+      "new": true,
+      "title": "Operator entry docs still route to Grafana at the public root and describe basic auth after the Console/Kestrel cutover",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (documentation truth)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "DOC",
+      "detail": "The Console cutover on 2026-10-21 moved the Falcon Console to https://falcon.mainecybertech.us/ and Grafana to /grafana; Kestrel/Authelia replaced the old access model on 2026-11-05. README and the operator start page were not updated: README.md:35 still says 'Access | Traefik ... basic auth for ntopng', README.md:96-97 still labels the public root as Grafana, and OPERATOR_START_HERE.md:10 tells operators to start at 'Grafana - Command Center' on the root URL. The access runbook and console runbook have the correct model, so the documents now contradict each other.",
+      "evidence": [
+        "README.md:35 (access row says basic auth for ntopng; omits Kestrel/Authelia and falcon-sso)",
+        "README.md:96-97 ('falcon.mainecybertech.us (Grafana, /dash, /ntop)')",
+        "docs/runbooks/OPERATOR_START_HERE.md:10 (Grafana Command Center at https://falcon.mainecybertech.us/) vs :37-42 (Kestrel/Authelia forward-auth)",
+        "docs/runbooks/CONSOLE_PHASE0.md:3-5 (Console live at /, Grafana at /grafana since 2026-10-21)",
+        "docs/design/FALCON_CONSOLE.md:1081 (D1 executed: console at /, Grafana at /grafana)",
+        "docs/runbooks/ACCESS_AND_ACCOUNTS.md:11-13 (Kestrel/Authelia + falcon-sso for Grafana/OSD/ntop)"
+      ],
+      "remediation": "Update README's product map/access row/hostnames and the operator start page to the Console-at-root + Kestrel model; add a link to CONSOLE_PHASE0/SSO.",
+      "note": "New P2. The 2026-10-23 audit closed its own DOC-P2-001 ('refresh CURRENT_STATE and operator auth runbooks') on 2026-11-03, but these entry docs remain wrong.",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P2-002",
+      "severity": "P2",
+      "area": "INV",
+      "new": true,
+      "title": "The review pack omits the entire SBOM/vuln set but the package manifest lists it; pack fidelity still reports PASS with 51 unexplained entries",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (release pack integrity)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "The review package now ships sbom/ (owner decision D2, 2026-10-15), so review-package/MANIFEST.sha256 contains 56 sbom files. make-repomix.sh still excludes sbom/*.cdx.json and sbom/vuln/** from the repomix pack. pack_fidelity.py therefore writes 51 'not-in-pack (unexpected; investigate)' rows, but returns 0 because it only fails on content mismatches, and verify_delivery.sh treats that as pack_fidelity_verdict=PASS. A pack-only reviewer cannot see the SBOM/vuln set the manifest claims, and the unresolved rows are not surfaced as a failure.",
+      "evidence": [
+        "automation/validation/make-repomix.sh:19-22 (ignore includes sbom/*.cdx.json and sbom/vuln/**)",
+        "automation/validation/pack_fidelity.py:95-110 (writes 'unexpected; investigate'), :112-117 (returns 0 unless content mismatch)",
+        "PACK_NOT_INCLUDED.txt:5-55 (51 sbom entries 'not-in-pack (unexpected; investigate)')",
+        "automation/validation/verify_delivery.sh:42-50 (PASS from pack_fidelity return code; no not-in-pack assertion)",
+        "automation/validation/build_review_package.sh:51-53 (sbom set ships in the package since 2026-10-15)",
+        "PACK_NOT_INCLUDED.txt last changed 2026-10-15 (commit a0ac9003), so the artifact is stale across the later publication cycles"
+      ],
+      "remediation": "Add the sbom ignore patterns to KNOWN_PACK_EXCLUSIONS (or include sbom in the pack), fail on any 'unexpected' not-in-pack entry, and regenerate PACK_NOT_INCLUDED.txt in verify_delivery.sh. If the pack intentionally cannot carry 56 MB of SBOM, record that as a dated disposition and keep the package manifest authoritative.",
+      "note": "New P2. Distinct from INV-P3-002 (the artifact regression): this is the systemic mismatch + fail-open gate introduced when SBOMs started shipping in the package.",
+      "lens": "g3"
+    },
+    {
+      "id": "INV-P2-003",
+      "severity": "P2",
+      "area": "INV",
+      "new": true,
+      "title": "Review package omits the Falcon Console source and the root LICENSE/NOTICE/VERSION/CHANGELOG files",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (release package completeness)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "INV",
+      "detail": "build_review_package.sh copies only docs ledgers closeout compose config bootstrap automation ci pins mct sbom plus evidence and three root files (REPOSITORY.md, README.md, AGENTS.md). Two omissions follow. (1) The Falcon Console (console/, 19 tracked files including auth.py, sso_gateway.py, api/server.py, actions_broker.py and tests) is now the product's root UI/API but is never copied; PACKAGE_MANIFEST.sha256 has zero './console/' entries (the only console matches are ./automation/console/resolve_sources.sh and ./config/console/roles.yaml). (2) The root LICENSE, NOTICE, VERSION, CHANGELOG.md and TESTING.md files are also absent from the manifest. A reviewer receiving the declared package cannot inspect or rebuild the console and does not receive the GPLv2 license text or the third-party NOTICE that the repository now advertises.",
+      "evidence": [
+        "automation/validation/build_review_package.sh:34-39 (copy list: docs ledgers closeout compose config bootstrap automation ci pins mct sbom; root files only REPOSITORY.md/README.md/AGENTS.md)",
+        "git ls-files console -> 19 files, including console/auth.py, console/sso_gateway.py, console/api/server.py, console/actions_broker.py and console/tests/",
+        "PACKAGE_MANIFEST.sha256: 0 entries matching ' ./console/'; only ./automation/console/resolve_sources.sh and ./config/console/roles.yaml",
+        "PACKAGE_MANIFEST.sha256: 0 entries for ./LICENSE, ./NOTICE, ./VERSION, ./CHANGELOG.md, ./TESTING.md, although README.md:127-131 advertises LICENSE/NOTICE",
+        "docs/runbooks/CONSOLE_PHASE0.md:3-5 (Console is live at the public root since 2026-10-21)"
+      ],
+      "remediation": "Add console/ and the root LICENSE/NOTICE/VERSION/CHANGELOG/TESTING files to the package copy list, rebuild the review package/manifest/digest, and add a gate that every tracked first-party top-level source file/directory is represented in the package manifest (allowlist the generated/delivery dirs explicitly).",
+      "note": "New P2. This is a package-completeness gap, not a repomix-pack omission: the pack includes console/, the formal review package does not; the missing LICENSE/NOTICE also undermines the HYGIENE-P3-001 closure for the delivered artifact.",
+      "lens": "g3"
+    },
+    {
+      "id": "ORCH-P2-003",
+      "severity": "P2",
+      "area": "ORCH",
+      "new": true,
+      "title": "The newest committed audit run fails the audit pack's own run checker (manifest keys and status vocabulary)",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (audit orchestration)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "ORCH",
+      "detail": "docs/audits/repo-deep-dive/20261023-1725-repo-deepdive-main-cdc1910/ is the newest durable audit record, but its audit_manifest.json has no pack/profile/findings keys (only run/generated/repository/.../counts), and its findings/register statuses use free text ('remediated-2026-11-02', 'closed 2026-11-03', 'partially-remediated-2026-11-03', 'owner-gated') outside the shared vocabulary. tools/check_run.sh reports 'missing keys: pack,profile,findings' and 'unknown finding status values', so the run cannot be machine-diffed or CSV-exported like the others.",
+      "evidence": [
+        "docs/audits/repo-deep-dive/20261023-1725-repo-deepdive-main-cdc1910/audit_manifest.json:1-40 (no pack/profile/findings keys; scope is an array)",
+        "docs/audits/repo-deep-dive/20261023-1725-repo-deepdive-main-cdc1910/follow_up_register.md:5-17 (closed/remediated/owner-gated text)",
+        "docs/audits/repo-deep-dive/20261023-1725-repo-deepdive-main-cdc1910/findings.json (statuses remediated-2026-11-02, partially-remediated-2026-11-03)",
+        "tools/check_run.sh (pack validator) -> 'missing keys: pack,profile,findings', 'unknown finding status values ...', RESULT: FAIL (2 checks)",
+        "automation/validation/audit_run_lifecycle.sh:120-141 passes the same folder (structure/id only), so the two validators disagree"
+      ],
+      "remediation": "Re-publish the 20261023 record in the shared manifest/status shape (pack/profile/findings, allowed status vocabulary), or extend the pack checker with an explicit focused-run schema; add the pack check to the publish flow.",
+      "note": "New P2. The consumer lifecycle check passes, but the producer's check_run.sh fails, so downstream diff/register tooling cannot consume the newest run faithfully.",
+      "lens": "g3"
+    },
+    {
+      "id": "REL-P2-003",
+      "severity": "P2",
+      "area": "REL",
+      "new": true,
+      "title": "Main is unbound and red after the Kestrel SSO merges: publication equality fails at db8c409 and the package still declares f79d786e",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (release gating)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "REL",
+      "detail": "PACKAGE_DIGEST.txt declares repository/closeout/delivered commit f79d786e (2026-11-03). Seven commits have landed since, including security/SSO changes (6c923cd8, 93a31cc6, merge ba4bf8b4/db8c409). The repository validate workflow on the db8c409 push failed (run 42164078378, 2026-11-06): 'FAIL publication equality ... commits after the declared commit touch only publication/test files (93a31cc6:config/traefik/dynamic.yml; 93a31cc6:console/sso_gateway.py; ... 6c923cd8:bootstrap/98-console.sh; ...)'. The topic-branch allowance only applies to pull_request events, so PR CI can be green while main stays red until a rebind; no rebind followed the merges. The delivered package therefore predates the Kestrel SSO cutover.",
+      "evidence": [
+        "PACKAGE_DIGEST.txt:2-4 (repository_commit=CLOSEOUT_SOURCE_COMMIT=DELIVERED_PACKAGE_COMMIT=f79d786e...)",
+        "git rev-list --count f79d786e..db8c409 -> 7 commits, including 6c923cd8 and 93a31cc6 (Kestrel SSO) and the merge commits",
+        ".github/workflows/validate.yml:126-129 (FALCON_PUBLICATION_ALLOW_TOPIC only when event_name == pull_request)",
+        "GitHub Actions run 42164078378 (push, db8c409, 2026-11-06): check 'validate' failure; log line 'FAIL publication equality ... commits after the declared commit touch ...'",
+        "check_publication_equality.py at db8c409: FAIL (commits after declared commit touch source files)"
+      ],
+      "remediation": "Rebind the publication chain at the post-Kestrel commit (build package, regenerate closeout, publish digest) before/at merge of source waves, and add a post-merge/main check that fails fast when the declared commit is behind source commits; consider requiring the rebind as part of the merge.",
+      "note": "New P2. The gate is honestly strict and detects the drift; the defect is the process leaving main unbound and red after a security-relevant merge.",
+      "lens": "g3"
+    },
+    {
+      "id": "TEST-P2-002",
+      "severity": "P2",
+      "area": "TEST",
+      "new": true,
+      "title": "The mTLS ingest migration left three plaintext HTTP validation paths that can no longer exercise replay/DLQ ingress",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (test/product surface)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "TEST",
+      "detail": "The aggregator's edge_ingest source now requires mutual TLS (verify_certificate: true), and the probe sink presents a client certificate. Three live validation scripts still POST plain http://vector-aggregator:6000/ without certs: phase4_data_checks.sh (the replay test, expects events to be ingested), probe_pipeline_test.sh (the dead-letter test, expects the DLQ to grow), and phase7_security_checks.sh (old-credential rejection). Against the TLS listener the plaintext requests fail at the handshake, so the replay and DLQ checks either fail or pass for the wrong reason; the security regression suite no longer tests the deployed ingress.",
+      "evidence": [
+        "config/vector/aggregator.yaml:17-35 (tls.enabled, verify_certificate: true)",
+        "config/vector/edge.yaml:239-252 (https + client cert)",
+        "automation/validation/phase4_data_checks.sh:111 (curl http://vector-aggregator:6000/ for the replay test)",
+        "automation/validation/probe_pipeline_test.sh:48 (curl http://vector-aggregator:6000/ for the dead-letter test)",
+        "automation/validation/phase7_security_checks.sh:85 (old-credential POST over http://)",
+        "evidence/raw/REVIEW-FIX/20261014T232947Z_ingest-mtls.out: handshake failure without a client certificate"
+      ],
+      "remediation": "Update the three scripts to use https with the ingest CA/client cert from /srv/falcon/secrets/vector-ingest (or run the request from the probe container), and add an offline fixture asserting the plaintext path is rejected.",
+      "note": "New P2. The mTLS migration itself is sound (ARCH-P2-003 verified-fixed); its negative/positive tests were not migrated.",
+      "lens": "g3"
+    },
+    {
+      "id": "DOC-P3-002",
+      "severity": "P3",
+      "area": "DOC",
+      "new": true,
+      "title": "Check-engine runbook status block contradicts its own phase table and the deployed 2026-10-15 waves",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (check-engine product docs)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "DOC",
+      "detail": "CHECK_ENGINE.md:18-22 says only P1/P2/P3/P4a/P5a/P5b/P6a are implemented and that the SNMP wave is 'staged but not built', while the same file's status table at :405-409 records SNMP, P6b, P6c, P5c and P7a as DONE (2026-10-14/15). The file list at :64-80 omits the new pack files (03-snmp, 07-time, 08-node, 09-topology, 10-ups) and actions. CURRENT_STATE.md:67-68 still says 220 checks / 46 assets / 15 pack rules (2026-10-14), while the 2026-10-15 deploy record says 35 packs upserted and config/checks now has 12 pack YAMLs.",
+      "evidence": [
+        "docs/runbooks/CHECK_ENGINE.md:18-22 (SNMP staged/not built) vs :405-409 (SNMP/P6b/P6c/P5c/P7a DONE)",
+        "docs/runbooks/CHECK_ENGINE.md:64-80 (file table omits 03-snmp/07-time/08-node/09-topology/10-ups and actions)",
+        "docs/CURRENT_STATE.md:67-68 (220 checks, 46 assets, 15 pack rules; 2026-10-14)",
+        "ledgers/decision_log.md:325 (2026-10-15: 35 packs upserted; topology probe; availability delivery)",
+        "config/checks/: 12 YAML pack files including 03-snmp.yaml, 07-time.yaml, 08-node.yaml, 09-topology.yaml, 10-ups.yaml"
+      ],
+      "remediation": "Refresh the status block and file table to the P7a state, and update CURRENT_STATE's check-engine counts/waves from the ledgers.",
+      "note": "New P3. Documentation truth for the newest product surface; no runtime defect observed.",
+      "lens": "g3"
+    },
+    {
+      "id": "DOC-P3-003",
+      "severity": "P3",
+      "area": "DOC",
+      "new": true,
+      "title": "Policy/guide status text still says proposed/not implemented where the repository records implemented controls",
+      "previous_status": null,
+      "status": "open",
+      "report": "new (documentation truth)",
+      "line": 0,
+      "owner": "@owner",
+      "target": "DOC",
+      "detail": "mct/VENDORING.md:3 still says 'policy proposed 2026-10-01; owner decision pending', :96 is headed 'Manual checks while P4 is unimplemented', and :127 says 'policy proposed; pin enforcement ... not yet implemented', while :66-77 records the 2026-10-15 owner decision and P4 implementation. EVOLUTION_GUIDE.md:293-294 still calls MCT pin enforcement proposed and the merge-safe apply a 'runtime follow-up', while :317-324 says the follow-up is not done, although bootstrap/60 implements it. The console runbook also says 'There are no buttons that change anything' (:39) while :33-34 documents ack/unack through the actions broker.",
+      "evidence": [
+        "mct/VENDORING.md:3 vs :66-77 (owner decision + P4 implemented), :96, :127",
+        "docs/architecture/EVOLUTION_GUIDE.md:293-294, :317-326 vs bootstrap/60-central-deploy.sh:209-241",
+        "docs/runbooks/CONSOLE_PHASE0.md:33-34 (ack/unack) vs :39 ('no buttons that change anything')"
+      ],
+      "remediation": "Update the status headers/backlog rows to the implemented state and qualify the console read-only statement (read-only data, explicit role-gated ack/unack actions).",
+      "note": "New P3. Same class as DOC-P2-002 but on policy/guide pages rather than status pages.",
+      "lens": "g3"
+    }
+  ]
+}

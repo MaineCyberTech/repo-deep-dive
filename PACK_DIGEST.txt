@@ -1,6 +1,6 @@
 # repo-deep-dive pack digest
 # generated: deterministic inventory; do not hand-edit
-# files: 2912
+# files: 2922
 # format: sha256  path
 354b1e2163a6d1911cc4e7c8ce6d3e99b17a28617aff73eae035b0fd25e97ad2  ./.gitattributes
 3f3225adca7f7926f0a5e81b1e9cc64fec09c3e2fb4b1a0ba27963c68c59787c  ./.github/CODEOWNERS
@@ -373,7 +373,7 @@ fcf16191df82a17ed9649433fff4377eb09fd038d04b0f6d6442e50d17a26598  ./runs/2026100
 6d3e5b05848a5a8659a5072e502934419722502a96f452fd48c1b3f68c7f0122  ./runs/20261004-full-main-ba4becb/risk_register.md
 3b35f1d75b2fa1971368449ecd451ef535f2ae2456a7c5806f30078b6ab0ad62  ./runs/20261004-full-main-ba4becb/roadmap.md
 a06932e44115c1cc60f9481f4abc509a74650504860c0e229de19a026d61afe0  ./runs/20261004-full-main-ba4becb/verification_log.md
-000d8cbcc03ef512f3a4a92d937c783e14595f9b64b4a3872c733b21a1fa15dd  ./runs/INDEX.md
+ee5f16bc69e3842abd19f4c8ab39e8e89e67bf5217f974e39b91f66ac72090c5  ./runs/INDEX.md
 91dceac86d44e442e279bea220b72c9cf4e38505565c6f4b9bc72699de484c3a  ./runs/README.md
 40bec1c6610fc37de257fae4eeade2dd0610d836da3cc5e171b76118c8f89064  ./runs/bench-test-20261007-1731-main-4ecee97/EXECUTIVE_SUMMARY.md
 c3ba715b06e74f994c6be4f7367ea7ab711c9584c93a1a61eeb2858d46d246f6  ./runs/bench-test-20261007-1731-main-4ecee97/INDEX.md
@@ -1604,6 +1604,16 @@ f73c9d0cb3d6ba05e5ffc4d9203465e72b5ac1926557d62e98c069720de20899  ./runs/falcon-
 6099c203fc9fec5239abf03b6ccc95605cb979c72a78f2a98209d9baf17390aa  ./runs/falcon-20261014-verify-main-edbf441/verification/priv-ir-rel-evol.md
 60126fb74aecfb537bf997aaf6e2561e01020bc45cb7f3ac49671e743aba92bc  ./runs/falcon-20261014-verify-main-edbf441/verification/sec-acm-admin-secret.md
 52b1acddcabb0e0880aa79326449371261e3573acbd3d945c3d5caa30a1fb5e8  ./runs/falcon-20261014-verify-main-edbf441/verification_log.md
+34e8b142aa704610a91a1af6e1692a064532eb02d9085041152513a554f757b7  ./runs/falcon-20261108-verify-main-db8c409/README.md
+1c900a781b5644015351d80bbc17eceb46893340cf9f66c6287cc0455835d018  ./runs/falcon-20261108-verify-main-db8c409/SUMMARY.md
+c631d61654d08ed61b5ef6770e273ef226cbc3aeed8a70251ed6acad9da223d2  ./runs/falcon-20261108-verify-main-db8c409/findings.json
+4216bf0fdbc35a6ae7859f424454c7f440e308cedce69084ef5b7934ef285368  ./runs/falcon-20261108-verify-main-db8c409/g1_security_data.json
+745c8c6afba03519686d1908cff5e666789314a3593a3543d261569ebefdab2e  ./runs/falcon-20261108-verify-main-db8c409/g1_security_data.md
+3d0265f17bc12767e056fa419bfcbbd2853bd9103b5b6dc9568e6e3795a3a9f7  ./runs/falcon-20261108-verify-main-db8c409/g2_ci_infra_dr.json
+b301b165dbe0c59c6857af528fbd7322126ffbcb5925a4af7d30784e3c6d0966  ./runs/falcon-20261108-verify-main-db8c409/g2_ci_infra_dr.md
+121d813007e6f180c15ae2f4aaf996a454e04c681ef7c3e1e33cf1f861974a63  ./runs/falcon-20261108-verify-main-db8c409/g3_product_hygiene.json
+9915573ea76781f07633829a95896dd19f09909ae1d07e69e1c1b92c7ed2b5b0  ./runs/falcon-20261108-verify-main-db8c409/g3_product_hygiene.md
+555b33680ce2a06cee1f6ae685d77f5fda9d0df3df247fae4f715d84e1e88f40  ./runs/falcon-20261108-verify-main-db8c409/verify_register.md
 ba5820a089d505eddd0a92c9b7e6c2a99eac063ea5bb7fe69daee08a38a3bf67  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/01_repository_inventory.md
 19060852a1c4f69d102d4670381d6ef8a1f4f3d8e50ad9dfb85796d51556e5ff  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/02_architecture_runtime_topology.md
 57dc3f56c286280fd382bd3af7d642e1d89079af4e98fb32f30dbfe2d6e38988  ./runs/falcon-edge-20261003-0018-fix-trust-root-87532ec/03_feature_implementation_map.md
