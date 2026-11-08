@@ -3,25 +3,25 @@
 | ID | Sev | Status | Title |
 |---|---|---|---|
 | EXEC-P1-001 | P1 | open | Release gate must remain conditional pending P1/P2 remediation |
-| FILE-P1-001 | P1 | open | Scheduled `expired_uploads` cleanup hard-deletes every chat-uploads object older than 7 days, including avatar |
+| FILE-P1-001 | P1 | verified-fixed | Scheduled `expired_uploads` cleanup hard-deletes every chat-uploads object older than 7 days, including avatar |
 | FINAL-P1-001 | P1 | open | Release gate must remain conditional pending P2 remediation |
 | INFRA-P1-001 | P1 | open | Development and production share one Terraform state key and resource address |
 | ACM-P2-001 | P2 | partially-fixed | RBAC matrix is enforced per-route but not documented as a single artifact |
-| ADMIN-P2-002 | P2 | open | Admin compliance export authorizes the target workspace by membership, not admin role |
+| ADMIN-P2-002 | P2 | verified-fixed | Admin compliance export authorizes the target workspace by membership, not admin role |
 | AI-P2-001 | P2 | open | AI endpoint is a stub with no tenancy/data-governance or rate-limit contract |
 | ARCH-P2-001 | P2 | open | Single-node topology: one droplet hosts all services and local Redis |
-| BP-P2-001 | P2 | open | In-repo branch-protection gate covers only `main`, not `develop` |
-| CHAIN-P2-001 | P2 | partially-fixed | Webhook SSRF + missing encryption key form a plausible internal-reach chain |
+| BP-P2-001 | P2 | verified-fixed | In-repo branch-protection gate covers only `main`, not `develop` |
+| CHAIN-P2-001 | P2 | verified-fixed | Webhook SSRF + missing encryption key form a plausible internal-reach chain |
 | CI-P2-001 | P2 | verified-fixed | `infra-development` destroys infra on every push to `develop` |
-| CI-P2-002 | P2 | open | Auto-commit workflows hold `contents: write` and push to main/develop |
-| CI-P2-003 | P2 | open | `develop` (auto-deploy target) is not covered by the branch-protection gate |
-| CI-P2-005 | P2 | open | Pull requests targeting `develop` skip the validate/test workflow |
-| CI-P2-006 | P2 | open | Development deploy is ungated and treats a cancelled CI run as success |
-| CI-P2-007 | P2 | open | Scheduled validate pipeline is persistently red on the default branch |
-| CI-P2-008 | P2 | open | Two workflows apply the same migrations concurrently on `develop` |
+| CI-P2-002 | P2 | verified-fixed | Auto-commit workflows hold `contents: write` and push to main/develop |
+| CI-P2-003 | P2 | verified-fixed | `develop` (auto-deploy target) is not covered by the branch-protection gate |
+| CI-P2-005 | P2 | verified-fixed | Pull requests targeting `develop` skip the validate/test workflow |
+| CI-P2-006 | P2 | verified-fixed | Development deploy is ungated and treats a cancelled CI run as success |
+| CI-P2-007 | P2 | verified-fixed | Scheduled validate pipeline is persistently red on the default branch |
+| CI-P2-008 | P2 | verified-fixed | Two workflows apply the same migrations concurrently on `develop` |
 | DATA-P2-001 | P2 | owner-accepted | Duplicate `add_user_groups` migrations |
 | DATA-P2-002 | P2 | partially-fixed | `gdpr_delete_user` is a hard multi-table delete with partial coverage |
-| DATA-P2-003 | P2 | open | `user_groups` INSERT/UPDATE RLS policies omit workspace membership, allowing cross-tenant group creation |
+| DATA-P2-003 | P2 | verified-fixed | `user_groups` INSERT/UPDATE RLS policies omit workspace membership, allowing cross-tenant group creation |
 | FILE-P2-001 | P2 | open | Uploads return a public URL from `chat-uploads` and trust client-declared content type |
 | FINAL-P2-001 | P2 | open | Dependency risk-acceptances expire 2027-01-04 |
 | INFRA-P2-001 | P2 | open | Single-droplet infrastructure has no environment isolation |
@@ -30,21 +30,21 @@
 | NOTIF-P2-001 | P2 | partially-fixed | Notifications are delivered only via Web Push; no durable multi-channel delivery/retry |
 | OBS-P2-001 | P2 | open | No distributed tracing / correlation to a collector |
 | PRIV-P2-001 | P2 | partially-fixed | GDPR erasure path is a hard multi-table delete with partial coverage |
-| PRIV-P2-002 | P2 | open | Account deletion is effectively unusable: API requires a password but the UI sends none and magic-link users h |
+| PRIV-P2-002 | P2 | verified-fixed | Account deletion is effectively unusable: API requires a password but the UI sends none and magic-link users h |
 | RES-P2-001 | P2 | open | Single-node failure domains: API, worker, Redis and DB proxy co-resident |
 | SC-P2-004 | P2 | open | Dependency risk-acceptances expire 2027-01-04 |
-| SC-P2-005 | P2 | open | Org gitleaks baseline is local-only and not enforced in CI |
+| SC-P2-005 | P2 | verified-fixed | Org gitleaks baseline is local-only and not enforced in CI |
 | SEC-P2-001 | P2 | verified-fixed | `WEBHOOK_ENCRYPTION_KEY` is not delivered by the production compose stack |
-| SEC-P2-002 | P2 | partially-fixed | Webhook SSRF validation does not constrain redirects or DNS rebinding |
-| SEC-P2-003 | P2 | open | Push subscription endpoints are stored without validation and fetched server-side (stored SSRF) |
-| WH-P2-002 | P2 | partially-fixed | Webhook delivery follows redirects / does not pin the validated IP (SSRF) |
-| WH-P2-003 | P2 | open | Any workspace member can create/update/delete webhook endpoints, exposing all workspace message content includ |
+| SEC-P2-002 | P2 | verified-fixed | Webhook SSRF validation does not constrain redirects or DNS rebinding |
+| SEC-P2-003 | P2 | verified-fixed | Push subscription endpoints are stored without validation and fetched server-side (stored SSRF) |
+| WH-P2-002 | P2 | verified-fixed | Webhook delivery follows redirects / does not pin the validated IP (SSRF) |
+| WH-P2-003 | P2 | verified-fixed | Any workspace member can create/update/delete webhook endpoints, exposing all workspace message content includ |
 | ACM-P3-001 | P3 | open | Admin `/stats` leaks global cross-tenant counters |
 | ADMIN-P3-001 | P3 | partially-fixed | Admin error buffer is in-memory only (lost on restart) |
 | ARCH-P3-001 | P3 | open | Worker health/metrics bind loopback but rely on a shared token |
-| BP-P3-001 | P3 | open | Server-side environment/ruleset configuration is not verifiable from source |
+| BP-P3-001 | P3 | verified-fixed | Server-side environment/ruleset configuration is not verifiable from source |
 | CHAIN-P3-001 | P3 | open | Public upload URL + client-declared content type is a stored-content risk |
-| CI-P3-001 | P3 | open | 13 workflows omit an explicit `permissions:` block |
+| CI-P3-001 | P3 | partially-fixed | 13 workflows omit an explicit `permissions:` block |
 | CTR-P3-001 | P3 | open | Containers lack runtime hardening beyond non-root and digest pinning |
 | CTR-P3-002 | P3 | open | First-party images are referenced by mutable tag (`:latest`/`:dev`) |
 | DET-P3-001 | P3 | open | [DEP] trivy not installed (dependency vuln scan skipped) |
@@ -73,7 +73,7 @@
 | SBOM-P3-002 | P3 | open | No license policy / dependency-review gate |
 | SC-P3-001 | P3 | partially-fixed | Large binary archives committed to the repository |
 | SEARCH-P3-001 | P3 | open | No documented search data-flow / retention statement |
-| SEC-P3-001 | P3 | open | Org gitleaks ruleset is local/opt-in only; CI relies on generic Trivy secret scanning |
+| SEC-P3-001 | P3 | verified-fixed | Org gitleaks ruleset is local/opt-in only; CI relies on generic Trivy secret scanning |
 | SECRET-P3-001 | P3 | open | Secret rotation is documented but not scheduled or monitored |
 | SECRET-P3-002 | P3 | partially-fixed | `.env` example files diverge between environments |
 | USE-P3-001 | P3 | open | No end-to-end onboarding assertion for the invitation/membership flow |

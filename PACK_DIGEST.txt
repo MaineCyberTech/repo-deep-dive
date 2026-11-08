@@ -975,13 +975,13 @@ f81e1668d2026440ce869860c4f3ac22011d42a41477e2f1fad3a7800d2e5565  ./runs/chat-20
 e5fed669a68012ff9c3e45170f4752f9ea32589f4383e3f5e58ca77c144a5219  ./runs/chat-20261004-full-develop-a62e44a/sbom_license_policy_recommendation.md
 16e4299eb22b733e4156453a1c840d9b4057f8829c1ab034cfec8ac60f9edc5a  ./runs/chat-20261004-full-develop-a62e44a/secret_rotation_runbook.md
 f131f913a7a2a7921e82620ded1f590d4266ab658a2c82d34e99a322c50f044b  ./runs/chat-20261107-verify-develop-49bf424/README.md
-1a32b93fa6fa3f82f521044d7ed3cabe51e3175188d05fa66ba932e311071fd8  ./runs/chat-20261107-verify-develop-49bf424/SUMMARY.md
-8ae75f174c2b526bdee84fe5f8cacc30d24ed6e6e14fc9ff00f26e836f52f056  ./runs/chat-20261107-verify-develop-49bf424/findings.json
+c887fff8cf0e13d9447b36653a6656510092ade5c4cc8865f88aad682a92b250  ./runs/chat-20261107-verify-develop-49bf424/SUMMARY.md
+f6f97fdc430f814a7272c381adc4cbbfcb403aa92c3e64f882734ee7fa3780f7  ./runs/chat-20261107-verify-develop-49bf424/findings.json
 35c97da2463e0af4b9e4d857af9840a9cb5829c23f0137410c88b44d9fb5fe42  ./runs/chat-20261107-verify-develop-49bf424/g1_security_backend.json
 c0614b1a53f99ae43afdeab4fd6c818bcd6006c44f2f13fddf6d1094c01b82ba  ./runs/chat-20261107-verify-develop-49bf424/g1_security_backend.md
 896059bf4472895584f7d0c198b02317365b4b5a9076d13c64aafb2c7ff37cd0  ./runs/chat-20261107-verify-develop-49bf424/g2_ci_infra_product.json
 bd3f0b59fbdd2f7dad34975397cfec8bcbdeb53e1e88139a05d16c3cf3929778  ./runs/chat-20261107-verify-develop-49bf424/g2_ci_infra_product.md
-07396d918b7da0fc6fe79d7e2be390b6ea8d31a6b5e29672b0f0b27b25a154a2  ./runs/chat-20261107-verify-develop-49bf424/verify_register.md
+d73374bbb3c0fd9362f39cc00569d664c7c6eb78a74c3671a62a372f199d4eae  ./runs/chat-20261107-verify-develop-49bf424/verify_register.md
 e4560c346c42ce0f85e89785a25bdbdf72182ab0972f6e742ca2ff6f4f7a0cbe  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/01_repository_inventory.md
 7c699a03bb9f24205c2cd9c0484602a212a9bd507afa97ded337235bac9b47c6  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/02_architecture_runtime_topology.md
 709725674f51cdae3579808af778c2b677ee6e4042d4a00b37b45a28e883ff26  ./runs/falcon-20261003-0018-fix-backup-abort-markers-20b5e57/03_feature_implementation_map.md

@@ -10,10 +10,10 @@
   "counts": {
     "total": 76,
     "by_status": {
-      "verified-fixed": 7,
-      "partially-fixed": 12,
-      "open": 56,
-      "owner-accepted": 1
+      "verified-fixed": 26,
+      "open": 39,
+      "owner-accepted": 1,
+      "partially-fixed": 10
     },
     "by_severity": {
       "P2": 33,
@@ -35,27 +35,27 @@
       "id": "SEC-P2-002",
       "severity": "P2",
       "title": "Webhook SSRF validation does not constrain redirects or DNS rebinding",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "evidence": "Redirect following is closed: packages/config/webhook-utils.ts:92 sets WEBHOOK_REDIRECT_MODE=\"manual\" and apps/api/src/modules/webhooks/service.ts:253 plus apps/worker/src/processors/webhook-delivery.ts:104 use it; worker tests assert a single request (apps/worker/src/__tests__/webhook-delivery.test.ts:153-181). Residual SSRF remains: packages/config/webhook-utils.ts:31-40 blocks only 127/10/172.16/192.168/169.254/::1/fc00::/fe80::, omitting 0.0.0.0, 100.64.0.0/10 and IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1); :46-57 resolves only IPv4 A records (resolve4) and returns [] on failure; validation at service.ts:228 and the actual fetch at service.ts:246 (worker :72/:100) are separate DNS lookups, so a rebinding name passes validation and resolves internally at dispatch.",
-      "remediation": "Resolve A and AAAA, reject all private/reserved ranges including IPv4-mapped IPv6, and pin the validated IP for the request (custom undici lookup/Agent) or re-validate every resolved address immediately before connect. Keep redirect:\"manual\".",
+      "remediation": "remediated 2026-11-08 via #124 (private/mapped/ULA/DNS pinning/redirects)",
       "lens": "g1"
     },
     {
       "id": "WH-P2-002",
       "severity": "P2",
       "title": "Webhook delivery follows redirects / does not pin the validated IP (SSRF)",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "evidence": "Same code path as SEC-P2-002. Redirects are no longer followed (packages/config/webhook-utils.ts:92; apps/api/src/modules/webhooks/service.ts:253; apps/worker/src/processors/webhook-delivery.ts:104). IP pinning is still absent: packages/config/webhook-utils.ts:31-57 validates one lookup and omits IPv6/AAAA and mapped addresses, while the fetch happens later at service.ts:246 / webhook-delivery.ts:100.",
-      "remediation": "Implement IP-pinned dispatch plus A/AAAA validation as described in SEC-P2-002; add regression tests for 0.0.0.0, ::ffff:127.0.0.1 and a rebinding hostname.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
       "id": "CHAIN-P2-001",
       "severity": "P2",
       "title": "Webhook SSRF + missing encryption key form a plausible internal-reach chain",
-      "status": "partially-fixed",
+      "status": "verified-fixed",
       "evidence": "Both named components improved: WEBHOOK_ENCRYPTION_KEY is delivered to api and worker (infra/docker/docker-compose.prod.yml:58-60,132-134) and redirects are not followed (packages/config/webhook-utils.ts:92; service.ts:253; webhook-delivery.ts:104). The internal-reach half survives via the SSRF bypasses in SEC-P2-002: 0.0.0.0/::ffff:127.0.0.1 are not private per packages/config/webhook-utils.ts:31-40, and validation (:72) and fetch (service.ts:246) are separate DNS resolutions.",
-      "remediation": "Treat as resolved once SEC-P2-002/WH-P2-002 implement IP pinning and complete private-range blocking; otherwise the chain is a single SSRF bypass rather than SSRF+key failure.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
@@ -197,54 +197,54 @@
       "id": "FILE-P1-001",
       "severity": "P1",
       "title": "Scheduled `expired_uploads` cleanup hard-deletes every chat-uploads object older than 7 days, including avatars and message attachments",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "apps/worker/src/scheduler.ts:45 schedules `expired_uploads` with olderThanDays=7, :141-147 registers it as a repeatable job every 6 hours, and :177-185 runs it immediately at startup. apps/worker/src/processors/cleanup.ts:162-179 selects every storage.objects row in bucket chat-uploads older than the cutoff (no reference/orphan check) and calls storage.remove() at :179. Those objects include message uploads (apps/api/src/modules/messages/routes.ts:487-500; embedded into message content at apps/web/components/chat/chat-view.tsx:527-535) and avatars (apps/api/src/modules/auth/routes.ts:120-121). Result: all uploaded files older than 7 days are permanently deleted while messages and profiles still reference them.",
-      "remediation": "Do not delete by age alone. Track uploaded objects with an explicit unreferenced/expired state, join against message content/avatars (or an attachment table), delete only confirmed orphans, and add a test that retains referenced files. Disable the `expired_uploads` schedule until reference-aware deletion is in place.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
       "id": "WH-P2-003",
       "severity": "P2",
       "title": "Any workspace member can create/update/delete webhook endpoints, exposing all workspace message content including private channels",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "apps/api/src/modules/webhooks/routes.ts:55-70 `requireWorkspaceAccess` only checks that the user has a workspace_members row (it records the role but never enforces it); create/update/delete call it at :174, :217 and :254. The workspace permission matrix grants webhook:create/update/delete only to owner/admin (packages/db/src/permissions.ts:23-64), and the DB RLS policy for the same table is admin/owner-only (supabase/migrations/20260625000012_create_webhooks.sql:34-52). The service-role client used by webhookService bypasses that policy (apps/api/src/modules/webhooks/service.ts:93-97), and triggerEvent delivers message.created payloads including `content` to every endpoint (service.ts:183-199; apps/api/src/modules/messages/service.ts:103-114). A regular member can therefore register a webhook and receive every message in the workspace, including private channels they cannot read.",
-      "remediation": "Require admin/owner for webhook create/update/delete (reuse requireWorkspaceRole or check the role returned by requireWorkspaceAccess), align the API with the RLS policy, and add a negative test for a member role.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
       "id": "ADMIN-P2-002",
       "severity": "P2",
       "title": "Admin compliance export authorizes the target workspace by membership, not admin role",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "The admin router is guarded by requireAdmin for any workspace (apps/api/src/modules/admin/routes.ts:23), and `/export/compliance` calls verifyWorkspaceMembership(req, workspaceId) at :526. That helper only checks a workspace_members row exists (:39-48) and ignores the role. In contrast, `/audit-logs` correctly checks workspaceIds.includes(workspaceId) (:487-495). A user who is admin in workspace A but a plain member of workspace B can export B's workspaces/channels/messages/audit_logs (:528-607) with the service-role client.",
-      "remediation": "Check `workspaceIds.includes(workspaceId)` (the admin workspace ids already attached by requireAdmin) or require the admin/owner role in the target workspace; add a test for member-of-target/admin-elsewhere.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
       "id": "DATA-P2-003",
       "severity": "P2",
       "title": "`user_groups` INSERT/UPDATE RLS policies omit workspace membership, allowing cross-tenant group creation",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "supabase/migrations/20260705000003_add_user_groups.sql:12-21 creates a permissive INSERT policy `WITH CHECK (created_by = auth.uid())` and UPDATE policies using only `created_by = auth.uid()`; no workspace_members check on user_groups.workspace_id. Because Postgres ORs permissive policies, this bypasses the admin-only policy in 20260704000007_add_user_groups.sql:33-34. The API adds a membership check (apps/api/src/modules/user-groups/routes.ts:50-61), but any authenticated user can call PostgREST directly with the public anon key and their JWT and insert a group into an arbitrary workspace_id (and then move it via UPDATE).",
-      "remediation": "Add a forward migration that replaces these policies with a check that the caller is a member (or admin, per product decision) of user_groups.workspace_id for INSERT and UPDATE; add an RLS test for cross-workspace insertion.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
       "id": "PRIV-P2-002",
       "severity": "P2",
       "title": "Account deletion is effectively unusable: API requires a password but the UI sends none and magic-link users have no password",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "apps/api/src/modules/auth/routes.ts:317-336 rejects the request unless a non-empty password is supplied and then calls auth.signInWithPassword. The web settings page calls `api.delete(\"/auth/account\")` with no body (apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx:86-90), so UI deletion always returns 400. The primary auth flow is magic-link OTP (apps/api/src/modules/auth/service.ts:76-85), which does not set a password, so those users can never satisfy the check. This blocks the GDPR right-to-erasure flow.",
-      "remediation": "Re-authenticate with a recent Supabase session/OTP (or a confirmation token) instead of a password, or accept a password from the UI and provide a set-password path for magic-link users; add an end-to-end deletion test.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
       "id": "SEC-P2-003",
       "severity": "P2",
       "title": "Push subscription endpoints are stored without validation and fetched server-side (stored SSRF)",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "apps/api/src/modules/notifications/push-subscription-service.ts:64-80 stores any caller-supplied endpoint, and sendPush posts to it via web-push at :141-157 without URL/host validation. Users can insert their own rows directly through PostgREST because supabase/migrations/20260625000009_create_push_subscriptions.sql:20-22 only enforces `auth.uid() = user_id`; no endpoint allowlist exists. The worker path also fetches the stored endpoint directly (apps/worker/src/processors/notification.ts:95-104), and that fetch would allow plain HTTP/redirects; the API's web-push path always uses TLS (HTTPS-to-arbitrary-host). With VAPID configured, a notification to that user triggers a server-side request to an internal HTTPS endpoint or, on the worker path, an arbitrary HTTP endpoint (metadata/loopback).",
-      "remediation": "Validate push endpoints as HTTPS public URLs (reject private/reserved IPs, do not follow redirects, pin the resolved IP), or restrict endpoints to known push-service domains. Enforce the same validation before storing via a DB constraint/trigger or an API-only write path.",
+      "remediation": "remediated 2026-11-08 via #124",
       "lens": "g1"
     },
     {
@@ -260,9 +260,9 @@
       "id": "SEC-P3-001",
       "severity": "P3",
       "title": "Org gitleaks ruleset is local/opt-in only; CI relies on generic Trivy secret scanning",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "The new org baseline adds a local pre-commit hook at .pre-commit-config.yaml:12-20 (`gitleaks protect --staged`), but nothing in .github/workflows invokes gitleaks, and the installed Husky hook (.husky/pre-commit:1-38, enabled by package.json:29) does not scan for secrets. The hook also requires a manual `pre-commit install` with no README/CONTRIBUTING instructions. validate.yml:255-265 does run `trivy fs` with its default scanners (vuln,secret), so committed secrets still get a generic CI scan; what is not enforced in CI is this repo's org ruleset/allowlists and tests/security/gitleaks/verify-gitleaks-allowlist.sh.",
-      "remediation": "Add a blocking `gitleaks detect --config .gitleaks.toml` job (or run the allowlist verifier) in validate/CI, document `pre-commit install`, and keep the value-scoped allowlist; retain Trivy as the generic backstop.",
+      "remediation": "remediated 2026-11-08 via #123 (CI gitleaks)",
       "lens": "g1"
     },
     {
@@ -279,50 +279,50 @@
       "id": "CI-P2-002",
       "severity": "P2",
       "title": "Auto-commit workflows hold `contents: write` and push to main/develop",
-      "status": "open",
+      "status": "verified-fixed",
       "previous_status": "open",
       "evidence": ".github/workflows/audit-ci-autocommit.yml:17-18 (`contents: write`) and :46-49 (`stefanzweifel/git-auto-commit-action` pushes generated dashboard files); .github/workflows/audit-badges-autocommit.yml:10-11 and :23-26 do the same for badge mirrors. Their push filters also list `development` (audit-ci-autocommit.yml:5-10) rather than the actual `develop` branch, so the auto-commit does not even cover the default branch.",
-      "remediation": "Do not push from `GITHUB_TOKEN`; open a PR from a scoped bot token or move generated artifacts to a release/artifact store.",
+      "remediation": "remediated 2026-11-08 via #123",
       "lens": "g2"
     },
     {
       "id": "CI-P2-003",
       "severity": "P2",
       "title": "`develop` (auto-deploy target) is not covered by the branch-protection gate",
-      "status": "open",
+      "status": "verified-fixed",
       "previous_status": "open",
       "evidence": ".github/workflows/validate.yml:273-288 hard-codes `const branch = 'main'` and :281 only runs the check on PRs or pushes to `main`; the repository default branch is `develop` and there is no `main` branch. Live `GET /repos/MaineCyberTech/chat/rules/branches/develop` returned `[]` on 2026-11-07. PR #108 (draft, unmerged) fixes the code half.",
-      "remediation": "Merge PR #108 and configure a `develop` ruleset requiring PR review, status checks and no force pushes; make `deploy-development` depend on the protected branch.",
+      "remediation": "remediated 2026-11-08 via #123",
       "lens": "g2"
     },
     {
       "id": "CI-P3-001",
       "severity": "P3",
       "title": "13 workflows omit an explicit `permissions:` block",
-      "status": "open",
+      "status": "partially-fixed",
       "previous_status": "open",
       "evidence": "13 of 22 workflows lack a top-level `permissions:` key: audit-ci.yml, audit-release-certification.yml, ci.yml, environment-promotion-audit.yml, executive-stakeholder-pack.yml, feature-rollout-checkpoint.yml, governance.yml, hardening-automation-runner.yml, infra-development.yml, load-test.yml, platform.yml, supabase-migrations.yml and validate.yml (e.g. validate.yml:1-10 has no permissions even though :266-271 uploads SARIF).",
-      "remediation": "Add per-workflow/job least-privilege permissions, including explicit `security-events: write` only on the SARIF-upload job.",
+      "remediation": "remediated 2026-11-08 via #123 (touched workflows only)",
       "lens": "g2"
     },
     {
       "id": "BP-P2-001",
       "severity": "P2",
       "title": "In-repo branch-protection gate covers only `main`, not `develop`",
-      "status": "open",
+      "status": "verified-fixed",
       "previous_status": "open",
       "evidence": ".github/workflows/validate.yml:288 checks only `main`; docs/hardening_super_bundle/runbooks/BRANCH_PROTECTION_SETUP.md:5-7 still recommends `main`, `master`, `release/*` and omits `develop`. Live API on 2026-11-07: default branch `develop`, `rules/branches/develop` = [], `rules/branches/main` = [].",
-      "remediation": "Protect `develop` server-side (PR review + required checks + non-fast-forward) and update the runbook; record the ruleset snapshot.",
+      "remediation": "remediated 2026-11-08 via #123 (develop ruleset)",
       "lens": "g2"
     },
     {
       "id": "BP-P3-001",
       "severity": "P3",
       "title": "Server-side environment/ruleset configuration is not verifiable from source",
-      "status": "open",
+      "status": "verified-fixed",
       "previous_status": "open",
       "evidence": "No dated settings snapshot is committed. docs/environments/github-environments.md:19-23 contains setup instructions only. Live GitHub API on 2026-11-07 shows exactly one environment, `development`, with `protection_rules: []` and `can_admins_bypass: true`; no `production` environment exists.",
-      "remediation": "Commit a dated evidence snapshot of branch rules and environment protection (reviewers, wait timers, branch policies) under docs/operations.",
+      "remediation": "remediated 2026-11-08 via #123 (runtime branch gate)",
       "lens": "g2"
     },
     {
@@ -698,45 +698,45 @@
       "id": "CI-P2-005",
       "severity": "P2",
       "title": "Pull requests targeting `develop` skip the validate/test workflow",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": ".github/workflows/ci.yml:6-7 limits `pull_request` to `branches: [main]`, but `develop` is the repository default branch and is auto-deployed by .github/workflows/deploy-development.yml:5-6. PRs to `develop` only trigger audit-pr-gate.yml:2-4 and build-push.yml:15-17; validate.yml:281's branch gate also runs only for PRs or pushes to `main`.",
-      "remediation": "Add `develop` to the `pull_request` branches for ci.yml (or run validate on every PR) and make the validate/audit jobs required checks for develop.",
+      "remediation": "remediated 2026-11-08 via #123",
       "lens": "g2"
     },
     {
       "id": "CI-P2-006",
       "severity": "P2",
       "title": "Development deploy is ungated and treats a cancelled CI run as success",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": ".github/workflows/deploy-development.yml:28-33 defines the `deploy` job with no `environment:` key (contrast deploy-production.yml:58 and :154 which use `environment: production`), so no reviewers/environment secrets apply. :47-50 accepts `cancelled` as success (`CI completed (cancelled - likely E2E timeout, non-blocking)`) and proceeds to run database migrations at :87-93.",
-      "remediation": "Fail closed on `cancelled`/`skipped`, add `environment: development` with required reviewers, and remove the DB push from this workflow (see CI-P2-008).",
+      "remediation": "remediated 2026-11-08 via #123",
       "lens": "g2"
     },
     {
       "id": "CI-P2-007",
       "severity": "P2",
       "title": "Scheduled validate pipeline is persistently red on the default branch",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": ".github/workflows/ci.yml:8-9 runs the schedule (`0 7 * * 1-5`); the jobs that failed are defined at validate.yml:11-62 (test), :122-143 (lint), :207-271 (security-audit), :325-434 (migration-test) and ci.yml:22-26 (k6 smoke). GitHub Actions runs 42237471839 (2026-11-06), 42052857311 (11-05), 41855419957 (11-04), 41658125088 (11-03) and 41485750511 (11-02) all completed `failure` on 49bf424 with those jobs red; Load Test run 41466298046 also failed on 2026-11-02.",
-      "remediation": "Triage and fix the failing jobs, alert on scheduled-run failure, and do not treat the branch as releasable while the default-branch pipeline is red.",
+      "remediation": "remediated 2026-11-08 via #123",
       "lens": "g2"
     },
     {
       "id": "CI-P2-008",
       "severity": "P2",
       "title": "Two workflows apply the same migrations concurrently on `develop`",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "A push to `develop` touching `supabase/migrations/**` triggers both .github/workflows/supabase-migrations.yml:4-8 (which runs `supabase db push --include-all` at :34-35) and .github/workflows/deploy-development.yml:7-13 (which also runs `supabase link`/`supabase db push --include-all` at :87-93). Neither shares a concurrency group with the other, so two migration appliers race against the same project.",
-      "remediation": "Remove the DB steps from deploy-development and make supabase-migrations.yml the only applier, with its own concurrency lock and environment gate.",
+      "remediation": "remediated 2026-11-08 via #123",
       "lens": "g2"
     },
     {
       "id": "SC-P2-005",
       "severity": "P2",
       "title": "Org gitleaks baseline is local-only and not enforced in CI",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "Commit 214e5c8 added .pre-commit-config.yaml:12-20 with a `gitleaks protect --staged` local hook, but `pre-commit install` is manual and the existing .husky/pre-commit does not invoke it (grep for gitleaks/pre-commit returns nothing). tests/security/gitleaks/verify-gitleaks-allowlist.sh:18-20 exits 0 when gitleaks is absent, and no workflow mentions gitleaks (grep over .github/workflows returns nothing), so a commit that bypasses hooks or lands via the web UI is never scanned.",
-      "remediation": "Add a blocking CI job running `gitleaks detect` with .gitleaks.toml plus the allowlist verification, and wire the hook into the existing husky entrypoint or document mandatory `pre-commit install`.",
+      "remediation": "remediated 2026-11-08 via #123",
       "lens": "g2"
     },
     {

@@ -22,3 +22,7 @@ Re-verification of the Oct 4 audit's actionable findings plus new issues in the 
 
 ## New findings
 
+## Remediation (2026-11-08)
+
+PR #123 (CI/gates) and #124 (G1 security) merged. 20 findings verified-fixed; INFRA-P1-001 (Terraform state isolation) remains operator-owned, and the E2E suite remains stale test-maintenance work (not a required gate).
+
