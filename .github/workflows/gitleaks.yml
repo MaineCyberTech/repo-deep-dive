@@ -21,17 +21,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+      - name: Run Gitleaks (pinned CLI)
+        # The gitleaks-action wrapper requires a paid organisation licence.
+        # Run the pinned, checksum-verified Apache-2.0 CLI instead and upload
+        # the SARIF report below.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --report-format=sarif --report-path=results.sarif
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL --retry 3 -o gitleaks.tar.gz "$url"
+          echo "${GITLEAKS_SHA256}  gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          ./gitleaks detect --no-banner --redact \
+            --report-format sarif --report-path results.sarif
 
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
-        if: always()
+        if: always() && hashFiles('results.sarif') != ''
         with:
-          sarif-file: results.sarif
+          sarif_file: results.sarif
           category: gitleaks
 
