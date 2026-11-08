@@ -1,0 +1,6 @@
+# Public SHA256 SSH key fingerprints quoted in archived verification evidence.
+# Gitleaks generic-api-key false positives; the values are public key fingerprints.
+3c7bf8899824cb36832712588ceacd0628de2207:runs/falcon-20261014-verify-main-edbf441/verification/ci-bp-sc-sbom-det.md:generic-api-key:54
+3c7bf8899824cb36832712588ceacd0628de2207:runs/falcon-20261014-verify-main-edbf441/91_verification_ci-bp-sc-sbom-det.md:generic-api-key:54
+8119cd0262fdeec39ce6131bd6ccfd380b483c4b:runs/falcon-20261012-verify-main-3623d2e/91_verification_ci-bp-sc-sbom-det.md:generic-api-key:96
+00356a6f91537d459f17039304e649883af12038:runs/falcon-20261012-verify-main-3623d2e/verification/ci-bp-sc-sbom-det.md:generic-api-key:96
