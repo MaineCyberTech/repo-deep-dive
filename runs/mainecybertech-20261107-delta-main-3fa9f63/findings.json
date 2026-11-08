@@ -14,10 +14,10 @@
   "counts": {
     "total": 50,
     "by_status": {
-      "verified-fixed": 38,
+      "verified-fixed": 39,
       "partially-fixed": 7,
       "still-open": 3,
-      "open": 2
+      "open": 1
     },
     "by_severity": {
       "P1": 12,
@@ -391,9 +391,9 @@
       "id": "IR-P2-011",
       "severity": "P2",
       "title": "The first (and only) alert-path exercise failed and the IR evidence table still records no exercise",
-      "status": "open",
+      "status": "verified-fixed",
       "evidence": "The public API still shows exactly one alert-path-exercise run — 41323651243 on 2026-11-01 (main@4199ce8c) — and it failed at step 'Exercise alert delivery on the droplet'; the preceding direct ntfy relay check succeeded, so the failure is in the droplet-side Alertmanager exercise, not the channel. There has been no run since. docs/ALERT_PATH_EXERCISE.md:102-106 still has `_none recorded yet_` in the evidence table, and the scheduled next attempt is 2026-12-01. The missed-heartbeat drill is still unrecorded (docs/ALERT_PATH_EXERCISE.md:84-100).",
-      "remediation": "Identify the failing precondition from the failed run (DROPLET_IP/DO_API_TOKEN resolution, SSH/DO_SSH_HOST_KEY, or the Alertmanager endpoint), rerun on dev, confirm the ntfy notification and the Watchdog heartbeat, then record the run URL, operator and observation in the evidence table. Keep the monthly schedule; add a runbook step for a failed exercise so it cannot sit unowned.",
+      "remediation": "alert path exercised 2026-11-07T23:33Z (script exit 0, webhook total 1->2, failed 0) after #394 removed the no-op Slack receiver; evidence recorded in #399",
       "lens": "g3_backups_infra"
     },
     {

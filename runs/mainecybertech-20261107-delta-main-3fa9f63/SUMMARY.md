@@ -75,3 +75,7 @@ needs `SUPABASE_DB_URL`.
 - `CI-P3-017`, `CI-P3-018` -> verified-fixed (ai-reviewer#3 + #390)
 - `DR-P3-010` -> verified-fixed (#389)
 
+## Alert path (2026-11-07)
+
+`IR-P2-011` -> verified-fixed: the exercise passed end-to-end after #394 removed the no-op Slack receiver (webhook total 1->2, failed 0); evidence recorded in #399.
+

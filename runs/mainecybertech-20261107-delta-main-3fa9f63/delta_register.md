@@ -27,7 +27,7 @@
 | DR-P2-011 | P2 | verified-fixed | Backup jobs run on persistent lab runners but leave plaintext dumps/downloaded user objects in the workspace w |
 | EVOL-P2-003 | P2 | verified-fixed | tailwind-merge 3.x is installed against Tailwind CSS 3.4, so class-conflict merging uses Tailwind v4 semantics |
 | INFRA-P2-003 | P2 | partially-fixed | Operations documentation contradicts the current pipeline and configuration |
-| IR-P2-011 | P2 | open | The first (and only) alert-path exercise failed and the IR evidence table still records no exercise |
+| IR-P2-011 | P2 | verified-fixed | The first (and only) alert-path exercise failed and the IR evidence table still records no exercise |
 | PRIV-P2-010 | P2 | verified-fixed | Direct anon INSERT on store_quotes bypasses the consent gate, validation and rate limits |
 | SEC-P2-019 | P2 | verified-fixed | File-request upload listing and signed URLs skip the parent request's visibility check |
 | SEC-P2-020 | P2 | verified-fixed | Client roles granted ai:view can read every AI draft output in the organization |
