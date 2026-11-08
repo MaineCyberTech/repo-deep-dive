@@ -43,7 +43,7 @@ jobs:
 
   remediation:
     needs: preflight
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, lab, lab-docker, ci-runner]
     env:
       ORG: ${{ inputs.org }}
       REPO: ${{ inputs.repo }}

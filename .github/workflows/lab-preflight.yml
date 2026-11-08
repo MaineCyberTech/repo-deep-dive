@@ -41,7 +41,7 @@ permissions:
 
 jobs:
   lab:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, lab, lab-docker, ci-runner]
     env:
       HOST: ${{ vars.LAB_ENDPOINT_HOST }}
       USER: ${{ vars.LAB_ENDPOINT_USER }}

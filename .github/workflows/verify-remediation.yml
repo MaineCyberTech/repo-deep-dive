@@ -44,7 +44,7 @@ jobs:
 
   verify:
     needs: preflight
-    runs-on: [self-hosted, linux, x64, ci-runner]
+    runs-on: [self-hosted, Linux, X64, lab, lab-docker, harrier-managed]
     env:
       ORG: ${{ github.repository_owner }}
       REPO: ${{ inputs.repo }}
