@@ -1,0 +1,264 @@
+{
+  "area": "G1",
+  "run": "buddy-20261108-verify-master-9e3b015",
+  "repository": "MaineCyberTech/buddy",
+  "target": {
+    "branch": "master",
+    "commit": "9e3b015446b21e5b1130fce58899c0627f339a3c",
+    "commitDate": "2026-10-15T01:50:21-04:00",
+    "verifiedAt": "2026-11-08"
+  },
+  "scope": [
+    "ARCH",
+    "DATA",
+    "USE",
+    "FILE",
+    "UX",
+    "PERF",
+    "MOB"
+  ],
+  "method": "Static re-verification against the current checkout plus a full unit-test run. `npm test` at 9e3b015: 19 files / 185 tests passed. The suite has no InventoryScreen test, so the item-action persistence and equip-rendering paths are not covered. The btoa failure was reproduced separately with Node 20 (CJK/emoji throw InvalidCharacterError). No commits or pushes; product paths were not modified.",
+  "productCodeDelta": "git diff adcf767..9e3b015 -- app components lib data public next.config.js is empty. Only package.json/package-lock.json (postcss override), security tooling, and docs changed, so G1 findings were re-checked rather than inferred from the delta.",
+  "counts": {
+    "bySeverity": {
+      "P1": 1,
+      "P2": 8,
+      "P3": 9
+    },
+    "byStatus": {
+      "verified-fixed": 0,
+      "partially-fixed": 0,
+      "open": 17,
+      "regressed": 0,
+      "owner-accepted": 1
+    },
+    "byArea": {
+      "ARCH": 3,
+      "DATA": 2,
+      "USE": 4,
+      "FILE": 2,
+      "UX": 3,
+      "PERF": 1,
+      "MOB": 3
+    },
+    "priorTotal": 13,
+    "new": 5,
+    "total": 18
+  },
+  "findings": [
+    {
+      "id": "ARCH-P1-001",
+      "severity": "P1",
+      "title": "Client is fully authoritative: no server trust boundary exists",
+      "status": "owner-accepted",
+      "evidence": [
+        "docs/README.md:79 records ARCH-P1-001 as Deferred, owner maintainer, dated 2026-10-03, until an account/cloud mode exists.",
+        "next.config.js:62 uses static `output: 'standalone'`; app/ has no route handlers or server endpoints, so there is still no server authority to validate state.",
+        "The acceptance is unchanged at 9e3b015 and remains scoped to the guest-only/local-first product."
+      ],
+      "remediation": "Keep the dated acceptance while guest-only. Before any account/cloud mode, add a server-side validation/authority boundary and re-audit; re-confirm the acceptance at each release."
+    },
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Inventory item actions mutate the store but are never persisted",
+      "status": "open",
+      "evidence": [
+        "components/device/InventoryScreen.tsx:23-30 `handleItemAction` calls `setBuddy` and `setInventory` but never calls `saveGame`.",
+        "Compare the other two mutation paths that do persist: components/device/MainDevice.tsx:61-88 and components/device/AdventureScreen.tsx:50-61.",
+        "No product-code change since adcf767 affects this path: `git diff adcf767..9e3b015 -- app components lib data public` is empty; only package.json/dependency and docs/security files changed."
+      ],
+      "remediation": "After a successful `applyItemAction`, call `saveGame({ version: 2, guestId, buddy: outcome.buddy, createdAt: outcome.buddy.identity.generatedAt, updatedAt: Date.now(), inventory: outcome.inventory })` and surface saved/failed status like MainDevice. Prefer one shared `persistGame` helper so all mutation paths cannot drift; add a fake-indexeddb component test that reloads after use/sell/equip."
+    },
+    {
+      "id": "DATA-P2-001",
+      "severity": "P2",
+      "title": "Inventory item actions are not written to the save",
+      "status": "open",
+      "evidence": [
+        "components/device/InventoryScreen.tsx:23-30 updates only the Zustand store after `applyItemAction`.",
+        "lib/storage/indexeddb.ts:82-87 `exportSave` reads the persisted record; unsaved inventory/coins/item states are therefore omitted from any backup.",
+        "app/page.tsx:15-27 rehydrates only from IndexedDB on reload, so the UI-visible inventory after use/sell/equip is lost on refresh."
+      ],
+      "remediation": "Persist the post-action buddy and inventory atomically (one `saveGame` call) and include inventory in the same save. Add a test that uses an item, reloads, and asserts the quantity/coins/hat survive."
+    },
+    {
+      "id": "USE-P2-001",
+      "severity": "P2",
+      "title": "Inventory actions are lost on reload (persistence gap visible to the player)",
+      "status": "open",
+      "evidence": [
+        "components/device/InventoryScreen.tsx:23-30 shows a success message but does not persist the action.",
+        "components/ui/OfflineIndicator.tsx:16 tells the player 'OFFLINE — Local saves only', which overstates durability for inventory actions.",
+        "app/page.tsx:15-27 restores only the last persisted save, so a reload after using/selling/equipping reverts the item and coin changes."
+      ],
+      "remediation": "Persist every successful item action before showing the success message (or show an explicit unsaved state). Add the same autosave-status affordance used by MainDevice and a reload test."
+    },
+    {
+      "id": "FILE-P2-001",
+      "severity": "P2",
+      "title": "Save export uses btoa and can throw on non-Latin-1 content",
+      "status": "open",
+      "evidence": [
+        "lib/storage/indexeddb.ts:82-87 `exportSave` returns `btoa(JSON.stringify(save))`; `importSave` at :94 decodes with `atob`.",
+        "The only tests are ASCII/Latin-1: lib/storage/indexeddb.test.ts:104-119; there is no Unicode nickname/emoji case.",
+        "Reproduced with Node 20: `btoa` throws `InvalidCharacterError` for CJK/emoji JSON; characters in U+0080..U+00FF (e.g. ë) survive `atob` as code units in a browser. The bug is currently latent because no UI calls `exportSave` (see FILE-P2-002), but it will break the export feature once wired."
+      ],
+      "remediation": "Encode UTF-8 explicitly, e.g. `TextEncoder` -> base64 (chunked to avoid call-stack limits) and `TextDecoder` in `importSave`, or use the well-tested encodeURIComponent/unescape pattern. Keep the MAX_IMPORT_LENGTH guard and add a Unicode round-trip test (e.g. a nickname with CJK/emoji)."
+    },
+    {
+      "id": "UX-P2-001",
+      "severity": "P2",
+      "title": "Pinch-zoom is disabled (viewport maximumScale=1, userScalable=false)",
+      "status": "open",
+      "evidence": [
+        "app/layout.tsx:41-48 exports `maximumScale: 1` and `userScalable: false`.",
+        "app/globals.css:32 also sets `touch-action: manipulation` on body, suppressing double-tap zoom.",
+        "No change in the audited range; this still fails WCAG 1.4.4 (Resize Text) for low-vision users."
+      ],
+      "remediation": "Remove `maximumScale`/`userScalable` (or allow zoom to at least 5x) and change body touch-action to `pan-x pan-y pinch-zoom` (or remove the rule). Verify at 200%/400% zoom on a 320px viewport."
+    },
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "title": "AdventureScreen mutates a state object in place instead of returning a new one",
+      "status": "open",
+      "evidence": [
+        "components/device/AdventureScreen.tsx:39-42 computes `newProgression` and then assigns `updatedBuddy.progression = newProgression`, mutating the object returned by `applyAdventureResult`.",
+        "The store is updated immediately afterwards, so the mutation is local today, but it violates the pure-transition contract used by the other engines."
+      ],
+      "remediation": "Keep `applyAdventureResult` pure and have it return the incremented `totalAdventures` (or spread into a new buddy) instead of assigning to the returned object. Add an input-immutability assertion."
+    },
+    {
+      "id": "DATA-P3-001",
+      "severity": "P3",
+      "title": "applyAdventureResult mutates item objects shared with the input inventory",
+      "status": "open",
+      "evidence": [
+        "lib/locations/adventure.ts:131 creates only a shallow `newInventory = { ...inventory }`; `newItems = [...newInventory.items]` at :153 reuses the same item object references.",
+        "lib/locations/adventure.ts:155-157 then does `existing.quantity += item.quantity`, mutating the item object inside the caller's inventory (and any save snapshot holding that reference)."
+      ],
+      "remediation": "Copy each item before changing it (`const newItems = inventory.items.map(i => ({ ...i }))`) or replace the found entry with a new object; add a test that asserts the input inventory is unchanged after applying loot."
+    },
+    {
+      "id": "MOB-P3-001",
+      "severity": "P3",
+      "title": "Manifest relies on SVG icons flagged maskable; no PNG/apple-touch fallback",
+      "status": "open",
+      "evidence": [
+        "public/manifest.json:10-22 contains only `icon-192.svg` and `icon-512.svg`, both declared `purpose: \"any maskable\"`; there is no PNG or separate maskable-safe-zone asset.",
+        "app/layout.tsx:31-35 sets `appleWebApp` metadata but no `apple-touch-icon`, and public/ contains no PNG icon.",
+        "The manifest also has no `id` field (public/manifest.json:1-26)."
+      ],
+      "remediation": "Add 192/512 PNG icons plus a dedicated maskable PNG with the 40% safe zone, an apple-touch-icon (180x180), and a manifest `id`. Keep `purpose` entries separate (`any` vs `maskable`) and validate with Lighthouse/installability checks on iOS and Android."
+    },
+    {
+      "id": "MOB-P3-002",
+      "severity": "P3",
+      "title": "Service worker caches all runtime responses without a storage budget",
+      "status": "open",
+      "evidence": [
+        "public/sw.js:67-74 caches every successful same-origin GET (`response.status === 200 && response.type === 'basic'`) with no entry/size cap or eviction.",
+        "public/sw.js:71-73 does not await or catch `cache.put`, so a QuotaExceededError becomes an unhandled rejection and can leave the cache partially populated."
+      ],
+      "remediation": "Precache only the app shell and bound runtime caching (LRU/max entries or max bytes), and await/catch `cache.put` to handle QuotaExceededError. Add a synthetic large-response/quota test."
+    },
+    {
+      "id": "PERF-P3-001",
+      "severity": "P3",
+      "title": "Install-prompt detection polls on a 1s interval",
+      "status": "open",
+      "evidence": [
+        "components/ui/ServiceWorkerRegistration.tsx:28-37 runs `setInterval(..., 1000)` and checks `getInstallPrompt()` every second; the interval is cleared only if a prompt is found.",
+        "lib/offline/sw.ts:23-30 already captures `beforeinstallprompt`, but the captured event is not pushed to React/Zustand, forcing the polling workaround."
+      ],
+      "remediation": "Replace the interval with an event-driven subscription: have `listenForInstallPrompt` notify a store/callback when the event fires, and clear the prompt on use/dismissal. Add a test that no timer remains after the prompt is captured."
+    },
+    {
+      "id": "USE-P3-001",
+      "severity": "P3",
+      "title": "Selling an item has no confirmation step",
+      "status": "open",
+      "evidence": [
+        "components/device/InventoryScreen.tsx:81-88 the SELL button calls `handleItemAction(entry.id, 'sell')` immediately; there is no confirm dialog, undo window, or disabled state.",
+        "Because item actions are not persisted (USE-P2-001), a reload can undo a mistaken sale before the next save; once a later care/adventure save persists it, there is no undo path."
+      ],
+      "remediation": "Add a confirmation step or a short undo window for sell (and optionally for consuming rare items). Include the item name and coin value in the confirmation, and test cancel/undo."
+    },
+    {
+      "id": "UX-P3-001",
+      "severity": "P3",
+      "title": "Install prompt and offline banner can overlay content",
+      "status": "open",
+      "evidence": [
+        "components/ui/OfflineIndicator.tsx:10-17 renders a fixed top banner at `z-50`; components/ui/ServiceWorkerRegistration.tsx:53-62 renders a fixed bottom install button at `z-50`.",
+        "app/layout.tsx:60-68 and components/device/MainDevice.tsx:101-117 reserve no space for either overlay, so they cover the header/controls on short (e.g. 320px) viewports."
+      ],
+      "remediation": "Reserve layout space (sticky in-flow banners or body padding that matches the banner height), honor safe-area insets, and make the install prompt dismissible. Test 320x568 and landscape."
+    },
+    {
+      "id": "USE-P2-002",
+      "severity": "P2",
+      "title": "Equipping a hat writes an item id into identity.hat, so hats do not render and can outlive the item",
+      "status": "open",
+      "evidence": [
+        "lib/actions/care.ts:246-255 equip returns `identity: { ...buddy.identity, hat: def.id }`; the item ids are `flower_crown`, `tiny_glasses`, `adventurer_hat` (data/items.ts:17-19).",
+        "The renderer only recognizes HATS names such as `flower` and `crown` (data/hats.ts:1-22; components/device/LcdDisplay.tsx:57-83); none of the three equipable item ids is a key. Equipping therefore overwrites the buddy's generated hat (e.g. `crown`) and draws nothing.",
+        "components/device/MainDevice.tsx:216-218 prints the raw item id as `Hat: flower_crown`; lib/actions/items.test.ts:58-64 only asserts the item id, so the rendering mismatch is untested.",
+        "Selling the last copy (lib/actions/care.ts:234-243) leaves `identity.hat` pointing at the sold item id; no unequip/clear path exists."
+      ],
+      "remediation": "Add an explicit item-to-hat-style mapping (or a separate `equippedAccessory` field) instead of overloading the generated-hat vocabulary; render that value in LcdDisplay and the profile, and clear/unequip when the last copy is sold. Add component tests asserting the rendered sprite/profile text, not just `identity.hat`."
+    },
+    {
+      "id": "FILE-P2-002",
+      "severity": "P2",
+      "title": "Save export/import has no user-facing entry point",
+      "status": "open",
+      "evidence": [
+        "lib/storage/indexeddb.ts:82-106 defines `exportSave`, `importSave`, and `getSaveMetadata`, but the only call sites are lib/storage/indexeddb.test.ts:104-147.",
+        "app/page.tsx:7,15-27 only imports `loadGame`/`hasSave`; app/error.tsx:4,59-67 only imports `deleteSave`. No component offers download/upload, so players cannot back up or restore a save.",
+        "This was already noted as a P2 in docs/buddy/reports/phases/audit-03-pwa-offline-report.md:30 but was not carried into the 20261005 findings; it is distinct from DR-P2-001 (drill evidence) and RES-P3-002 (automatic backup)."
+      ],
+      "remediation": "Add a Settings/Data surface with export (download a text/JSON file) and import (file picker + confirmation + reload), using the Unicode-safe codec from FILE-P2-001. Reject/confirm overwriting an existing save, and add an end-to-end export -> clear -> import test."
+    },
+    {
+      "id": "MOB-P2-001",
+      "severity": "P2",
+      "title": "No service-worker update prompt; activation deletes the old cache under a running page",
+      "status": "open",
+      "evidence": [
+        "public/sw.js:22-33 calls `self.skipWaiting()` during install, and public/sw.js:35-53 deletes every cache except the new one then calls `clients.claim()`.",
+        "lib/offline/sw.ts:1-19 only registers the worker; components/ui/ServiceWorkerRegistration.tsx:11-26 has no `updatefound`/`waiting`/`controllerchange` handling and no update UI.",
+        "A running page can therefore be claimed by a new worker whose cache no longer contains its old build assets, with no prompt to reload. docs/buddy/reports/phases/audit-03-pwa-offline-report.md:29 already flagged the missing update prompt as P2."
+      ],
+      "remediation": "Keep the new worker waiting, show an 'update available' prompt, post `SKIP_WAITING` on acceptance, and reload on `controllerchange` (or reload before the activate handler deletes the old cache). Test with two build IDs and an open tab."
+    },
+    {
+      "id": "USE-P3-002",
+      "severity": "P3",
+      "title": "Adventure results leave mood stale",
+      "status": "open",
+      "evidence": [
+        "lib/locations/adventure.ts:133-140 changes energy/happiness/hunger and returns the new buddy without calling `recalculateMood`.",
+        "The care and item paths do recalculate (lib/actions/care.ts:283, :323), and components/device/MainDevice.tsx:132-142 displays `currentBuddy.mood`, so a buddy can show HAPPY after an adventure drops it into the low-needs range."
+      ],
+      "remediation": "Call `newBuddy.mood = recalculateMood(newBuddy)` before returning from `applyAdventureResult` and add a test that covers a drop across the neutral/sad threshold."
+    },
+    {
+      "id": "UX-P3-002",
+      "severity": "P3",
+      "title": "Inventory action buttons are undersized for touch",
+      "status": "open",
+      "evidence": [
+        "components/device/InventoryScreen.tsx:66, :75, :84 use `px-2 py-0.5 text-[10px]`, producing roughly 20px-high controls; the tab controls at components/device/MainDevice.tsx:161-188 are also only ~27px high.",
+        "The controls are roughly 20px high with 10px label text: below the 24x24 CSS-px WCAG 2.5.8 target unless the spacing exception applies, and far below the 44px mobile guidance; the inventory is the densest action row on a touch-first screen."
+      ],
+      "remediation": "Raise the inventory/tab controls to at least 24px (ideally 44px) with `min-h-11 py-2 text-xs` and adequate spacing; verify at 320px width and with a screen reader/keyboard."
+    }
+  ],
+  "verification": {
+    "unitTests": "19 files / 185 tests passed (npm test at 9e3b015)",
+    "codecReproduction": "Node 20: btoa(JSON.stringify({nickname:'日本語'})) and the emoji case throw InvalidCharacterError; Latin-1-range characters such as ë remain in range and round-trip via atob code units.",
+    "coverageGap": "No components/device/InventoryScreen test; lib/actions/items.test.ts:58-64 asserts identity.hat only."
+  }
+}

@@ -1,0 +1,459 @@
+{
+  "area": "G2",
+  "run": "buddy-20261108-verify-master-9e3b015",
+  "repository": "MaineCyberTech/buddy",
+  "target": {
+    "branch": "master",
+    "commit": "9e3b015446b21e5b1130fce58899c0627f339a3c",
+    "commitDate": "2026-10-15T01:50:21-04:00",
+    "verifiedAt": "2026-11-08"
+  },
+  "scope": [
+    "BP",
+    "CI",
+    "SC",
+    "SBOM",
+    "INFRA",
+    "DOC",
+    "DR",
+    "IR",
+    "OBS",
+    "TEST",
+    "SEC",
+    "RES",
+    "PRIV",
+    "CHAIN",
+    "EVOL",
+    "HYGIENE",
+    "DET"
+  ],
+  "method": "Static re-verification against origin/master@9e3b015, plus unauthenticated GitHub API checks (rulesets, environments, workflow runs, check-run annotations), npm audit/npm ls with Node 20.19.5, and a pinned gitleaks 8.30.1 scan. Read-only; no commits or pushes.",
+  "counts": {
+    "bySeverity": {
+      "P1": 4,
+      "P2": 11,
+      "P3": 18
+    },
+    "byStatus": {
+      "verified-fixed": 2,
+      "partially-fixed": 0,
+      "open": 30,
+      "regressed": 1,
+      "owner-accepted": 0
+    },
+    "byArea": {
+      "BP": 2,
+      "CI": 5,
+      "SC": 6,
+      "SBOM": 1,
+      "INFRA": 1,
+      "DOC": 4,
+      "DR": 1,
+      "IR": 1,
+      "OBS": 1,
+      "TEST": 1,
+      "SEC": 2,
+      "RES": 2,
+      "PRIV": 1,
+      "CHAIN": 1,
+      "EVOL": 1,
+      "HYGIENE": 2,
+      "DET": 1
+    },
+    "priorTotal": 28,
+    "new": 5,
+    "total": 33
+  },
+  "findings": [
+    {
+      "id": "BP-P1-001",
+      "severity": "P1",
+      "title": "master is unprotected: no required PR, review, or status checks",
+      "status": "open",
+      "evidence": [
+        "GitHub API /repos/MaineCyberTech/buddy/rulesets returns an empty array; no repository ruleset protects master.",
+        "PR #42 (head 9b2e9c0) merged at 2026-10-15T05:50:22Z with 0 reviews while its head CI run 38686390902 failed; the resulting master push run 38688963905 also failed. A required-check/required-review rule would have blocked this.",
+        "docs/release-process.md:100-111 still describes the branch ruleset as something to create; .github/CODEOWNERS:1-4 only requests review."
+      ],
+      "remediation": "Enable a master ruleset requiring a PR, the CI status check, and CODEOWNERS review, and blocking force-push/deletion. Verify with a direct push and with a red-CI PR."
+    },
+    {
+      "id": "BP-P1-002",
+      "severity": "P1",
+      "title": "The `release` environment required by release.yml does not exist",
+      "status": "open",
+      "evidence": [
+        ".github/workflows/release.yml:30 declares `environment: release` for the build/publish job.",
+        "GitHub API /repos/MaineCyberTech/buddy/environments lists only `dev` and `development`; no `release` environment exists, so no required-reviewer gate or v* tag restriction applies.",
+        "docs/release-process.md:79-89 still instructs maintainers to create it."
+      ],
+      "remediation": "Create the `release` environment with required reviewers and a deployment tag policy restricted to v* tags; verify a non-maintainer tag push waits for approval."
+    },
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "CI is failing on master at the audited commit",
+      "status": "regressed",
+      "evidence": [
+        "The postcss fix made master green at 1db7d77 (run 37269996571, all jobs success). Current master 9e3b015 is red: run 38688963905 security job 116270206623 fails at .github/workflows/ci.yml:75-76 (`npm audit --audit-level=high --omit=dev`).",
+        "Local reproduction with Node 20.19.5: `npm audit --omit=dev` exits 1 with 1 critical + 2 high vulnerabilities (next 15.5.27 GHSA-2464-fhr4-w9xw critical; source-map-js 1.2.1 and zod 3.25.76 high).",
+        "package-lock.json:6574-6575 still pins next 15.5.27; package.json:24 allows ^15.5.27, so a lockfile refresh to >=15.5.28 is available."
+      ],
+      "remediation": "Refresh the lockfile to next >=15.5.28 and patch source-map-js >=1.2.2 / zod >=4.6.6 (direct upgrade or overrides), then confirm the master security job is green at the new SHA."
+    },
+    {
+      "id": "SC-P1-001",
+      "severity": "P1",
+      "title": "Next.js 15.5.27 carries a critical RCE advisory and a high DoS advisory",
+      "status": "open",
+      "evidence": [
+        "package.json:24 declares `next: ^15.5.27`; package-lock.json:6574-6575 resolves and pins next 15.5.27 for `npm ci`.",
+        "GHSA-2464-fhr4-w9xw (CVSS 9.5, published by Vercel on 2026-10-14; GitHub Advisory Database 2026-10-22) affects next >=10.0.0 <=15.5.27 and is fixed in 15.5.28; GHSA-p3m5-59mp-jv5r (high, App Router Server Actions DoS) is also fixed in 15.5.28.",
+        "`npm audit --omit=dev` reports `next` as critical; the optional sharp dependency is already 0.35.5 (meets the advisory workaround) but does not clear the Next package advisory."
+      ],
+      "remediation": "Upgrade next to >=15.5.28 (15.5.29 is the current 15.x backport) and regenerate package-lock.json; then re-run npm audit and the CI security job."
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "dependency-review job is skipped because the dependency graph / Dependabot is disabled",
+      "status": "open",
+      "evidence": [
+        ".github/workflows/ci.yml:95-112 defines the dependency-review job and warns it requires the Dependency graph.",
+        "Check-run annotation on PR 4cd2a17 (2026-11-08) says: `Dependency review is not supported on this repository. Please ensure that Dependency graph is enabled`; run 42434707717 dependency-review job failed at the Dependency review step.",
+        "On master pushes the job is skipped by the `if: github.event_name == 'pull_request'` guard (.github/workflows/ci.yml:100), so it is not a gate there either."
+      ],
+      "remediation": "Enable Dependency graph plus Dependabot alerts/security updates in repository settings; re-run a PR until the job reports a real pass/fail conclusion."
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Release workflow packages and publishes without the security gate",
+      "status": "open",
+      "evidence": [
+        ".github/workflows/release.yml:33-58 runs only install, lint, typecheck, test, and build; there is no `npm audit`, gitleaks, or license-policy step.",
+        ".github/workflows/release.yml:69-70 generates the SBOM and :91-102 packages/uploads/publishes the artifact, so a vulnerable dependency set can be released.",
+        "The CI security gate exists separately at .github/workflows/ci.yml:75-93 but is not invoked or required by the release workflow; master CI is currently red (CI-P1-001)."
+      ],
+      "remediation": "Run the same audit/secret/license gate in the release build job (or make the release workflow require a green CI run for the tagged SHA) before packaging and publishing."
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "Security job skips secret scan and license policy whenever npm audit fails",
+      "status": "open",
+      "evidence": [
+        ".github/workflows/ci.yml:75-93 runs Audit, Secret scan, and License policy as sequential steps in one job.",
+        "Run 38688963905 job 116270206623: step 5 `Audit production dependencies` failed, then steps 6 `Secret scan (gitleaks)` and 7 `License policy` were skipped. The same pattern appears in PR run 38686390902.",
+        "Because npm audit has been red since 9e3b015, gitleaks has not actually run on master since then, despite DET-P3-001/SC-P3-001 being nominally addressed."
+      ],
+      "remediation": "Split audit, secret scan, and license policy into independent jobs, or make the secret scan and license steps run with `if: always()` so a failed audit cannot suppress them."
+    },
+    {
+      "id": "DOC-P2-001",
+      "severity": "P2",
+      "title": "README states the stack is Next.js 14 but the repo is Next.js 15.5.27",
+      "status": "open",
+      "evidence": [
+        "README.md:27 says `Framework | Next.js 14 (App Router)`.",
+        "package.json:24 declares next ^15.5.27; package-lock.json:6574-6575 pins 15.5.27, and CI builds with Next 15.5.27."
+      ],
+      "remediation": "Update the README stack table to Next.js 15 (or state the exact pinned line) and keep it in sync with package.json."
+    },
+    {
+      "id": "DOC-P2-002",
+      "severity": "P2",
+      "title": "README 'Known gaps' and testing sections contradict the current code/tests",
+      "status": "open",
+      "evidence": [
+        "README.md:19-21 says achievements, lifecycle evolution, and skills are implemented but not wired into the game loop; lib/actions/care.ts:133-145 and lib/locations/adventure.ts:168-176 now wire progression, skills, evolution, and achievements.",
+        "README.md:105-108 calls component/E2E coverage and persistence-layer tests tracked gaps, but app/page.test.tsx, app/error.test.tsx, components/**/*.test.tsx and lib/storage/indexeddb.test.ts exist.",
+        "README.md:14-16 still cites the 20261003 audit (99abf29, 11 P1) rather than the 20261005 run and its current residual status."
+      ],
+      "remediation": "Reconcile the README with the current code: mark achievements/evolution/skills wired, list the existing component and persistence suites, and update the audit status block."
+    },
+    {
+      "id": "DR-P2-001",
+      "severity": "P2",
+      "title": "No backup/restore drill and no committed evidence of one",
+      "status": "open",
+      "evidence": [
+        "docs/release-process.md:51-61 defines the release steps and :63-67 defines rollback, but neither includes a backup/restore drill or an evidence artifact.",
+        "docs/release-readiness.md:40-45 lists the release gate conditions; none covers save export/delete/import verification.",
+        "No drill record exists under docs/; the only export/import test is the unit round-trip at lib/storage/indexeddb.test.ts:113, which is not a release drill."
+      ],
+      "remediation": "Add a restore drill to the release checklist: export a representative save, clear storage, import, assert equality, and attach the result to the release record."
+    },
+    {
+      "id": "SC-P2-001",
+      "severity": "P2",
+      "title": "High-severity postcss advisory remains in the production dependency tree (accepted)",
+      "status": "verified-fixed",
+      "evidence": [
+        "package.json:50-52 now carries `overrides.postcss: ^8.5.28`; package-lock.json:7115-7117 resolves the single postcss copy to 8.5.28.",
+        "`npm ls postcss --package-lock-only` shows `next@15.5.27 -> postcss@8.5.28 deduped` and no nested next/node_modules/postcss entry; the vendored 8.4.31 is gone.",
+        "`npm audit --omit=dev` no longer reports postcss; docs/RISK_ACCEPTANCE.md:1-12 records RA-001 as CLOSED on 2026-10-05."
+      ],
+      "remediation": "Keep the override while on Next 15.5.x and re-check `npm ls postcss` on every Next upgrade; remove it once the Next line vendors postcss >=8.5.19."
+    },
+    {
+      "id": "SC-P2-002",
+      "severity": "P2",
+      "title": "Repository secret-scanning and Dependabot security updates are disabled",
+      "status": "open",
+      "evidence": [
+        ".github/dependabot.yml:1-40 configures weekly npm and GitHub Actions version updates; Dependabot runs are visible weekly on master (e.g. runs 42434672732 and 42434670391). This pre-dates the verify target and is not Dependabot security updates.",
+        "Dependency graph is still disabled per the dependency-review annotation (CI-P2-001); Dependabot alerts and security updates depend on it, so they remain unavailable.",
+        "No repository secret-scanning or push-protection configuration is present in-repo; the unauthenticated GitHub API cannot confirm the live setting, and the new gitleaks baseline is an in-repo compensating control, not repository secret scanning."
+      ],
+      "remediation": "Enable Dependency graph, Dependabot alerts and security updates, and secret scanning with push protection in repository settings; verify each via `gh api` and record the result."
+    },
+    {
+      "id": "SC-P2-003",
+      "severity": "P2",
+      "title": "Vendored prompt pack authorship and licensing are unconfirmed",
+      "status": "open",
+      "evidence": [
+        "LICENSE:1-5 records a proprietary, all-rights-reserved license for the repository and associated materials, and NOTICE:20-28 restricts redistribution of the prompt pack; both pre-date the verify target (present at adcf767).",
+        "docs/README.md:28-32 still records the pack's authorship/ownership and licensing as unconfirmed, with no named author or dated confirmation.",
+        "The pack remains 87 files under docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack/ (docs/README.md:21-24)."
+      ],
+      "remediation": "Record the pack's author/holder and license with an owner and date, or remove it from the distributed repository; keep NOTICE/docs/README consistent with the decision."
+    },
+    {
+      "id": "SC-P2-004",
+      "severity": "P2",
+      "title": "Additional high advisories in production dependencies: source-map-js 1.2.1 and zod 3.25.76",
+      "status": "open",
+      "evidence": [
+        "package-lock.json:8097-8098 pins source-map-js 1.2.1 (GHSA-68fv-2mgg-jv7q, high, fixed 1.2.2); it is a production transitive dependency of postcss 8.5.28.",
+        "package-lock.json:9379-9380 pins zod 3.25.76 (GHSA-mrhx-c7xc-m3w5, high, fixed 4.6.6); package.json:28 declares `zod: ^3.23.0` and lib/storage/schema.ts:1 imports it for save validation.",
+        "`npm audit --omit=dev` reports both as high; both are independent of the now-fixed postcss advisory."
+      ],
+      "remediation": "Add an override/update for source-map-js >=1.2.2 and upgrade zod to >=4.6.6 (or a patched 3.x if backported); re-run npm audit and the CI security job."
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "CSP allows 'unsafe-inline' scripts and styles",
+      "status": "open",
+      "evidence": [
+        "next.config.js:30 sets `script-src 'self' 'unsafe-inline'` and :31 sets `style-src 'self' 'unsafe-inline'` for every route.",
+        "next.config.js:25-27 documents this as required by Next.js but does not implement a nonce/hash or record an exception.",
+        "docs/RISK_ACCEPTANCE.md does not contain a dated acceptance for the CSP exception."
+      ],
+      "remediation": "Move scripts to a nonce/hash-based policy (Next.js nonce support or middleware) and narrow style-src; otherwise record a dated owner acceptance with a review trigger."
+    },
+    {
+      "id": "CHAIN-P3-001",
+      "severity": "P3",
+      "title": "Exploit-chain surface is limited to save import; residual risk is client respawn",
+      "status": "open",
+      "evidence": [
+        "README.md:7-9 and docs/release-readiness.md:1-10 confirm the release is guest-only and local-first with no server, account, or remote data.",
+        "app/ contains only layout/page/error entry points; there are no route handlers, server actions, or API routes to chain through.",
+        "The condition is unchanged at 9e3b015; save import remains the only untrusted input path."
+      ],
+      "remediation": "No action while guest-only; re-run this lens after any server/account introduction."
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "`next lint` is deprecated and will be removed in Next.js 16",
+      "status": "open",
+      "evidence": [
+        "package.json:12 still defines `lint` as `next lint`.",
+        "CI calls `npm run lint` at .github/workflows/ci.yml:35-36, so the deprecated command remains on the release gate."
+      ],
+      "remediation": "Migrate to the ESLint CLI (or the Next.js codemod) before upgrading to Next.js 16, and verify lint stays green in CI."
+    },
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "status": "open",
+      "evidence": [
+        "The verify host has no gitleaks binary on PATH (`which gitleaks` fails), so the deterministic lens still skips the secret scan unless the auditor installs it.",
+        "CI has installed the checksum-pinned scanner since before adcf767 (.github/workflows/ci.yml:78-86), and .gitleaks.toml:1-61 is auto-discovered from the target path; a manually downloaded 8.30.1 run found no leaks.",
+        "No repo or harness change at 9e3b015 installs gitleaks for deterministic runs; SC-P3-001 (config) is fixed separately."
+      ],
+      "remediation": "Install/pin gitleaks in the deterministic audit harness (or have the lens fetch the same checksum-verified release), not only in CI."
+    },
+    {
+      "id": "DOC-P3-001",
+      "severity": "P3",
+      "title": "README quality-gate command omits the build step used by CI",
+      "status": "open",
+      "evidence": [
+        "README.md:60-63 documents `npm ci && npm run lint && npm run typecheck && npm run test` as the quality gate.",
+        ".github/workflows/ci.yml:41-48 also runs `npm run test:coverage` and `npm run build`, so the documented gate is weaker than the enforced gate."
+      ],
+      "remediation": "Document the full CI gate (lint, typecheck, test, coverage, build) or point the README at the CI workflow as the source of truth."
+    },
+    {
+      "id": "EVOL-P3-001",
+      "severity": "P3",
+      "title": "No feature-flag or plugin boundary for content/feature evolution",
+      "status": "open",
+      "evidence": [
+        "lib/buddy/screens.ts:1 defines a fixed compile-time screen union; there is no flag/config seam for staged content or features.",
+        "next.config.js:44-73 exposes only build/runtime settings; no feature-flag configuration exists in the repo.",
+        "Content remains hard-wired through data/*.ts imports rather than a typed loader/plugin boundary."
+      ],
+      "remediation": "If content velocity increases, add a typed content-loading seam and a minimal feature-flag config; not required for the current guest-only RC."
+    },
+    {
+      "id": "HYGIENE-P3-001",
+      "severity": "P3",
+      "title": "Vendored prompt pack dominates the repository tree",
+      "status": "open",
+      "evidence": [
+        "docs/prompts/buddy_virtual_pet_v2_complete_prompt_pack/ contains 87 files (~388K) out of 232 tracked files in the repository.",
+        "docs/README.md:21-24 classifies it as planning/specification material committed alongside the application, with no archive/submodule boundary."
+      ],
+      "remediation": "Keep the pack under an archive/submodule with confirmed licensing, or move it out of the product repository."
+    },
+    {
+      "id": "HYGIENE-P3-002",
+      "severity": "P3",
+      "title": "No .editorconfig; line/format policy is split across tools",
+      "status": "open",
+      "evidence": [
+        "No .editorconfig exists at the repository root (`ls .editorconfig` fails at 9e3b015).",
+        ".gitattributes:1-4 only normalizes line endings; formatting is left to Prettier defaults (package.json:20-21) with no editor-level policy."
+      ],
+      "remediation": "Add a .editorconfig (indent, charset, final newline, line endings) and optionally a pre-commit format check."
+    },
+    {
+      "id": "INFRA-P3-001",
+      "severity": "P3",
+      "title": "Documented release/CI controls drift from the live repository configuration",
+      "status": "open",
+      "evidence": [
+        "docs/release-process.md:69-111 documents the required release environment, v* tag ruleset, and master ruleset.",
+        "Live GitHub settings still differ: /rulesets returns [], /environments lists only dev and development, and master accepted a failing/zero-review merge (BP-P1-001/BP-P1-002).",
+        "No automated settings check exists in .github/workflows/; the drift is only discoverable manually."
+      ],
+      "remediation": "Add a scheduled `gh api` settings check (or runbook step) that asserts the rulesets/environments exist, and reconcile docs with the live configuration."
+    },
+    {
+      "id": "IR-P3-001",
+      "severity": "P3",
+      "title": "No incident-response runbook or tabletop exercise recorded",
+      "status": "open",
+      "evidence": [
+        "docs/README.md:12-17 indexes the documentation set; it contains no incident-response runbook or tabletop record.",
+        "docs/release-process.md:63-67 covers release rollback only (delete release/tag, cut a patch), not token compromise, dependency emergency, or incident communication.",
+        "The only runbook-like file is the vendored prompt pack's docs/prompts/.../prompts/12-ai-agent-operator-runbook.md, which is planning material, not a repo IR procedure."
+      ],
+      "remediation": "Add a short IR runbook (token compromise, bad release rollback, dependency emergency) and run/store one tabletop record under docs/."
+    },
+    {
+      "id": "OBS-P3-001",
+      "severity": "P3",
+      "title": "Client errors are only logged locally; no production error sink is wired",
+      "status": "open",
+      "evidence": [
+        "app/error.tsx:21-43 emits a structured JSON line to console.error and dispatches a `buddy:error` window event, but no reporter/listener is attached.",
+        "app/error.tsx:24-28 explicitly notes a reporter can be attached later; the code and docs contain no Sentry/OTel/other sink configuration.",
+        "No dated 'no production telemetry' acceptance appears in docs/RISK_ACCEPTANCE.md or docs/README.md:77-82."
+      ],
+      "remediation": "Attach a privacy-respecting reporter to `buddy:error` (error message/digest/build id only), or record an explicit dated no-telemetry acceptance."
+    },
+    {
+      "id": "PRIV-P3-001",
+      "severity": "P3",
+      "title": "No in-app privacy notice or data-management surface",
+      "status": "open",
+      "evidence": [
+        "app/error.tsx:24-28 is the only privacy note and it is an internal code comment, not user-facing UI.",
+        "No settings/about/privacy component exists under app/ or components/; the only data action is the error-boundary RESET SAVE at app/error.tsx:59-67.",
+        "lib/storage/indexeddb.ts:82-106 provides export/import calls, but no UI invokes them."
+      ],
+      "remediation": "Add a small settings/about surface with export, delete, and a short privacy notice; link it from the app shell."
+    },
+    {
+      "id": "RES-P3-001",
+      "severity": "P3",
+      "title": "Service worker caches every successful same-origin GET with no bound or eviction policy",
+      "status": "open",
+      "evidence": [
+        "public/sw.js:56-75 intercepts every GET, returns cache hits, and writes every 200/basic response into CACHE_NAME.",
+        "There is no size/count bound, LRU, or QuotaExceededError handling; activate (public/sw.js:35-54) only deletes caches from other build ids.",
+        "The same behavior is described in RES-P3-001's prior evidence; no change at 9e3b015."
+      ],
+      "remediation": "Restrict runtime caching to immutable hashed assets, bound the cache, and handle quota/write failures; use stale-while-revalidate for navigations."
+    },
+    {
+      "id": "RES-P3-002",
+      "severity": "P3",
+      "title": "No automated backup of the browser-local save",
+      "status": "open",
+      "evidence": [
+        "lib/storage/indexeddb.ts:82-87 implements exportSave and :89-106 implements importSave, but no app/component code calls them (grep for exportSave/importSave outside lib returns no product call sites).",
+        "docs/release-process.md:51-67 has no periodic export/backup step or recovery instruction.",
+        "The only round-trip coverage is the unit test at lib/storage/indexeddb.test.ts:113."
+      ],
+      "remediation": "Provide a periodic export/backup affordance (or File System Access download) in the UI and document recovery steps."
+    },
+    {
+      "id": "SBOM-P3-001",
+      "severity": "P3",
+      "title": "No license policy and no committed SBOM artifact",
+      "status": "open",
+      "evidence": [
+        ".github/workflows/release.yml:69-70 generates an SBOM for each release and :94-101 uploads it; this existed at adcf767 but produces no committed/linked SBOM artifact.",
+        ".github/workflows/ci.yml:88-93 is still a placeholder that only prints a notice; no allow/deny license check exists.",
+        "No SBOM is committed to the repository or linked from the docs/release record."
+      ],
+      "remediation": "Define and enforce an allow/deny license policy in CI, and either commit the per-release SBOM or link the release artifact from the docs/release record."
+    },
+    {
+      "id": "SC-P3-001",
+      "severity": "P3",
+      "title": "gitleaks runs with the default ruleset; no reviewed allowlist file in-repo",
+      "status": "verified-fixed",
+      "evidence": [
+        ".gitleaks.toml:1-61 now defines the org baseline with `useDefault = true` and commented, narrow allowlists (placeholders, public key material, Supabase demo key, fixtures, redaction markers).",
+        ".pre-commit-config.yaml:16-21 invokes `gitleaks protect --staged --redact -c .gitleaks.toml`; .github/workflows/ci.yml:86 uses gitleaks auto-discovery from the target path.",
+        "A pinned gitleaks 8.30.1 scan of the checkout used the config and reported no leaks (39 commits scanned)."
+      ],
+      "remediation": "Keep the allowlist narrow and reviewed; add a dated rationale for any new entry and keep CI/pre-commit on the same config."
+    },
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "Guest id falls back to Math.random in non-secure contexts",
+      "status": "open",
+      "evidence": [
+        "components/hatch/HatchFlow.tsx:17-22 uses `crypto.randomUUID()` when available but falls back to `'guest-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)` in non-secure contexts.",
+        "The fallback is documented as the only non-secure path, but no dated acceptance or guard prevents its future use as an auth/ownership token."
+      ],
+      "remediation": "Keep the fallback documented and never use it as an auth/ownership token if a server is added later; add a test that the secure path is preferred."
+    },
+    {
+      "id": "TEST-P3-001",
+      "severity": "P3",
+      "title": "Coverage scope excludes components/ and app/; no E2E or accessibility automation",
+      "status": "open",
+      "evidence": [
+        "vitest.config.ts:17-19 includes only `lib/**/*.ts` and `data/**/*.ts` in coverage, with thresholds at :22-27; app/ and components/ tests are not measured.",
+        "Component tests exist (app/page.test.tsx, app/error.test.tsx, components/**/*.test.tsx) but are outside coverage scope.",
+        "No Playwright config or E2E/axe test files exist despite @playwright/test at package.json:47."
+      ],
+      "remediation": "Add app/components to coverage (or a second threshold) and either add E2E + axe checks or remove the unused Playwright dependency."
+    },
+    {
+      "id": "DOC-P3-002",
+      "severity": "P3",
+      "title": "docs/README audit reconciliation and licensing status are stale",
+      "status": "open",
+      "evidence": [
+        "docs/README.md:52 still frames the current audit as 99abf29 with `0 P0 / 11 P1`; the latest full run is 20261005/adcf767 with 4 P1/13 P2.",
+        "docs/README.md:57-65 marks achievements/evolution/CI/license as open, but care.ts:140-145 and adventure.ts:168-176 wire achievements/evolution, .github/workflows/ci.yml exists, and LICENSE:1-5 is a proprietary license.",
+        "docs/README.md:95-98 says 'The repository has no chosen license yet', contradicting LICENSE:1-5; README.md:14-16 likewise cites 99abf29 as current."
+      ],
+      "remediation": "Update the audit matrix and licensing section to the latest run/commit and current controls, or archive the historical page and add a current status page."
+    }
+  ]
+}
