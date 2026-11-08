@@ -667,13 +667,13 @@ d08e901f9c2b804033016611676d78e1236018d2826eca42863c4ef04254fb9b  ./runs/buddy-2
 a14bf259ecc4bb2b811d3b50f2a1f719403a07876fbccc678aede6aafb2195de  ./runs/buddy-20261005-full-master-adcf767/secret_rotation_runbook.md
 6edd86d3f880a3b563c793e4a3c4d1bb17cfe43bd254f099fcedd22625ad7900  ./runs/buddy-20261005-full-master-adcf767/verification_log.md
 318f95f6aa4a7e87cf2a273a143ff727b319d3bc4f2261930a6e9e87472efd67  ./runs/buddy-20261108-verify-master-9e3b015/README.md
-d5de86740dacd15a160d62effafeea964edd002895504a4eca657128a71ce646  ./runs/buddy-20261108-verify-master-9e3b015/SUMMARY.md
-ce6d909eaa0232da50e850624e83fb4ffab063947ef42dc953724c2a2879dbad  ./runs/buddy-20261108-verify-master-9e3b015/findings.json
+da8f04ab0160b1a86c45385c858bb4df6495b4d508e62f7f49a49e02c5b80f02  ./runs/buddy-20261108-verify-master-9e3b015/SUMMARY.md
+5be56b144be1c43df33965e59498af64e69d1d7e1bb4c2c7a28197434d42246a  ./runs/buddy-20261108-verify-master-9e3b015/findings.json
 d7fe51fcd64fe805c260d3c7a62d85b99b0793bfdeb0c59df0e87f2d01a919a4  ./runs/buddy-20261108-verify-master-9e3b015/g1_product_data_ux.json
 67b8fb18b73cbfcd296e36659232825424ead09ae3f4ae49fe37fed37d0acfef  ./runs/buddy-20261108-verify-master-9e3b015/g1_product_data_ux.md
 5280e5f47bff80900df587a9768b2f5db60dfa1ad487000d0dcb87c2d6c20f49  ./runs/buddy-20261108-verify-master-9e3b015/g2_ci_security_ops.json
 35f9445f933f4825fcf66faa8f395d28ed37824c0dfe9321546d9b1ad2f54eeb  ./runs/buddy-20261108-verify-master-9e3b015/g2_ci_security_ops.md
-34a3c390a76e43f95bd726f8b1b281612f2b0a2f05701726f1b6efab11f00728  ./runs/buddy-20261108-verify-master-9e3b015/verify_register.md
+24d4886d3f4cda70b9c4a55933eb0d086faa62b0536d57af3cb4978b4d338bdb  ./runs/buddy-20261108-verify-master-9e3b015/verify_register.md
 65313ee42ff6d8ebdde97e30ea17fe4cd33152a90a129393de60e3d1afc0692b  ./runs/chat-20261003-0018-develop-a72b8cc/01_repository_inventory.md
 4f66d7614535a3222185c5dcec3b66177acd8c24f32b2214626eada45aa1a3f7  ./runs/chat-20261003-0018-develop-a72b8cc/02_architecture_runtime_topology.md
 d1845255528339710c67980d0189ecb1ad74ca8ddef4180d51fc7091eb0ea18a  ./runs/chat-20261003-0018-develop-a72b8cc/03_feature_implementation_map.md
