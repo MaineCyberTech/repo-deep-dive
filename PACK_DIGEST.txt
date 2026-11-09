@@ -19,7 +19,7 @@ ead0067f930c47e7ef7bcbe2e30036a3fed1cf736eacbcb426ae48704f561d57  ./.github/work
 a652051f69f69983a06a3b398c398a429ed8e51097d65237f40401431ec65832  ./.github/workflows/pack-tests.yml
 7c4a633709d3cbe8ae58071c8d1ab69eaab1836c15fe7257f79996cbba6d910f  ./.github/workflows/remediation-board.yml
 d171d8f41c4695b7a3e42a9d8e560bab8eca681a711e31980350770d2e353934  ./.github/workflows/remediation.yml
-3b37e8eb669e868e3146b13f72fb1cdcd7864e0893ce6df564a55f4481d3b129  ./.github/workflows/verify-remediation.yml
+8fd9c50cb33eb23b801cb09fdfafd33ae0f39cbf7f6ddb08dd365ffcdd8cbe6d  ./.github/workflows/verify-remediation.yml
 a7d6c5fd1d3d805737035729989ecb9f49259c3b8e979dec90e8fa98503f472e  ./.gitignore
 5437790eabbe0d70c990987a44f0972d5cc5a6c7b6c8028f008e51a4cd2d42d2  ./.gitleaks.toml
 3367395a942675c93d518cf56f1cde564f4e6b4e169f48d146d344a922635958  ./.gitleaksignore
