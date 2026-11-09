@@ -12,6 +12,7 @@ self-hosted-runner:
     - lab-sudo
     - lab-docker
     - lab-debian
+    - harrier-managed
     - ci-runner
     - edge-builder
     - lab-runner-2
