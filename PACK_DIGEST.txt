@@ -13,7 +13,7 @@ ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull
 3bfe60e3cc5a527261751b69b24f85964acd527f1937f09500acf62f0fdb444d  ./.github/workflows/lab-agent-offboard.yml
 9680784abcd13bb4b19b4769d193cfbff81e7505125e562c5d49920361f4f8ca  ./.github/workflows/lab-agent-onboard.yml
 1a0cf4c86671e615c4031d4fcbf3541b5efc0cf10f7a83a9c27bacbc651e182a  ./.github/workflows/lab-overlay-health.yml
-07b61e96bd0a8bd196d936b72427b38db4aa751a1543fadd389230688d8177cd  ./.github/workflows/lab-preflight.yml
+a4b0d21eb0d652f3bf446ee766d7b455c565f44da7337b3089b795d09e4d29cf  ./.github/workflows/lab-preflight.yml
 a48484ba129f6aaf574b9f35ad41d1df7aab49d8c471e9e5e49174d3a393131a  ./.github/workflows/lab-tests.yml
 1e97f0ebee94b37e62d3bd29531fcd9d7acc50e222ca1bad639affa35774aedb  ./.github/workflows/pack-digest.yml
 a652051f69f69983a06a3b398c398a429ed8e51097d65237f40401431ec65832  ./.github/workflows/pack-tests.yml
@@ -2900,7 +2900,7 @@ bad1ba77f6445fcc22ec416907fbc8280273a3f0444fb36fb060f96a4113e51c  ./tools/lab-vp
 90e9799dce9fbdd1613b2dd3df14bd35be2a2e6bcdf2df82c4d53ebd6bccbece  ./tools/lab_api_server.py
 e8c72613b33aa177e5686780d5d57366fe932b8f936df1a90da12418018388ee  ./tools/lab_runner.py
 98a54dc6be95d1f4161c721c7a14495b17cbc8bfe874b6f13f93bc3b24fe261b  ./tools/lib_findings.py
-24b97f86b95fae0dca13d4a040d0ca579828f41088b76ae11c44f6943516a1b7  ./tools/lint_pack.sh
+d96f8509f51b49afced8a2ed43d6a5eacf76b768531b0576965234997c453e7e  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
 a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py

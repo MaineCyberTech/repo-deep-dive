@@ -28,6 +28,7 @@ on:
       - 'runs/**'
       - 'tools/lab-vpn/**'
       - 'docs/LAB_VPN.md'
+      - 'AGENTS.md'
       - 'tools/remediation_plan.py'
       - 'tools/remediation_status.py'
       - 'tools/deterministic_checks.py'
