@@ -42,6 +42,11 @@ permissions:
 
 jobs:
   lab:
+    # The main-protection ruleset stores the composite context
+    # "Lab preflight / lab". This workflow runs directly (not as a reusable
+    # workflow), so the check-run name is the job name; set it verbatim so the
+    # required check matches.
+    name: Lab preflight / lab
     runs-on: ubuntu-latest
     env:
       HOST: ${{ vars.LAB_ENDPOINT_HOST }}
