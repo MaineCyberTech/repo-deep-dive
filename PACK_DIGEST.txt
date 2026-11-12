@@ -13,7 +13,7 @@ de520153fe3c48deb397eede2f32834950aeea8354d2c83e25522af4c15ff982  ./.github/work
 3bfe60e3cc5a527261751b69b24f85964acd527f1937f09500acf62f0fdb444d  ./.github/workflows/lab-agent-offboard.yml
 9680784abcd13bb4b19b4769d193cfbff81e7505125e562c5d49920361f4f8ca  ./.github/workflows/lab-agent-onboard.yml
 1a0cf4c86671e615c4031d4fcbf3541b5efc0cf10f7a83a9c27bacbc651e182a  ./.github/workflows/lab-overlay-health.yml
-5d25cc24112b398c6622c337de12166f58501bffffa09a8ab7c59eb019a3efc4  ./.github/workflows/lab-preflight.yml
+6dc13b86528dfb646fe5a0de6f80fda98128d596724b017de7a7d585854ba42e  ./.github/workflows/lab-preflight.yml
 a48484ba129f6aaf574b9f35ad41d1df7aab49d8c471e9e5e49174d3a393131a  ./.github/workflows/lab-tests.yml
 38b110b3090700e8337bb9095a09981273a82af0a6b0f398561edf5f41221f86  ./.github/workflows/pack-digest.yml
 a652051f69f69983a06a3b398c398a429ed8e51097d65237f40401431ec65832  ./.github/workflows/pack-tests.yml

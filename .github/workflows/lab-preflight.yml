@@ -36,6 +36,12 @@ on:
       - '.github/workflows/verify-remediation.yml'
       - '.github/workflows/lab-tests.yml'
       - '.github/workflows/lab-preflight.yml'
+      # The protected main branch requires this check. Digest-only pull
+      # requests are produced by the pack-digest workflow, so include the
+      # digest inputs/outputs or those PRs can never satisfy the ruleset.
+      - 'PACK_DIGEST.txt'
+      - 'tools/pack_digest.sh'
+      - '.github/workflows/pack-digest.yml'
       - '.github/workflows/gitleaks.yml'
       - '.gitleaks.toml'
 
