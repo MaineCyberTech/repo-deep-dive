@@ -36,6 +36,8 @@ on:
       - '.github/workflows/verify-remediation.yml'
       - '.github/workflows/lab-tests.yml'
       - '.github/workflows/lab-preflight.yml'
+      - '.github/workflows/gitleaks.yml'
+      - '.gitleaks.toml'
 
 permissions:
   contents: read
