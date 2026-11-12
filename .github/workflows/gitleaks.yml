@@ -15,23 +15,34 @@ permissions:
 jobs:
   gitleaks:
     runs-on: ubuntu-latest
+    env:
+      # Pinned CLI release; the checksum is for the linux_x64 tarball.
+      GITLEAKS_VERSION: "8.30.1"
+      GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
+      - name: Install Gitleaks
+        run: |
+          set -euo pipefail
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          curl --fail --silent --show-error --location "$url" --output "${RUNNER_TEMP}/${archive}"
+          echo "${GITLEAKS_SHA256}  ${RUNNER_TEMP}/${archive}" | sha256sum --check --strict
+          mkdir -p "${RUNNER_TEMP}/bin"
+          tar --extract --gzip --file "${RUNNER_TEMP}/${archive}" --directory "${RUNNER_TEMP}/bin" gitleaks
+          echo "${RUNNER_TEMP}/bin" >> "$GITHUB_PATH"
+
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: --report-format=sarif --report-path=results.sarif
+        run: |
+          gitleaks detect --source . --config .gitleaks.toml --redact --no-banner --report-format sarif --report-path results.sarif --exit-code 1
 
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@1190a975f95ce23525efb6a3fc21ea29567c1b52 # v3.38.2
         if: always()
         with:
-          sarif-file: results.sarif
+          sarif_file: results.sarif
           category: gitleaks
-

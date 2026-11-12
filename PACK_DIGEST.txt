@@ -9,7 +9,7 @@ b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/depe
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
 4c942c9478086df741d68665e39c347be0804cd14dc13c83e695e26a2292b50f  ./.github/workflows/audit.yml
 006110372ed17c35c29430bec367c5e5698d439187dbfbd5746a1087cdb292e5  ./.github/workflows/deep-dive-deterministic.yml
-075f2c0aa7f3ae3a71e1c04fe16dc4ece6086e0b1bea9c746fba10911bc6c3b6  ./.github/workflows/gitleaks.yml
+de520153fe3c48deb397eede2f32834950aeea8354d2c83e25522af4c15ff982  ./.github/workflows/gitleaks.yml
 3bfe60e3cc5a527261751b69b24f85964acd527f1937f09500acf62f0fdb444d  ./.github/workflows/lab-agent-offboard.yml
 9680784abcd13bb4b19b4769d193cfbff81e7505125e562c5d49920361f4f8ca  ./.github/workflows/lab-agent-onboard.yml
 1a0cf4c86671e615c4031d4fcbf3541b5efc0cf10f7a83a9c27bacbc651e182a  ./.github/workflows/lab-overlay-health.yml
@@ -21,7 +21,7 @@ d9b27f51a2a442da4c39f9b037ef5695e2f3dcd50e1d3cc4a8e8eba52848a2ef  ./.github/work
 f1a95f6e08e811f2a08787451017bf9242ae7eaeff9892a30d9fed9ee1fcacde  ./.github/workflows/remediation.yml
 fc138c0e5a350cd76d7ea218b4d0758c85a7924fb9ccc22e046a60eaca0361e8  ./.github/workflows/verify-remediation.yml
 a7d6c5fd1d3d805737035729989ecb9f49259c3b8e979dec90e8fa98503f472e  ./.gitignore
-5437790eabbe0d70c990987a44f0972d5cc5a6c7b6c8028f008e51a4cd2d42d2  ./.gitleaks.toml
+e168b8f3dc49a088147ccaad6b9930ee68236a61b4bb2871da26d0a12c55f1e6  ./.gitleaks.toml
 c68f436916fee9fef29e44c069cf6ad01a9fa59cef9c73df26cf92fe556c24b3  ./.pre-commit-config.yaml
 316da29a96e05da3f994d921bd8324488d4b6b55bcaf3a6915fefb7ce74bf8e5  ./AGENTS.md
 d9c187e6d2a9ee5dfba8ed5ce951fff66fbf63eb906220b815a4f0213ed7c81d  ./CHANGELOG.md
