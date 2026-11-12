@@ -13,7 +13,7 @@ ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull
 3bfe60e3cc5a527261751b69b24f85964acd527f1937f09500acf62f0fdb444d  ./.github/workflows/lab-agent-offboard.yml
 9680784abcd13bb4b19b4769d193cfbff81e7505125e562c5d49920361f4f8ca  ./.github/workflows/lab-agent-onboard.yml
 1a0cf4c86671e615c4031d4fcbf3541b5efc0cf10f7a83a9c27bacbc651e182a  ./.github/workflows/lab-overlay-health.yml
-07b61e96bd0a8bd196d936b72427b38db4aa751a1543fadd389230688d8177cd  ./.github/workflows/lab-preflight.yml
+2abf338b1c0992d432618d03ad89be5a7932e92de1b02115d8cebc272ed57571  ./.github/workflows/lab-preflight.yml
 a48484ba129f6aaf574b9f35ad41d1df7aab49d8c471e9e5e49174d3a393131a  ./.github/workflows/lab-tests.yml
 1e97f0ebee94b37e62d3bd29531fcd9d7acc50e222ca1bad639affa35774aedb  ./.github/workflows/pack-digest.yml
 a652051f69f69983a06a3b398c398a429ed8e51097d65237f40401431ec65832  ./.github/workflows/pack-tests.yml
@@ -23,7 +23,7 @@ fc138c0e5a350cd76d7ea218b4d0758c85a7924fb9ccc22e046a60eaca0361e8  ./.github/work
 a7d6c5fd1d3d805737035729989ecb9f49259c3b8e979dec90e8fa98503f472e  ./.gitignore
 5437790eabbe0d70c990987a44f0972d5cc5a6c7b6c8028f008e51a4cd2d42d2  ./.gitleaks.toml
 c68f436916fee9fef29e44c069cf6ad01a9fa59cef9c73df26cf92fe556c24b3  ./.pre-commit-config.yaml
-ba7eee35d957142f7785aefcf9e62959d68572eab38b0c3b185195ed41d0a90d  ./AGENTS.md
+316da29a96e05da3f994d921bd8324488d4b6b55bcaf3a6915fefb7ce74bf8e5  ./AGENTS.md
 d9c187e6d2a9ee5dfba8ed5ce951fff66fbf63eb906220b815a4f0213ed7c81d  ./CHANGELOG.md
 c4dd58c3dffa1dd407b5acaddf402025659b1e211d1265ce4771b07e0a307f43  ./CONTRIBUTING.md
 b29024c5a60cdf3f8f2b4b86439cca19e6fcb4d8f854ae825c6676cdfa415426  ./LICENSE
@@ -2900,7 +2900,7 @@ bad1ba77f6445fcc22ec416907fbc8280273a3f0444fb36fb060f96a4113e51c  ./tools/lab-vp
 90e9799dce9fbdd1613b2dd3df14bd35be2a2e6bcdf2df82c4d53ebd6bccbece  ./tools/lab_api_server.py
 e8c72613b33aa177e5686780d5d57366fe932b8f936df1a90da12418018388ee  ./tools/lab_runner.py
 98a54dc6be95d1f4161c721c7a14495b17cbc8bfe874b6f13f93bc3b24fe261b  ./tools/lib_findings.py
-24b97f86b95fae0dca13d4a040d0ca579828f41088b76ae11c44f6943516a1b7  ./tools/lint_pack.sh
+d96f8509f51b49afced8a2ed43d6a5eacf76b768531b0576965234997c453e7e  ./tools/lint_pack.sh
 20f9bf26d086ff05307d234e8135a6967cc975ce5b73dfa479c91ea85cf6ac24  ./tools/live_snapshot.sh
 a4f4172ded7f5348f99d5bd6b2f056e36e9b5f8c36b63a8bc54ae7acbb9f1669  ./tools/new_run.py
 86ac300687dd95f3de066e49a743d748d0a6fbd99b002df1baeeff800b4e9a2a  ./tools/normalize_register.py
