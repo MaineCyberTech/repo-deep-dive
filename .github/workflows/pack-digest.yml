@@ -2,18 +2,22 @@ name: Regenerate PACK_DIGEST
 
 # PACK_DIGEST.txt is a generated inventory: any content change rewrites it, so
 # two concurrent PRs conflict on it and every rebase needs a manual regen
-# (observed ~6x in one session). This workflow makes `main` self-healing: after
-# every push it regenerates the digest and commits it only if the hashes changed.
+# (observed ~6x in one session). This workflow keeps `main` self-healing by
+# regenerating the digest and opening a pull request when the hashes change.
+#
+# Why a pull request instead of a push: the protected `main` branch requires
+# review and the `Lab preflight / lab` status check. A bot that bypasses the
+# ruleset with a write deploy key or a broad PAT is an avoidable privilege and
+# an unreviewed code path. The workflow now writes only to the bot-owned
+# `automation/pack-digest` branch and opens a normal PR.
 #
 # Why it cannot loop: tools/pack_digest.sh is deterministic/idempotent (no
-# wall-clock timestamp), so a second run produces no diff; and a push made with
-# the workflow token does not trigger further workflow runs.
+# wall-clock timestamp). The PR branch is updated in place and a second run
+# produces no diff once the PR is merged.
 #
-# If branch protection ever blocks a `github.token` push, create a fine-grained
-# PAT with repo `contents: write` and store it as the repository secret
-# `PACK_DIGEST_TOKEN` (Settings > Secrets and variables > Actions). The workflow
-# prefers that secret automatically; it never hardcodes a token. An unset secret
-# falls back to `github.token`, so no configuration is required on a normal repo.
+# No `PACK_DIGEST_KEY` deploy key or `PACK_DIGEST_TOKEN` PAT is used. The
+# workflow's `GITHUB_TOKEN` has exactly `contents: write` (push the bot branch)
+# and `pull-requests: write` (open the PR).
 
 on:
   push:
@@ -22,10 +26,11 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 # Serialise self-heal runs; a newer push supersedes an in-flight regen.
 concurrency:
-  group: pack-digest-main
+  group: pack-digest-pr
   cancel-in-progress: true
 
 jobs:
@@ -44,12 +49,9 @@ jobs:
       - name: Regenerate PACK_DIGEST.txt
         run: bash tools/pack_digest.sh
 
-      - name: Commit and push if the digest changed
+      - name: Open or update the digest pull request
         env:
-          # Prefer the repo-scoped write deploy key (registered as a branch-ruleset
-          # bypass actor); fall back to a fine-grained PAT, then github.token.
-          DEPLOY_KEY: ${{ secrets.PACK_DIGEST_KEY }}
-          GH_TOKEN: ${{ secrets.PACK_DIGEST_TOKEN || github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -62,20 +64,44 @@ jobs:
 
           git add PACK_DIGEST.txt
           git commit -m "chore: regenerate PACK_DIGEST"
+          git checkout -B automation/pack-digest
 
-          if [ -n "${DEPLOY_KEY:-}" ]; then
-            # Repo-scoped write deploy key; a ruleset bypass actor, so no user PAT.
-            install -m700 -d ~/.ssh
-            printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_pack_digest
-            chmod 600 ~/.ssh/id_pack_digest
-            ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null || true
-            GIT_SSH_COMMAND="ssh -i ~/.ssh/id_pack_digest -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
-              git push "git@github.com:${{ github.repository }}.git" "HEAD:refs/heads/main"
-          else
-            # Fallback: authenticate the push via a header, not the remote URL, so
-            # the token cannot leak through git diagnostics or shell error output.
-            AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
-            git -c credential.helper= \
-                -c http.extraheader="AUTHORIZATION: ${AUTH}" \
-                push origin "HEAD:refs/heads/main"
+          # Authenticate the push via a header, not the remote URL, so the token
+          # cannot leak through git diagnostics or shell error output.
+          AUTH="Basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          GIT_AUTH=(-c credential.helper= -c "http.extraheader=AUTHORIZATION: ${AUTH}")
+
+          # Update the bot-owned branch. It is generated output with a single
+          # writer, so moving it is intentional; the lease still refuses a
+          # blind overwrite if another run changed it after our fetch.
+          git "${GIT_AUTH[@]}" fetch -q origin \
+            "+refs/heads/automation/pack-digest:refs/remotes/origin/automation/pack-digest" \
+            || true
+          push_args=()
+          if git rev-parse -q --verify refs/remotes/origin/automation/pack-digest >/dev/null; then
+            push_args+=("--force-with-lease=refs/heads/automation/pack-digest:$(git rev-parse refs/remotes/origin/automation/pack-digest)")
           fi
+          git "${GIT_AUTH[@]}" push "${push_args[@]}" origin \
+            "HEAD:refs/heads/automation/pack-digest"
+
+          existing="$(gh pr list --repo "$GITHUB_REPOSITORY" \
+            --head automation/pack-digest --state open --json number \
+            --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            echo "updated the existing digest pull request #$existing"
+            exit 0
+          fi
+
+          gh pr create --repo "$GITHUB_REPOSITORY" \
+            --base main --head automation/pack-digest \
+            --title "chore: regenerate PACK_DIGEST" \
+            --body "$(cat <<'EOF'
+          Automated `PACK_DIGEST.txt` regeneration.
+
+          `tools/pack_digest.sh` found that the committed digest no longer matches
+          the tracked files. This pull request was generated by the
+          `Regenerate PACK_DIGEST` workflow using the repository `GITHUB_TOKEN`;
+          no deploy key or personal access token is used. Review the digest diff
+          and merge after the required checks pass.
+          EOF
+          )"

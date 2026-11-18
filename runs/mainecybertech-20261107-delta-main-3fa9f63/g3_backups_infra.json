@@ -1,0 +1,125 @@
+{
+  "area": "G3",
+  "findings": [
+    {
+      "id": "DR-P0-001",
+      "severity": "P0",
+      "title": "No successful backup has ever run: all four backup/restore workflows still have zero green runs, including the new Garage-primary path",
+      "status": "open",
+      "evidence": "Re-verified at main@3fa9f636 with the public GitHub Actions API (read-only, no logs): `status=success` returns total_count 0 for db-backup, storage-backup, db-restore-test and storage-restore-test. Latest main db-backup run 42212650616 (2026-11-06T11:45Z, main@15393691) failed the 'Run database backup script' step 0 s after it started (11:46:04), which matches the missing-URL guard at scripts/backup-database.sh:67-70. The new Garage path is directly exercised and still fails: on 2026-11-07 three manual storage-backup dispatches on develop all failed — 42338975431 (04:33Z, 9c0485e6, before #375), 42343086424 (05:31Z, 65eba79f, empty-dev allowance present) and 42345678702 (06:08Z, a58e171c, Garage primary) — each failing the script step in 1-4 s (42345678702 ran on the lab `ci-runner`). No run exists at 3fa9f636 yet. The documented dev destination is Raven Garage at 192.168.222.120:3900 with the offsite credentials (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:135-137; scripts/backup-database.sh:41-56). Operator blockers remain exactly as briefed: SUPABASE_DB_URL missing/stale, Garage access key not accepted by the service, and no non-empty restore drill (drill ledger still all `planned`, docs/runbooks/backup-restore-drill-ledger.md:12-24).",
+      "remediation": "Operator actions, not code: provision a current SUPABASE_DB_URL (and the prod rows in prod-backup/prod-approval), fix the Garage key/secret so the lab runner's upload succeeds, then dispatch db-backup, storage-backup, db-restore-test and storage-restore-test once from main and attach the run URLs to the drill ledger. Do not close this on code inspection: require at least one green db-backup + one green db-restore-test with a non-empty archive, and a green storage backup + storage restore test."
+    },
+    {
+      "id": "DR-P1-003",
+      "severity": "P1",
+      "title": "Restore-test backup location contract (S3_BUCKET/S3_PREFIX) is documented and shared by write/read paths",
+      "status": "verified-fixed",
+      "evidence": "The contract is documented at docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:125-146 and in the script headers (scripts/backup-database.sh:5-12, scripts/restore-database.sh:7-11, scripts/backup-storage.sh:6-9). Both restore workflows now call the same discovery helper (db-restore-test.yml:89-111; storage-restore-test.yml:70-89), which normalises a legacy `s3://bucket[/prefix]` value, rebuilds the key once without double-prefixing and emits `backup_file`/`backup_uri` (scripts/ci/find-latest-backup.sh:37-67). The old inline `aws s3 ls | sort | tail -1` duplication is gone. Note: the orchestrator brief labels DR-P1-003 'offsite + encryption'; in the Nov 3 register that subject is DR-P1-004, which is re-verified separately below.",
+      "remediation": "None for this contract. Keep the helper as the single read path when new restore workflows are added."
+    },
+    {
+      "id": "DR-P1-004",
+      "severity": "P1",
+      "title": "Encryption is now enforced, but the offsite/second-destination copy is optional, skipped in the documented dev config, and never verified",
+      "status": "partially-fixed",
+      "evidence": "Encryption: both backup workflows set REQUIRE_BACKUP_ENCRYPTION=1 (db-backup.yml:109-115; storage-backup.yml:99-103) and both scripts encrypt the gzipped dump/archive with openssl AES-256-CBC/PBKDF2 before upload, deleting the plaintext (scripts/backup-database.sh:108-129; scripts/backup-storage.sh:172-184); both restore paths fail closed on a `.enc` object without the key and decrypt with it (db-restore-test.yml:127-151; scripts/restore-storage.sh:97-109). Offsite: the copy only runs when `S3_OFFSITE_BUCKET` is non-empty (scripts/backup-database.sh:152-159; scripts/backup-storage.sh:206-210), and the scripts now clear that variable whenever bucket+endpoint match the primary (backup-database.sh:49-56; backup-storage.sh:47-54). The documented dev configuration promotes Garage to primary and says the duplicate copy is skipped (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:135-137), so the current documented state is a single destination; no successful run has produced even the primary object (DR-P0-001). There is also no post-copy `head-object`/listing, so 'Offsite copy complete' only reflects the `aws s3 cp` exit status (backup-database.sh:158; backup-storage.sh:209-210). The docs still tell the operator to 'confirm an encrypted object lands in both buckets' (docs/RTO_RPO.md:50-57), which the promoted-Garage config no longer does by default.",
+      "remediation": "Decide the intended DR topology: either keep two distinct destinations (different bucket and/or endpoint) and fail the job when the offsite copy is configured but absent, or document that Garage is the single copy and delete the offsite claim. Add a `aws s3api head-object` (size/ETag) check after both uploads and record the destination object keys in the run summary. Do not accept 'copy complete' on the CLI exit code alone."
+    },
+    {
+      "id": "DR-P2-001",
+      "severity": "P2",
+      "title": "Storage backup listing pagination, partial-download count and archive-integrity gates remain in place",
+      "status": "verified-fixed",
+      "evidence": "Re-verified at 3fa9f636: scripts/backup-storage.sh pages the Storage list endpoint until a short page (84-102), walks folders recursively, counts listed vs downloaded objects and refuses a mismatch (128-144), refuses a zero-object mirror unless the explicit dev-only flag is set (133-139), and VERIFY_BACKUP checks a readable tar containing MANIFEST.txt (162-170); storage-backup.yml sets VERIFY_BACKUP=1 (line 103). The prior defect (silent 1000-object truncation / silent zero-object archive) is fixed for the default/prod path. The new ALLOW_EMPTY_STORAGE=1 dev path deliberately reintroduces a manifest-only archive; its monitoring consequence is tracked as DR-P2-010, not as a regression of this row.",
+      "remediation": "None for the default path. If the empty-dev allowance is kept, make the resulting archive distinguishable in the run output and never count it as a data-bearing backup (see DR-P2-010)."
+    },
+    {
+      "id": "DR-P3-008",
+      "severity": "P3",
+      "title": "Restore discovery now distinguishes 'cannot list the bucket' from 'bucket reachable but empty', with a negative fixture in CI",
+      "status": "verified-fixed",
+      "evidence": "scripts/ci/find-latest-backup.sh:45-54 captures the `aws s3 ls` failure, prints a redacted `::error::` naming the bucket/prefix, endpoint, credential presence and AWS exit code, and exits; :56-60 gives a separate message for a reachable-but-empty prefix. The negative fixtures cover a synthetic exit 254, an empty prefix and a successful newest-object pick (scripts/ci/test-find-latest-backup.sh:44-76), and the self-test plus shellcheck are wired into the shared CI action (.github/actions/shellcheck/action.yml:20-39). Both restore workflows call the helper (db-restore-test.yml:111; storage-restore-test.yml:89).",
+      "remediation": "None. The remaining restore failure is reachability/credentials (DR-P0-001 / DR-P1-008), and the helper will now name the exact cause."
+    },
+    {
+      "id": "IR-P2-011",
+      "severity": "P2",
+      "title": "The first (and only) alert-path exercise failed and the IR evidence table still records no exercise",
+      "status": "open",
+      "evidence": "The public API still shows exactly one alert-path-exercise run — 41323651243 on 2026-11-01 (main@4199ce8c) — and it failed at step 'Exercise alert delivery on the droplet'; the preceding direct ntfy relay check succeeded, so the failure is in the droplet-side Alertmanager exercise, not the channel. There has been no run since. docs/ALERT_PATH_EXERCISE.md:102-106 still has `_none recorded yet_` in the evidence table, and the scheduled next attempt is 2026-12-01. The missed-heartbeat drill is still unrecorded (docs/ALERT_PATH_EXERCISE.md:84-100).",
+      "remediation": "Identify the failing precondition from the failed run (DROPLET_IP/DO_API_TOKEN resolution, SSH/DO_SSH_HOST_KEY, or the Alertmanager endpoint), rerun on dev, confirm the ntfy notification and the Watchdog heartbeat, then record the run URL, operator and observation in the evidence table. Keep the monthly schedule; add a runbook step for a failed exercise so it cannot sit unowned."
+    },
+    {
+      "id": "IR-P0-003",
+      "severity": "P0",
+      "title": "The off-box dead-man's switch is configured and fail-closed, but the external heartbeat URL is still unset and never drilled",
+      "status": "partially-fixed",
+      "evidence": "The mechanism remains: Watchdog routes to a dedicated external receiver every 5 min (infra/digitalocean/alertmanager.tmpl.yml:86-100,145-152) and prod deploys fail closed when ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty (deploy-do.yml:870-889). The repo still states the URL is unset — docs/INCIDENT_RESPONSE.md:154-161, docs/DATA_BREACH_RESPONSE.md:145-156 and :464-467 — and there is no observed missed-heartbeat drill (docs/ALERT_PATH_EXERCISE.md:84-106). The only alert-path exercise run failed (IR-P2-011).",
+      "remediation": "Provision ALERTMANAGER_WATCHDOG_WEBHOOK_URL (external, off-droplet) in the prod environment; run the documented stop-Alertmanager drill past the provider grace period; record who was paged and the detection time in docs/ALERT_PATH_EXERCISE.md. Until then, a total monitoring/droplet loss is still not detected off-box."
+    },
+    {
+      "id": "OBS-P1-002",
+      "severity": "P1",
+      "title": "Prod deploy health gate now uses the app-host API read and asserts the JSON success envelope instead of the retired api host",
+      "status": "verified-fixed",
+      "evidence": "deploy-do.yml:92-111 sets `PUBLIC_API_CHECK_URL=https://app.mainecybertech.com/api/v1/store/products` for prod (dev keeps the working api host) and exports it from the setup job (deploy-do.yml:50-55). The Health check step polls that URL and, for prod, requires `.success == true`, not only HTTP 200 (deploy-do.yml:1184-1195). docs/MONITORING_AND_ALERTING.md:186-195 now describes the same gate. The code fix is present at 3fa9f636; no prod deploy has completed since the promotion (deploy run 42346818866 was still in progress at audit time), so the gate is verified by inspection, not by a live prod deploy.",
+      "remediation": "None. When the next prod deploy runs, record the green health-gate step as the artifact."
+    },
+    {
+      "id": "OBS-P3-008",
+      "severity": "P3",
+      "title": "node-exporter is now inside service-down alerting and is gated by a real HTTP/filesystem probe",
+      "status": "verified-fixed",
+      "evidence": "MCTServiceDown matches `up{job=~\"mct-api|mct-worker|node-exporter\"}` (infra/digitalocean/prometheus.rules.yml:11-22) and a dedicated MCTNodeExporterDown rule fires at 5 m (:24-34). promtool case 53 asserts both alerts (prometheus.rules.test.yml:824-852). The scratch-based exporter no longer self-healthchecks; a digest-pinned sibling `node-exporter-probe` scrapes :9100 and requires a `node_filesystem_size_bytes{mountpoint=\"/\"}` series (docker-compose.yml:306-340), and deploy-do gates on `node-exporter-probe` (deploy-do.yml:1092-1100).",
+      "remediation": "None. (Minor doc drift is recorded under OBS-P3-009.)"
+    },
+    {
+      "id": "DR-P1-008",
+      "severity": "P1",
+      "title": "Restore-test workflows hard-code ubuntu-latest and cannot reach the private Garage endpoint the backup workflows now use",
+      "status": "open",
+      "evidence": "The configurable runner added in #370/#378 is applied only to the two backup workflows: db-backup.yml:53 and storage-backup.yml:56 use `runs-on: ${{ fromJSON(vars.BACKUP_RUNNER_LABELS || '[\"ubuntu-latest\"]') }}`, and the recent backup dispatches prove the variable is set to the lab runners (job 42345678702 ran on `ci-runner`, labels self-hosted/Linux/X64/lab/lab-docker; 42343086424 on `lab-runner-2`). Both restore workflows still hard-code `runs-on: ubuntu-latest` (db-restore-test.yml:46; storage-restore-test.yml:55) while reading the same repository `S3_ENDPOINT` (db-restore-test.yml:105; storage-restore-test.yml:83), which the secrets matrix documents as the private `http://192.168.222.120:3900` Garage endpoint for dev (docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:135-137) and warns that a GitHub-hosted runner cannot reach (line 188). The matrix scopes BACKUP_RUNNER_LABELS to db-backup/storage-backup only (line 189). No restore-test run has happened since the switch (zero db/storage restore-test runs since 2026-11-02), so the first scheduled Monday run on the promoted main cannot reach the documented endpoint and will fail to list the bucket before any restore assertion, unless the endpoint/runner is changed to a reachable path in the same change.",
+      "remediation": "Use the same runner expression (or a dedicated `RESTORE_RUNNER_LABELS`) in db-restore-test.yml and storage-restore-test.yml, or provide a publicly reachable/relayed endpoint for restore reads. Add a fast preflight that resolves the newest object (or `head-object`) so an unreachable endpoint fails with the same actionable diagnostic as DR-P3-008. Then prove both restore tests green against the Garage archive."
+    },
+    {
+      "id": "DR-P2-010",
+      "severity": "P2",
+      "title": "The dev empty-mirror allowance records a zero-object archive as a successful backup, which the branch-agnostic staleness alarm counts as fresh and the storage restore test is guaranteed to reject",
+      "status": "open",
+      "evidence": "storage-backup.yml:104-106 sets `ALLOW_EMPTY_STORAGE=1` for every run that is not a prod dispatch or a PROD_BACKUP_ENABLED schedule; scripts/backup-storage.sh:133-139 then writes a manifest-only archive (`object_count: 0`) and the job succeeds, while the restore verifier explicitly refuses any archive with zero object files (scripts/restore-storage.sh:130-133). The independent staleness check does not filter by branch, environment or event — it asks `gh run list --status success --limit 1` across all branches (backup-staleness-check.yml:60-84) — so a dev manifest-only success (or any dev success) satisfies the 30 h 'storage backup' freshness gate for the whole repo, including the prod-backup schedule. The direct prod guard is intact (a prod dispatch or PROD_BACKUP_ENABLED schedule gets `0`), but prod assurance is weakened through the shared success signal. Once a manifest-only archive is the newest object, the next storage-restore-test will select it and fail.",
+      "remediation": "Make emptiness explicit in the success signal: either keep the job red in dev until real data exists, or emit a distinct outcome (e.g. a `manifest-only` annotation/step output) that the staleness check excludes from 'success'. Filter the staleness query by the environment/branch that the prod schedule uses (or by a dedicated `backup-source=prod` marker) so a dev run can never satisfy the prod freshness gate. Do not let a zero-object archive become the newest object the restore test selects."
+    },
+    {
+      "id": "DR-P2-011",
+      "severity": "P2",
+      "title": "Backup jobs run on persistent lab runners but leave plaintext dumps/downloaded user objects in the workspace when any step fails",
+      "status": "open",
+      "evidence": "The backup jobs now run on the self-hosted lab runners (db-backup.yml:53; storage-backup.yml:56; run 42345678702 used `ci-runner`). Both scripts clean up only on the success path: scripts/backup-database.sh deletes the plaintext dump only after encryption (:121) and the encrypted object only at the end (:162-163); any pg_dump/verify/encryption/upload/prune failure aborts under `set -e` and leaves `./backups/supabase-dump-*.sql.gz[.enc]` behind. scripts/backup-storage.sh stages downloaded user files under `./storage-backups/<timestamp>/` (:56-69), removes the plaintext tar immediately after encryption (:173-177) but removes the staging directory and encrypted archive only after both uploads (:212); an upload/offsite-copy/prune failure leaves the plaintext staging tree. Neither workflow has an `if: always()` cleanup step (db-backup.yml:55-152; storage-backup.yml:58-133), and neither directory is gitignored, so the files sit in the repo workspace on the runner until the next checkout of this repo cleans them. That is a full plaintext DB dump / user-file set readable by co-tenant processes on a shared lab host after a failure.",
+      "remediation": "Put staging under `$RUNNER_TEMP` and add an `EXIT` trap to each script that removes its own staging directory and archive (backup-database.sh: `$BACKUP_DIR`/`$LOCAL_PATH`/`$UPLOAD_PATH`; backup-storage.sh: `$STAGE_DIR`/`$ARCHIVE_PATH`/`$UPLOAD_PATH`) so cleanup runs on any exit. Add an `if: always()` cleanup step to both workflows as a second layer, and verify on the lab runner that a deliberately failed run leaves no dump/object files behind."
+    },
+    {
+      "id": "DR-P3-009",
+      "severity": "P3",
+      "title": "Backup retention deletes objects in place with no versioning, object lock or immutability on either destination",
+      "status": "open",
+      "evidence": "Both scripts prune with `s3api list-objects-v2` + `s3api delete-object` (scripts/backup-database.sh:166-184; scripts/backup-storage.sh:214-231) and retain only 30 days (`RETENTION_DAYS`, backup-database.sh:33; backup-storage.sh:57). No repo-managed bucket has versioning/object-lock for backups: Terraform only versions the Terraform-state bucket (infra/terraform/digitalocean/state-bucket.tf:28-34), and docs/RTO_RPO.md:24-26 documents 30-day retention but no immutability. A bad run, a stolen write key, or a mistaken S3_BUCKET/S3_PREFIX can therefore permanently delete the backup history; there is no tested 'deleted backup' recovery path.",
+      "remediation": "Enable bucket versioning and a governance/compliance object-lock or lifecycle retention on both backup destinations, and document the recovery procedure (restore a prior object version). Add a drill that deletes a test object and proves it can be recovered, and keep the prune path unable to bypass the lock."
+    },
+    {
+      "id": "DR-P3-010",
+      "severity": "P3",
+      "title": "The offsite-copy skip ignores S3_OFFSITE_PREFIX, so a same-bucket/different-prefix second copy is dropped; the copy is never verified",
+      "status": "open",
+      "evidence": "The skip is decided only by bucket+endpoint equality (scripts/backup-database.sh:49-56; scripts/backup-storage.sh:47-54) and then clears `S3_OFFSITE_BUCKET`, even when `S3_OFFSITE_PREFIX` (documented at docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md:142-146) differs from `S3_PREFIX`. A legitimate configuration that keeps a second copy under a different prefix in the same bucket is therefore skipped with a 'skipping duplicate copy' message and the offsite prefix is never pruned or written. When the copy does run, the script prints 'Offsite copy complete' immediately after `aws s3 cp` (backup-database.sh:152-158; backup-storage.sh:206-210) with no `head-object`/listing check, so a no-op or wrong-endpoint copy is not detected.",
+      "remediation": "Include `S3_OFFSITE_PREFIX` in the skip predicate (or only skip when bucket, prefix and endpoint all match) and do not clear the bucket variable in the different-prefix case. After each copy, `aws s3api head-object` the destination key and compare size/ETag, failing the job if the object is absent; record both destination keys in the run summary."
+    },
+    {
+      "id": "OBS-P3-009",
+      "severity": "P3",
+      "title": "Monitoring doc carries a duplicated stale health-check table and describes the deploy gate as node-exporter rather than node-exporter-probe",
+      "status": "open",
+      "evidence": "docs/MONITORING_AND_ALERTING.md:224-233 is the current health-check table (including node-exporter-probe), immediately followed by a second, stale table at :235-243 that omits node-exporter-probe and duplicates every other row. The duplication was introduced in the Nov 3 P3 batch (commit 27cc92a7) and remains at 3fa9f636. Separately, docs/CI.md:57-60 says the deploy prunes only after 'node-exporter' is healthy, while the workflow gates `node-exporter-probe` (deploy-do.yml:1100). The docs no longer match the code and a reader sees two different container-health inventories.",
+      "remediation": "Delete the stale second table at docs/MONITORING_AND_ALERTING.md:235-243 and correct docs/CI.md:58-59 to name node-exporter-probe. Consider a docs check that rejects adjacent duplicate tables/rows in the monitoring runbook."
+    }
+  ]
+}

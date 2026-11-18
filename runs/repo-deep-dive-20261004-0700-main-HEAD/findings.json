@@ -1,0 +1,39 @@
+{
+  "run": "repo-deep-dive-20261004-0700-main-HEAD",
+  "generated": "2026-10-05T05:42:20Z",
+  "sourceReports": 2,
+  "counts": {
+    "bySeverity": {
+      "P3": 2
+    },
+    "byArea": {
+      "DET": 1,
+      "GEN": 1
+    },
+    "total": 2
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 13,
+      "owner": "@owner",
+      "target": "DET",
+      "status": "open",
+      "note": ""
+    },
+    {
+      "id": "GEN-P3-001",
+      "severity": "P3",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_focused_security_supply_chain_ci.md",
+      "line": 7,
+      "owner": "@owner",
+      "target": "GEN",
+      "status": "open",
+      "note": ""
+    }
+  ]
+}

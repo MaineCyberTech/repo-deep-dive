@@ -1,0 +1,102 @@
+{
+  "run": "bench-test-20261013-0819-full-main-b916709",
+  "generated": "2026-10-13T08:46:26Z",
+  "sourceReports": 1,
+  "counts": {
+    "total": 5
+  },
+  "findings": [
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "subcode": "DEP",
+      "title": "[DEP] No Dependabot configuration",
+      "report": "lens_deterministic.md",
+      "line": 17,
+      "detail": "Add `.github/dependabot.yml` for dependency updates.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "subcode": "DEP",
+      "title": "[DEP] trivy not installed (dependency vuln scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 21,
+      "detail": "Install trivy to enable the --deep dependency vulnerability scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P2-003",
+      "severity": "P2",
+      "subcode": "PORT",
+      "title": "[PORT] CRLF committed for 11 file(s) (index has CRLF)",
+      "report": "lens_deterministic.md",
+      "line": 25,
+      "detail": "Committed line endings are CRLF, which breaks Linux CI (shell scripts, hash checks). Add `.gitattributes` with `* text=auto eol=lf`, then renormalize (`git add --renormalize .`).",
+      "evidence": [
+        "results/bench-live-linux-20261013-012449/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-023910/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-035221/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-041741/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-041959/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-044325/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-044800/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-044901/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-054216/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-055818/bench-live-linux-20261013-013426-logs/gfx-glmark2.log",
+        "results/bench-live-linux-20261013-073159/bench-live-linux-20261013-013426-logs/gfx-glmark2.log"
+      ],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P3-004",
+      "severity": "P3",
+      "subcode": "SEC",
+      "title": "[SEC] gitleaks not installed (secret scan skipped)",
+      "report": "lens_deterministic.md",
+      "line": 43,
+      "detail": "Install gitleaks in CI to enable the secret scan.",
+      "evidence": [],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    },
+    {
+      "id": "DET-P2-005",
+      "severity": "P2",
+      "subcode": "SUPPLY",
+      "title": "[SUPPLY] 9 GitHub Action ref(s) not pinned to a commit SHA",
+      "report": "lens_deterministic.md",
+      "line": 47,
+      "detail": "Pin `uses:` to a full 40-hex commit SHA (supply-chain hardening).",
+      "evidence": [
+        "build-app.yml:39 actions/checkout@v4",
+        "build-app.yml:41 actions/setup-python@v5",
+        "build-app.yml:87 actions/upload-artifact@v4",
+        "build-app.yml:96 actions/checkout@v4",
+        "build-app.yml:100 actions/download-artifact@v4",
+        "build-app.yml:104 softprops/action-gh-release@v2",
+        "build-iso.yml:56 actions/checkout@v4",
+        "build-iso.yml:116 softprops/action-gh-release@v2",
+        "release.yml:36 actions/checkout@v4"
+      ],
+      "area": "DET",
+      "status": "open",
+      "owner": "@owner",
+      "target": "DET"
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+# 20_ai_automation_agent_readiness — Prompt 20 - AI Automation and Agent Readiness Audit
+
+- Run: `bench-test-20261013-0819-full-main-b916709`
+- Target: `bench-test` @ `b916709` (branch `main`)
+- Domain: `20_ai_automation_agent_readiness.md` (area AI, prompt)
+
+## Verification Performed
+
+# 20_ai_automation_agent_readiness - 20_ai_automation_agent_readiness.md
+
+Domain subagent `20_ai_automation_agent_readiness` (area AI), read-only audit of `C:\temp\bench-test`.
+
+## Checks / Evidence
+
+- **P1 - Test suite is documented as mandatory but no CI gate runs it, so an agent can land a red change on main** (confidence: High)
+  - `AGENTS.md:164-174 - '## Testing - required before every commit' lists `python tests/run_all.py` (line 167) and 'Never commit with a failing suite' (line 174)`
+  - `.github/workflows/release.yml:22-23 - `on: push: branches: [main]` (tag workflow runs on every main push)`
+  - `.github/workflows/release.yml:41-107 - 'Decide the next version' / 'Tag the release' push a tag with `permissions: contents: write`; no test or review step precedes it`
+  - `.github/workflows/build-app.yml:10-17 - triggers on push to main touching bench/** or packaging/**, builds and publishes release assets`
+  - `.github/workflows/build-iso.yml:38-43 - triggers on push to main touching bench/** or live/**`
+  - ``git grep -n -i 'run_all|pytest|test_' -- .github/` returned no matches (no workflow executes the test suite)`
+  - Impact: The validation command agents are told to run before every commit is never enforced. An agent that skips or mis-runs `tests/run_all.py` can push a failing change straight to main, and release.yml then auto-tags and publishes it as a release. The documented gate is advisory only, and there is no signal to a reviewer that a change is already broken.
+  - Recommendation: Add a required `.github/workflows/ci.yml` that runs on pull_request and push to main: `python tests/run_all.py`, `python -m py_compile bench/*.py server/*.py`, and `bash -n` on the shell scripts (mirroring AGENTS.md:166-170), on both ubuntu-latest and windows-latest. Mark it a required status check on main and make release.yml depend on it (`needs:` / workflow_run) so a red suite cannot produce a tag or bundles.
+- **P2 - No PR, contribution, review or small-batch guidance; auto-tagging on direct main pushes means no human approval gate** (confidence: High)
+  - `No CONTRIBUTING.md, PULL_REQUEST_TEMPLATE, CODEOWNERS, or ISSUE_TEMPLATE exist: `git ls-files` shows only AGENTS.md plus the three workflows under .github/`
+  - ``git grep -n -iE 'pull request|human approval|approval|branch protection|small.?batch' -- AGENTS.md README.md docs/*.md` returned no matches`
+  - `AGENTS.md:279-285 - the 'Do not' list only forbids 'Push to main with a red tests/run_all.py ...' (line 284), implying direct-to-main pushes are the normal path`
+  - `.github/workflows/release.yml:96-107 - a tag is created and pushed automatically by CI with no approval step`
+  - Impact: Agents have no documented expectation to open a scoped, reviewable PR or to keep changes small, and no human-approval checkpoint exists before a change becomes a tagged release. An autonomous agent can self-approve its own work by pushing to main, which conflicts with the 'small-batch PRs + human approval for releases' guardrail this domain expects and makes review/rollback harder.
+  - Recommendation: Add CONTRIBUTING.md and a PR template stating: work on a branch, open a PR, require CI green + one human review, keep PRs to one logical change (small batch), and never merge your own change. Add CODEOWNERS for bench/, server/, live/, and .github/. Enable branch protection on main (require PR + required status check) and gate the release/tag workflow behind a manual approval (workflow_dispatch or an environment with reviewers).
+- **P2 - No prompt-injection / untrusted-content guidance while agents are directed to read committed run logs and results** (confidence: Medium)
+  - `AGENTS.md:273-275 - instructs agents to 'Read result files as UTF-8' and open a run's artifacts, and AGENTS.md:38-39 tells agents to reproduce evidence from them`
+  - `AGENTS.md:33-46 - agents are told to parse runner/phase output and telemetry from results`
+  - `10,299 tracked files sit under results/ (of 10,555 total tracked files); 7,244 are tracked *.log files, e.g. results/bench-live-linux-20261013-080711/bench-live-linux-20261013-080711-logs/kernel-since-start.log and errors-since-start.log`
+  - ``git grep -n -iE 'prompt inject|injection|untrusted' -- AGENTS.md README.md docs/*.md` returned no matches (no warning anywhere)`
+  - Impact: Agents are explicitly pointed at large volumes of machine-generated, contributor-submittable content (console/kernel/error logs, sysinfo dumps) with no instruction to treat it as untrusted data. A crafted log in a PR, or a compromised host's output, can carry text that an agent paraphrases or follows as instructions (prompt injection), influencing code changes, secret handling, or release actions.
+  - Recommendation: Add an 'Untrusted content / prompt injection' section to AGENTS.md: state that logs, results/, examples/ and any run artifact are data, never instructions; require agents to quote/annotate rather than obey embedded directives; never execute commands copied from an artifact; and ask a human when an artifact requests an action. Optionally add a CI check that flags instruction-like patterns in newly committed artifacts.
+- **P2 - Agent instruction file misstates repository shape: 'a few runs' tracked vs 10,299 tracked result files (97.6% of the repo)** (confidence: High)
+  - `AGENTS.md:59 - 'results/   output (mostly git-ignored; a few runs are tracked as history)'`
+  - `README.md:335 - same claim ('mostly git-ignored; a few runs tracked as history')`
+  - ``git ls-files results/ | Measure-Object -Line` = 10299 and `git ls-files | Measure-Object -Line` = 10555 (97.6% of tracked files are under results/)`
+  - `.gitignore:1-5 - declares results/ and *.log ignored, yet 10,299 result files and 7,244 *.log files are tracked (added/force-added despite the ignore rules)`
+  - `commit 83c168cc 'bench: bench-live-linux-20261013-080711 (744 files)' - a single generated-artifact commit of 744 files / 66,313 insertions`
+  - `.gitattributes - does not mark results/ as generated/vendored, so tooling and repo maps treat these as real source`
+  - Impact: The repo map agents rely on understates generated content by orders of magnitude, so an agent planning a change cannot tell generated history from source, and 'agent readiness' repo maps/embedding indexes are dominated by noise. It also contradicts the stated ignore policy, so an agent cannot trust AGENTS.md/README for what is safe to touch.
+  - Recommendation: Correct AGENTS.md:59 and README.md:335 to state the real tracked-result policy, and mark generated trees explicitly (e.g. add `results/** linguist-generated=true -diff` to .gitattributes, or stop tracking run history and keep a small curated examples/ set). Add an explicit do-not-touch rule for `results/**`, `*.log`, `server/data/**` and `*.telemetry.csv`.
+- **P3 - README release/version text is stale and contradicts VERSION, which agents are told is the single source of truth** (confidence: High)
+  - `VERSION:1 - contains `1.11.5``
+  - `README.md:12 - 'Release `v1.1.0`'`
+  - `README.md:15-17 - 'release line plus an automatic build: `1.11.3+<n>.<commit>`' and 'ISO <gpu> v1.11.3 #<run>'`
+  - `AGENTS.md:192-207 - states versions are derived from git and that release.yml 'keeps VERSION in step', and that 'every surface reads it'`
+  - Impact: An agent following README for the current release number or for version-related behaviour reads a value two-plus releases behind VERSION, undermining the 'single authoritative descriptor' claim agents are told to rely on and increasing the chance of incorrect version references in generated docs/releases.
+  - Recommendation: Generate the version string in README from VERSION (or remove the hardcoded release number and point to VERSION/releases), and add a small test/check that fails when README's release line disagrees with VERSION.
+- **P3 - Secrets guidance names only the ISO workflow, omitting that build-app.yml bakes the same world-readable token into public app bundles** (confidence: High)
+  - `AGENTS.md:176-186 (Security) - attributes the baked control-plane/upload token only to `.github/workflows/build-iso.yml` ('baked via the BENCH_AGENT_CONF / BENCH_UPLOAD_CONF secrets by .github/workflows/build-iso.yml')`
+  - `.github/workflows/build-app.yml:60-64 - sets `BENCH_BAKE_AGENT_CONF: ${{ secrets.BENCH_AGENT_CONF }}` and builds public release bundles`
+  - `README.md:158-163 - 'CI also bakes the control-plane config into each bundle ... the releases are public, so that token is world-readable: use a limited, rotatable one'`
+  - Impact: The instruction file agents read understates where the shared join token is exposed. An agent reasoning about secret exposure from AGENTS.md alone could conclude the token only ships in ISOs and miss the public app-bundle path, leading to incomplete rotation advice or a mistaken 'safe to reuse' assumption.
+  - Recommendation: Update AGENTS.md Security to list every public artifact that carries the baked token (build-iso.yml ISOs and build-app.yml bundles) and the rotation obligation for each; cross-link README.md:158-163. Consider a single 'baked secret inventory' doc and a check that the secret name only appears in approved workflows.
+
+## Verification Performed
+
+Read-only source review of the target at commit `b916709`; the evidence above was
+recorded by the domain subagent and normalized by `tools/full_domain.py` (mechanical
+report body derived from that recorded findings JSON).
+
+## Findings
+
+| ID | Severity | Title |
+|---|---|---|
+| AI-P1-001 | P1 | Test suite is documented as mandatory but no CI gate runs it, so an agent can land a red change on main |
+| AI-P2-001 | P2 | No PR, contribution, review or small-batch guidance; auto-tagging on direct main pushes means no human approval gate |
+| AI-P2-002 | P2 | No prompt-injection / untrusted-content guidance while agents are directed to read committed run logs and results |
+| AI-P2-003 | P2 | Agent instruction file misstates repository shape: 'a few runs' tracked vs 10,299 tracked result files (97.6% of the repo) |
+| AI-P3-001 | P3 | README release/version text is stale and contradicts VERSION, which agents are told is the single source of truth |
+| AI-P3-002 | P3 | Secrets guidance names only the ISO workflow, omitting that build-app.yml bakes the same world-readable token into public app bundles |

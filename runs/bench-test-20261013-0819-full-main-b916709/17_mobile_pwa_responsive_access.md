@@ -1,0 +1,83 @@
+# 17_mobile_pwa_responsive_access — Prompt 17 - Mobile, PWA, and Responsive Access Audit
+
+- Run: `bench-test-20261013-0819-full-main-b916709`
+- Target: `bench-test` @ `b916709` (branch `main`)
+- Domain: `17_mobile_pwa_responsive_access.md` (area MOB, prompt)
+
+## Verification Performed
+
+# 17_mobile_pwa_responsive_access - 17_mobile_pwa_responsive_access.md
+
+Domain subagent `17_mobile_pwa_responsive_access` (area MOB), read-only audit of `C:\temp\bench-test`.
+
+## Checks / Evidence
+
+- **P2 - Primary tab bar cannot fit a phone: it is a non-wrapping flex row with no horizontal scroll** (confidence: High)
+  - `server/web/style.css:41 - `.tabs{display:flex;gap:4px;padding:10px 22px 0}` - no `flex-wrap` and no `overflow-x`, so the six tabs cannot wrap and have nowhere to scroll`
+  - `server/web/style.css:42 - `.tabs button{...padding:9px 16px}` - each tab adds 32px of horizontal padding`
+  - `server/web/index.html:27-34 - six tabs (Live, History, Trends, Compare, Fleet, Schedules) are rendered inline in the tab bar`
+  - `server/web/style.css:244,279,280,281 - the only four `@media` queries in the whole stylesheet target .statcols/.minigrid/.fgrid; none touch .tabs (or any ≤500px breakpoint)`
+  - `reproduced: Segoe UI 14px (the stylesheet's fallback font, style.css:9) string metrics -> labels sum 293.2px; nav chrome = 6x32px padding + 5x4px gap + 2x22px nav padding = 256px; total ~549px required`
+  - Impact: On a 320-414px-wide phone the tab bar requires ~549px, overflowing by 135-229px. The rightmost tabs (Compare/Fleet/Schedules) are pushed off-screen and the page gains a horizontal scrollbar; navigation to those tabs is effectively unreachable without pinch-zooming.
+  - Recommendation: Give `.tabs` `overflow-x:auto; -webkit-overflow-scrolling:touch` (mirroring the existing `.rtabs` rule at style.css:209) and/or a `@media (max-width:520px)` rule that shrinks tab padding and allows wrapping. Verify with a 360px browser viewport.
+- **P2 - Fixed multi-column grids never collapse on phones, forcing horizontal overflow or unreadable cells** (confidence: High)
+  - `server/web/style.css:53 - `.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}` - hard two columns; the Compare tab's result tables land here (server/web/index.html:104, rendered at server/web/app.js:1002-1007)`
+  - `server/web/style.css:76 - `.gauges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}` - four fixed gauge columns inside every runner card`
+  - `server/web/style.css:52 - `.grid{...minmax(320px,1fr)}` with server/web/style.css:45 `main{padding:18px 22px 60px}` -> runner grid needs >=320+44 = 364px content width, so it overflows any viewport narrower than 364px`
+  - `server/web/style.css:107 - `th,td{...white-space:nowrap}` - wide cells (run history has 11 columns, server/web/index.html:67-78) cannot shrink, so inner tables are wide by design`
+  - `server/web/style.css:244,279,280,281 - media queries adjust .statcols/.minigrid/.fgrid only; `.grid2` and `.gauges` have no narrow-width override`
+  - Impact: Phone users get horizontal page scroll and clipped content: the Compare view keeps two side-by-side tables, runner cards keep four tiny gauge cells (mono values like '1234.5' overflow their track), and the runner grid exceeds the viewport below 364px.
+  - Recommendation: Add `@media (max-width:600px)` rules collapsing `.grid2` and `.gauges` to a single column (and `.grid` to `minmax(0,1fr)`), matching the existing `.fgrid` collapse at style.css:281. Keep `.tablecard{overflow:auto}` for per-card table scroll.
+- **P2 - Interactive controls are below the 44x44px minimum touch target** (confidence: High)
+  - `server/web/style.css:11-12 - `button{...padding:8px 12px}` with the 14px base font (style.css:9) yields ~33px-tall buttons`
+  - `server/web/style.css:81 - `.ract button{padding:6px 10px;font-size:12px}` -> ~28px-tall row-action buttons (start/stop/power/forget)`
+  - `server/web/style.css:106-111 - `th,td{padding:9px 12px}` and `tbody tr{cursor:pointer}` -> clickable table rows ~30px tall (run history, fleet, schedules)`
+  - `server/web/style.css:42 - tabs at `padding:9px 16px` -> ~38px tall`
+  - Impact: On touch devices the primary controls (runner actions, tabs, clickable table rows) are below the ~44px guidance, causing frequent mis-taps during the exact scenario the dashboard is used for - acting on a run from a phone.
+  - Recommendation: Add a coarse-pointer/narrow-width media query raising button and row padding (e.g. `@media (max-width:600px){button{padding:11px 14px} th,td{padding:12px}}`) so targets reach >=44px.
+- **P2 - Header and filter bars clip or overflow on narrow screens instead of wrapping** (confidence: High)
+  - `server/web/style.css:24-26 - `.topbar{...gap:24px;...;overflow:hidden}` - the sticky header hides overflow rather than wrapping, so the connection status / token button are cut off on small screens`
+  - `server/web/style.css:32 - `.topstats{...overflow:hidden;flex:0 1 auto}` - the stat strip is clipped, not scrolled or wrapped`
+  - `server/web/style.css:50 - `.filters{margin-left:auto;display:flex;gap:8px;align-items:center}` - no `flex-wrap`; the History bar holds two selects, a default-width text input, a count and a button (server/web/index.html:53-63), and the Trends bar three selects (server/web/index.html:87-91)`
+  - `contrast: server/web/style.css:129 `.formrow{...flex-wrap:wrap}` and server/web/style.css:222 `.focushead{...flex-wrap:wrap}` do wrap, so the omission in .filters/.topbar is inconsistent`
+  - Impact: On phones the operator loses sight of connection state and the token/settings control (clipped by the header), and the history/trends filter controls run off the right edge with no way to reach them - the filter row is the main way to narrow a large run history.
+  - Recommendation: Add `flex-wrap:wrap` to `.filters` and to the header children (or drop `overflow:hidden` and let the header wrap/scroll on narrow widths). Validate at 360px.
+- **P3 - No PWA surface at all: no manifest, icons, service worker, install prompt, or offline fallback** (confidence: High)
+  - `server/web/index.html:4-7 - the <head> contains only charset, viewport, title and one stylesheet link; there is no `<link rel="manifest">`, `theme-color`, apple-touch-icon or icon`
+  - `repository: `git ls-files` shows no *.webmanifest, manifest.json, sw.js, service-worker or icon/PNG assets under server/web (only index.html, style.css, app.js)`
+  - `server/web/app.js - no `navigator.serviceWorker.register(...)`, no `beforeinstallprompt`, no `Notification`/push handling anywhere in the 1838-line file`
+  - `server/benchd.py:1431 - `httpd = ThreadingHTTPServer((a.host, a.port), Handler)` - the server is plain HTTP with no TLS, so a service worker could not register over a LAN address anyway (secure context required)`
+  - `server/web/app.js:200-205 - the only resilience is `setConn()` toggling a 'disconnected' banner; on reload while offline the page is simply dead (no cache/offline shell)`
+  - Impact: The dashboard cannot be installed to a phone home screen and has no offline fallback. For a live telemetry console this is partly acceptable by design, but the low-cost pieces (manifest, theme-color, apple-touch-icon, in-app 'add to home screen' affordance) are absent, so field/bench operators cannot get an app-like entry point.
+  - Recommendation: Either (a) deliberately document 'web UI is a desktop-only live console; no PWA/offline support' in docs/CONTROL_PLANE.md, or (b) add a minimal manifest (name, icons, `display:standalone`, `theme-color`) plus a service worker with a cache-first app shell and a network-fallback offline page, noting it only works over HTTPS/localhost. Track the decision so it is not silently assumed.
+- **P3 - Fixed/sticky chrome ignores safe-area insets (notch, home indicator)** (confidence: High)
+  - `server/web/index.html:5 - `<meta name="viewport" content="width=device-width, initial-scale=1">` has no `viewport-fit=cover``
+  - `server/web/style.css - no `env(safe-area-inset-*)` usage anywhere in the stylesheet`
+  - `server/web/style.css:24-26 - `.topbar{position:sticky;top:0}` and server/web/style.css:206-207/222-223 - `.focuspane{position:fixed;inset:0}` / `.focushead{position:sticky;top:0}` sit under any notch/status bar`
+  - `server/web/style.css:167-169 - `.toast{position:fixed;right:20px;bottom:20px}` can collide with the iOS home-indicator area`
+  - Impact: On notched/rounded-corner devices the sticky header, full-screen focus pane and bottom-right toasts can be partly obscured by system UI, and the token/connection controls at the top can become hard to tap.
+  - Recommendation: Add `viewport-fit=cover` and pad the sticky/fixed chrome with `env(safe-area-inset-*)` (e.g. `padding-top:calc(14px + env(safe-area-inset-top))` on `.topbar`, `padding-bottom` on `.toast`).
+- **P3 - No mobile/responsive test coverage; the suite is source-string matching only** (confidence: High)
+  - `tests/test_dashboards.py:102-105 - the web check documents "Source-level, because the suite has no browser. The behaviour was verified by hand..."`
+  - `tests/test_dashboards.py:106-133 - `_web()` asserts on substrings of app.js/style.css (e.g. `"function focusTabsInner" in js`) and never renders a viewport, so CSS layout regressions cannot be caught`
+  - `repository: no Playwright/Cypress/Puppeteer config or any browser-E2E file in the tree`
+  - Impact: Any fix to the responsive issues above (or a future regression, e.g. removing an `overflow-x`) would pass CI undetected; there is no automated guard that a narrow viewport renders without horizontal overflow.
+  - Recommendation: Add a lightweight responsive smoke test (Playwright/`playwright.config` with 375x812 and 320x568 viewports) asserting `document.documentElement.scrollWidth <= innerWidth` at each width, plus a check that the tab bar has no overflow. If a browser dep is undesirable, add a CSS-lint assertion that `.tabs`/`.filters` retain `overflow-x`/`flex-wrap`.
+
+## Verification Performed
+
+Read-only source review of the target at commit `b916709`; the evidence above was
+recorded by the domain subagent and normalized by `tools/full_domain.py` (mechanical
+report body derived from that recorded findings JSON).
+
+## Findings
+
+| ID | Severity | Title |
+|---|---|---|
+| MOB-P2-001 | P2 | Primary tab bar cannot fit a phone: it is a non-wrapping flex row with no horizontal scroll |
+| MOB-P2-002 | P2 | Fixed multi-column grids never collapse on phones, forcing horizontal overflow or unreadable cells |
+| MOB-P2-003 | P2 | Interactive controls are below the 44x44px minimum touch target |
+| MOB-P2-004 | P2 | Header and filter bars clip or overflow on narrow screens instead of wrapping |
+| MOB-P3-001 | P3 | No PWA surface at all: no manifest, icons, service worker, install prompt, or offline fallback |
+| MOB-P3-002 | P3 | Fixed/sticky chrome ignores safe-area insets (notch, home indicator) |
+| MOB-P3-003 | P3 | No mobile/responsive test coverage; the suite is source-string matching only |

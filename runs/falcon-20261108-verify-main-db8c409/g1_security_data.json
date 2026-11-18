@@ -1,0 +1,357 @@
+{
+  "area": "G1",
+  "findings": [
+    {
+      "id": "DATA-P1-001",
+      "severity": "P1",
+      "title": "Wazuh/IRIS retention coverage is incomplete and the repository statement contradicts the live estate (alerts class not ISM-managed)",
+      "status": "owner-accepted",
+      "evidence": "Retention is now codified: automation/wazuh/ism_retention_apply.sh:38-50 creates wazuh-retention (90 d + ism_template for wazuh-alerts-4.x-*) and wazuh-monitoring-retention (30 d + template for monitoring/statistics); RETENTION_MATRIX.md:19-31 records the owner decision. The repository still cannot reproduce the live claim: docs/runbooks/SCHEMA_AND_RETENTION.md:65 says the Wazuh indexer is 'not managed here', and no read-only checker compares all Wazuh ISM classes against the declared matrix (retention_sweep_check.sh:45-52 only checks central falcon-* patterns).",
+      "remediation": "Keep the owner acceptance for the IRIS deletion window; refresh SCHEMA_AND_RETENTION.md:65 and add a read-only Wazuh ISM-vs-matrix coverage check with an accelerated deletion test."
+    },
+    {
+      "id": "PRIV-P1-001",
+      "severity": "P1",
+      "title": "Wazuh indexer and IRIS case data still have no retention or deletion window (owner-gated)",
+      "status": "verified-fixed",
+      "evidence": "RETENTION_MATRIX.md:50 records the IRIS 365 d owner decision and the read-only review tool; automation/validation/iris_retention_review.sh:1-12 lists past-window cases. Wazuh windows are codified at automation/wazuh/ism_retention_apply.sh:38-50 (90 d alerts, 30 d monitoring/statistics, with templates).",
+      "remediation": "Residual only: IRIS deletion remains manual/approved; add a per-class accelerated deletion test (no regression found)."
+    },
+    {
+      "id": "WH-P1-001",
+      "severity": "P1",
+      "title": "OpenSearch sink drops failed batches with no dead-letter/replay path (detection now closed and live-verified)",
+      "status": "partially-fixed",
+      "evidence": "config/vector/aggregator.yaml:132-171 adds a 512 MiB disk buffer, end-to-end acknowledgements and 20 retries/1 h, but the only DLQ input is route_valid.invalid (:166-171). There is still no sink-failure journal, no reroute_dropped path and no capture for non-retriable mapping/4xx rejects, so a rejected batch is observed (bootstrap/90-alerting.sh:241-247) but not preserved. automation/validation/write_rejection_test.sh:52-60 exercises an index-read-only window, not a forced non-retriable mapping rejection.",
+      "remediation": "Add a durable sink-failure journal + replay (or a proxy/sidecar that captures 4xx rejects) and a forced-mapping-rejection drill proving every failed batch is captured and replayable."
+    },
+    {
+      "id": "ACM-P2-001",
+      "severity": "P2",
+      "title": "Live client-VPN enrollment credential is a single shared token with no expiry; per-device lifecycle implemented but unused",
+      "status": "partially-fixed",
+      "evidence": "automation/vpn/enroll-service.py:60-113 supports <name>:<token>[:expiry] and rejects expired bindings; automation/vpn/issue-enroll-token.sh:26-50 issues 24 h default per-device tokens and writes <name>.enroll-token. But the closure path still cannot prove the bare line is gone: automation/validation/enrollment_closure_check.sh:84-93 only compares the deployed file hash, docs/security/ENROLLMENT_CLOSURE.md:15 still describes one shared token baked into endpoint scripts, and automation/vpn/sync-levelio-scripts.sh:11 embeds the whole token file into every endpoint script (new ACM-P2-004). Impact while the bare token is live: authorize() accepts the shared token for any name not in `named` (:102-113) and existing_peer() replaces a block with the same name (:135-141,228-240), so a holder can re-enroll an unbound site/sensor name and take over its tunnel address.",
+      "remediation": "Fix the bulk-token substitution first; then issue per-device bindings for every active device, rotate/remove the bare line, and make enrollment_closure_check fail on a bare token or expired binding; bind tokens to device identity (not only a client-chosen name)."
+    },
+    {
+      "id": "ACM-P2-003",
+      "severity": "P2",
+      "title": "Deployed enrollment service does not enforce per-device token expiry; issuance tool and deployed enforcement disagree (no deployed-artifact binding)",
+      "status": "verified-fixed",
+      "evidence": "automation/validation/enrollment_closure_check.sh:84-93 compares /opt/falcon/vpn-enroll/enroll-service.py to the repo copy; automation/vpn/enroll-service.py:60-113 implements expiry parsing and a 403 for expired/malformed bindings; config/systemd/falcon-enrollment-closure.timer runs the daily check.",
+      "remediation": "None for the deployed-drift finding; keep the daily hash check and bump the service version on behavior changes."
+    },
+    {
+      "id": "ADMIN-P2-001",
+      "severity": "P2",
+      "title": "Admin/observability consoles are exposed through public routers without origin authentication",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:137-204 puts kestrel-auth on every public console/observability router (falcon root/console, /grafana, /dash, /ntop, iris, soc). The only unauthenticated public routes are the /ntop exact-path redirect and the token-gated enroll service. docs/runbooks/SSO.md:3-18 records the live Kestrel cutover.",
+      "remediation": "None; keep the forward-auth gate and add a negative test that each public host redirects/rejects an unauthenticated request."
+    },
+    {
+      "id": "ADMIN-P2-002",
+      "severity": "P2",
+      "title": "The Access-posture gate accepts origin reachability; no automated check verifies Cloudflare Access enforcement anymore",
+      "status": "partially-fixed",
+      "evidence": "automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com; .github/workflows/external-smoke.yml:40-60 is explicitly reachability-only and now accepts 200/401/403. docs/runbooks/SSO.md:3-8 says the Cloudflare Access apps were removed on 2026-11-05 and Kestrel is the identity source, so the independent watcher now asserts a retired control; no Kestrel/idp assertion exists.",
+      "remediation": "Change the independent watcher to assert the Kestrel login redirect (idp.mainecybertech.us) or a 401/403 without a session, and keep the lab smoke as availability-only."
+    },
+    {
+      "id": "ADMIN-P2-003",
+      "severity": "P2",
+      "title": "No centralized actor-level audit trail for Grafana/ntfy/IRIS console admin actions",
+      "status": "partially-fixed",
+      "evidence": "config/logrotate/falcon-traefik:1-20 codifies daily/50M/keep-7 rotation; console/actions_broker.py:31-37,102 appends actor/action JSONL for ack/unack/downtime. Container stdout/stderr is still local-only by design (docs/runbooks/WAZUH_INTEGRATION.md:163-180) and config/vector/aggregator.yaml:13-18 has no container-log source; Grafana/ntfy/IRIS admin actions still have no centralized actor-level stream.",
+      "remediation": "Ship a filtered container/admin-action stream into Wazuh/OpenSearch and add actor-level detection; keep the Traefik rotation and broker log."
+    },
+    {
+      "id": "API-P2-001",
+      "severity": "P2",
+      "title": "Ingest contract relies on a shared secret header, not request signing or idempotency keys",
+      "status": "partially-fixed",
+      "evidence": "config/vector/aggregator.yaml:22-44 adds mutual TLS (verify_certificate: true) and keeps HTTP basic auth; config/vector/edge.yaml:241-256 uses the shared falcon-vector-edge credential and one client certificate. There is still no per-request HMAC/nonce or idempotency key (no such implementation in config/vector), so a holder can replay/inject and retries can duplicate.",
+      "remediation": "Add an HMAC/timestamp/nonce (or per-sensor certificate identity) and a deterministic document id/idempotency key; keep basic auth as a second factor."
+    },
+    {
+      "id": "CHAIN-P2-001",
+      "severity": "P2",
+      "title": "The only automated Access-posture check no longer verifies Access (external-smoke accepts any 302 from the lab vantage)",
+      "status": "regressed",
+      "evidence": "The prior fix relied on the independent DO watcher asserting Cloudflare Access: automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com. docs/runbooks/SSO.md:3-8 says the Access apps were removed on 2026-11-05 and Kestrel is live; docs/CURRENT_STATE.md:24-27 still says Access remains the edge gate. .github/workflows/external-smoke.yml:40-60 remains reachability-only. No check now asserts the Kestrel forward-auth path, so the previous verified-fixed control is void.",
+      "remediation": "Restore a non-owner enforcement check for the current control (Kestrel login redirect or 401/403) and update/retire the stale Access assertions; treat CHAIN-P2-001 as regressed until then."
+    },
+    {
+      "id": "DATA-P2-002",
+      "severity": "P2",
+      "title": "Root LV is below the disk guard's 20 GiB threshold: the guard fails every 15 minutes and cannot reclaim back above it (69 GiB snapshot repo on root)",
+      "status": "verified-fixed",
+      "evidence": "automation/validation/disk_guard.sh:23-27 keeps the 24 GiB data / 20 GiB root thresholds and keep-2; bootstrap/85-backup-job.sh:68-75 keeps the newest two local snapshots; compose/central/docker-compose.yml:79 still bind-mounts /var/lib/falcon-snapshots/opensearch on the root LV. The code state matches the fixed configuration; no live free-space re-measure was possible in this read-only pass.",
+      "remediation": "No code remediation; continue monitoring root free and keep the snapshot count at 2."
+    },
+    {
+      "id": "DATA-P2-003",
+      "severity": "P2",
+      "title": "Edge control-plane spool keeps purging ~134 MiB per 10-14 h; nothing consumes it and the purge alert cannot fire at that rate",
+      "status": "partially-fixed",
+      "evidence": "The spool is still write-only: automation/validation/disk_guard.sh:69-87 deletes vector-*.ndjson* older than 7 days, and bootstrap/90-alerting.sh:632-638 alerts when >24 files or a >256 MiB/6 h purge burst. No consumer/drain path exists in this repository, so the 128 MiB rotation still overwrites the previous .1 file; the new retention only bounds disk use.",
+      "remediation": "Either implement a drain+delete consumer with acknowledged delivery, or record the write-only acceptance and lower the alert to an expected-cadence check; archive a bounded copy if the data is needed."
+    },
+    {
+      "id": "NOTIF-P2-002",
+      "severity": "P2",
+      "title": "Notification noise remains high; the accurate disk-guard root alert now dominates and sub-repeat-interval flapping persists",
+      "status": "partially-fixed",
+      "evidence": "automation/validation/disk_guard.sh:107-128 now throttles the guard alert (6 h default); automation/alerting/ntfy_relay.py:68-70,382-400,521-528 implements same-title dedupe and a regression test exists (automation/validation/tests/ntfy_relay_dedupe_test.py). However DEDUPE_SECONDS defaults to 0 and config/systemd/falcon-alert-relay.service:9 has no MON_RELAY_DEDUPE_SECONDS (the 300 s setting is a live drop-in per ledgers/decision_log.md:305); no 7-day accounting re-run is recorded.",
+      "remediation": "Codify the dedupe/quiet settings in the unit or an EnvironmentFile, enable a non-zero window, and record the 7-day noise measurement."
+    },
+    {
+      "id": "PRIV-P2-001",
+      "severity": "P2",
+      "title": "The vendored MCT client/vendor layer still has no privacy-classification boundary in this repository",
+      "status": "verified-fixed",
+      "evidence": "docs/privacy/DATA_GOVERNANCE.md:56-63 records the vendored MCT boundary (archive-only; new client-data processing needs classification/retention/review); RETENTION_MATRIX.md:50 covers the live IRIS 365 d entry.",
+      "remediation": "None; add the MCT_CONSOLIDATION cross-reference when the vendored layer is next touched."
+    },
+    {
+      "id": "PRIV-P2-003",
+      "severity": "P2",
+      "title": "The published production verdict still binds a superseded package and carries a contradictory readiness line",
+      "status": "open",
+      "evidence": "docs/phase9/review/PRODUCTION_VERDICT.md:8-26 still binds c312ab7 / 1,168 entries and :37 says NOT_SUPPORTED; PACKAGE_DIGEST.txt:2-7 now binds f79d786 / 4,394 entries with production_readiness=APPROVED. The cycle note (:10-11) still cites e74fd7b/3,834.",
+      "remediation": "Rebind the verdict identity block to the current digest, regenerate the readiness line from the ledgers, and extend tests/digest_verdict_consistency_test.sh to the verdict fields."
+    },
+    {
+      "id": "SEARCH-P2-001",
+      "severity": "P2",
+      "title": "Retention gaps remain on the Wazuh indexer alerts class and IRIS; RETENTION_MATRIX.md is stale",
+      "status": "partially-fixed",
+      "evidence": "automation/wazuh/ism_retention_apply.sh:38-50 codifies alerts 90 d and monitoring/statistics 30 d with ism_template entries, but its header (:9) leaves wazuh-states-retention/wazuh-archives-14d/security-auditlog-retention on existing policies with no template, so a new states/archives index is unmanaged. docs/runbooks/SCHEMA_AND_RETENTION.md:65 still says the Wazuh indexer is 'not managed here' while RETENTION_MATRIX.md:23-27 claims coverage.",
+      "remediation": "Add ism_template entries for wazuh-states-* and wazuh-archives-* (or document the deliberate exception), and refresh SCHEMA_AND_RETENTION.md:65."
+    },
+    {
+      "id": "SEARCH-P2-002",
+      "severity": "P2",
+      "title": "OpenSearch snapshot repository still on the root LV; root free is below the guard threshold and the guard now fails every 15 minutes",
+      "status": "verified-fixed",
+      "evidence": "Same control as DATA-P2-002: compose/central/docker-compose.yml:79 still mounts the snapshot repo on root, but disk_guard.sh:23-27 / keep-2 and bootstrap/85-backup-job.sh:68-75 keep the fixed configuration. The 20261014 run recorded 45 GiB root free and guard exit 0; no live re-measure was possible here.",
+      "remediation": "No remediation; keep the 2-snapshot cap and monitor root free."
+    },
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "Public-facing routers have no origin authentication; ntfy-auth is dead config",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:26-28 removes the dead ntfy-auth middleware and :137-204 puts kestrel-auth on every public admin/observability router. docs/runbooks/SSO.md:3-18 records the cutover; the only public non-admin route is the token-gated enroll service.",
+      "remediation": "None; keep an unauthenticated-request test per public host."
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Public rate limits key on client-supplied X-Forwarded-For; no per-account limits on auth endpoints",
+      "status": "partially-fixed",
+      "evidence": "config/traefik/dynamic.yml:36-54 now keys the public/login limiters on CF-Connecting-IP and adds a 1/s login limiter. The header is still client-supplied for direct-to-origin requests (config/nftables/falcon.nft:47-48 allows 80/443 from the lab subnets), automation/vpn/enroll-service.py:17-19,116-121 still collapses to one fleet-wide bucket behind Traefik, and OSD/Wazuh/IRIS still have no per-account lockout.",
+      "remediation": "Trust the header only from the cloudflared/tunnel source, add per-account lockout/backoff, and give enrollment a per-device bucket."
+    },
+    {
+      "id": "SEC-P2-004",
+      "severity": "P2",
+      "title": "Deployed enrollment service is a stale build: per-device token expiry is not enforced and the documented issuance flow is rejected",
+      "status": "verified-fixed",
+      "evidence": "automation/validation/enrollment_closure_check.sh:84-93 compares the deployed service to the repo; automation/vpn/enroll-service.py:60-113 enforces per-device expiry; config/systemd/falcon-enrollment-closure.timer runs it daily.",
+      "remediation": "None; keep the deployed-hash check."
+    },
+    {
+      "id": "ACM-P3-001",
+      "severity": "P3",
+      "title": "No consolidated access-control matrix; authorization remains per-service and distributed across four documents",
+      "status": "open",
+      "evidence": "No consolidated artifact exists: `find . -iname '*access*matrix*'` returns only audit/evidence copies. Authorization remains distributed across docs/architecture/PORT_PROTOCOL_MATRIX.md:1-40, docs/runbooks/ACCESS_AND_ACCOUNTS.md:1-20, docs/architecture/IDENTITY_AND_SECRETS.md and docs/architecture/TRUST_BOUNDARIES.md; the new Kestrel/console role mapping is not in one matrix.",
+      "remediation": "Publish docs/security/ACCESS_CONTROL_MATRIX.md generated from the four sources, including the Kestrel/console role mapping."
+    },
+    {
+      "id": "ACM-P3-002",
+      "severity": "P3",
+      "title": "Documented Cloudflare Access policy state does not match live behavior: the falcon app has no owner-IP bypass (and two dead apps remain)",
+      "status": "open",
+      "evidence": "docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-134 still says each Access app carries an owner-IP bypass; :181-192 says the live path is Authelia at auth.mainecybertech.us/192.168.222.220:9091. docs/runbooks/SSO.md:3-8,30-33 says Access apps were removed on 2026-11-05 and Kestrel/Authentik is live at idp.mainecybertech.us/192.168.222.224:9000. docs/CURRENT_STATE.md:24-27 also still says Access remains the edge gate.",
+      "remediation": "Rewrite ACCESS_AND_ACCOUNTS sections 6-8 and CURRENT_STATE to the Kestrel state; keep the historical Access section clearly marked as rollback-only."
+    },
+    {
+      "id": "AI-P3-001",
+      "severity": "P3",
+      "title": "Agent/audit-run pointers are stale: the lifecycle runbook still calls the closed 2026-09-30 run 'the current run' and AGENTS.md/README point at it as the full-domain reference",
+      "status": "partially-fixed",
+      "evidence": "AGENTS.md:138-139, README.md:10-12 and docs/runbooks/AUDIT_RUN_LIFECYCLE.md:40-41 still name falcon-20261014-verify-main-edbf441 as the latest verification; there is no pointer to this 2026-11-08 run and no doc-drift test.",
+      "remediation": "Update the three pointers and add a check that the newest run ID is referenced."
+    },
+    {
+      "id": "AI-P3-002",
+      "severity": "P3",
+      "title": "No AI-provenance policy and no per-tool agent instruction coverage",
+      "status": "partially-fixed",
+      "evidence": "AGENTS.md:142-144 has the provenance rule, but no CLAUDE.md/.cursorrules/copilot-instructions.md/GEMINI.md exists (find returns none) and .github/pull_request_template.md is still 32 lines with no authorship/provenance field.",
+      "remediation": "Add pointer files and a PR provenance field; keep the independent-review rule."
+    },
+    {
+      "id": "API-P3-002",
+      "severity": "P3",
+      "title": "Public-access deploy script still names the retired dash.falcon/ntfy.falcon hostnames in its operator guidance",
+      "status": "verified-fixed",
+      "evidence": "bootstrap/97-cloudflare-api-config.sh:36 sets HOSTS=(falcon iris enroll) and :64 marks dash.falcon/ntfy.falcon retired; the fallback text matches.",
+      "remediation": "None for this finding (the script's Access provisioning is tracked as ADMIN-P2-004)."
+    },
+    {
+      "id": "CHAIN-P3-001",
+      "severity": "P3",
+      "title": "Anonymous origin -> admin console exposure, plus latent docker.sock mounts in the vendored Shuffle compose",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:137-204 now gates every public console router with kestrel-auth; mct/compose/docker-compose.shuffle.yml:48-51,90-93 has the docker.sock mounts commented out and the container drift check reports no running socket mounts. The Shuffle stack remains archive-only.",
+      "remediation": "None; keep Shuffle archive-only."
+    },
+    {
+      "id": "CHAIN-P3-002",
+      "severity": "P3",
+      "title": "No automated live-vs-repo drift check for the exposure edges; the applied wg0 narrowing can regress silently",
+      "status": "open",
+      "evidence": "automation/validation/post_reboot_verify.sh:25-30 checks only the default-deny policy and stale tables; bootstrap/32-inbound-mode.sh:52-71 reconciles only the policy word. No check compares the live nftables ruleset to config/nftables/falcon.nft; automation/validation/tunnel_drift_check.sh covers the Cloudflare tunnel, not nft.",
+      "remediation": "Add a read-only normalized live-vs-repo nftables diff and a metric/alert on the existing timer pattern."
+    },
+    {
+      "id": "DATA-P3-004",
+      "severity": "P3",
+      "title": "Nightly backup leaves an unencrypted config archive beside the encrypted one and never removes it",
+      "status": "verified-fixed",
+      "evidence": "bootstrap/85-backup-job.sh:78-89 creates config-YYYYMMDD.tar.gz, encrypts to .enc and removes the plaintext on success (`rm -f \"$cfg\"`); the failure path keeps it 0600.",
+      "remediation": "None."
+    },
+    {
+      "id": "DATA-P3-005",
+      "severity": "P3",
+      "title": "Retention documentation drift: snapshot cadence/keep count disagree and the Wazuh indexer backup job is not in the matrix",
+      "status": "partially-fixed",
+      "evidence": "RETENTION_MATRIX.md:19-31 still has no row for the Wazuh indexer snapshot job even though automation/validation/wazuh_indexer_backup.sh:42 keeps 14; docs/runbooks/SCHEMA_AND_RETENTION.md:65 still says the Wazuh indexer is not managed here.",
+      "remediation": "Add the Wazuh indexer snapshot class (job, keep 14, timer) to both retention docs and refresh the stale pointer."
+    },
+    {
+      "id": "NOTIF-P2-001",
+      "severity": "P3",
+      "title": "ntfy-auth Traefik middleware is still dead config; ntfy-native deny-all remains the only access control",
+      "status": "verified-fixed",
+      "evidence": "config/traefik/dynamic.yml:26-28 has only the removal comment; no router references ntfy-auth; the lab ntfy is internal-only (:125-134). Residual dead material: /srv/falcon/secrets/ntfy_htpasswd is still mounted (compose/central/docker-compose.yml:36) and generated (bootstrap/50-secrets.sh:87-97), and two runbooks still describe it.",
+      "remediation": "None for the dead middleware; delete the unused htpasswd mount/secret and stale runbook text as hygiene."
+    },
+    {
+      "id": "NOTIF-P3-003",
+      "severity": "P3",
+      "title": "Retired public lab-ntfy hostname still referenced in ledgers and the 97 deploy fallback text",
+      "status": "partially-fixed",
+      "evidence": "bootstrap/97-cloudflare-api-config.sh:64 and docs/architecture/PORT_PROTOCOL_MATRIX.md:38 have the corrected falcon/iris/enroll wording, but ledgers/exception_register.md:29 (EX-20) and ledgers/risk_register.md:31 (R-24) still name falcon-ntfy.mainecybertech.us.",
+      "remediation": "Annotate the two historical ledger rows as retired/historical; do not rewrite the records."
+    },
+    {
+      "id": "PRIV-P3-001",
+      "severity": "P3",
+      "title": "Owner/legal privacy inputs and the 'synthetic-only' wording remain outstanding",
+      "status": "open",
+      "evidence": "docs/privacy/DATA_GOVERNANCE.md:47-54 still lists owner/legal inputs (entity/DPA/jurisdiction and device scope); docs/phase9/OWNER_ACTIONS.md A6/C3 remain open. The 'synthetic-only' wording is fixed at docs/architecture/DATA_FLOW_AND_CLASSIFICATION.md:4.",
+      "remediation": "Complete A6/C3 owner/legal inputs and record the device/site scope; otherwise explicitly accept the lab-scope limitation."
+    },
+    {
+      "id": "SEARCH-P3-001",
+      "severity": "P3",
+      "title": "Legacy falcon-eve indices keep divergent mappings; consumer queries silently under-return",
+      "status": "verified-fixed",
+      "evidence": "config/opensearch/falcon-eve-template.json:8,672 pins dynamic:false and event_time; automation/validation/mapping_drift_check.py exists and the 20261014 evidence reports legacy drift 0/16 after the 14 d retention expiry. No legacy indices remain in the current window.",
+      "remediation": "None; keep the mapping-drift metric."
+    },
+    {
+      "id": "SEC-P3-004",
+      "severity": "P3",
+      "title": "wg0 tunnel has no peer-class separation; every peer (including client endpoints) can reach the edge control plane and Wazuh proxies",
+      "status": "open",
+      "evidence": "config/nftables/falcon.nft:33 drops only 10.99.0.20/.21/.22 to 9443/15140/15141, while automation/vpn/enroll-service.py:46,230-240 allocates 10.99.0.20-99 and docs/runbooks/VPN.md:16 documents that pool; :36-37 still accepts syslog/NetFlow from every wg0 peer. The hardcoded set is already stale (.20 retired) and does not cover .23-.99.",
+      "remediation": "Drop the whole client pool (or a dedicated client subnet) on those ports, keep site/sensor ranges separate, and add a negative test from a .23+ peer."
+    },
+    {
+      "id": "SEC-P3-005",
+      "severity": "P3",
+      "title": "Console session cookies are not marked Secure (central OSD explicit cookie.secure: false; Grafana/Wazuh default)",
+      "status": "verified-fixed",
+      "evidence": "config/central/opensearch_dashboards.yml:3-5 sets opensearch_security.cookie.secure: true; automation/wazuh/multi-node/config/wazuh_dashboard/opensearch_dashboards.yml:17-19 sets it true; compose/central/docker-compose.yml:238 sets GF_SECURITY_COOKIE_SECURE=true.",
+      "remediation": "None."
+    },
+    {
+      "id": "WH-P3-001",
+      "severity": "P3",
+      "title": "No replay/idempotency protection or tests on the notification path (ntfy); Shuffle path retired",
+      "status": "partially-fixed",
+      "evidence": "automation/alerting/ntfy_relay.py:22-34 still documents replay as an accepted residual (no signature/nonce); automation/validation/tests/ntfy_relay_dedupe_test.py now covers same-title duplicate delivery, and the retired Shuffle smoke script is gone. No replay test exists.",
+      "remediation": "Add a replay test that documents/limits the accepted behavior, or add a message id/idempotency key."
+    },
+    {
+      "id": "ARCH-P2-003",
+      "severity": "P2",
+      "title": "Live ingest authentication is an HTTP basic-auth shared credential, not mTLS or request signing",
+      "status": "partially-fixed",
+      "evidence": "config/vector/aggregator.yaml:22-44 adds mutual TLS with verify_certificate: true and keeps basic auth; config/vector/edge.yaml:241-256 uses one shared client certificate. There is still no per-device certificate identity or request signing/replay key; automation/validation/gen_ingest_certs.sh:43-49 issues one CN=vector-edge-probe certificate.",
+      "remediation": "Issue per-sensor client certificates bound to sensor_id, or add request signing; keep the shared basic secret only as a second factor."
+    },
+    {
+      "id": "ACM-P2-004",
+      "severity": "P1",
+      "title": "Endpoint-script sync embeds the entire enrollment token file (all per-device tokens) into every device script",
+      "status": "open",
+      "evidence": "automation/vpn/sync-levelio-scripts.sh:11 reads the whole /srv/falcon/secrets/vpn_enroll.token into ENROLL_TOKEN and :18-19 substitutes it into every installer/updater script. issue-enroll-token.sh:44,48 writes per-device lines <name>:<token>:<expiry> plus a <name>.enroll-token file. Once any per-device binding exists, every endpoint script receives all bindings (and the multi-line value can break or corrupt the sed substitution), defeating the per-device lifecycle and leaking credentials to every device.",
+      "remediation": "Generate each script from that device's <name>.enroll-token only (or inject the token at runtime); refuse to sync when the token file has more than the one intended line; add a two-binding test proving only the target token is embedded."
+    },
+    {
+      "id": "SEC-P2-005",
+      "severity": "P2",
+      "title": "SSO header adapter authenticates unsigned X-Authentik-*/Remote-* headers on 0.0.0.0:8090",
+      "status": "open",
+      "evidence": "console/sso_gateway.py:166-186 accepts X-Authentik-Username/Remote-User and ...-Groups with no shared secret, mints an admin role when the group contains admins (:173), and returns the IRIS token at :184-185. The service binds 0.0.0.0:8090 (bootstrap/98-console.sh:239-240) and nftables allows 8090 from all Docker and management sources (config/nftables/falcon.nft:50); docs/runbooks/SSO.md:152-164 even documents the direct fake-header curl. A compromised container on 172.16/12 (or any management host) can use the returned X-Proxy-*/X-Falcon-* headers or the IRIS token against the app containers on the same Docker networks, bypassing Kestrel.",
+      "remediation": "Bind the adapter to Traefik's Docker gateway/loopback, require a Traefik-injected shared secret or mTLS, remove the Remote-* fallback, and add a negative test that a direct fake-header request is 401."
+    },
+    {
+      "id": "SEC-P2-006",
+      "severity": "P2",
+      "title": "Client VPN peer-class firewall rule is a hardcoded three-address set; dynamically enrolled clients .23-.99 reach the control plane and Wazuh proxies",
+      "status": "open",
+      "evidence": "config/nftables/falcon.nft:33 drops only 10.99.0.20/.21/.22 on tcp 9443/15140/15141; automation/vpn/enroll-service.py:46,230-240 allocates any free address in 10.99.0.20-99, and docs/runbooks/VPN.md:16 documents that pool. A new client peer at .23+ is not dropped; syslog/NetFlow also remain open to all wg0 peers at falcon.nft:36-37.",
+      "remediation": "Replace the three addresses with the full client pool/subnet (or an nft set maintained by enrollment), keep site/sensor peers in a separate range, and add a negative test from a .23 peer."
+    },
+    {
+      "id": "ADMIN-P2-004",
+      "severity": "P2",
+      "title": "Kestrel cutover left Cloudflare Access in the independent posture check, deploy provisioning and current-state docs",
+      "status": "open",
+      "evidence": "automation/alerting/do_watcher/watch.sh:63-75 still requires a 302 to cloudflareaccess.com; bootstrap/97-cloudflare-api-config.sh:122-155 still creates/updates Access apps and an owner-IP bypass, and bootstrap/run-all-deploy.sh:45 runs it; docs/CURRENT_STATE.md:24-27 says Access remains the edge gate and docs/runbooks/ACCESS_AND_ACCOUNTS.md:124-134,181-192 still describes Access/Authelia while docs/runbooks/SSO.md:3-8 says the Access apps were removed on 2026-11-05.",
+      "remediation": "Retire/replace the Access provisioning with a Kestrel-aware path (or make it fail closed and require an explicit rollback flag), update the watcher to assert the Kestrel login redirect/401, and refresh the current-state/access docs."
+    },
+    {
+      "id": "ADMIN-P2-005",
+      "severity": "P2",
+      "title": "Console API still requires a Cloudflare Access JWT and grants admin to owner-IP/LAN, not the Kestrel identity used by Traefik",
+      "status": "open",
+      "evidence": "console/auth.py:1-13,116-132 verifies Cf-Access-Jwt-Assertion and otherwise grants admin for CF-Connecting-IP == owner or a direct private peer; config/traefik/dynamic.yml:137-157 now puts only kestrel-auth in front of the console (no Access JWT), and docs/runbooks/SSO.md:12 says the console is Kestrel gate-only. After the documented Access-app deletion, non-owner Kestrel users get 401 from the API, while bootstrap/98-console.sh:121-126 still tries to populate the Access AUD from the deleted app.",
+      "remediation": "Consume the Kestrel identity headers (signed by Traefik/adapter), remove the Access-JWT and owner-IP/LAN bypass for the public path, and add a test that a non-owner Kestrel user gets viewer access."
+    },
+    {
+      "id": "ADMIN-P2-006",
+      "severity": "P2",
+      "title": "Console action endpoints have no CSRF/Origin enforcement and trust an owner-IP/LAN admin identity",
+      "status": "open",
+      "evidence": "console/api/server.py:722-756 accepts POST /console/api/v1/actions/{ack,unack,downtime-add}, parses the body and calls the root broker without checking Origin/Referer or a CSRF token; console/auth.py:126-131 treats the owner IP or a direct LAN peer as admin; console/web/app.js:258-262 sends the state-changing request. A cross-site POST from an owner browser (or a LAN client) can ack/unack/downtime checks and suppress alerts when the session cookie is sent.",
+      "remediation": "Require a per-session CSRF token and an Origin/Referer allowlist, enforce Content-Type: application/json, and use SameSite cookies; do not grant admin solely by source IP."
+    },
+    {
+      "id": "ADMIN-P2-007",
+      "severity": "P2",
+      "title": "Trusted-header SSO trusts entire Docker subnets: any frontend/backend container can self-assert Grafana/OpenSearch admin",
+      "status": "open",
+      "evidence": "compose/central/docker-compose.yml:233 whitelists 172.30.2.0/24 for Grafana's auth proxy; config/central/opensearch-security/config.yml:77-79 and automation/wazuh/multi-node/config/wazuh_indexer/opensearch-security/config.yml:77-79 trust 172.30.1/2/4 as internal proxies. A compromised container on those shared networks (vector aggregator, ntop, etc.) can call Grafana/OSD/Wazuh with X-Falcon-User/X-Proxy-User: <admin> and X-Proxy-Roles: admin directly, bypassing Kestrel.",
+      "remediation": "Scope each whitelist to the Traefik container IP/network, strip client-supplied identity headers at the app ingress, and use mTLS/JWT between Traefik and the apps; separate the data-plane networks."
+    }
+  ]
+}

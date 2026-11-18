@@ -43,6 +43,15 @@ id = "generic-api-key"
     regexTarget = "line"
     regexes = ['''"[^"]+\.md": "[0-9a-f]{64}"''']
 
+    # Public-key fingerprints printed by `ssh-keygen -Y verify` in the
+    # verification audit logs. The `SHA256:...` value is a key digest, not a
+    # credential. Match the full ssh-keygen phrase on the line so an unrelated
+    # generic-api-key value in the same files is still reported.
+    [[rules.allowlists]]
+    description = "ssh-keygen ED25519 public-key fingerprints"
+    regexTarget = "line"
+    regexes = ['''ED25519 key SHA256:[A-Za-z0-9+/]{43}''']
+
     # Non-secret values re-quoted from other repos' audits.
     [[rules.allowlists]]
     description = "module identifier, throwaway e2e JWT, and other reviewed non-secrets"

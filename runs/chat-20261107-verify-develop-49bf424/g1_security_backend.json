@@ -1,0 +1,239 @@
+{
+  "area": "G1",
+  "repo": "MaineCyberTech/chat",
+  "commit": "49bf4243ae02a9cd5c6ca090417d12c3696429ea",
+  "branch": "develop",
+  "verified_at": "2026-11-07",
+  "previous_run": "chat-20261004-full-develop-a62e44a",
+  "counts": {
+    "total": 27,
+    "reverified": 19,
+    "new": 8,
+    "verified_fixed": 2,
+    "partially_fixed": 8,
+    "open": 16,
+    "regressed": 0,
+    "owner_accepted": 1,
+    "new_p1": 1,
+    "new_p2": 5,
+    "new_p3": 2
+  },
+  "findings": [
+    {
+      "id": "SEC-P2-001",
+      "severity": "P2",
+      "title": "`WEBHOOK_ENCRYPTION_KEY` is not delivered by the production compose stack",
+      "status": "verified-fixed",
+      "evidence": "infra/docker/docker-compose.prod.yml:58-60 (worker) and :132-134 (api) now pass WEBHOOK_ENCRYPTION_KEY; infra/docker/.env.prod.example:29-33 defines it; .env.example:77 also documents it. apps/api/src/modules/webhooks/service.ts:21-27 still throws when the key is unset and apps/api/src/config/env.ts:25 keeps it optional, so a misconfigured deploy fails at first webhook-secret use rather than silently storing plaintext. Stale docs remain: docs/environments/env-vars.md:88-94 still says the prod compose does not pass the key.",
+      "remediation": "n/a for delivery. Update docs/environments/env-vars.md to remove the stale claim; optionally make WEBHOOK_ENCRYPTION_KEY required in production env validation so startup fails closed."
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "Webhook SSRF validation does not constrain redirects or DNS rebinding",
+      "status": "partially-fixed",
+      "evidence": "Redirect following is closed: packages/config/webhook-utils.ts:92 sets WEBHOOK_REDIRECT_MODE=\"manual\" and apps/api/src/modules/webhooks/service.ts:253 plus apps/worker/src/processors/webhook-delivery.ts:104 use it; worker tests assert a single request (apps/worker/src/__tests__/webhook-delivery.test.ts:153-181). Residual SSRF remains: packages/config/webhook-utils.ts:31-40 blocks only 127/10/172.16/192.168/169.254/::1/fc00::/fe80::, omitting 0.0.0.0, 100.64.0.0/10 and IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1); :46-57 resolves only IPv4 A records (resolve4) and returns [] on failure; validation at service.ts:228 and the actual fetch at service.ts:246 (worker :72/:100) are separate DNS lookups, so a rebinding name passes validation and resolves internally at dispatch.",
+      "remediation": "Resolve A and AAAA, reject all private/reserved ranges including IPv4-mapped IPv6, and pin the validated IP for the request (custom undici lookup/Agent) or re-validate every resolved address immediately before connect. Keep redirect:\"manual\"."
+    },
+    {
+      "id": "WH-P2-002",
+      "severity": "P2",
+      "title": "Webhook delivery follows redirects / does not pin the validated IP (SSRF)",
+      "status": "partially-fixed",
+      "evidence": "Same code path as SEC-P2-002. Redirects are no longer followed (packages/config/webhook-utils.ts:92; apps/api/src/modules/webhooks/service.ts:253; apps/worker/src/processors/webhook-delivery.ts:104). IP pinning is still absent: packages/config/webhook-utils.ts:31-57 validates one lookup and omits IPv6/AAAA and mapped addresses, while the fetch happens later at service.ts:246 / webhook-delivery.ts:100.",
+      "remediation": "Implement IP-pinned dispatch plus A/AAAA validation as described in SEC-P2-002; add regression tests for 0.0.0.0, ::ffff:127.0.0.1 and a rebinding hostname."
+    },
+    {
+      "id": "CHAIN-P2-001",
+      "severity": "P2",
+      "title": "Webhook SSRF + missing encryption key form a plausible internal-reach chain",
+      "status": "partially-fixed",
+      "evidence": "Both named components improved: WEBHOOK_ENCRYPTION_KEY is delivered to api and worker (infra/docker/docker-compose.prod.yml:58-60,132-134) and redirects are not followed (packages/config/webhook-utils.ts:92; service.ts:253; webhook-delivery.ts:104). The internal-reach half survives via the SSRF bypasses in SEC-P2-002: 0.0.0.0/::ffff:127.0.0.1 are not private per packages/config/webhook-utils.ts:31-40, and validation (:72) and fetch (service.ts:246) are separate DNS resolutions.",
+      "remediation": "Treat as resolved once SEC-P2-002/WH-P2-002 implement IP pinning and complete private-range blocking; otherwise the chain is a single SSRF bypass rather than SSRF+key failure."
+    },
+    {
+      "id": "CHAIN-P3-001",
+      "severity": "P3",
+      "title": "Public upload URL + client-declared content type is a stored-content risk",
+      "status": "open",
+      "evidence": "apps/api/src/modules/messages/routes.ts:486-500 returns `publicUrl` from getPublicUrl for a client-chosen path; upload validation is metadata-only (apps/api/src/validators/upload.ts:55-66 allowlists contentType, no byte sniff) and the signed upload URL at routes.ts:489-491 does not bind the uploaded bytes to that type. The web client embeds that public URL into message content (apps/web/components/chat/chat-view.tsx:527-535). No bucket visibility/allowed_mime_types definition exists in the repo: supabase/config.toml:122-132 leaves buckets commented out.",
+      "remediation": "Use a private bucket with short-lived signed downloads, sniff magic bytes server-side (or scan uploads), enforce Content-Disposition: attachment for non-images, and define the bucket policy in tracked config/migrations."
+    },
+    {
+      "id": "FILE-P2-001",
+      "severity": "P2",
+      "title": "Uploads return a public URL from `chat-uploads` and trust client-declared content type",
+      "status": "open",
+      "evidence": "apps/api/src/modules/messages/routes.ts:474-501 accepts fileName/contentType/fileSize from the request and returns `getPublicUrl(...)` at :500; the signed upload URL (:489-491) does not enforce the declared content type or size. apps/api/src/validators/upload.ts:55-67 only validates client metadata: `fileSize` is optional (:66) and never used by the route; contentType is never checked against file bytes. Bucket visibility is still unverified/tracked only as commented config (supabase/config.toml:122-132).",
+      "remediation": "Verify bytes against an allowlist (magic-byte sniff), require size server-side or via bucket policy, return signed URLs instead of public URLs, and track the bucket definition (public=false, allowed_mime_types, file_size_limit) in migrations/config."
+    },
+    {
+      "id": "FILE-P3-001",
+      "severity": "P3",
+      "title": "No per-tenant/user quota or total-storage cap on uploads",
+      "status": "open",
+      "evidence": "No quota/storage accounting exists (grep for quota/storage_usage finds only webhook response-size code). The only caps are a client-declared optional 10MB per-file value (apps/api/src/validators/upload.ts:3,66) and the global local-storage limit of 50MiB (supabase/config.toml:125). The worker cleanup is retention, not quota, and is itself destructive (new FILE-P1-001).",
+      "remediation": "Add per-user/per-workspace storage accounting and a quota check before issuing upload URLs; pair it with a safe, reference-aware retention job."
+    },
+    {
+      "id": "DATA-P2-001",
+      "severity": "P2",
+      "title": "Duplicate `add_user_groups` migrations",
+      "status": "owner-accepted",
+      "evidence": "supabase/migrations/README.md:8-25 documents the two migrations as intentional and forbids merging/editing/deleting applied history; both remain listed at supabase/migrations/migrations.list:44,48. The second file (supabase/migrations/20260705000003_add_user_groups.sql:12-21) layers permissive policies over the admin-only policies in 20260704000007_add_user_groups.sql:33-34; README explicitly flags the resulting authorization model as an open product question.",
+      "remediation": "Keep the applied migrations (no squash) and record the owner decision. Address the policy ambiguity via a new forward migration covered by new finding DATA-P2-003."
+    },
+    {
+      "id": "DATA-P2-002",
+      "severity": "P2",
+      "title": "`gdpr_delete_user` is a hard multi-table delete with partial coverage",
+      "status": "partially-fixed",
+      "evidence": "Coverage and atomicity improved: supabase/migrations/20260725000001_make_gdpr_delete_atomic.sql:48-104 deletes the public user-owned tables plus auth.refresh_tokens/mfa_factors/sessions/identities/users in one transaction, and :108-118 rolls back on error. Residual: it is still a hard delete with no retention/legal-hold matrix, and it deletes no storage objects (no `storage` reference in the function), so avatars and chat-upload attachments survive erasure. The API route relies on the RPC (apps/api/src/modules/auth/routes.ts:338-354).",
+      "remediation": "Add storage-object deletion (or anonymisation) to the erasure flow, document the retention/legal-hold matrix, and keep the atomic RPC semantics."
+    },
+    {
+      "id": "PRIV-P2-001",
+      "severity": "P2",
+      "title": "GDPR erasure path is a hard multi-table delete with partial coverage",
+      "status": "partially-fixed",
+      "evidence": "Same remediation and residual as DATA-P2-002: supabase/migrations/20260725000001_make_gdpr_delete_atomic.sql:48-104 covers public rows and auth rows atomically, but does not remove uploaded objects/avatars and documents no retention matrix (:25-44).",
+      "remediation": "Same as DATA-P2-002: extend erasure to storage, document retention, and verify with a deletion test that checks objects."
+    },
+    {
+      "id": "PRIV-P3-001",
+      "severity": "P3",
+      "title": "No automated data-retention enforcement",
+      "status": "verified-fixed",
+      "evidence": "False negative in the prior run: the worker scheduler and processor already existed at a62e44a and still exist now. apps/worker/src/scheduler.ts:31-48 defines RETENTION_SCHEDULE/CLEANUP_SCHEDULE (messages 365d, audit 90d, consent 730d, soft-deleted channels/workspaces 30d, notifications 30d) and :127-159 registers repeatable BullMQ jobs; apps/worker/src/main.ts:96 calls startScheduler(). apps/worker/src/processors/data-retention.ts:31-60 and :236-284 execute the deletions.",
+      "remediation": "n/a. Add a retention-run metric/alert if operators need proof of execution."
+    },
+    {
+      "id": "MT-P3-001",
+      "severity": "P3",
+      "title": "Admin `/stats` returns global cross-tenant counts (residual)",
+      "status": "open",
+      "evidence": "apps/api/src/modules/admin/routes.ts:59-68 scopes workspaces and channels to getAdminWorkspaceIds(req), but users (:61) and messages (:67) still run unscoped count queries with the service-role client. Response at :69 returns those global counts to any workspace admin.",
+      "remediation": "Scope users to distinct members of workspaceIds and messages to channels in workspaceIds (or document these as platform-admin-only metrics and gate them separately)."
+    },
+    {
+      "id": "ACM-P2-001",
+      "severity": "P2",
+      "title": "RBAC matrix is enforced per-route but not documented as a single artifact",
+      "status": "partially-fixed",
+      "evidence": "A role/permission matrix now exists in code: packages/db/src/permissions.ts:3-82 defines 18 permissions and owner/admin/member grants, and apps/api/src/middleware/require-permission.ts:13-36 enforces it when applied. However no route applies requirePermission (usage search finds only the definition and its test), apps/api/src/route-registry.ts:46-114 annotates endpoints/middleware only for health/auth/workspaces (:51,:57-70,:76-89), and there are no per-role negative contract tests. The matrix is therefore not actually wired to routes or generated as a reviewable route map.",
+      "remediation": "Apply requirePermission (or equivalent role checks) on every mutating route, annotate all registry entries with the required permission, generate the route/role matrix from the registry, and add contract tests asserting 401/403 per role."
+    },
+    {
+      "id": "ACM-P3-001",
+      "severity": "P3",
+      "title": "Admin `/stats` leaks global cross-tenant counters",
+      "status": "open",
+      "evidence": "Same defect as MT-P3-001: apps/api/src/modules/admin/routes.ts:61 and :67 count all users and all messages; only workspaces/channels are filtered by workspaceIds (:62-66).",
+      "remediation": "Scope users/messages counts to getAdminWorkspaceIds(req), or move global counts behind an explicit platform-admin check."
+    },
+    {
+      "id": "ADMIN-P3-001",
+      "severity": "P3",
+      "title": "Admin error buffer is in-memory only (lost on restart)",
+      "status": "partially-fixed",
+      "evidence": "A durable option now exists: apps/api/src/modules/admin/error-buffer.ts:18-27 reads ERROR_LOG_FILE and :34-60 appends/rehydrates NDJSON; initErrorLog is called at apps/api/src/server.ts:22. However production never sets ERROR_LOG_FILE or mounts a volume (no ERROR_LOG_FILE reference in infra/docker/docker-compose.prod.yml), so the default prod path is still the in-memory buffer declared at error-buffer.ts:16 and /admin/logs loses history on restart.",
+      "remediation": "Set ERROR_LOG_FILE and mount a persistent volume for the api service in infra/docker/docker-compose.prod.yml (or ship admin errors to the structured log/Sentry sink)."
+    },
+    {
+      "id": "AI-P2-001",
+      "severity": "P2",
+      "title": "AI endpoint is a stub with no tenancy/data-governance or rate-limit contract",
+      "status": "open",
+      "evidence": "apps/api/src/modules/ai/routes.ts:5-20 still implements a local string-rewrite stub: only `authenticate` middleware, no input length cap, no rate limiter, no tenancy/data-flow contract. No provider or governance documentation exists for this route.",
+      "remediation": "Before adding a provider, define tenant isolation (no cross-tenant prompt/context), per-user rate limits and cost caps, input/output size limits, and a data-retention statement; add tests for the limits."
+    },
+    {
+      "id": "SEARCH-P3-001",
+      "severity": "P3",
+      "title": "No documented search data-flow / retention statement",
+      "status": "open",
+      "evidence": "Search remains in-database via messages.search_vector: supabase/migrations/20260625000005_create_search.sql:18-46 and 20260627000003_enhanced_search.sql:18-46; the API route is apps/api/src/modules/messages/routes.ts:39-76. No privacy/retention statement for search queries or the index was found under docs/ (search docs contain no search data-flow statement).",
+      "remediation": "Document that search is tenant-scoped in Postgres, what query text is logged (if any), and the retention of the index; add the statement to the privacy docs."
+    },
+    {
+      "id": "NOTIF-P2-001",
+      "severity": "P2",
+      "title": "Notifications are delivered only via Web Push; no durable multi-channel delivery/retry",
+      "status": "partially-fixed",
+      "evidence": "A durable notification worker now exists: apps/worker/src/processors/notification.ts:17-25 defines a BullMQ queue with retries and :275-300 handles in_app/push/email. But the API never enqueues to it; apps/api/src/modules/notifications/service.ts:78-112 inserts the in-app row and calls pushSubscriptionService.sendPush() in-process (best-effort), so production has no durable retry or email fallback. The prod compose also passes neither VAPID nor SMTP vars to api/worker (infra/docker/docker-compose.prod.yml has no VAPID_/SMTP_ entries), and no delivery log table is written.",
+      "remediation": "Have notificationService.create() enqueue a notification job with explicit channels, persist per-channel delivery attempts, wire SMTP/VAPID into the prod env, and add a fallback channel plus tests."
+    },
+    {
+      "id": "NOTIF-P3-001",
+      "severity": "P3",
+      "title": "Push subscription lifecycle (revocation/expiry) is not monitored",
+      "status": "open",
+      "evidence": "Expired endpoints are deleted on 404/410 (apps/api/src/modules/notifications/push-subscription-service.ts:161-164; apps/worker/src/processors/notification.ts:106-108), but there is no push-delivery counter/gauge or alert: apps/api/src/lib/metrics.ts defines no push metric and no rule references push failures. Stale subscriptions therefore cannot be trended or alerted on.",
+      "remediation": "Add push send success/failure and pruned-subscription counters, expose them from the worker metrics endpoint, and alert on sustained 404/410 rates."
+    },
+    {
+      "id": "FILE-P1-001",
+      "severity": "P1",
+      "title": "Scheduled `expired_uploads` cleanup hard-deletes every chat-uploads object older than 7 days, including avatars and message attachments",
+      "status": "open",
+      "evidence": "apps/worker/src/scheduler.ts:45 schedules `expired_uploads` with olderThanDays=7, :141-147 registers it as a repeatable job every 6 hours, and :177-185 runs it immediately at startup. apps/worker/src/processors/cleanup.ts:162-179 selects every storage.objects row in bucket chat-uploads older than the cutoff (no reference/orphan check) and calls storage.remove() at :179. Those objects include message uploads (apps/api/src/modules/messages/routes.ts:487-500; embedded into message content at apps/web/components/chat/chat-view.tsx:527-535) and avatars (apps/api/src/modules/auth/routes.ts:120-121). Result: all uploaded files older than 7 days are permanently deleted while messages and profiles still reference them.",
+      "remediation": "Do not delete by age alone. Track uploaded objects with an explicit unreferenced/expired state, join against message content/avatars (or an attachment table), delete only confirmed orphans, and add a test that retains referenced files. Disable the `expired_uploads` schedule until reference-aware deletion is in place."
+    },
+    {
+      "id": "WH-P2-003",
+      "severity": "P2",
+      "title": "Any workspace member can create/update/delete webhook endpoints, exposing all workspace message content including private channels",
+      "status": "open",
+      "evidence": "apps/api/src/modules/webhooks/routes.ts:55-70 `requireWorkspaceAccess` only checks that the user has a workspace_members row (it records the role but never enforces it); create/update/delete call it at :174, :217 and :254. The workspace permission matrix grants webhook:create/update/delete only to owner/admin (packages/db/src/permissions.ts:23-64), and the DB RLS policy for the same table is admin/owner-only (supabase/migrations/20260625000012_create_webhooks.sql:34-52). The service-role client used by webhookService bypasses that policy (apps/api/src/modules/webhooks/service.ts:93-97), and triggerEvent delivers message.created payloads including `content` to every endpoint (service.ts:183-199; apps/api/src/modules/messages/service.ts:103-114). A regular member can therefore register a webhook and receive every message in the workspace, including private channels they cannot read.",
+      "remediation": "Require admin/owner for webhook create/update/delete (reuse requireWorkspaceRole or check the role returned by requireWorkspaceAccess), align the API with the RLS policy, and add a negative test for a member role."
+    },
+    {
+      "id": "ADMIN-P2-002",
+      "severity": "P2",
+      "title": "Admin compliance export authorizes the target workspace by membership, not admin role",
+      "status": "open",
+      "evidence": "The admin router is guarded by requireAdmin for any workspace (apps/api/src/modules/admin/routes.ts:23), and `/export/compliance` calls verifyWorkspaceMembership(req, workspaceId) at :526. That helper only checks a workspace_members row exists (:39-48) and ignores the role. In contrast, `/audit-logs` correctly checks workspaceIds.includes(workspaceId) (:487-495). A user who is admin in workspace A but a plain member of workspace B can export B's workspaces/channels/messages/audit_logs (:528-607) with the service-role client.",
+      "remediation": "Check `workspaceIds.includes(workspaceId)` (the admin workspace ids already attached by requireAdmin) or require the admin/owner role in the target workspace; add a test for member-of-target/admin-elsewhere."
+    },
+    {
+      "id": "DATA-P2-003",
+      "severity": "P2",
+      "title": "`user_groups` INSERT/UPDATE RLS policies omit workspace membership, allowing cross-tenant group creation",
+      "status": "open",
+      "evidence": "supabase/migrations/20260705000003_add_user_groups.sql:12-21 creates a permissive INSERT policy `WITH CHECK (created_by = auth.uid())` and UPDATE policies using only `created_by = auth.uid()`; no workspace_members check on user_groups.workspace_id. Because Postgres ORs permissive policies, this bypasses the admin-only policy in 20260704000007_add_user_groups.sql:33-34. The API adds a membership check (apps/api/src/modules/user-groups/routes.ts:50-61), but any authenticated user can call PostgREST directly with the public anon key and their JWT and insert a group into an arbitrary workspace_id (and then move it via UPDATE).",
+      "remediation": "Add a forward migration that replaces these policies with a check that the caller is a member (or admin, per product decision) of user_groups.workspace_id for INSERT and UPDATE; add an RLS test for cross-workspace insertion."
+    },
+    {
+      "id": "PRIV-P2-002",
+      "severity": "P2",
+      "title": "Account deletion is effectively unusable: API requires a password but the UI sends none and magic-link users have no password",
+      "status": "open",
+      "evidence": "apps/api/src/modules/auth/routes.ts:317-336 rejects the request unless a non-empty password is supplied and then calls auth.signInWithPassword. The web settings page calls `api.delete(\"/auth/account\")` with no body (apps/web/app/(workspace)/[workspaceSlug]/settings/page.tsx:86-90), so UI deletion always returns 400. The primary auth flow is magic-link OTP (apps/api/src/modules/auth/service.ts:76-85), which does not set a password, so those users can never satisfy the check. This blocks the GDPR right-to-erasure flow.",
+      "remediation": "Re-authenticate with a recent Supabase session/OTP (or a confirmation token) instead of a password, or accept a password from the UI and provide a set-password path for magic-link users; add an end-to-end deletion test."
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "Push subscription endpoints are stored without validation and fetched server-side (stored SSRF)",
+      "status": "open",
+      "evidence": "apps/api/src/modules/notifications/push-subscription-service.ts:64-80 stores any caller-supplied endpoint, and sendPush posts to it via web-push at :141-157 without URL/host validation. Users can insert their own rows directly through PostgREST because supabase/migrations/20260625000009_create_push_subscriptions.sql:20-22 only enforces `auth.uid() = user_id`; no endpoint allowlist exists. The worker path also fetches the stored endpoint directly (apps/worker/src/processors/notification.ts:95-104), and that fetch would allow plain HTTP/redirects; the API's web-push path always uses TLS (HTTPS-to-arbitrary-host). With VAPID configured, a notification to that user triggers a server-side request to an internal HTTPS endpoint or, on the worker path, an arbitrary HTTP endpoint (metadata/loopback).",
+      "remediation": "Validate push endpoints as HTTPS public URLs (reject private/reserved IPs, do not follow redirects, pin the resolved IP), or restrict endpoints to known push-service domains. Enforce the same validation before storing via a DB constraint/trigger or an API-only write path."
+    },
+    {
+      "id": "FILE-P3-002",
+      "severity": "P3",
+      "title": "Avatar upload accepts any `image/*` subtype (including SVG) and derives the storage path extension from client input without sanitisation",
+      "status": "open",
+      "evidence": "apps/api/src/validators/upload.ts:69-74 only requires contentType to start with `image/`, so image/svg+xml passes; apps/api/src/modules/auth/routes.ts:120-121 derives the storage key suffix directly from `contentType.split(\"/\")[1]` without sanitising it and stores `avatars/<userId>.<suffix>`. apps/web/components/auth/avatar-upload.tsx:56-60 sends the browser-declared type and uses the returned public URL. SVG/HTML active content and unusual/path-like subtypes are therefore accepted, and the same route falls back to getPublicUrl at routes.ts:136-138.",
+      "remediation": "Use an explicit image allowlist (JPEG/PNG/GIF/WebP), reject SVG/HTML, derive the extension from a fixed map (not client input), and serve avatars from a private bucket via signed URLs."
+    },
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "Org gitleaks ruleset is local/opt-in only; CI relies on generic Trivy secret scanning",
+      "status": "open",
+      "evidence": "The new org baseline adds a local pre-commit hook at .pre-commit-config.yaml:12-20 (`gitleaks protect --staged`), but nothing in .github/workflows invokes gitleaks, and the installed Husky hook (.husky/pre-commit:1-38, enabled by package.json:29) does not scan for secrets. The hook also requires a manual `pre-commit install` with no README/CONTRIBUTING instructions. validate.yml:255-265 does run `trivy fs` with its default scanners (vuln,secret), so committed secrets still get a generic CI scan; what is not enforced in CI is this repo's org ruleset/allowlists and tests/security/gitleaks/verify-gitleaks-allowlist.sh.",
+      "remediation": "Add a blocking `gitleaks detect --config .gitleaks.toml` job (or run the allowlist verifier) in validate/CI, document `pre-commit install`, and keep the value-scoped allowlist; retain Trivy as the generic backstop."
+    }
+  ]
+}

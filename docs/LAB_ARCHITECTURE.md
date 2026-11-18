@@ -8,9 +8,9 @@ Design for the audit/CI lab, written to be **portable to a bare-metal host**. Pa
 | Piece | Detail |
 |---|---|
 | Host | **Proxmox VE** node `testnuc` `192.168.222.222` (lab #2). The legacy node (`172.23.128.50`) is retired. |
-| Guests | `ci-runner` `192.168.222.201` (container, root; lab job API `:8722`, node/pnpm/docker/gitleaks/rg/python) · `edge-builder` `192.168.222.202` (container, Ubuntu 24.04, `lab-python`/`lab-sudo`) · `lab-runner-2` `192.168.222.203` (container, docker). |
+| Guests | `ci-runner` `192.168.222.201` (container, root; lab job API `:8722`, node/pnpm/docker/gitleaks/rg/python) · `edge-builder` `192.168.222.202` (container, Ubuntu 24.04, `lab-python`/`lab-sudo`; rootfs grown to 56G 2026-10-13) · `lab-runner-2` `192.168.222.203` (container, docker) · `iso-builder` `192.168.222.210` (container, Ubuntu 24.04, **privileged + nesting** required by mkarchiso chroot mounts, Docker; dedicated to the bench-test live-ISO builds via the `lab-iso` label). |
 | Access | Dedicated audit overlay `wgaudit0` (UDP 51900) via `mct-portal-dev`; lab #2 = testnuc (`192.168.222.0/24`); scoped non-root `labvpn` identity; GitHub-routed onboarding (`lab-audit-gh.sh`). Separate falcon telemetry `wg0`. |
-| Runners | GitHub Actions runners registered at the **org** in the `lab` runner group (public repos allowed, selected = repo-deep-dive + private repos); label `lab` (`ci-runner`, `edge-builder`, `lab-runner-2`), all online. |
+| Runners | GitHub Actions runners registered at the **org** in the `lab` runner group (public repos allowed, selected = repo-deep-dive + private repos); label `lab` (`ci-runner`, `edge-builder`, `lab-runner-2`) plus `lab-iso` (`iso-builder`; ISO builds only - a plain unprivileged LXC cannot run mkarchiso's `--rbind` chroot setup), all online. |
 | Secrets | `.env`, `lab-tokens.json` (lab job API), GitHub repo secrets. |
 | Monitoring | falcon `wg0` + node-exporter (external). |
 

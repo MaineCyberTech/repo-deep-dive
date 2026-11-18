@@ -1,0 +1,159 @@
+{
+  "domain": "15_performance_scalability_cost",
+  "file": "15_performance_scalability_cost.md",
+  "area": "PERF",
+  "agent": "subagent",
+  "emitted_at": "2026-10-13T08:46:17Z",
+  "findings": [
+    {
+      "severity": "P1",
+      "area": "PERF",
+      "title": "Unbounded SQLite growth: telemetry/logs/events/artifacts have no retention, cap, or capacity signal",
+      "evidence": [
+        "server/benchd.py:94-143 - SCHEMA creates telemetry, logs, events and artifacts tables with no TTL, no rollup/partition, and no row/size cap; indices only speed reads",
+        "server/benchd.py:653-681 - the only bulk delete paths are operator-driven DELETE /api/v1/runs/<id> and /runners/<id>; there is no scheduled prune (grep for vacuum/prune/retention/purge finds none)",
+        "server/benchd.py:1096-1100 - every 4 Hz telemetry batch is appended; server/benchd.py:1124-1127 appends console lines (each up to 4000 chars, server/benchd.py:1121)",
+        "server/benchd.py:1140-1141 - report/manifest artifacts are stored base64-encoded inside the artifacts.content TEXT column, in the same DB",
+        "docs/CONTROL_PLANE.md:254 - documents 'the DB grows ~1 row/second per active run (fine for a lab)', while telemetry actually arrives at 4 Hz (README.md:55, docs/PHASE_TIMINGS.md:182)",
+        "bench/telemetry_log.py:294-297,410-415 - the Linux sampler writes 4 Hz rows with one column per logical CPU, so row width grows with host core count",
+        "docs/CONTROL_PLANE.md:174-175 - the documented deployment is an LXC with --cores 1 --memory 1024 --rootfs local-lvm:4 (4 GiB rootfs holding the DB and its WAL)"
+      ],
+      "impact": "The control-plane database grows without bound in a 4 GiB container with no warning threshold. Over a fleet of runs (each a 4 Hz telemetry stream plus console logs and base64 artifacts) the rootfs and WAL fill, after which SQLite writes fail and the control plane silently stops recording runs. There is no metric, alert, or warning band before the disk-full failure - the first signal is an outage.",
+      "recommendation": "Add a retention policy (keep N days / N runs per host, downsample older telemetry to 1/N rows, drop console bodies > horizon), store artifacts on the filesystem with the DB holding only a path, run a scheduled VACUUM/incremental_vacuum, and expose DB bytes + row counts + rootfs free on /health with documented warn/critical thresholds.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    },
+    {
+      "severity": "P1",
+      "area": "PERF",
+      "title": "Web dashboard re-fetches 300 full run rows and an unbounded /trends scan on every refresh tick",
+      "evidence": [
+        "server/web/app.js:296-298 - renderAll() unconditionally calls renderHistory() and renderTrends() (only renderFleet is tab-gated), on every refresh",
+        "server/web/app.js:842 - renderHistory() fetches /runs?limit=300 including the full summary+system blob per row, every refresh",
+        "server/web/app.js:960 - renderTrends() fetches /trends?... every refresh",
+        "server/web/app.js:182-189 - SSE runner/run/command events call queueRefresh() (1200 ms debounce), and 'snapshot' calls refresh()",
+        "server/benchd.py:1000-1002 - every runner heartbeat publishes a 'runner' SSE event; bench/benchreport.py:729-743 heartbeats every 2 s, so the debounce stays saturated and a full refresh cascade runs about every 1.2 s while any runner is online",
+        "server/benchd.py:918-919 - _trends runs SELECT id,host,label,started,summary FROM runs WHERE status!='running' ORDER BY started with no LIMIT, then json.loads()s every run's summary (server/benchd.py:925-933) on each call",
+        "server/benchd.py:456-466 - run_public() json-parses summary/profile/system for every row of every listing"
+      ],
+      "impact": "Server work per refresh scales with total runs x connected clients, and on the documented 1-vCPU lab container the dashboard itself becomes the dominant load: each tick selects, transfers and parses 300 summaries plus a full-table /trends scan. As history grows this degrades every open tab, and a few operators multiply it.",
+      "recommendation": "Fetch per tab only when it is activated/visible; add pagination to History and a LIMIT/host-filter to /trends (and/or a cached materialized trends table refreshed at write time); keep /runs list responses to light fields and fetch summary/detail lazily; slow the heartbeat-driven refresh (e.g. do not publish an SSE event on every heartbeat).",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    },
+    {
+      "severity": "P2",
+      "area": "PERF",
+      "title": "Per-run detail, stats and CSV endpoints load and re-parse every telemetry row on the request thread",
+      "evidence": [
+        "server/benchd.py:788-800 - _run_telemetry SELECTs * (all rows) then decimates in Python to ?max= (the web asks for max=4000, server/web/app.js:254), so the query is unbounded and the cap is applied after I/O",
+        "server/benchd.py:862-880 - _compute_stats SELECTs all telemetry rows for the run and builds sorted series in Python; it is invoked by run detail (server/benchd.py:767) and /stats (server/benchd.py:882-883)",
+        "server/benchd.py:817-828 - _derive calls tele_public() again for every row, so each row's extra JSON is parsed twice per request",
+        "server/benchd.py:885-897 - _telemetry_csv builds the entire CSV in an io.StringIO in memory before sending (no streaming)",
+        "server/benchd.py:759-766 - run detail also loads up to 4000 log rows and all artifact metadata in the same request",
+        "docs/PHASE_TIMINGS.md:87 - the 'Soak only (long)' preset runs ~70 min, i.e. ~17k 4 Hz rows for a single run"
+      ],
+      "impact": "Every detail/stats/CSV view re-reads and re-computes the whole run (twice for the extra-JSON columns) on the single request thread of a 1-vCPU box, and the CSV path holds the whole export in memory. Concurrent views of long soaks produce CPU and RSS spikes that can stall heartbeats and the SSE stream.",
+      "recommendation": "Push downsampling/aggregation into SQL (or cache the finished stats/derived dict on run finish), SELECT only needed columns, parse extra JSON once, and stream the CSV with an iterator instead of building it in memory.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    },
+    {
+      "severity": "P2",
+      "area": "PERF",
+      "title": "Realtime path scales by unbounded threads and broadcasts whole telemetry batches to every subscriber",
+      "evidence": [
+        "server/benchd.py:1431-1433 - ThreadingHTTPServer with daemon_threads and no thread/client cap; each connection is a thread",
+        "server/benchd.py:948-968 - each SSE subscriber holds a handler thread for its whole lifetime, blocking on q.get(timeout=15)",
+        "server/benchd.py:508 - Handler.protocol_version = 'HTTP/1.0', so connections are not kept alive and each poll/reload costs a new thread + TCP setup",
+        "server/benchd.py:1101-1107 - one telemetry POST publishes the entire batch (up to named[-1000:]) to all subscribers, so fan-out grows with batch size x subscribers x active runs",
+        "server/benchd.py:199-217 - subscriber queues are queue.Queue(maxsize=1000) and publish() drops on a full queue via a bare except: pass, with no counter or resync notice"
+      ],
+      "impact": "A handful of dashboard tabs (SSE + polling) on the documented 1 GiB/1-vCPU container can exhaust threads and memory; a slow client silently loses telemetry and phase events, so the live view can undercount without any error. HTTP/1.0 amplifies this by re-creating connections for every reload.",
+      "recommendation": "Cap concurrent SSE clients and total worker threads; coalesce telemetry to latest-value-per-series for slow subscribers and emit an explicit 'resync' event (with a dropped-event counter) instead of silent loss; enable HTTP/1.1 keep-alive; consider a single fan-out writer.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    },
+    {
+      "severity": "P2",
+      "area": "PERF",
+      "title": "CI rebuilds a multi-GB ISO and both app bundles on every bench/** or live/** push with no dependency caching",
+      "evidence": [
+        ".github/workflows/build-iso.yml:38-42 - push to main touching bench/** or live/** triggers the ISO build automatically; :54 timeout-minutes: 120",
+        ".github/workflows/build-iso.yml:105-107 - the ISO is split into 1900 MiB release assets (so each build uploads/attaches multiple GB)",
+        "live/ci-build.sh:27-31 - the build refuses to run below ~25-30 GB free disk; live/ci-build.sh:46-51 pip-installs torch (a multi-GB wheel set) from the CUDA index when the venv lacks it",
+        ".github/workflows/build-app.yml:12-17 - push to main touching bench/** triggers Windows+Linux bundle builds; there is no actions/cache step and no pip cache (build-app.yml:45-55 reinstalls pyinstaller every run)",
+        "packaging/build_app.py:135-143,188-189 - every bundle is built with the whole stdlib requested as hidden imports; build_app.py:172-185 builds three apps per OS, each embedding the bench/ toolkit and tools/lhm",
+        "No workflow uses actions/cache (grep over .github/workflows finds none)"
+      ],
+      "impact": "Ordinary code changes to bench/** pay for a 120-min-budget ISO build (multi-GB disk + network + release storage) and a full pair of PyInstaller bundles, with torch/pyinstaller re-downloaded each time. This is the largest recurring compute/egress cost in the repo and slows feedback for changes that do not affect the ISO.",
+      "recommendation": "Narrow the push triggers (build the ISO only for live/** / build-graph changes, or on manual dispatch), add actions/cache for the pip/torch download and PyInstaller work dirs, cache the Torch venv between runs on self-hosted runners, and avoid bundling the entire stdlib.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    },
+    {
+      "severity": "P2",
+      "area": "PERF",
+      "title": "Heartbeat/liveness path performs a blocking GitHub compare call with an 8 s timeout, longer than the runner's 6 s client timeout",
+      "evidence": [
+        "server/benchd.py:984-1005 - the heartbeat handler calls runner_public() synchronously before responding",
+        "server/benchd.py:438-452 - runner_public() calls latest_git() and compare_detail(rc, ref) on the request thread",
+        "server/benchd.py:307-321 - compare_detail() does an unauthenticated GET to api.github.com/repos/.../compare/<base>...<head> with urlopen(timeout=8); cache key is (base, head) and the cache is cleared at 500 entries",
+        "server/benchd.py:359-379 - latest_git() also calls GitHub with timeout=8 (cached 120 s)",
+        "bench/benchreport.py:449 - the runner's Reporter uses timeout=6, shorter than the server's 8 s external timeout",
+        "server/benchd.py:699 - /state also calls runner_public() for every runner, so the same external call is reachable from the dashboard path"
+      ],
+      "impact": "A slow or rate-limited GitHub (unauthenticated API limit 60/hr/IP) can block a heartbeat thread for up to 8 s; the runner's 6 s HTTP timeout then fires, so heartbeats fail and runners can flap offline while the control plane is otherwise healthy. This couples lab liveness to a third-party API - a cost/reliability dependency with no fallback timeout smaller than the caller's.",
+      "recommendation": "Decouple enrichment from the heartbeat response (compute toolkit status in the background / cache per runner), lower the GitHub timeout below the runner timeout (e.g. 2-3 s), return immediately on cache miss, and make BENCH_OFFLINE the default when no token is configured so the call is skipped by design.",
+      "confidence": "Medium",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    },
+    {
+      "severity": "P3",
+      "area": "PERF",
+      "title": "Static dashboard assets are served with Cache-Control: no-store and no validators, so they are re-downloaded on every load",
+      "evidence": [
+        "server/benchd.py:527-540 - the shared _send() sets Cache-Control: no-store on every response, including static files",
+        "server/benchd.py:1254-1273 - _static() serves index.html, app.js and style.css with no ETag/Last-Modified and no compression",
+        "server/web/app.js size 95 KB and server/web/style.css size 16 KB (unminified, per the file listing), linked from server/web/index.html:6"
+      ],
+      "impact": "Every dashboard load (and every HTTP/1.0 reconnect, see the realtime finding) re-transfers roughly 112 KB of unminified JS/CSS with no 304 support, adding avoidable bandwidth and latency on the lab/LAN and making the no-keep-alive polling cost worse.",
+      "recommendation": "Serve static assets with Cache-Control: max-age plus ETag/Last-Modified and honour If-None-Match/If-Modified-Since (304), and gzip the JS/CSS; keep no-store only for API/SSE responses.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    },
+    {
+      "severity": "P3",
+      "area": "PERF",
+      "title": "History and Fleet silently cap at 300/500 runs and ignore the server's total count",
+      "evidence": [
+        "server/web/app.js:842 - History fetches /runs?limit=300 with no paging control",
+        "server/web/app.js:900 - Fleet fetches /runs?limit=500 with no paging control",
+        "server/benchd.py:726-737 - /runs already supports limit/offset and returns total, so pagination exists server-side",
+        "server/web/app.js:861 - the History header shows only rows.length, not the server 'total', so truncation is invisible",
+        "No ?offset= is constructed anywhere in server/web/app.js (grep finds none)"
+      ],
+      "impact": "Once a fleet accumulates more than 300 (History) / 500 (Fleet) runs, older data silently disappears from the UI with no indication or way to reach it, undermining historical comparison and trend review even though the API can serve it.",
+      "recommendation": "Add a 'load older' / infinite-scroll control using the existing limit/offset API and display the server total (e.g. 'showing 300 of N'); surface a warning when results are truncated.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "PERF"
+    }
+  ],
+  "report": "# 15_performance_scalability_cost - 15_performance_scalability_cost.md\n\nDomain subagent `15_performance_scalability_cost` (area PERF), read-only audit of `C:\\temp\\bench-test`.\n\n## Checks / Evidence\n\n- **P1 - Unbounded SQLite growth: telemetry/logs/events/artifacts have no retention, cap, or capacity signal** (confidence: High)\n  - `server/benchd.py:94-143 - SCHEMA creates telemetry, logs, events and artifacts tables with no TTL, no rollup/partition, and no row/size cap; indices only speed reads`\n  - `server/benchd.py:653-681 - the only bulk delete paths are operator-driven DELETE /api/v1/runs/<id> and /runners/<id>; there is no scheduled prune (grep for vacuum/prune/retention/purge finds none)`\n  - `server/benchd.py:1096-1100 - every 4 Hz telemetry batch is appended; server/benchd.py:1124-1127 appends console lines (each up to 4000 chars, server/benchd.py:1121)`\n  - `server/benchd.py:1140-1141 - report/manifest artifacts are stored base64-encoded inside the artifacts.content TEXT column, in the same DB`\n  - `docs/CONTROL_PLANE.md:254 - documents 'the DB grows ~1 row/second per active run (fine for a lab)', while telemetry actually arrives at 4 Hz (README.md:55, docs/PHASE_TIMINGS.md:182)`\n  - `bench/telemetry_log.py:294-297,410-415 - the Linux sampler writes 4 Hz rows with one column per logical CPU, so row width grows with host core count`\n  - `docs/CONTROL_PLANE.md:174-175 - the documented deployment is an LXC with --cores 1 --memory 1024 --rootfs local-lvm:4 (4 GiB rootfs holding the DB and its WAL)`\n  - Impact: The control-plane database grows without bound in a 4 GiB container with no warning threshold. Over a fleet of runs (each a 4 Hz telemetry stream plus console logs and base64 artifacts) the rootfs and WAL fill, after which SQLite writes fail and the control plane silently stops recording runs. There is no metric, alert, or warning band before the disk-full failure - the first signal is an outage.\n  - Recommendation: Add a retention policy (keep N days / N runs per host, downsample older telemetry to 1/N rows, drop console bodies > horizon), store artifacts on the filesystem with the DB holding only a path, run a scheduled VACUUM/incremental_vacuum, and expose DB bytes + row counts + rootfs free on /health with documented warn/critical thresholds.\n- **P1 - Web dashboard re-fetches 300 full run rows and an unbounded /trends scan on every refresh tick** (confidence: High)\n  - `server/web/app.js:296-298 - renderAll() unconditionally calls renderHistory() and renderTrends() (only renderFleet is tab-gated), on every refresh`\n  - `server/web/app.js:842 - renderHistory() fetches /runs?limit=300 including the full summary+system blob per row, every refresh`\n  - `server/web/app.js:960 - renderTrends() fetches /trends?... every refresh`\n  - `server/web/app.js:182-189 - SSE runner/run/command events call queueRefresh() (1200 ms debounce), and 'snapshot' calls refresh()`\n  - `server/benchd.py:1000-1002 - every runner heartbeat publishes a 'runner' SSE event; bench/benchreport.py:729-743 heartbeats every 2 s, so the debounce stays saturated and a full refresh cascade runs about every 1.2 s while any runner is online`\n  - `server/benchd.py:918-919 - _trends runs SELECT id,host,label,started,summary FROM runs WHERE status!='running' ORDER BY started with no LIMIT, then json.loads()s every run's summary (server/benchd.py:925-933) on each call`\n  - `server/benchd.py:456-466 - run_public() json-parses summary/profile/system for every row of every listing`\n  - Impact: Server work per refresh scales with total runs x connected clients, and on the documented 1-vCPU lab container the dashboard itself becomes the dominant load: each tick selects, transfers and parses 300 summaries plus a full-table /trends scan. As history grows this degrades every open tab, and a few operators multiply it.\n  - Recommendation: Fetch per tab only when it is activated/visible; add pagination to History and a LIMIT/host-filter to /trends (and/or a cached materialized trends table refreshed at write time); keep /runs list responses to light fields and fetch summary/detail lazily; slow the heartbeat-driven refresh (e.g. do not publish an SSE event on every heartbeat).\n- **P2 - Per-run detail, stats and CSV endpoints load and re-parse every telemetry row on the request thread** (confidence: High)\n  - `server/benchd.py:788-800 - _run_telemetry SELECTs * (all rows) then decimates in Python to ?max= (the web asks for max=4000, server/web/app.js:254), so the query is unbounded and the cap is applied after I/O`\n  - `server/benchd.py:862-880 - _compute_stats SELECTs all telemetry rows for the run and builds sorted series in Python; it is invoked by run detail (server/benchd.py:767) and /stats (server/benchd.py:882-883)`\n  - `server/benchd.py:817-828 - _derive calls tele_public() again for every row, so each row's extra JSON is parsed twice per request`\n  - `server/benchd.py:885-897 - _telemetry_csv builds the entire CSV in an io.StringIO in memory before sending (no streaming)`\n  - `server/benchd.py:759-766 - run detail also loads up to 4000 log rows and all artifact metadata in the same request`\n  - `docs/PHASE_TIMINGS.md:87 - the 'Soak only (long)' preset runs ~70 min, i.e. ~17k 4 Hz rows for a single run`\n  - Impact: Every detail/stats/CSV view re-reads and re-computes the whole run (twice for the extra-JSON columns) on the single request thread of a 1-vCPU box, and the CSV path holds the whole export in memory. Concurrent views of long soaks produce CPU and RSS spikes that can stall heartbeats and the SSE stream.\n  - Recommendation: Push downsampling/aggregation into SQL (or cache the finished stats/derived dict on run finish), SELECT only needed columns, parse extra JSON once, and stream the CSV with an iterator instead of building it in memory.\n- **P2 - Realtime path scales by unbounded threads and broadcasts whole telemetry batches to every subscriber** (confidence: High)\n  - `server/benchd.py:1431-1433 - ThreadingHTTPServer with daemon_threads and no thread/client cap; each connection is a thread`\n  - `server/benchd.py:948-968 - each SSE subscriber holds a handler thread for its whole lifetime, blocking on q.get(timeout=15)`\n  - `server/benchd.py:508 - Handler.protocol_version = 'HTTP/1.0', so connections are not kept alive and each poll/reload costs a new thread + TCP setup`\n  - `server/benchd.py:1101-1107 - one telemetry POST publishes the entire batch (up to named[-1000:]) to all subscribers, so fan-out grows with batch size x subscribers x active runs`\n  - `server/benchd.py:199-217 - subscriber queues are queue.Queue(maxsize=1000) and publish() drops on a full queue via a bare except: pass, with no counter or resync notice`\n  - Impact: A handful of dashboard tabs (SSE + polling) on the documented 1 GiB/1-vCPU container can exhaust threads and memory; a slow client silently loses telemetry and phase events, so the live view can undercount without any error. HTTP/1.0 amplifies this by re-creating connections for every reload.\n  - Recommendation: Cap concurrent SSE clients and total worker threads; coalesce telemetry to latest-value-per-series for slow subscribers and emit an explicit 'resync' event (with a dropped-event counter) instead of silent loss; enable HTTP/1.1 keep-alive; consider a single fan-out writer.\n- **P2 - CI rebuilds a multi-GB ISO and both app bundles on every bench/** or live/** push with no dependency caching** (confidence: High)\n  - `.github/workflows/build-iso.yml:38-42 - push to main touching bench/** or live/** triggers the ISO build automatically; :54 timeout-minutes: 120`\n  - `.github/workflows/build-iso.yml:105-107 - the ISO is split into 1900 MiB release assets (so each build uploads/attaches multiple GB)`\n  - `live/ci-build.sh:27-31 - the build refuses to run below ~25-30 GB free disk; live/ci-build.sh:46-51 pip-installs torch (a multi-GB wheel set) from the CUDA index when the venv lacks it`\n  - `.github/workflows/build-app.yml:12-17 - push to main touching bench/** triggers Windows+Linux bundle builds; there is no actions/cache step and no pip cache (build-app.yml:45-55 reinstalls pyinstaller every run)`\n  - `packaging/build_app.py:135-143,188-189 - every bundle is built with the whole stdlib requested as hidden imports; build_app.py:172-185 builds three apps per OS, each embedding the bench/ toolkit and tools/lhm`\n  - `No workflow uses actions/cache (grep over .github/workflows finds none)`\n  - Impact: Ordinary code changes to bench/** pay for a 120-min-budget ISO build (multi-GB disk + network + release storage) and a full pair of PyInstaller bundles, with torch/pyinstaller re-downloaded each time. This is the largest recurring compute/egress cost in the repo and slows feedback for changes that do not affect the ISO.\n  - Recommendation: Narrow the push triggers (build the ISO only for live/** / build-graph changes, or on manual dispatch), add actions/cache for the pip/torch download and PyInstaller work dirs, cache the Torch venv between runs on self-hosted runners, and avoid bundling the entire stdlib.\n- **P2 - Heartbeat/liveness path performs a blocking GitHub compare call with an 8 s timeout, longer than the runner's 6 s client timeout** (confidence: Medium)\n  - `server/benchd.py:984-1005 - the heartbeat handler calls runner_public() synchronously before responding`\n  - `server/benchd.py:438-452 - runner_public() calls latest_git() and compare_detail(rc, ref) on the request thread`\n  - `server/benchd.py:307-321 - compare_detail() does an unauthenticated GET to api.github.com/repos/.../compare/<base>...<head> with urlopen(timeout=8); cache key is (base, head) and the cache is cleared at 500 entries`\n  - `server/benchd.py:359-379 - latest_git() also calls GitHub with timeout=8 (cached 120 s)`\n  - `bench/benchreport.py:449 - the runner's Reporter uses timeout=6, shorter than the server's 8 s external timeout`\n  - `server/benchd.py:699 - /state also calls runner_public() for every runner, so the same external call is reachable from the dashboard path`\n  - Impact: A slow or rate-limited GitHub (unauthenticated API limit 60/hr/IP) can block a heartbeat thread for up to 8 s; the runner's 6 s HTTP timeout then fires, so heartbeats fail and runners can flap offline while the control plane is otherwise healthy. This couples lab liveness to a third-party API - a cost/reliability dependency with no fallback timeout smaller than the caller's.\n  - Recommendation: Decouple enrichment from the heartbeat response (compute toolkit status in the background / cache per runner), lower the GitHub timeout below the runner timeout (e.g. 2-3 s), return immediately on cache miss, and make BENCH_OFFLINE the default when no token is configured so the call is skipped by design.\n- **P3 - Static dashboard assets are served with Cache-Control: no-store and no validators, so they are re-downloaded on every load** (confidence: High)\n  - `server/benchd.py:527-540 - the shared _send() sets Cache-Control: no-store on every response, including static files`\n  - `server/benchd.py:1254-1273 - _static() serves index.html, app.js and style.css with no ETag/Last-Modified and no compression`\n  - `server/web/app.js size 95 KB and server/web/style.css size 16 KB (unminified, per the file listing), linked from server/web/index.html:6`\n  - Impact: Every dashboard load (and every HTTP/1.0 reconnect, see the realtime finding) re-transfers roughly 112 KB of unminified JS/CSS with no 304 support, adding avoidable bandwidth and latency on the lab/LAN and making the no-keep-alive polling cost worse.\n  - Recommendation: Serve static assets with Cache-Control: max-age plus ETag/Last-Modified and honour If-None-Match/If-Modified-Since (304), and gzip the JS/CSS; keep no-store only for API/SSE responses.\n- **P3 - History and Fleet silently cap at 300/500 runs and ignore the server's total count** (confidence: High)\n  - `server/web/app.js:842 - History fetches /runs?limit=300 with no paging control`\n  - `server/web/app.js:900 - Fleet fetches /runs?limit=500 with no paging control`\n  - `server/benchd.py:726-737 - /runs already supports limit/offset and returns total, so pagination exists server-side`\n  - `server/web/app.js:861 - the History header shows only rows.length, not the server 'total', so truncation is invisible`\n  - `No ?offset= is constructed anywhere in server/web/app.js (grep finds none)`\n  - Impact: Once a fleet accumulates more than 300 (History) / 500 (Fleet) runs, older data silently disappears from the UI with no indication or way to reach it, undermining historical comparison and trend review even though the API can serve it.\n  - Recommendation: Add a 'load older' / infinite-scroll control using the existing limit/offset API and display the server total (e.g. 'showing 300 of N'); surface a warning when results are truncated.\n\n## Verification Performed\n\nRead-only source review of the target at commit `b916709`; the evidence above was\nrecorded by the domain subagent and normalized by `tools/full_domain.py` (mechanical\nreport body derived from that recorded findings JSON).\n"
+}

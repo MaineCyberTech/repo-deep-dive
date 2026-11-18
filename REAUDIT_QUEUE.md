@@ -90,6 +90,8 @@ Total: 7 repos, 119 PRs.
 - [x] https://github.com/MaineCyberTech/falcon/pull/32
 - [x] https://github.com/MaineCyberTech/falcon/pull/33
 
+**Re-audit result (2026-10-14, verification mode):** 126 findings of `falcon-20261011-0416-full-f5cb7c9` re-checked at `edbf441` — 49 verified-fixed, 26 partially-fixed, 49 open, 2 owner-accepted, 1 regressed (INV-P3-002, P3); 0 P0/P1 regressions; 1 new machine finding (DET-P2-001 CRLF) and 8 new P2/P3 items. Run: [falcon-20261014-verify-main-edbf441](runs/falcon-20261014-verify-main-edbf441/).
+
 **Re-audit result (2026-10-04):** P0 3/4 closed, 1 still-open (`OBS-P0-001`); P1 14/20 closed, 5 still-open + 1 owner-accepted (`CI-P1-002`); 0 regressed. Owner-side residual: branch protection plan-gated, single-host standby, retention decision, review-package. [VERIFY](file:///C:/temp/reaudit/falcon/VERIFY.md)
 
 ### falcon-edge

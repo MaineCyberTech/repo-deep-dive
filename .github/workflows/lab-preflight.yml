@@ -28,6 +28,7 @@ on:
       - 'runs/**'
       - 'tools/lab-vpn/**'
       - 'docs/LAB_VPN.md'
+      - 'AGENTS.md'
       - 'tools/remediation_plan.py'
       - 'tools/remediation_status.py'
       - 'tools/deterministic_checks.py'
@@ -35,12 +36,25 @@ on:
       - '.github/workflows/verify-remediation.yml'
       - '.github/workflows/lab-tests.yml'
       - '.github/workflows/lab-preflight.yml'
+      # The protected main branch requires this check. Digest-only pull
+      # requests are produced by the pack-digest workflow, so include the
+      # digest inputs/outputs or those PRs can never satisfy the ruleset.
+      - 'PACK_DIGEST.txt'
+      - 'tools/pack_digest.sh'
+      - '.github/workflows/pack-digest.yml'
+      - '.github/workflows/gitleaks.yml'
+      - '.gitleaks.toml'
 
 permissions:
   contents: read
 
 jobs:
   lab:
+    # The main-protection ruleset stores the composite context
+    # "Lab preflight / lab". This workflow runs directly (not as a reusable
+    # workflow), so the check-run name is the job name; set it verbatim so the
+    # required check matches.
+    name: Lab preflight / lab
     runs-on: ubuntu-latest
     env:
       HOST: ${{ vars.LAB_ENDPOINT_HOST }}

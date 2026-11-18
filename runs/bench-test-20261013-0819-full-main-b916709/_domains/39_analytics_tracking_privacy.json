@@ -1,0 +1,87 @@
+{
+  "domain": "39_analytics_tracking_privacy",
+  "file": "39_analytics_tracking_privacy.md",
+  "area": "AN",
+  "agent": "subagent",
+  "emitted_at": "2026-10-13T08:46:19Z",
+  "findings": [
+    {
+      "severity": "P2",
+      "area": "AN",
+      "title": "System inventory captures stable hardware identifiers and PII with no redaction switch, and committed examples expose a real GPU serial plus MAC/IP",
+      "evidence": [
+        "bench/Get-SystemInfo.ps1:10 $info.Host = $env:COMPUTERNAME (hostname)",
+        "bench/Get-SystemInfo.ps1:25 processor_id = $cpu.ProcessorId",
+        "bench/Get-SystemInfo.ps1:36 mfg/part/serial = $_.SerialNumber (DIMM serials)",
+        "bench/Get-SystemInfo.ps1:46 pnp = $_.PNPDeviceID; :49 nvidia-smi --query-gpu=...,serial,uuid,... (GPU serial + uuid)",
+        "bench/Get-SystemInfo.ps1:85-88 NIC mac = $_.MacAddress; ip = ...IPv4 (MAC + IP addresses)",
+        "bench/benchreport.py:274 system_info() includes hostname = socket.gethostname()",
+        "examples/omarchy-20261009/omarchy-linux-20261009-031453-logs/nvidia-smi-q.start.txt:26 'Serial Number : 0321015039747' (real GPU serial committed to the repo)",
+        "examples/omarchy-20261009/omarchy-linux-20261009-031453-logs/kernel-since-start.log:1 MAC=c8:60:00:a0:43:ee ... SRC=192.168.111.178 DST=192.168.111.161 (real MAC + internal IPs committed)",
+        "grep for redact|anonym|scrub|pii|privacy across the repo finds no redaction mode - only server/benchd.py:524 redacts 'token=' in the request log",
+        "docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/follow_up_register.md:8 DATA-P2-001 recorded as open and still open at HEAD 72c18734"
+      ],
+      "impact": "A run captures device-unique identifiers (DIMM/board/GPU serials, GPU UUID, PNP device id, processor id, MAC, IPv4) plus hostname that fingerprint and correlate a specific machine, and there is no -Anonymize/redaction option. The repository's own examples already contain a real GPU serial and MAC/IP addresses, so any user who follows the documented share/commit workflow publishes the same identifiers. Privacy impact even for a self-hosted benchmark tool when results are committed or shared.",
+      "recommendation": "Add a redaction mode (drop or hash serials, MACs, IPs, hostname, processor/PNP ids) and make it the default for any shareable/committed output; gate the raw inventory behind an explicit -IncludeIdentifiers flag; scrub the committed examples to redacted placeholders; document the sensitive fields and retention expectations.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "AN"
+    },
+    {
+      "severity": "P2",
+      "area": "AN",
+      "title": "Results (including full system inventory) are auto-published to a GitHub repository with no consent prompt and no minimization step",
+      "evidence": [
+        "bench/tui.py:507-514 after a successful collect the dashboard calls self.upload() when AUTO_UPLOAD=1 (and even on collect failure)",
+        "bench/tui.py:521-531 _auto_upload_enabled() reads AUTO_UPLOAD= from the on-stick config with no user prompt",
+        "bench/upload.py:15 AUTO_UPLOAD=1 'upload right after a successful collect'",
+        "bench/upload.py:186-190 os.walk(src) uploads every file in the results directory unchanged (no scrub/allowlist before send)",
+        "live/README.md:170-184 documents the upload, the config file, and GITHUB_REPO=MaineCyberTech/bench-test; Build-LiveUSB.sh persists the token across reflashes",
+        "README.md:334 examples/ are 'real Windows + Linux result sets' - the same directory shape that upload.py walks and sends"
+      ],
+      "impact": "With a configured token (and optionally AUTO_UPLOAD=1) the toolkit pushes the untouched results tree - hostname, serials, MAC/IP inventory, telemetry and logs - to whatever GITHUB_REPO/GITHUB_BRANCH are set, with no per-upload confirmation, no redaction, and no field minimization. Combined with the documented default repo (recorded as PUBLIC by the repo's own prior audit GOV-P3-001), identifiers are published to a world-readable location automatically, which is difficult to reverse and easy to trigger accidentally.",
+      "recommendation": "Make publication an explicit, confirmed action (never silent auto-upload), run a mandatory redaction/minimization pass before any upload, require a private destination by default, show the exact file/field set being published, and document consent/retention for uploaded data.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "AN"
+    },
+    {
+      "severity": "P2",
+      "area": "AN",
+      "title": "Control plane stores client IP, hostname and a persistent machine_id in SQLite with no retention or deletion policy",
+      "evidence": [
+        "server/benchd.py:98 runners.addr TEXT; :1213 stores self.client_address[0] (client IP) on every /register",
+        "server/benchd.py:101-105 runs table stores host and system (hostname/system inventory) per run",
+        "server/benchd.py:95-100 runners table stores machine_id (persistent hardware id) and api_key",
+        "server/benchd.py:111-115 telemetry rows and :116-129 logs/events/artifacts are stored per run",
+        "grep for prune|retention|VACUUM|expire|cleanup|older than across server/ finds no scheduled retention; the only DELETEs are explicit per-row user actions (server/benchd.py:662-678,1344-1346)"
+      ],
+      "impact": "The control-plane database accumulates runner IP addresses, hostnames, persistent machine identifiers, telemetry, logs and artifacts indefinitely. There is no documented retention window, no automatic pruning, and no purge job, so personal/device data outlives its purpose and grows without bound - a data-minimization and retention-expectation gap for a tool that explicitly says the db should never be committed.",
+      "recommendation": "Define and document a retention policy (e.g. keep telemetry for N days, purge logs/artifacts after M) and implement a scheduled prune; document that addr is a client IP and consider not persisting it (or hashing it) unless needed; add a purge/export command for operator data-subject requests.",
+      "confidence": "High",
+      "status": "open",
+      "owner": "@owner",
+      "target": "AN"
+    },
+    {
+      "severity": "P3",
+      "area": "AN",
+      "title": "No privacy/analytics governance artifacts (vendor list, consent, do-not-track, retention docs) and no privacy tests",
+      "evidence": [
+        "grep for privacy|consent|gdpr|ccpa|do not track|opt-in|opt-out|cookie across docs/ returns only prior-audit text and unrelated 'opt-in' wording - no privacy policy, vendor list or retention doc exists",
+        "docs/ contains only CONTROL_PLANE.md, DATA.md, FUTURE_WORK.md, METHODOLOGY.md, PHASE_TIMINGS.md and the prior audit run - no privacy/analytics document",
+        "No analytics/tracking/consent tests exist: tests/ covers reporting, control plane, packaging and updates only; grep for redact|anonym|pii in tests/ returns nothing",
+        "Third-party endpoints contacted by the toolkit are functional only (bench/Invoke-NetBench.ps1:37,58 and bench/net_bench.py:95,97 speed.cloudflare.com; bench/upload.py:31 api.github.com; bench/bootstrap.py:48 python-build-standalone; bench/Get-Sensors.ps1:17 LibreHardwareMonitor; bench/Install-GpuFanCurve.ps1:34 nvfancontrol) but are not inventoried anywhere"
+      ],
+      "impact": "Operators and future agents have no single place that lists which identifiers are collected, where they are sent, for how long they are kept, or how a user opts out - and no test guards redaction/consent behavior, so privacy controls can regress silently. The web dashboard itself (server/web/app.js) has no analytics, no cookies and only a local app.js script, so end-user web-tracking concerns are genuinely not applicable, but the machine-inventory/privacy surface remains undocumented.",
+      "recommendation": "Add docs/PRIVACY.md (data inventory: fields, purpose, storage, retention, third-party endpoints, opt-out) and a vendor/endpoint list; document consent for upload; add a unit test asserting the redaction mode strips serials/MAC/IP and that no shareable path emits identifiers without redaction.",
+      "confidence": "Medium",
+      "status": "open",
+      "owner": "@owner",
+      "target": "AN"
+    }
+  ],
+  "report": "# 39_analytics_tracking_privacy - 39_analytics_tracking_privacy.md\n\nDomain subagent `39_analytics_tracking_privacy` (area AN), read-only audit of `C:\\temp\\bench-test`.\n\n## Checks / Evidence\n\n- **P2 - System inventory captures stable hardware identifiers and PII with no redaction switch, and committed examples expose a real GPU serial plus MAC/IP** (confidence: High)\n  - `bench/Get-SystemInfo.ps1:10 $info.Host = $env:COMPUTERNAME (hostname)`\n  - `bench/Get-SystemInfo.ps1:25 processor_id = $cpu.ProcessorId`\n  - `bench/Get-SystemInfo.ps1:36 mfg/part/serial = $_.SerialNumber (DIMM serials)`\n  - `bench/Get-SystemInfo.ps1:46 pnp = $_.PNPDeviceID; :49 nvidia-smi --query-gpu=...,serial,uuid,... (GPU serial + uuid)`\n  - `bench/Get-SystemInfo.ps1:85-88 NIC mac = $_.MacAddress; ip = ...IPv4 (MAC + IP addresses)`\n  - `bench/benchreport.py:274 system_info() includes hostname = socket.gethostname()`\n  - `examples/omarchy-20261009/omarchy-linux-20261009-031453-logs/nvidia-smi-q.start.txt:26 'Serial Number : 0321015039747' (real GPU serial committed to the repo)`\n  - `examples/omarchy-20261009/omarchy-linux-20261009-031453-logs/kernel-since-start.log:1 MAC=c8:60:00:a0:43:ee ... SRC=192.168.111.178 DST=192.168.111.161 (real MAC + internal IPs committed)`\n  - `grep for redact|anonym|scrub|pii|privacy across the repo finds no redaction mode - only server/benchd.py:524 redacts 'token=' in the request log`\n  - `docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/follow_up_register.md:8 DATA-P2-001 recorded as open and still open at HEAD 72c18734`\n  - Impact: A run captures device-unique identifiers (DIMM/board/GPU serials, GPU UUID, PNP device id, processor id, MAC, IPv4) plus hostname that fingerprint and correlate a specific machine, and there is no -Anonymize/redaction option. The repository's own examples already contain a real GPU serial and MAC/IP addresses, so any user who follows the documented share/commit workflow publishes the same identifiers. Privacy impact even for a self-hosted benchmark tool when results are committed or shared.\n  - Recommendation: Add a redaction mode (drop or hash serials, MACs, IPs, hostname, processor/PNP ids) and make it the default for any shareable/committed output; gate the raw inventory behind an explicit -IncludeIdentifiers flag; scrub the committed examples to redacted placeholders; document the sensitive fields and retention expectations.\n- **P2 - Results (including full system inventory) are auto-published to a GitHub repository with no consent prompt and no minimization step** (confidence: High)\n  - `bench/tui.py:507-514 after a successful collect the dashboard calls self.upload() when AUTO_UPLOAD=1 (and even on collect failure)`\n  - `bench/tui.py:521-531 _auto_upload_enabled() reads AUTO_UPLOAD= from the on-stick config with no user prompt`\n  - `bench/upload.py:15 AUTO_UPLOAD=1 'upload right after a successful collect'`\n  - `bench/upload.py:186-190 os.walk(src) uploads every file in the results directory unchanged (no scrub/allowlist before send)`\n  - `live/README.md:170-184 documents the upload, the config file, and GITHUB_REPO=MaineCyberTech/bench-test; Build-LiveUSB.sh persists the token across reflashes`\n  - `README.md:334 examples/ are 'real Windows + Linux result sets' - the same directory shape that upload.py walks and sends`\n  - Impact: With a configured token (and optionally AUTO_UPLOAD=1) the toolkit pushes the untouched results tree - hostname, serials, MAC/IP inventory, telemetry and logs - to whatever GITHUB_REPO/GITHUB_BRANCH are set, with no per-upload confirmation, no redaction, and no field minimization. Combined with the documented default repo (recorded as PUBLIC by the repo's own prior audit GOV-P3-001), identifiers are published to a world-readable location automatically, which is difficult to reverse and easy to trigger accidentally.\n  - Recommendation: Make publication an explicit, confirmed action (never silent auto-upload), run a mandatory redaction/minimization pass before any upload, require a private destination by default, show the exact file/field set being published, and document consent/retention for uploaded data.\n- **P2 - Control plane stores client IP, hostname and a persistent machine_id in SQLite with no retention or deletion policy** (confidence: High)\n  - `server/benchd.py:98 runners.addr TEXT; :1213 stores self.client_address[0] (client IP) on every /register`\n  - `server/benchd.py:101-105 runs table stores host and system (hostname/system inventory) per run`\n  - `server/benchd.py:95-100 runners table stores machine_id (persistent hardware id) and api_key`\n  - `server/benchd.py:111-115 telemetry rows and :116-129 logs/events/artifacts are stored per run`\n  - `grep for prune|retention|VACUUM|expire|cleanup|older than across server/ finds no scheduled retention; the only DELETEs are explicit per-row user actions (server/benchd.py:662-678,1344-1346)`\n  - Impact: The control-plane database accumulates runner IP addresses, hostnames, persistent machine identifiers, telemetry, logs and artifacts indefinitely. There is no documented retention window, no automatic pruning, and no purge job, so personal/device data outlives its purpose and grows without bound - a data-minimization and retention-expectation gap for a tool that explicitly says the db should never be committed.\n  - Recommendation: Define and document a retention policy (e.g. keep telemetry for N days, purge logs/artifacts after M) and implement a scheduled prune; document that addr is a client IP and consider not persisting it (or hashing it) unless needed; add a purge/export command for operator data-subject requests.\n- **P3 - No privacy/analytics governance artifacts (vendor list, consent, do-not-track, retention docs) and no privacy tests** (confidence: Medium)\n  - `grep for privacy|consent|gdpr|ccpa|do not track|opt-in|opt-out|cookie across docs/ returns only prior-audit text and unrelated 'opt-in' wording - no privacy policy, vendor list or retention doc exists`\n  - `docs/ contains only CONTROL_PLANE.md, DATA.md, FUTURE_WORK.md, METHODOLOGY.md, PHASE_TIMINGS.md and the prior audit run - no privacy/analytics document`\n  - `No analytics/tracking/consent tests exist: tests/ covers reporting, control plane, packaging and updates only; grep for redact|anonym|pii in tests/ returns nothing`\n  - `Third-party endpoints contacted by the toolkit are functional only (bench/Invoke-NetBench.ps1:37,58 and bench/net_bench.py:95,97 speed.cloudflare.com; bench/upload.py:31 api.github.com; bench/bootstrap.py:48 python-build-standalone; bench/Get-Sensors.ps1:17 LibreHardwareMonitor; bench/Install-GpuFanCurve.ps1:34 nvfancontrol) but are not inventoried anywhere`\n  - Impact: Operators and future agents have no single place that lists which identifiers are collected, where they are sent, for how long they are kept, or how a user opts out - and no test guards redaction/consent behavior, so privacy controls can regress silently. The web dashboard itself (server/web/app.js) has no analytics, no cookies and only a local app.js script, so end-user web-tracking concerns are genuinely not applicable, but the machine-inventory/privacy surface remains undocumented.\n  - Recommendation: Add docs/PRIVACY.md (data inventory: fields, purpose, storage, retention, third-party endpoints, opt-out) and a vendor/endpoint list; document consent for upload; add a unit test asserting the redaction mode strips serials/MAC/IP and that no shareable path emits identifiers without redaction.\n\n## Verification Performed\n\nRead-only source review of the target at commit `b916709`; the evidence above was\nrecorded by the domain subagent and normalized by `tools/full_domain.py` (mechanical\nreport body derived from that recorded findings JSON).\n"
+}

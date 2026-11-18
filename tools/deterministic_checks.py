@@ -46,7 +46,7 @@ import tempfile
 sys.dont_write_bytecode = True
 
 SKIP_DIRS = {".git", "node_modules", ".pnpm", ".next", "dist", "build", "out",
-             "vendor", "venv", ".venv", "__pycache__", "coverage"}
+             "vendor", "venv", ".venv", "__pycache__", "coverage", "review-package"}
 TEXT_EXT = {".sh", ".bash", ".py", ".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx",
             ".yml", ".yaml", ".json", ".toml", ".cfg", ".ini", ".conf", ".md",
             ".txt", ".sql", ".php", ".html", ".css", ".rb", ".go", ".rs", ".java"}

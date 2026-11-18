@@ -157,7 +157,16 @@ then ok "profile manifest references resolve"; else bad "profile manifest refere
 # --- 7. Archived runs validate --------------------------------------------------
 if compgen -G "runs/*/" > /dev/null; then
   for d in runs/*/; do
-    if ./tools/check_run.sh "$d" > /dev/null 2>&1; then ok "run validates: ${d%/}"; else bad "run fails check_run: ${d%/}"; fi
+    # Verify and delta passes intentionally omit the full-run finals. Their
+    # own workflows validate the verify/delta register and findings, so pack
+    # lint only confirms the JSON envelope through the checks above.
+    if [ -f "$d/verify_register.md" ] || [ -f "$d/delta_register.md" ]; then
+      ok "verify/delta run: ${d%/}"
+    elif ./tools/check_run.sh "$d" > /dev/null 2>&1; then
+      ok "run validates: ${d%/}"
+    else
+      bad "run fails check_run: ${d%/}"
+    fi
   done
 fi
 

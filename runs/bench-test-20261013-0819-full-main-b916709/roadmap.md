@@ -1,0 +1,276 @@
+# Roadmap
+
+- CHAIN-P0-001 (P0) — Single shared secret is both the runner join token and the operator bearer, and it is baked into public app bundles / live ISOs -> anyone who downloads a release gets fleet-wide remote code execution (exec/shell) on every runner
+- EXEC-P0-001 (P0) — Release gate = NO-GO: 3 unresolved P0s, all about one shared operator secret baked into public artifacts
+- FINAL-P0-001 (P0) — One shared operator/join token is baked into public app bundles and the live ISO, so any release download yields fleet-wide remote code execution (merged across 10 domains)
+- FINAL-P0-002 (P0) — A write-capable GitHub PAT is baked into the publicly downloadable live ISO, and runners auto-pull code from main, turning repo write into fleet code execution (merged across 4 domains)
+- SC-P0-001 (P0) — GitHub PAT with Contents:Read/Write is baked into the publicly-downloadable live ISO
+- SEC-P0-001 (P0) — Operator token (and a repo-write GitHub PAT) baked into public release artifacts
+- ACM-P1-001 (P1) — Shared join token is the full operator credential and is baked into public releases
+- ACM-P1-002 (P1) — machine_id adoption hands out another runner's API key
+- ADMIN-P1-001 (P1) — Shared all-powerful operator token is distributed to every runner
+- ADMIN-P1-002 (P1) — Runner identity takeover via machine_id
+- AI-P1-001 (P1) — Test suite is documented as mandatory but no CI gate runs it, so an agent can land a red change on main
+- API-P1-001 (P1) — POST /api/v1/register gives away another runner's api_key via unproven machine_id adoption
+- ARCH-P1-001 (P1) — Single shared token is both the join credential and an all-powerful operator credential, and is shipped in public artifacts
+- BP-P1-001 (P1) — No test/CI workflow exists, so no required status check can gate merges to main
+- BP-P1-002 (P1) — Release workflow writes directly to main and cuts tags with no approval or documented bypass
+- CHAIN-P1-001 (P1) — Runner identity takeover via /register machine_id adoption: any authenticated runner can claim another runner's row and is handed that row's api_key (the runner_id path was fixed, the machine_id path was not)
+- CHAIN-P1-002 (P1) — A Contents:Read/Write GitHub PAT is baked into the public live ISO and every runner auto-pulls code from main at startup -> repo write access becomes code execution on the whole fleet (CI-to-production / supply-chain chain)
+- CI-P1-001 (P1) — Build workflows bake live credentials into public release artifacts
+- CI-P1-002 (P1) — No test/lint/secret-scan CI gate; nothing runs on pull_request
+- CTR-P1-001 (P1) — Control-plane and upload bearer tokens are baked into the publicly downloadable live ISO image
+- DATA-P1-001 (P1) — DELETE /api/v1/runs/<id> does not delete the run's logs; they stay orphaned in the DB and remain readable
+- DR-P1-001 (P1) — No backup of the control-plane SQLite database, which is the single system of record
+- DR-P1-002 (P1) — Restore is never exercised: no restore script, runbook, or test; the only import path cannot rebuild the DB
+- EXEC-P1-001 (P1) — Cross-domain convergence: a single shared BENCHD_TOKEN serves both the low-trust join tier and the highest-privilege operator tier
+- EXEC-P1-002 (P1) — Runner identity takeover via POST /register machine_id adoption is unfixed and gives an attacker another runner's API key
+- EXEC-P1-003 (P1) — No CI test/quality gate: main merges and auto-releases land with zero automated verification
+- EXEC-P1-004 (P1) — Disaster recovery is absent: the single SQLite system of record has no backup, no restore, and no exercise
+- FINAL-P1-001 (P1) — Control plane fails open: with no BENCHD_TOKEN it serves the full operator API unauthenticated while bound to 0.0.0.0 (reproduced across 4 domains)
+- FINAL-P1-002 (P1) — Any enrolled runner can take over another runner's identity via unproven machine_id adoption and be handed that runner's api_key (merged across 5 domains)
+- FINAL-P1-003 (P1) — No CI test/lint/secret gate, while the release workflow self-modifies main and auto-tags with no approval (merged across 5 domains)
+- FINAL-P1-004 (P1) — Data lifecycle is unmanaged: run delete leaves logs behind (reproduced), telemetry/artifacts have no retention, and there is no backup, restore, or incident plan (merged across 6 domains)
+- FINAL-P1-005 (P1) — The most destructive operation fails open on integrity checks, and third-party code is fetched and executed without verification; no SBOM or license inventory exists (merged across 4 domains)
+- FINAL-P1-006 (P1) — ~10,000 generated result files (~55 MB, with machine PII) are committed to a public repo despite a results/ ignore rule (merged across 6 domains)
+- HYGIENE-P1-001 (P1) — 9,555 generated result files (~55 MB) committed under results/
+- INFRA-P1-001 (P1) — benchd fails open: with no BENCHD_TOKEN it serves the full operator API unauthenticated (reproduced)
+- INFRA-P1-002 (P1) — The shared operator token is baked into publicly downloadable app bundles and the live ISO, and it is the same token that grants operator control
+- INV-P1-001 (P1) — Shared control-plane token baked into public releases
+- IR-P1-001 (P1) — No incident-response documentation, severity taxonomy, roles, or postmortem process exists anywhere in the repository
+- PERF-P1-001 (P1) — Unbounded SQLite growth: telemetry/logs/events/artifacts have no retention, cap, or capacity signal
+- PERF-P1-002 (P1) — Web dashboard re-fetches 300 full run rows and an unbounded /trends scan on every refresh tick
+- PRIV-P1-001 (P1) — Unredacted hostnames and absolute home paths (usernames) committed to the public repository
+- REL-P1-001 (P1) — No CHANGELOG and no release notes are generated for version tags; release.yml only cuts a bare tag
+- RES-P1-001 (P1) — iso_fetch returns ok=True even when SHA256SUMS verification fails, so a bad ISO is accepted for a destructive write
+- SBOM-P1-001 (P1) — No SBOM is produced for either shipped artifact set (PyInstaller app bundles and the live ISO)
+- SBOM-P1-002 (P1) — Third-party binary LibreHardwareMonitor is redistributed in release bundles with no tracked license/attribution (MPL-2.0 compliance gap)
+- SC-P1-001 (P1) — Control-plane operator token is baked into public app bundles
+- SC-P1-002 (P1) — Third-party binaries are downloaded and executed without integrity verification (LibreHardwareMonitor 'latest', nvfancontrol)
+- SEARCH-P1-001 (P1) — Deleting a run does not delete its console logs; they stay retrievable by run id
+- SEC-P1-001 (P1) — Fail-open authentication when no token is configured
+- SEC-P1-002 (P1) — /api/v1/register discloses other runners' API keys
+- SECRET-P1-001 (P1) — Shared operator/join token is baked into public app release bundles
+- SECRET-P1-002 (P1) — Write-capable GitHub PAT is baked into the public live-USB ISO
+- TEST-P1-001 (P1) — No CI job runs the test suite or any compile/lint gate
+- ACM-P2-001 (P2) — No lifecycle for runner API keys or the operator token: no expiry, rotation, or per-key revocation; keys stored in plaintext
+- ACM-P2-002 (P2) — Control plane fails open: with no BENCHD_TOKEN every request is a full operator (RCE/reboot/delete), and the shipped unit binds 0.0.0.0
+- ACM-P2-003 (P2) — No credential lifecycle (expiry/rotation/revocation); keys plaintext
+- ACM-P2-004 (P2) — Fail-open when no token is set, on a 0.0.0.0 unit
+- ACM-P2-005 (P2) — No audit trail / actor attribution for privileged actions
+- ACM-P2-006 (P2) — Operator token in URLs + wildcard CORS
+- ADMIN-P2-001 (P2) — No audit log for privileged, destructive, or export actions; actions are unattributable because the token is shared
+- ADMIN-P2-002 (P2) — Destructive actions are gated only in the browser; the API enforces nothing and deletes are irreversible with no undo
+- ADMIN-P2-003 (P2) — No audit trail for privileged/delete/export actions
+- ADMIN-P2-004 (P2) — Destructive actions gated only in the browser; deletes irreversible
+- ADMIN-P2-005 (P2) — Fail-open when no token; docs bind 0.0.0.0
+- ADMIN-P2-006 (P2) — exec/shell is fleet-wide RCE with no approval and idle output is dropped
+- ADMIN-P2-007 (P2) — Operator token in URL/localStorage; no expiry, rotation, or lockout
+- AI-P2-001 (P2) — No PR, contribution, review or small-batch guidance; auto-tagging on direct main pushes means no human approval gate
+- AI-P2-002 (P2) — No prompt-injection / untrusted-content guidance while agents are directed to read committed run logs and results
+- AI-P2-003 (P2) — Agent instruction file misstates repository shape: 'a few runs' tracked vs 10,299 tracked result files (97.6% of the repo)
+- AN-P2-001 (P2) — System inventory captures stable hardware identifiers and PII with no redaction switch, and committed examples expose a real GPU serial plus MAC/IP
+- AN-P2-002 (P2) — Results (including full system inventory) are auto-published to a GitHub repository with no consent prompt and no minimization step
+- AN-P2-003 (P2) — Control plane stores client IP, hostname and a persistent machine_id in SQLite with no retention or deletion policy
+- API-P2-001 (P2) — Write endpoints perform no body validation: malformed JSON is treated as success
+- API-P2-002 (P2) — Run creation is not idempotent: a repeated client-supplied run id returns 500 and leaks the DB schema
+- API-P2-003 (P2) — DELETE /api/v1/runs/<id> leaves the run's log rows orphaned; the doc contract says '+data'
+- API-P2-004 (P2) — Realtime SSE fan-out silently drops events once a subscriber's queue fills (no backpressure, no metric)
+- ARCH-P2-001 (P2) — Single-node control plane with local SQLite and in-memory bus (SPOF, no backup)
+- ARCH-P2-002 (P2) — Realtime SSE drops events silently and cannot resume
+- ARCH-P2-003 (P2) — Operator token in URLs, logged in full, and wildcard CORS
+- BP-P2-001 (P2) — Secret-bearing public-release workflows run with no environment approval gate
+- BP-P2-002 (P2) — No Dependabot and all third-party actions are referenced by mutable tags
+- BP-P2-003 (P2) — No documented branch/release/hotfix model or break-glass process
+- CHAIN-P2-001 (P2) — The operator/exec chains are effectively silent: no audit trail or alerting for command issuance, no operator identity (single shared token), and exec output is dropped when no run is active
+- CI-P2-001 (P2) — Actions pinned to mutable tags, not commit SHAs
+- CI-P2-002 (P2) — release.yml self-pushes to main with contents:write and no environment/reviewer gate
+- CI-P2-003 (P2) — runner_labels input allows arbitrary/self-hosted runners; secrets inline in shell
+- CI-P2-004 (P2) — No Dependabot/secret scanning/SBOM/CODEOWNERS; branch protection undocumented
+- CTR-P2-001 (P2) — CI ISO build runs a --privileged container with the host repository bind-mounted read-write
+- CTR-P2-002 (P2) — Unpinned mutable base image tag (archlinux:latest) in the build container
+- CTR-P2-003 (P2) — bench-agent service runs unsandboxed with no runtime hardening profile while executing control-plane shell commands
+- DATA-P2-001 (P2) — No retention or aging policy for telemetry, logs, events or artifacts - the SQLite database grows without bound
+- DATA-P2-002 (P2) — Schema declares no foreign keys and never enables FK enforcement (PRAGMA foreign_keys = 0)
+- DATA-P2-003 (P2) — Migrations are best-effort additive ALTERs with no schema version tracking, rollback, or drift detection
+- DATA-P2-004 (P2) — Phase writes use a non-atomic check-then-insert with no UNIQUE(run_id, seq), so concurrent or replayed posts can create duplicate phase rows
+- DET-P2-003 (P2) — [PORT] CRLF committed for 11 file(s) (index has CRLF)
+- DET-P2-005 (P2) — [SUPPLY] 9 GitHub Action ref(s) not pinned to a commit SHA
+- DOC-P2-001 (P2) — Documented test command (`python tests/run_all.py`) fails on Windows: needs `windows-curses`, which the docs never say
+- DOC-P2-002 (P2) — README release/version is stale and self-contradictory (v1.1.0 vs VERSION 1.11.5 vs the 1.11.3 written directly below it)
+- DOC-P2-003 (P2) — docs/PHASE_TIMINGS.md reports the same preset on the same machine as both ~11.5 min and ~14.1 min, contradicting itself
+- DOC-P2-004 (P2) — LICENSE declares the repo PROPRIETARY AND CONFIDENTIAL while README instructs the public to clone and download its public releases
+- DR-P2-001 (P2) — Destructive deletes purge run data irreversibly with no snapshot, soft-delete, or confirmation
+- DR-P2-002 (P2) — Schema has no version record and migrations are additive-only with no rollback path (bad-migration drill impossible)
+- DR-P2-003 (P2) — Secrets have no backup/recovery or rotation procedure (per-runner keys live only in the DB)
+- DR-P2-004 (P2) — No encryption at rest for the database, artifacts, or (hypothetical) backups
+- EVOL-P2-001 (P2) — Adding a benchmark module/phase requires editing 6+ hardcoded lists; there is no registry or module template
+- EVOL-P2-002 (P2) — No CI workflow runs the test suite, so platform changes are merged unverified
+- EVOL-P2-003 (P2) — Schema 'migration' is unversioned, additive-only column checks run on every startup
+- EVOL-P2-004 (P2) — Authorization is a hardcoded two-tier boolean checked per handler; no role/permission model to extend
+- EVOL-P2-005 (P2) — Telemetry/summary metric catalogue is duplicated across Python and JavaScript with no single source of truth
+- EXEC-P2-001 (P2) — Evidence binding gap: the run is pinned to b916709 but the working tree advanced 5 commits and findings reproduce at 60ab90eb/72c18734
+- EXEC-P2-002 (P2) — Published-artifact and privacy hygiene: ~9.5k generated files are tracked on a public repo with host/user identifiers
+- FEAT-P2-001 (P2) — Deleting a run orphans its logs rows
+- FILE-P2-001 (P2) — iso_fetch reports ok:true and acks "done" even when the ISO checksum is missing or mismatched
+- FILE-P2-002 (P2) — Artifact upload has no MIME/extension/size validation, no content-scanning hook, and no per-run quota
+- FILE-P2-003 (P2) — All file downloads are authorized by one static shared token carried in the query string, with no expiry, rotation, or revocation
+- HYGIENE-P2-001 (P2) — History is 94% auto-generated `bench:` commits
+- HYGIENE-P2-002 (P2) — Duplicate nested `results/results/` tree
+- HYGIENE-P2-003 (P2) — README release drift (v1.1.0 vs VERSION 1.11.3)
+- HYGIENE-P2-004 (P2) — Stdlib-only test suite fails on Windows system Python
+- INFRA-P2-001 (P2) — Documented BENCHD_DB config key is never read; DB path is hard-coded and has no backup/retention
+- INFRA-P2-002 (P2) — Operator token is transported in URLs and kept in browser localStorage; no TLS/reverse proxy exists in the repo
+- INFRA-P2-003 (P2) — benchd systemd unit runs as root on 0.0.0.0 with no User/CapabilityBoundingSet and no readiness probe
+- INFRA-P2-004 (P2) — Deployment is an unversioned manual pct snippet that does not ship VERSION or write a commit stamp, breaking the fleet staleness comparison
+- INV-P2-001 (P2) — Generated run output committed en masse
+- INV-P2-002 (P2) — Recursively nested/duplicated result trees committed
+- INV-P2-003 (P2) — No dependency manifest or lockfile
+- INV-P2-004 (P2) — README version stale vs VERSION and tags
+- IR-P2-001 (P2) — No monitoring or alerting: failures are only visible when a human watches the web dashboard
+- IR-P2-002 (P2) — No backup or restore procedure for the control-plane SQLite database (all fleet history, artifacts and per-runner keys)
+- IR-P2-003 (P2) — No operator audit log: privileged commands and destructive deletes carry no actor identity or durable trail
+- IR-P2-004 (P2) — No data-breach or vulnerability-disclosure process, while a public repo bakes a world-readable operator token into ISO/app artifacts
+- MOB-P2-001 (P2) — Primary tab bar cannot fit a phone: it is a non-wrapping flex row with no horizontal scroll
+- MOB-P2-002 (P2) — Fixed multi-column grids never collapse on phones, forcing horizontal overflow or unreadable cells
+- MOB-P2-003 (P2) — Interactive controls are below the 44x44px minimum touch target
+- MOB-P2-004 (P2) — Header and filter bars clip or overflow on narrow screens instead of wrapping
+- NOTIF-P2-001 (P2) — No out-of-band alert/notification delivery for critical health verdicts
+- OBS-P2-001 (P2) — No alerting or uptime monitoring for the control plane or for failed runs
+- OBS-P2-002 (P2) — No structured logging and no request IDs / correlation IDs
+- OBS-P2-003 (P2) — Server-side errors are swallowed; no error tracking or stack traces
+- OBS-P2-004 (P2) — /health conflates liveness and readiness and performs a DB query plus a network call
+- OBS-P2-005 (P2) — No runtime/service metrics and no monitoring-of-the-monitoring
+- ORCH-P2-001 (P2) — Published audit run uses two conflicting finding-ID schemes
+- ORCH-P2-002 (P2) — risk_register.md is a verbatim copy of follow_up_register.md
+- ORCH-P2-003 (P2) — Run INDEX and audit_manifest.json omit the deterministic lens artifacts
+- PERF-P2-001 (P2) — Per-run detail, stats and CSV endpoints load and re-parse every telemetry row on the request thread
+- PERF-P2-002 (P2) — Realtime path scales by unbounded threads and broadcasts whole telemetry batches to every subscriber
+- PERF-P2-003 (P2) — CI rebuilds a multi-GB ISO and both app bundles on every bench/** or live/** push with no dependency caching
+- PERF-P2-004 (P2) — Heartbeat/liveness path performs a blocking GitHub compare call with an 8 s timeout, longer than the runner's 6 s client timeout
+- PRIV-P2-001 (P2) — Collectors capture stable hardware identifiers and PII with no redaction mode, and the uploader publishes the whole results directory to public GitHub
+- PRIV-P2-002 (P2) — No attributable audit trail for privileged/admin actions (shared operator token, commands record no actor)
+- PRIV-P2-003 (P2) — Deletion is incomplete: deleting a run leaves its console logs, and deleting a runner leaves its runs/telemetry/inventory
+- PRIV-P2-004 (P2) — No retention or scheduled-purge policy for telemetry, logs, artifacts and the SQLite database
+- PRIV-P2-005 (P2) — Per-runner API keys are stored in plaintext in SQLite and looked up by direct comparison
+- REL-P2-001 (P2) — README's release/version strings are stale and self-contradictory, so the shipped docs disagree with VERSION
+- REL-P2-002 (P2) — Release artifacts are tagged by workflow run number, not by version or commit, so notes cannot be tied to a build
+- REL-P2-003 (P2) — Changelog input is unenforced: no PR/issue templates or CONTRIBUTING, and commit subjects are 94% auto-generated noise
+- REL-P2-004 (P2) — No upgrade/rollback notes are possible: schema changes are unversioned additive ALTERs and the deploy does not ship VERSION
+- REL-P2-005 (P2) — Release notes carry no generation metadata (commit/version/date), and the repo's only release-note-like artifact is a one-line verdict
+- REL-P2-006 (P2) — No separate user/admin/operator/security note tracks; operator-mandated changes (token handling, exec/shell, deletes) have no release channel
+- RES-P2-001 (P2) — A completed run is recorded as 'failed' and its summary lost when the final finish post fails (no retry/idempotency)
+- RES-P2-002 (P2) — Backfill importer is not idempotent (re-running duplicates every run) and --reset deletes all history
+- RES-P2-003 (P2) — agent 'start' has a TOCTOU race that can run two benchmark batteries concurrently on one machine
+- RES-P2-004 (P2) — Documented rollback paths (A/B slot auto-revert, live toolkit self-update) are never exercised, and a bad toolkit update has no rollback
+- SBOM-P2-001 (P2) — No package manifest or lockfile anywhere; dependencies are installed unpinned at runtime, so no reproducible dependency set exists to inventory
+- SBOM-P2-002 (P2) — GitHub Actions dependencies are mutable major tags and there is no Dependabot, dependency-review or vulnerability scanning
+- SBOM-P2-003 (P2) — No release provenance: no build attestation/signing, and app/ISO release tags are run-number based rather than commit-bound
+- SBOM-P2-004 (P2) — No license policy, allow/deny list, CI license gate or exception process
+- SC-P2-001 (P2) — No dependency manifest or lockfile; compute deps are pip-installed unpinned, sometimes with an extra index
+- SC-P2-002 (P2) — GitHub Actions are pinned to mutable major tags and there is no dependency automation or dependency-review/license gate
+- SC-P2-003 (P2) — bootstrap.py extracts a downloaded tarball without a safe extraction filter and its integrity check fails open
+- SEARCH-P2-001 (P2) — No retention policy or cleanup job for logs, telemetry, artifacts or events - run data is kept forever
+- SEARCH-P2-002 (P2) — Deleting a runner orphans its runs, telemetry, logs and artifacts
+- SEARCH-P2-003 (P2) — Shared operator token is accepted in the URL query string and compared non-constant-time
+- SEC-P2-001 (P2) — Operator token in the URL query + cleartext logs over HTTP
+- SEC-P2-002 (P2) — Wildcard CORS on authenticated endpoints and SSE
+- SEC-P2-003 (P2) — No rate limiting or lockout
+- SEC-P2-004 (P2) — Unbounded request body (DoS)
+- SECRET-P2-001 (P2) — Placeholder token 'change-me' is accepted silently; no token strength/startup validation
+- SECRET-P2-002 (P2) — No secret rotation / revocation / break-glass runbook or inventory
+- TEST-P2-001 (P2) — Releases, tags and public ISO/app artifacts are published with no test or smoke verification of the artifact
+- TEST-P2-002 (P2) — Documented test command fails on Windows: suite needs third-party windows-curses but is described as stdlib-only
+- TEST-P2-003 (P2) — The 23 PowerShell battery scripts and the web dashboard are only validated by substring assertions, never executed or linted
+- USE-P2-001 (P2) — Control-plane commands report success on enqueue and never surface the runner's ack, so a rejected start/stop/exec looks successful
+- USE-P2-002 (P2) — Web Start-run form has no input validation; blank/zero/negative durations and sizes are sent silently
+- USE-P2-003 (P2) — GUI 'Clean up environment' deletes the cached runner interpreter with no confirmation and no in-run guard
+- USE-P2-004 (P2) — Remote terminal / ad-hoc exec is only offered while a run is live, so idle runners cannot be diagnosed from the dashboard
+- UX-P2-001 (P2) — Web dashboard's primary interactions are mouse-only (runner cards, sortable headers, table rows)
+- UX-P2-002 (P2) — Modal dialog has no dialog semantics, no focus trap, and no focus restore
+- UX-P2-003 (P2) — No ARIA anywhere in the web dashboard; tab strip and live SSE updates are not exposed to assistive tech
+- UX-P2-004 (P2) — Canvas charts have no accessible alternative and their tooltips are pointer-only
+- UX-P2-005 (P2) — Tk GUI suppresses the keyboard focus indicator and has no keyboard accelerators
+- ACM-P3-001 (P3) — Inconsistent constant-time credential comparison (bearer uses compare_digest; ?token=, _runner_ok and _caller use ==)
+- ACM-P3-007 (P3) — Inconsistent constant-time token comparison
+- ADMIN-P3-001 (P3) — Inconsistent confirmation for destructive console actions (schedule delete has none)
+- ADMIN-P3-008 (P3) — Inconsistent confirmation (schedule delete has none)
+- AI-P3-001 (P3) — README release/version text is stale and contradicts VERSION, which agents are told is the single source of truth
+- AI-P3-002 (P3) — Secrets guidance names only the ISO workflow, omitting that build-app.yml bakes the same world-readable token into public app bundles
+- AN-P3-001 (P3) — No privacy/analytics governance artifacts (vendor list, consent, do-not-track, retention docs) and no privacy tests
+- API-P3-001 (P3) — Error responses leak internal exception type and message; invalid client input returns 500 instead of 4xx
+- API-P3-002 (P3) — No rate limiting or request throttling on any endpoint; /health is unauthenticated
+- API-P3-003 (P3) — No machine-readable API contract (OpenAPI/schema); the prose contract already drifts from the handlers
+- ARCH-P3-001 (P3) — Documented topology drifts from code (dashboard commands; iso_write BENCHDATA guard)
+- ARCH-P3-002 (P3) — Telemetry/logs/events have no retention or pruning
+- BP-P3-001 (P3) — No CODEOWNERS file
+- BP-P3-002 (P3) — No pull-request template or contributing guide
+- CHAIN-P3-001 (P3) — Unauthenticated /health discloses deployment identity and fleet size, and every API response sets Access-Control-Allow-Origin: *
+- CI-P3-001 (P3) — Release tags do not map to a commit
+- CTR-P3-001 (P3) — LXC deployment binds the control plane to 0.0.0.0 despite documented 'LAN/lab address only' posture
+- DATA-P3-001 (P3) — Request bodies are not validated as JSON objects (non-object body returns 500 + internal exception), and the documented BENCHD_DB setting is ignored
+- DATA-P3-002 (P3) — No optimistic locking or version preconditions on mutations; a late /finish can overwrite a reaped run's terminal status
+- DATA-P3-003 (P3) — Hard deletes with no soft-delete/tombstone and no audit fields on any table
+- DET-P3-001 (P3) — [DEP] No Dependabot configuration
+- DET-P3-002 (P3) — [DEP] trivy not installed (dependency vuln scan skipped)
+- DET-P3-004 (P3) — [SEC] gitleaks not installed (secret scan skipped)
+- DOC-P3-001 (P3) — README 'Presets' table lists 11 presets but the GUI/TUI/web ship 13 - it omits 'Stabilized full soak (15 min)' and 'Graphics only (FurMark/Valley)'
+- DOC-P3-002 (P3) — AGENTS.md points to `update_ct.py`, which does not exist in the repository
+- DOC-P3-003 (P3) — No CONTRIBUTING/SECURITY/CHANGELOG or PR/issue templates, and no operator troubleshooting/rollback/incident runbook
+- DR-P3-001 (P3) — No DR runbook and no infrastructure-config backup; deployment is imperative/manual
+- EVOL-P3-001 (P3) — Command kinds are a hardcoded tuple; clients cannot advertise command capability and silently fail unknown kinds
+- EVOL-P3-002 (P3) — Vendored LibreHardwareMonitor binaries are git-ignored, so the app bundle is not reproducible from a clone despite docs claiming otherwise
+- EVOL-P3-003 (P3) — No package structure; shared code is a 2.5k-line flat module imported via sys.path insertion
+- FEAT-P3-001 (P3) — README preset table lists 11 of 13 presets
+- FEAT-P3-002 (P3) — README release claim is stale
+- FEAT-P3-003 (P3) — CONTROL_PLANE command-support matrix is stale
+- FEAT-P3-004 (P3) — Committed audit finding CI-P3-001 contradicts the tree
+- FEAT-P3-005 (P3) — Documented test command fails on stock Windows Python
+- FEAT-P3-006 (P3) — Working tree diverges from the recorded commit
+- FILE-P3-001 (P3) — Artifact metadata sha256 is client-supplied and never recomputed or verified on download
+- FILE-P3-002 (P3) — No per-artifact deletion, retention, or versioning; artifacts are purged only by deleting the whole run
+- FILE-P3-003 (P3) — Missing negative/authorization tests for the file surface and wildcard CORS on authenticated downloads
+- HYGIENE-P3-001 (P3) — Large monolithic modules with no internal split (benchreport.py 2,811 lines; app.js 1,822)
+- HYGIENE-P3-002 (P3) — No CHANGELOG or ADRs; release notes are implicit in commit subjects
+- HYGIENE-P3-003 (P3) — No type annotations and 238 broad `except Exception` handlers across the Python codebase
+- INFRA-P3-001 (P3) — Live launcher exports BENCHD_INSECURE and BENCH_AGENT_NAME that nothing consumes (env name drift)
+- INFRA-P3-002 (P3) — Environment-specific deploy values (container id 108, IP 192.168.222.188/24) are hard-coded in docs with no inventory, and a prior audit recorded a different address
+- INV-P3-001 (P3) — Missing GitHub governance metadata
+- INV-P3-002 (P3) — Large committed binary assets
+- INV-P3-003 (P3) — Committed audit artifacts pinned to an old commit
+- IR-P3-001 (P3) — Prior audit findings are all still marked open and were never re-verified, so the same incident class recurs
+- MOB-P3-001 (P3) — No PWA surface at all: no manifest, icons, service worker, install prompt, or offline fallback
+- MOB-P3-002 (P3) — Fixed/sticky chrome ignores safe-area insets (notch, home indicator)
+- MOB-P3-003 (P3) — No mobile/responsive test coverage; the suite is source-string matching only
+- NOTIF-P3-001 (P3) — In-app SSE notification bus silently drops events when a subscriber queue fills
+- OBS-P3-001 (P3) — No audit log of operator / destructive command issuance
+- OBS-P3-002 (P3) — No incident runbook, escalation path, or on-call checklist
+- OBS-P3-003 (P3) — Release marker not bound in the documented copy-deploy; /health can report 0.0.0+unknown
+- ORCH-P3-001 (P3) — Deterministic finding DET-P3-002 is dropped from the aggregate
+- ORCH-P3-002 (P3) — Published run was never reconciled after later commits fixed two findings
+- PERF-P3-001 (P3) — Static dashboard assets are served with Cache-Control: no-store and no validators, so they are re-downloaded on every load
+- PERF-P3-002 (P3) — History and Fleet silently cap at 300/500 runs and ignore the server's total count
+- PRIV-P3-001 (P3) — Operator token is handled via URL query string and browser localStorage
+- PRIV-P3-002 (P3) — No privacy/compliance documentation: data classification, retention policy, vendor/processor inventory, consent; secrets baked into public ISOs
+- REL-P3-001 (P3) — No known-issues track and no breaking-change record; there is nothing to seed release notes from
+- RES-P3-001 (P3) — Command queue is at-most-once with no DLQ/expiry; a fetched-but-unacked command is dropped, and a queued command never expires
+- RES-P3-002 (P3) — Control-plane client has no retry/backoff/circuit-breaker; registration retries forever and telemetry is dropped on failure
+- RES-P3-003 (P3) — HTTP server sets no read/connection timeout; a declared-but-unsent body pins a handler thread indefinitely
+- SBOM-P3-001 (P3) — Live ISO package set is version-unpinned, so the shipped image is neither reproducible nor fully inventoried
+- SC-P3-001 (P3) — ISO build trusts an unpinned third-party repo and an unpinned Docker base; no SBOM/provenance/checksums for app bundles
+- SEARCH-P3-001 (P3) — History 'search' is client-side only, over a capped 300-row page - not server-side
+- SEARCH-P3-002 (P3) — Missing indexes on hot filter paths and no documented index ownership
+- SEC-P3-001 (P3) — Static-handler path-prefix check can be bypassed by a sibling dir
+- SECRET-P3-001 (P3) — Control-plane token exposed in URL query string and browser localStorage
+- SECRET-P3-002 (P3) — Inconsistent token comparison and an unused BENCHD_INSECURE key
+- SECRET-P3-003 (P3) — Per-runner API key stored in cleartext; 0600 chmod is a no-op on Windows
+- TEST-P3-001 (P3) — The suite silently skips whole test groups, so lost coverage does not fail the run
+- TEST-P3-002 (P3) — Wall-clock/sleep based assertions make the suite flake-prone
+- TEST-P3-003 (P3) — No coverage measurement and no statement of what 'RESULT: PASS' does not cover
+- USE-P3-001 (P3) — Deleting a schedule is immediate with no confirmation, unlike every other destructive control
+- USE-P3-002 (P3) — No completion notification for long runs; the only signal is the browser tab title
+- USE-P3-003 (P3) — Compare gives no empty state, and with a single finished run it compares the run with itself and presents the 0% deltas as a comparison
+- USE-P3-004 (P3) — README release/version strings are stale and mutually inconsistent with VERSION
+- UX-P3-001 (P3) — No prefers-reduced-motion or prefers-color-scheme support; theme is fixed dark
+- UX-P3-002 (P3) — Offline runner cards dimmed with opacity .55 drops muted metadata below AA contrast
+- UX-P3-003 (P3) — No accessibility or visual-regression tooling or tests for any UI surface

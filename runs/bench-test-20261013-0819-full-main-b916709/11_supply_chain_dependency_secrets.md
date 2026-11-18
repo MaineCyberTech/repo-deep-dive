@@ -1,0 +1,84 @@
+# 11_supply_chain_dependency_secrets — Prompt 11 - Supply Chain, Dependency, and Secrets Audit
+
+- Run: `bench-test-20261013-0819-full-main-b916709`
+- Target: `bench-test` @ `b916709` (branch `main`)
+- Domain: `11_supply_chain_dependency_secrets.md` (area SC, prompt)
+
+## Verification Performed
+
+# 11_supply_chain_dependency_secrets - 11_supply_chain_dependency_secrets.md
+
+Domain subagent `11_supply_chain_dependency_secrets` (area SC), read-only audit of `C:\temp\bench-test`.
+
+## Checks / Evidence
+
+- **P0 - GitHub PAT with Contents:Read/Write is baked into the publicly-downloadable live ISO** (confidence: High)
+  - `.github/workflows/build-iso.yml:62-71 - the workflow writes the BENCH_UPLOAD_CONF secret into live/private/bench-upload.conf before the ISO build ('upload credentials baked into the image')`
+  - `bench/upload.py:10-16 - that config's documented shape is GITHUB_TOKEN=github_pat_xxx, a fine-grained PAT with 'Contents: Read/Write' to GITHUB_REPO=MaineCyberTech/bench-test`
+  - `live/Build-LiveUSB.sh:127-133 - installs live/private/bench-upload.conf into the image as /etc/bench-upload.conf (mode 600) inside airootfs`
+  - `.github/workflows/build-iso.yml:114-124 - attaches the built ISO to a GitHub release via softprops/action-gh-release (upload_release input defaults to true)`
+  - `README.md:361-363 and AGENTS.md:178-182 - the repo states the repository and its ISO releases are public and that a token baked into an ISO is world-readable; AGENTS.md says to 'rotate the token if an ISO is shared outside the lab'`
+  - `live/Build-LiveUSB.sh:170-178 - the leak guard only checks for live/private, server/benchd.conf and .git inside the toolkit copy; it does not detect the token that install() just placed at airootfs/etc/bench-upload.conf`
+  - Impact: Anyone who downloads a public ISO (or a build artifact) can unsquash airootfs and read a live GitHub PAT that has write access to this repository. Combined with release.yml (contents: write) and CI building from main, that enables pushing arbitrary commits/tags and poisoning future releases (including the next ISO and app bundles).
+  - Recommendation: Do not bake the GitHub PAT. Make upload credentials per-stick (BENCHDATA bench-upload.conf) or issue a short-lived, least-privilege, per-build token scoped to a separate upload-only repo/path. Rotate the currently-baked token out of band and assume it is compromised. Add a build-time assertion that fails the ISO build if any /etc/*.conf in airootfs contains GITHUB_TOKEN/AUTHORIZATION, and extend the live/Build-LiveUSB.sh leak guard to cover airootfs credentials, not just the toolkit copy.
+- **P1 - Control-plane operator token is baked into public app bundles** (confidence: High)
+  - `.github/workflows/build-app.yml:57-64 - passes secrets.BENCH_AGENT_CONF as BENCH_BAKE_AGENT_CONF to packaging/build_app.py ('same secret the live ISO uses. PUBLIC releases')`
+  - `packaging/build_app.py:66-84 - write_agent_conf() writes the control-plane config (BENCHD_SERVER + BENCHD_TOKEN) into every bundle directory`
+  - `README.md:158-163 - documents that each public app bundle carries this token and 'that token is world-readable: use a limited, rotatable one'`
+  - `AGENTS.md:94-95 and server/benchd.conf.example:4-6 - BENCHD_TOKEN is the shared join/registration and operator API bearer for the control plane`
+  - `.github/workflows/build-app.yml:104-109 - bundles are published to a public release`
+  - Impact: Every download of bench-app-windows.zip / bench-app-linux.zip yields the shared operator token. That token can register runners, drive the control plane and (per AGENTS.md) reach the privileged remote-exec command, so a public download equals control-plane access.
+  - Recommendation: Stop baking BENCHD_TOKEN into public artifacts; ship an empty bench-agent.conf.example and require per-host enrollment, or issue a dedicated low-privilege runner-enrollment key that cannot act as the operator token. Rotate the baked token and remove the token from already-published bundles.
+- **P1 - Third-party binaries are downloaded and executed without integrity verification (LibreHardwareMonitor 'latest', nvfancontrol)** (confidence: High)
+  - `bench/Get-Sensors.ps1:13-22 - downloads https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/releases/latest/download/LibreHardwareMonitor.zip (mutable 'latest'), Expand-Archive, then Add-Type -Path loads LibreHardwareMonitorLib.dll in-process; no pin, checksum, or signature check`
+  - `bench/Sample-Sensors.ps1:37-64 - the same unpinned 'latest' download + Add-Type pattern in the sensor sampler used by the default battery`
+  - `bench/Install-GpuFanCurve.ps1:30-37 - downloads nvfancontrol-rtx-win32-x64.zip from a pinned tag but with no hash/signature verification`
+  - `bench/Install-GpuFanCurve.ps1:48-62 - registers the extracted executable as a highest-privilege logon scheduled task, so a tampered asset becomes persistent elevated execution`
+  - `docs/audits/repo-deep-dive/20261007-1731-main-4ecee97/lens_focused_security_supply_chain_ci.md:7-8,60-77 - the same two issues were reported earlier (SUPPLY-P1-001, SUPPLY-P2-001) and remain unfixed at this commit`
+  - Impact: The toolkit's headline sensor/fan features execute mutable upstream code on every managed workstation, often elevated. A compromised or hijacked upstream release (or a MITM on a mirror) yields arbitrary code execution on benchmark hosts with no detection path.
+  - Recommendation: Pin an exact release and verify a committed SHA-256 (or Authenticode/MSIX signature) before Expand-Archive/Add-Type; fail closed on mismatch. Do the same for nvfancontrol before registering the logon task. Add a test that asserts each download URL is version-pinned and paired with a hash.
+- **P2 - No dependency manifest or lockfile; compute deps are pip-installed unpinned, sometimes with an extra index** (confidence: High)
+  - `git ls-files - no requirements.txt, pyproject.toml, uv.lock, poetry.lock, package.json, or any lockfile is tracked in the repository`
+  - `bench/bootstrap.py:38-43 and :260-282 - BASE_PACKAGES/GPU_PACKAGES (numpy, psutil, cryptography, windows-curses, onnxruntime-directml, onnx, torch) are installed with `pip install --upgrade` and no version pins or --require-hashes`
+  - `live/ci-build.sh:47-50 and :76-79 - `pip install torch numpy psutil cryptography --index-url https://download.pytorch.org/whl/cu126 --extra-index-url https://pypi.org/simple` (unpinned, no hashes, extra index)`
+  - `bench/Invoke-GpuBench.ps1:5-6,84-92 - `pip install --upgrade onnxruntime-directml onnx numpy` and `pip install --upgrade torch`; the index is a caller-settable -TorchIndex parameter`
+  - `bench/Invoke-RamBench.ps1:24 - `python -m pip install --quiet numpy` with no pin`
+  - Impact: Every build and benchmark host resolves floating versions from PyPI (+ the PyTorch index). A malicious or compromised release, or a dependency-confusion package reachable via --extra-index-url, executes code in the benchmark process/ISO build. Builds are not reproducible and no SBOM can be derived.
+  - Recommendation: Introduce a pinned, hashed requirements lockfile (e.g. pip-tools/uv with --require-hashes) for the compute deps, use it in bootstrap.py, ci-build.sh and the PowerShell runners, drop --extra-index-url in favour of one allow-listed index, and add Dependabot/Renovate to keep it current. Add a CI job that installs strictly from the lock.
+- **P2 - GitHub Actions are pinned to mutable major tags and there is no dependency automation or dependency-review/license gate** (confidence: High)
+  - `.github/workflows/build-app.yml:39,41,87,100,104 - actions/checkout@v4, actions/setup-python@v5, actions/upload-artifact@v4, actions/download-artifact@v4, softprops/action-gh-release@v2 (no commit-SHA pins)`
+  - `.github/workflows/build-iso.yml:56,116 and .github/workflows/release.yml:36 - same actions/checkout@v4 / softprops/action-gh-release@v2 tag pinning; release.yml runs with contents: write and pushes tags/commits`
+  - `Get-ChildItem .github - only .github/workflows/{build-app,build-iso,release}.yml exist - there is no .github/dependabot.yml (Dependabot/Renovate), no CODEOWNERS, no SECURITY.md, and no dependency-review or license-check workflow`
+  - Impact: Mutable action tags and unpinned third-party release actions can be re-pointed upstream (or a tag moved) to execute attacker code with the workflow's token; release.yml holds contents: write. With no dependency automation or review gate, neither the actions nor the Python deps are tracked for vulnerabilities/licences.
+  - Recommendation: Pin every `uses:` to a full commit SHA (keep the tag in a comment) and enable Dependabot for github-actions + pip, with a dependency-review action and a license allow-list gate on PRs. Add .github/CODEOWNERS and SECURITY.md.
+- **P2 - bootstrap.py extracts a downloaded tarball without a safe extraction filter and its integrity check fails open** (confidence: Medium)
+  - `bench/bootstrap.py:141-177 - _download_standalone downloads cpython-<ver>+<tag>-<triple>-install_only.tar.gz from GitHub and calls tarfile.extractall(root)`
+  - `bench/bootstrap.py:158-168 - the SHA-256 verification is 'best effort': if the .sha256 fetch fails for any reason it `pass`es and proceeds on HTTPS alone (fail-open)`
+  - `bench/bootstrap.py:169-173 - the existing interpreter directory is removed and the tarball is extracted with no membership filter (path-traversal / CWE-022 protection absent on Python < 3.14's data filter)`
+  - Impact: A tampered interpreter archive (or a moved/overwritten release asset) can write outside the cache directory or install a backdoored interpreter that every subsequent benchmark phase, and the dashboards, run with. The hash check that should stop this is skipped whenever the sidecar is unavailable.
+  - Recommendation: Pin the exact asset name and a hard-coded SHA-256 in the source (do not fetch the .sha256 over the same channel), fail closed on mismatch, and extract with tarfile.extractall(root, filter='data') (or an explicit member allow-list) after validating member paths.
+- **P3 - ISO build trusts an unpinned third-party repo and an unpinned Docker base; no SBOM/provenance/checksums for app bundles** (confidence: High)
+  - `live/Build-LiveUSB.sh:114-116 - for the nvidia-legacy variant adds `[omarchy] Server = https://pkgs.omarchy.org/stable/$arch` to pacman.conf; live/ci-build.sh:42-45,67-70 then imports and locally-signs live/keys/omarchy.gpg (key 40DFB630FF42BCFFB047046CF0134EE680CAC571)`
+  - `live/packages-nvidia-legacy.x86_64:1-8 - nvidia-580xx-dkms/utils and opencl-nvidia-580xx are installed unpinned from that third-party repo (Arch is a rolling release, so no version is fixed)`
+  - `live/ci-build.sh:55-82 - the container build uses the unpinned `archlinux:latest` image and runs `pacman -Sy` without `-u``
+  - `.github/workflows/build-app.yml:87-90 and :100-109 - app bundle zips are uploaded/published with no checksum, signature, or attestation; no workflow emits an SBOM (build-iso.yml:102 does produce SHA256SUMS for the ISO only)`
+  - Impact: The live ISO's kernel/driver/PyTorch supply comes from a non-official repo trusted by a committed key, built in a floating container; a compromise there lands in every stick. Consumers of the public app bundles have no way to verify integrity or see a dependency inventory, and there is no licence gate.
+  - Recommendation: Pin the container base by digest, use `pacman -Syu` in a versioned build, document and review the omarchy-repo trust decision (or vendor/pin the 580xx packages), and add an SBOM (e.g. Syft) plus SHA256SUMS for the app bundles and a signature/attestation (cosign/SLSA) on release assets. Add a license-report gate.
+
+## Verification Performed
+
+Read-only source review of the target at commit `b916709`; the evidence above was
+recorded by the domain subagent and normalized by `tools/full_domain.py` (mechanical
+report body derived from that recorded findings JSON).
+
+## Findings
+
+| ID | Severity | Title |
+|---|---|---|
+| SC-P0-001 | P0 | GitHub PAT with Contents:Read/Write is baked into the publicly-downloadable live ISO |
+| SC-P1-001 | P1 | Control-plane operator token is baked into public app bundles |
+| SC-P1-002 | P1 | Third-party binaries are downloaded and executed without integrity verification (LibreHardwareMonitor 'latest', nvfancontrol) |
+| SC-P2-001 | P2 | No dependency manifest or lockfile; compute deps are pip-installed unpinned, sometimes with an extra index |
+| SC-P2-002 | P2 | GitHub Actions are pinned to mutable major tags and there is no dependency automation or dependency-review/license gate |
+| SC-P2-003 | P2 | bootstrap.py extracts a downloaded tarball without a safe extraction filter and its integrity check fails open |
+| SC-P3-001 | P3 | ISO build trusts an unpinned third-party repo and an unpinned Docker base; no SBOM/provenance/checksums for app bundles |

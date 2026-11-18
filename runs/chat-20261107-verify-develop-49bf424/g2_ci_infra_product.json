@@ -1,0 +1,454 @@
+{
+  "area": "G2",
+  "target": "MaineCyberTech/chat@49bf4243ae02a9cd5c6ca090417d12c3696429ea (develop)",
+  "verified_at": "2026-11-07",
+  "previous_run": "chat-20261004-full-develop-a62e44a",
+  "counts": {
+    "total": 49,
+    "reverified": 42,
+    "new": 7,
+    "verified_fixed": 5,
+    "partially_fixed": 4,
+    "open": 40,
+    "regressed": 0,
+    "owner_accepted": 0,
+    "new_p1": 1,
+    "new_p2": 6
+  },
+  "findings": [
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "`infra-development` destroys infra on every push to `develop`",
+      "status": "verified-fixed",
+      "previous_status": "open",
+      "evidence": ".github/workflows/infra-development.yml:7-14 is `workflow_dispatch` only and defaults `apply: false`; :31 binds the job to `environment: development`; :118-132 runs a read-only plan; destructive actions are gated on `inputs.apply` at :41-51, :103-116 and :134-136. No push trigger remains.",
+      "remediation": "None required. Optional: add required reviewers to the live `development` environment (currently no protection rules; see BP-P3-001)."
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Auto-commit workflows hold `contents: write` and push to main/develop",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": ".github/workflows/audit-ci-autocommit.yml:17-18 (`contents: write`) and :46-49 (`stefanzweifel/git-auto-commit-action` pushes generated dashboard files); .github/workflows/audit-badges-autocommit.yml:10-11 and :23-26 do the same for badge mirrors. Their push filters also list `development` (audit-ci-autocommit.yml:5-10) rather than the actual `develop` branch, so the auto-commit does not even cover the default branch.",
+      "remediation": "Do not push from `GITHUB_TOKEN`; open a PR from a scoped bot token or move generated artifacts to a release/artifact store."
+    },
+    {
+      "id": "CI-P2-003",
+      "severity": "P2",
+      "title": "`develop` (auto-deploy target) is not covered by the branch-protection gate",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": ".github/workflows/validate.yml:273-288 hard-codes `const branch = 'main'` and :281 only runs the check on PRs or pushes to `main`; the repository default branch is `develop` and there is no `main` branch. Live `GET /repos/MaineCyberTech/chat/rules/branches/develop` returned `[]` on 2026-11-07. PR #108 (draft, unmerged) fixes the code half.",
+      "remediation": "Merge PR #108 and configure a `develop` ruleset requiring PR review, status checks and no force pushes; make `deploy-development` depend on the protected branch."
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "13 workflows omit an explicit `permissions:` block",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "13 of 22 workflows lack a top-level `permissions:` key: audit-ci.yml, audit-release-certification.yml, ci.yml, environment-promotion-audit.yml, executive-stakeholder-pack.yml, feature-rollout-checkpoint.yml, governance.yml, hardening-automation-runner.yml, infra-development.yml, load-test.yml, platform.yml, supabase-migrations.yml and validate.yml (e.g. validate.yml:1-10 has no permissions even though :266-271 uploads SARIF).",
+      "remediation": "Add per-workflow/job least-privilege permissions, including explicit `security-events: write` only on the SARIF-upload job."
+    },
+    {
+      "id": "BP-P2-001",
+      "severity": "P2",
+      "title": "In-repo branch-protection gate covers only `main`, not `develop`",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": ".github/workflows/validate.yml:288 checks only `main`; docs/hardening_super_bundle/runbooks/BRANCH_PROTECTION_SETUP.md:5-7 still recommends `main`, `master`, `release/*` and omits `develop`. Live API on 2026-11-07: default branch `develop`, `rules/branches/develop` = [], `rules/branches/main` = [].",
+      "remediation": "Protect `develop` server-side (PR review + required checks + non-fast-forward) and update the runbook; record the ruleset snapshot."
+    },
+    {
+      "id": "BP-P3-001",
+      "severity": "P3",
+      "title": "Server-side environment/ruleset configuration is not verifiable from source",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "No dated settings snapshot is committed. docs/environments/github-environments.md:19-23 contains setup instructions only. Live GitHub API on 2026-11-07 shows exactly one environment, `development`, with `protection_rules: []` and `can_admins_bypass: true`; no `production` environment exists.",
+      "remediation": "Commit a dated evidence snapshot of branch rules and environment protection (reviewers, wait timers, branch policies) under docs/operations."
+    },
+    {
+      "id": "SC-P2-004",
+      "severity": "P2",
+      "title": "Dependency risk-acceptances expire 2027-01-04",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": ".pnpm-audit-exceptions.json:2 `expires: 2027-01-04`; the blocking gate in .github/workflows/validate.yml:236-241 fails only after that date. The same expiry is recorded in .trivyignore:13.",
+      "remediation": "Track the expiry, land the `next` 16.x upgrade and remove the advisories before 2027-01-04."
+    },
+    {
+      "id": "SC-P3-001",
+      "severity": "P3",
+      "title": "Large binary archives committed to the repository",
+      "status": "partially-fixed",
+      "previous_status": "open",
+      "evidence": "No archive files are in the HEAD tree (`git ls-tree -r --name-only HEAD` matches 0 of zip/tar/gz/7z/jar/bin). However `infra.zip` (52,592,943 bytes) and `docs-prompts-archive.zip` (602,255 bytes) remain reachable in history; `.git` is 54 MB. They were removed from the tree at 10ac4a7 (2026-10-03, before the audited commit).",
+      "remediation": "If clone size matters, purge the two blobs from history (git filter-repo/BFG) and publish archives as release assets; keep the pre-commit >5 MB guard (.husky/pre-commit:4-14)."
+    },
+    {
+      "id": "SBOM-P3-001",
+      "severity": "P3",
+      "title": "SBOMs are generated but not signed or attested",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": ".github/workflows/build-push.yml:99-133 and .github/workflows/deploy-production.yml:214-238 generate and upload SPDX SBOMs, but no workflow contains cosign/sigstore/attest steps (grep over .github/workflows). docs/supply-chain.md:8 records code signing as missing.",
+      "remediation": "Sign images and SBOMs with cosign (keyless OIDC, `id-token: write`) and publish provenance attestations."
+    },
+    {
+      "id": "SBOM-P3-002",
+      "severity": "P3",
+      "title": "No license policy / dependency-review gate",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "No dependency-review or license-check job exists in .github/workflows (22 workflows inspected). docs/supply-chain.md:12 records `License Compliance` as `❌ Missing`. LICENSE:1 is MIT (the prior note that it was proprietary is stale), but dependency licenses are still ungated.",
+      "remediation": "Add `actions/dependency-review-action` on PRs plus a license allow-list check (pnpm licenses list/license-checker)."
+    },
+    {
+      "id": "CTR-P3-001",
+      "severity": "P3",
+      "title": "Containers lack runtime hardening beyond non-root and digest pinning",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "infra/docker/docker-compose.prod.yml:28-46, :118-142, :147-175 etc. define only `mem_limit`, healthchecks and env; there is no `cap_drop`, `no-new-privileges`, `read_only`, tmpfs or `security_opt`/seccomp in any compose file (grep). Dockerfiles do run non-root: apps/api/Dockerfile:55-56, apps/web/Dockerfile:64-65, apps/worker/Dockerfile:32-33.",
+      "remediation": "Add `cap_drop: [ALL]`, `security_opt: [no-new-privileges:true]`, `read_only: true` + tmpfs, and a seccomp profile for the app containers."
+    },
+    {
+      "id": "CTR-P3-002",
+      "severity": "P3",
+      "title": "First-party images are referenced by mutable tag (`:latest`/`:dev`)",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "infra/docker/docker-compose.prod.yml:29, :49, :119 default to `ghcr.io/mainecybertech/chat/{web,worker,api}:latest`; dev compose uses `chat-{web,api,worker}:dev` (docker-compose.dev.yml:29, :61, :99). deploy-production.yml:177-208 publishes `:latest`, then :338-343 pulls by commit tag and re-tags `:latest`; the running compose still references a mutable tag.",
+      "remediation": "Emit the image digest from build-push and deploy with `API_IMAGE/WEB_IMAGE/WORKER_IMAGE=<repo>@sha256:...`."
+    },
+    {
+      "id": "SECRET-P3-001",
+      "severity": "P3",
+      "title": "Secret rotation is documented but not scheduled or monitored",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "docs/security/secrets-rotation.md:1-12 and the remainder of the runbook describe procedures, but contain no owner, `last-rotated` date, rotation interval or expiry field, and no workflow/alert references rotation (grep for owner/expiry/last-rotated returns nothing).",
+      "remediation": "Add a secret inventory with owner, last-rotated date and due date, and an alert when rotation is overdue."
+    },
+    {
+      "id": "SECRET-P3-002",
+      "severity": "P3",
+      "title": "`.env` example files diverge between environments",
+      "status": "partially-fixed",
+      "previous_status": "open",
+      "evidence": "Eight example files remain with different key sets: .env.example 57 keys, infra/docker/.env.prod.example 20, infra/docker/.env.dev.example 11, apps/api/.env.example 19, apps/worker/.env.example 15, apps/web/.env.example 5. `WEBHOOK_ENCRYPTION_KEY` is now present at .env.example:77 and infra/docker/.env.prod.example:33 but still absent from infra/docker/.env.dev.example.",
+      "remediation": "Generate all example files from one schema and fail CI when a required key is missing from an environment template."
+    },
+    {
+      "id": "INFRA-P2-001",
+      "severity": "P2",
+      "title": "Single-droplet infrastructure has no environment isolation",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "infra/terraform/main.tf:12-19 defines one `digitalocean_droplet.chat` per environment and infra/terraform/versions.tf:4-13 uses one backend key for all environments; docs/environments/environment-model.md:65-69 states both environments connect to the same Supabase project; docs/runbooks/backup-strategy.md:18-22 describes the single-host failure domain.",
+      "remediation": "Separate Terraform state/workspaces and hosts per environment, and use separate Supabase projects/credentials for development and production."
+    },
+    {
+      "id": "INFRA-P3-001",
+      "severity": "P3",
+      "title": "Terraform state/backend and provider versions exist but drift checks are absent",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "The only Terraform invocation outside provisioning is the manual `.github/workflows/infra-development.yml:7-14` (plan at :118-132). There is no `terraform plan` on pull_request and no scheduled drift job in any workflow (grep of .github/workflows).",
+      "remediation": "Add a read-only `terraform plan` job on PRs touching infra and a scheduled drift detection job."
+    },
+    {
+      "id": "DET-P3-001",
+      "severity": "P3",
+      "title": "[DEP] trivy not installed (dependency vuln scan skipped)",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "`command -v trivy` returns nothing in the audit environment, so the deterministic lens still skips its dependency scan. CI itself uses `aquasecurity/trivy-action` (.github/workflows/validate.yml:255-265 and build-push.yml:135-153), which does not help local/offline audit runs.",
+      "remediation": "Pin/install trivy in the audit toolchain (or container image) and record the version with each run."
+    },
+    {
+      "id": "DET-P3-002",
+      "severity": "P3",
+      "title": "[SUPPLY] 9 container image(s) without a digest pin",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "The count is still 9, all first-party deploy images: docker-compose.prod.yml:29, :49, :119; docker-compose.devremote.yml:26, :69, :106; docker-compose.dev.yml:29, :61, :99. All third-party images are now digest-pinned (caddy, redis, livekit, prometheus, alertmanager, node base images).",
+      "remediation": "Pin first-party deploys by the digest emitted from build-push (same remediation as CTR-P3-002)."
+    },
+    {
+      "id": "DET-P3-003",
+      "severity": "P3",
+      "title": "[SUPPLY] hadolint not installed (Dockerfile lint skipped)",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "`command -v hadolint` returns nothing and no workflow/script invokes hadolint (grep over .github and scripts).",
+      "remediation": "Add hadolint to the audit toolchain and a CI lint step for apps/*/Dockerfile."
+    },
+    {
+      "id": "RES-P2-001",
+      "severity": "P2",
+      "title": "Single-node failure domains: API, worker, Redis and DB proxy co-resident",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "infra/docker/docker-compose.prod.yml:11-215 runs caddy, web, worker, redis, livekit, prometheus and alertmanager on one host/network; infra/terraform/main.tf:12-19 provisions one droplet (default `s-1vcpu-512mb-10gb`, infra/terraform/variables.tf:23-26); docs/runbooks/backup-strategy.md:16-22, :35-36 calls the host/Redis a single point of failure.",
+      "remediation": "Define failure domains and a warm standby; move Redis/Postgres to managed services; schedule chaos tests against the failure modes."
+    },
+    {
+      "id": "RES-P3-001",
+      "severity": "P3",
+      "title": "Chaos and load tests are not part of a scheduled pipeline",
+      "status": "verified-fixed",
+      "previous_status": "open",
+      "evidence": ".github/workflows/chaos-tests.yml:5-6 has a weekly `schedule` (`0 3 * * 0`) with API-crash and Redis-down jobs; .github/workflows/load-test.yml:6-7 has a weekly schedule (`0 6 * * 1`) and ci.yml:22-26 runs k6-smoke on the schedule trigger. The schedule already existed at a62e44a, so the prior finding was not reproducible.",
+      "remediation": "None for scheduling; add an alert when these scheduled runs fail (see CI-P2-007)."
+    },
+    {
+      "id": "OBS-P2-001",
+      "severity": "P2",
+      "title": "No distributed tracing / correlation to a collector",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "apps/api/src/lib/trace-context.ts:1-13 only parses/emits W3C `traceparent`; there is no OTel SDK/exporter (`grep -r 'NodeSDK|OTLPTraceExporter|@opentelemetry/sdk-node' apps packages` returns nothing) and no collector in infra/docker. docs/architecture/tracing.md:11 states the gap explicitly.",
+      "remediation": "Add an OTel SDK with an OTLP exporter and a collector, or record the conscious decision not to trace."
+    },
+    {
+      "id": "OBS-P3-001",
+      "severity": "P3",
+      "title": "Error tracking (Sentry) is optional and admin error buffer is in-memory",
+      "status": "partially-fixed",
+      "previous_status": "open",
+      "evidence": "apps/api/src/lib/sentry.ts:23-30 warns and disables tracking when `SENTRY_DSN` is unset; apps/api/src/modules/admin/error-buffer.ts:19-27 supports a durable file when `ERROR_LOG_FILE` is set. Neither variable is written by deploy-production.yml:272-295 nor passed by infra/docker/docker-compose.prod.yml:123-134, so production still runs without Sentry and with an in-memory buffer.",
+      "remediation": "Require `SENTRY_DSN` in production and set `ERROR_LOG_FILE` to a path on a persistent volume."
+    },
+    {
+      "id": "PERF-P3-001",
+      "severity": "P3",
+      "title": "No performance budget / regression gate in CI",
+      "status": "partially-fixed",
+      "previous_status": "open",
+      "evidence": "tests/k6/smoke-test.js:7-10 enforces `p(95)<2000` and `http_req_failed<0.01`; tests/k6/load-test.js:11-14 enforces `p(95)<3000`. .github/workflows/load-test.yml:6-7, :16-22 runs only the smoke test weekly against production; `load-test.js` is never invoked by CI and there is no PR budget or trend dashboard.",
+      "remediation": "Run the load test on a schedule and add a PR/nightly p95 budget with stored trend results."
+    },
+    {
+      "id": "DR-P3-001",
+      "severity": "P3",
+      "title": "No evidence of an executed restore drill / RPO-RTO validation",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "docs/runbooks/backup-strategy.md:6-7 labels the RTO/RPO table as targets, not measured; :100-107 tells operators to test monthly, but no dated drill result exists under docs/operations (only five operational docs) or docs/runbooks.",
+      "remediation": "Run a restore drill against a staging/local target, record observed RTO/RPO, and commit the dated result."
+    },
+    {
+      "id": "IR-P3-001",
+      "severity": "P3",
+      "title": "No evidence of a conducted incident tabletop exercise",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "docs/runbooks/incident-response.md exists, but docs/audits/repo-deep-dive/chat-20261004-full-develop-a62e44a/incident_tabletop_scenarios.md:3-4 states no dated tabletop artifact exists and proposes scenarios only; no scenario/date/participant record is committed.",
+      "remediation": "Run a tabletop, record date/participants/scenario/actions, and commit it under docs/operations."
+    },
+    {
+      "id": "DOC-P3-001",
+      "severity": "P3",
+      "title": "Deployment policy contradicts the development deploy workflow (DB changes)",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "docs/operations/deployment-policy.md:33-37 says schema/RLS/seed data are never applied by a deploy workflow, but .github/workflows/deploy-development.yml:87-93 runs `supabase db push --include-all`. :27-31 documents a `hotfix=true` input that deploy-production.yml:10-16 does not define (only `rollback_sha`).",
+      "remediation": "Remove DB steps from deploy-development (leave supabase-migrations.yml as the only channel) or update the policy; align the hotfix documentation with the workflow."
+    },
+    {
+      "id": "DOC-P3-002",
+      "severity": "P3",
+      "title": "Stale one-off reconciliation docs remain in the tree",
+      "status": "verified-fixed",
+      "previous_status": "open",
+      "evidence": "Commit 95764fd (#106) deleted COMMIT_MSG.txt, temp_layout.txt, tmp_migrations_list.txt, FINAL_RECONCILED_REPO_AUDIT.md, FINAL_RECONCILIATION_EXECUTION_SUMMARY.md and FINAL_RECONCILIATION_REPO_AUDIT_PROMPT.md. `git ls-files` at HEAD has no matching paths.",
+      "remediation": "None."
+    },
+    {
+      "id": "UX-P3-001",
+      "severity": "P3",
+      "title": "Accessibility is audited by an ad-hoc script, not a CI gate",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "scripts/accessibility-audit.sh:20-45 runs `pa11y-ci` with an axe runner on demand, but no workflow references axe/pa11y (grep over .github/workflows returns nothing) and the script is not a required check.",
+      "remediation": "Run axe/pa11y on key routes in CI with a violation budget and make it blocking."
+    },
+    {
+      "id": "MOB-P3-001",
+      "severity": "P3",
+      "title": "Service worker offline strategy is not covered by tests or a documented cache policy",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "apps/web/public/sw.js:1-40 implements `CACHE_NAME = chat-platform-v1`, cache-first static and network-first API handling, but no test references sw.js/CACHE_NAME (grep over tests and *.test/*.spec returns nothing) and no cache policy document exists outside audit history.",
+      "remediation": "Document the cache/update policy and add a service-worker update/offline test."
+    },
+    {
+      "id": "USE-P3-001",
+      "severity": "P3",
+      "title": "No end-to-end onboarding assertion for the invitation/membership flow",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "apps/web/components/workspace/invite-members-modal.tsx implements invitations, but tests/e2e/*.spec.ts contain no invite/invitation scenario (grep returns nothing); coverage stops at workspace creation/member trigger (tests/e2e/auth-workspace-chat.spec.ts:48).",
+      "remediation": "Add an invite -> accept -> membership E2E that runs in validate.yml."
+    },
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Single-node topology: one droplet hosts all services and local Redis",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "infra/docker/docker-compose.prod.yml:11-215 places caddy/web/worker/redis/livekit/prometheus/alertmanager on one compose host; infra/terraform/main.tf:12-19 provisions a single droplet and docs/runbooks/backup-strategy.md:18-22 confirms any host failure is a full outage.",
+      "remediation": "Define RTO/RPO and move to managed Postgres/Redis or a warm standby with tested failover."
+    },
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "title": "Worker health/metrics bind loopback but rely on a shared token",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "infra/docker/docker-compose.prod.yml:57, :131, :160 inject the same `METRICS_TOKEN` into worker, api and prometheus; apps/worker/src/lib/metrics-auth.ts:25 compares against `process.env.METRICS_TOKEN`; apps/worker/src/health.ts:14 binds loopback by default.",
+      "remediation": "Issue per-consumer metrics tokens and rotate them with the secret-rotation runbook."
+    },
+    {
+      "id": "INV-P2-001",
+      "severity": "P2",
+      "title": "Stale generated reconciliation artifacts remain tracked at the repository root",
+      "status": "verified-fixed",
+      "previous_status": "open",
+      "evidence": "Commit 95764fd (#106) removed the six root reconciliation/scratch files; the HEAD root contains only project files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, AGENTS.md, package.json, tsconfig.base.json, turbo.json, etc.) and `git ls-files` finds no matching artifacts.",
+      "remediation": "None."
+    },
+    {
+      "id": "INV-P3-001",
+      "severity": "P3",
+      "title": "Committed audit/hardening bundles inflate the repository tree",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "HEAD tracks 1108 files total; docs/audits has 126 files (~984 KB, including a 63-file copy of the previous audit run), docs/hardening_super_bundle 47 files (~264 KB), docs/hardening_operator_edition 22 files and docs/feature_rollout_operator_pack 17 files. Multiple generated mirrors remain.",
+      "remediation": "Keep one canonical audit run in-tree and move generated mirrors/operator editions to release artifacts or object storage."
+    },
+    {
+      "id": "INV-P3-002",
+      "severity": "P3",
+      "title": "Character-encoding (mojibake) artifacts remain in workflow/log text",
+      "status": "verified-fixed",
+      "previous_status": "open",
+      "evidence": "README.md:7 now contains a correct em dash; grep for replacement characters/`Ã`/`â€` over README, workflows, scripts and operational docs returns only historical audit documents that quote the old corruption. Workflow files are valid UTF-8.",
+      "remediation": "None."
+    },
+    {
+      "id": "HYGIENE-P3-002",
+      "severity": "P3",
+      "title": "Duplicated logic/schema and one-off scripts remain",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "A second `requireAdmin` is defined locally at apps/api/src/modules/workspaces/routes.ts:169-176 alongside apps/api/src/middleware/require-admin.ts:12-60; duplicate migration basenames remain (20260625000007/20260627000001 `add_missing_indexes`, 20260704000007/20260705000003 `add_user_groups`); one-off generators sit at the scripts root (generate_prompt_outputs.py, update_scores.py, consolidate_audit.py).",
+      "remediation": "Consume the shared middleware, document the intentional migration duplicates (DATA-P2-001), and move one-off scripts under scripts/audits with owners."
+    },
+    {
+      "id": "REL-P3-001",
+      "severity": "P3",
+      "title": "CHANGELOG has no generator/CI gate",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "CHANGELOG.md:8 has the last release `1.0.0 - 2026-07-06` and :59 an `[Unreleased]` section; package.json and .github contain no commitlint/changesets configuration (grep returns nothing), and no release-notes job exists.",
+      "remediation": "Adopt changesets or commitlint plus a release-notes/changelog CI job."
+    },
+    {
+      "id": "EVOL-P3-001",
+      "severity": "P3",
+      "title": "No extension/plugin contract or versioned public API surface",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "packages/sdk exists, and docs/api/versioning.md:22-27 plus apps/api/src/middleware/deprecation.ts:18 provide versioning/deprecation mechanics (both already existed at a62e44a), but no plugin/extension contract exists (find docs -iname '*plugin*' -o -iname '*extension*' returns nothing) and docs/api/versioning.md:29-37 describes `Accept-Version` middleware that is not implemented.",
+      "remediation": "Publish an extension/plugin contract and document/implement the advertised header versioning (or remove the claim)."
+    },
+    {
+      "id": "EXEC-P1-001",
+      "severity": "P1",
+      "title": "Release gate must remain conditional pending P1/P2 remediation",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "docs/audits/repo-deep-dive/chat-20261004-full-develop-a62e44a/RELEASE_GATE.md:5-6 still reads `GO WITH CONDITIONS`, and :28 requires re-running the owning domains. At this commit 33 P2/P3 items remain open in G2 alone, including CI-P2-002, CI-P2-003, BP-P2-001, INFRA-P2-001, OBS-P2-001 and new INFRA-P1-001; live scheduled CI on 49bf424 is red (CI-P2-007) and the production domain does not resolve.",
+      "remediation": "Keep the gate conditional; re-run owning domains after the P2/P1 remediation and only then issue an unconditional verdict."
+    },
+    {
+      "id": "FINAL-P1-001",
+      "severity": "P1",
+      "title": "Release gate must remain conditional pending P2 remediation",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": "docs/audits/repo-deep-dive/chat-20261004-full-develop-a62e44a/22_final_risk_register_roadmap.md:16-18 records the conditional gate and the 2027-01-04 risk acceptance; docs/.../RELEASE_GATE.md:5-6 keeps `GO WITH CONDITIONS`. The webhook/SSRF P2 was fixed (#105), but structural P2s (branch protection, environment isolation, tracing) remain.",
+      "remediation": "Close the remaining P2s (CI/BP/INFRA/OBS) before an unconditional GO."
+    },
+    {
+      "id": "FINAL-P2-001",
+      "severity": "P2",
+      "title": "Dependency risk-acceptances expire 2027-01-04",
+      "status": "open",
+      "previous_status": "open",
+      "evidence": ".pnpm-audit-exceptions.json:2 and .trivyignore:13 carry the same 2027-01-04 expiry; .github/workflows/validate.yml:236-241 enforces the date only when it passes.",
+      "remediation": "Remediate or re-accept with a new dated record before 2027-01-04."
+    },
+    {
+      "id": "INFRA-P1-001",
+      "severity": "P1",
+      "title": "Development and production share one Terraform state key and resource address",
+      "status": "open",
+      "evidence": "infra/terraform/versions.tf:4-7 hard-codes backend bucket `chat-terraform-state`, key `infra/terraform.tfstate`; infra/terraform/main.tf:12-14 defines a single `digitalocean_droplet.chat` named `chat-${var.environment}`. Both .github/workflows/infra-development.yml:58 and .github/workflows/deploy-production.yml:71-73 init that same backend, and no workflow uses `terraform workspace`/`TF_WORKSPACE` (grep returns nothing). An `apply` for one environment therefore plans a replace of the other environment's droplet/firewall/DNS held at the same address.",
+      "remediation": "Give each environment its own backend key (e.g. `infra/development/terraform.tfstate`, `infra/production/terraform.tfstate`) or Terraform workspaces, separate credentials, and a state-lock/plan review before any apply."
+    },
+    {
+      "id": "CI-P2-005",
+      "severity": "P2",
+      "title": "Pull requests targeting `develop` skip the validate/test workflow",
+      "status": "open",
+      "evidence": ".github/workflows/ci.yml:6-7 limits `pull_request` to `branches: [main]`, but `develop` is the repository default branch and is auto-deployed by .github/workflows/deploy-development.yml:5-6. PRs to `develop` only trigger audit-pr-gate.yml:2-4 and build-push.yml:15-17; validate.yml:281's branch gate also runs only for PRs or pushes to `main`.",
+      "remediation": "Add `develop` to the `pull_request` branches for ci.yml (or run validate on every PR) and make the validate/audit jobs required checks for develop."
+    },
+    {
+      "id": "CI-P2-006",
+      "severity": "P2",
+      "title": "Development deploy is ungated and treats a cancelled CI run as success",
+      "status": "open",
+      "evidence": ".github/workflows/deploy-development.yml:28-33 defines the `deploy` job with no `environment:` key (contrast deploy-production.yml:58 and :154 which use `environment: production`), so no reviewers/environment secrets apply. :47-50 accepts `cancelled` as success (`CI completed (cancelled - likely E2E timeout, non-blocking)`) and proceeds to run database migrations at :87-93.",
+      "remediation": "Fail closed on `cancelled`/`skipped`, add `environment: development` with required reviewers, and remove the DB push from this workflow (see CI-P2-008)."
+    },
+    {
+      "id": "CI-P2-007",
+      "severity": "P2",
+      "title": "Scheduled validate pipeline is persistently red on the default branch",
+      "status": "open",
+      "evidence": ".github/workflows/ci.yml:8-9 runs the schedule (`0 7 * * 1-5`); the jobs that failed are defined at validate.yml:11-62 (test), :122-143 (lint), :207-271 (security-audit), :325-434 (migration-test) and ci.yml:22-26 (k6 smoke). GitHub Actions runs 42237471839 (2026-11-06), 42052857311 (11-05), 41855419957 (11-04), 41658125088 (11-03) and 41485750511 (11-02) all completed `failure` on 49bf424 with those jobs red; Load Test run 41466298046 also failed on 2026-11-02.",
+      "remediation": "Triage and fix the failing jobs, alert on scheduled-run failure, and do not treat the branch as releasable while the default-branch pipeline is red."
+    },
+    {
+      "id": "CI-P2-008",
+      "severity": "P2",
+      "title": "Two workflows apply the same migrations concurrently on `develop`",
+      "status": "open",
+      "evidence": "A push to `develop` touching `supabase/migrations/**` triggers both .github/workflows/supabase-migrations.yml:4-8 (which runs `supabase db push --include-all` at :34-35) and .github/workflows/deploy-development.yml:7-13 (which also runs `supabase link`/`supabase db push --include-all` at :87-93). Neither shares a concurrency group with the other, so two migration appliers race against the same project.",
+      "remediation": "Remove the DB steps from deploy-development and make supabase-migrations.yml the only applier, with its own concurrency lock and environment gate."
+    },
+    {
+      "id": "SC-P2-005",
+      "severity": "P2",
+      "title": "Org gitleaks baseline is local-only and not enforced in CI",
+      "status": "open",
+      "evidence": "Commit 214e5c8 added .pre-commit-config.yaml:12-20 with a `gitleaks protect --staged` local hook, but `pre-commit install` is manual and the existing .husky/pre-commit does not invoke it (grep for gitleaks/pre-commit returns nothing). tests/security/gitleaks/verify-gitleaks-allowlist.sh:18-20 exits 0 when gitleaks is absent, and no workflow mentions gitleaks (grep over .github/workflows returns nothing), so a commit that bypasses hooks or lands via the web UI is never scanned.",
+      "remediation": "Add a blocking CI job running `gitleaks detect` with .gitleaks.toml plus the allowlist verification, and wire the hook into the existing husky entrypoint or document mandatory `pre-commit install`."
+    },
+    {
+      "id": "INFRA-P2-002",
+      "severity": "P2",
+      "title": "Production approval/deploy path is not configured: no `main` branch and no `production` environment",
+      "status": "open",
+      "evidence": ".github/workflows/deploy-production.yml:16-17 triggers on push to `main` and :58, :154, :249, :388 use `environment: production`, but `git ls-remote --heads origin` has no `main`, and the GitHub environments API on 2026-11-07 lists only `development` (`protection_rules: []`, `can_admins_bypass: true`). The production domains `chat.mainecybertech.com` and `chat-api.mainecybertech.com` have no DNS at verification time while `chat.mainecybertech.us` returns 200.",
+      "remediation": "Either create a `main` branch and a protected `production` environment with required reviewers, or disable the production workflow and document that production is not deployed."
+    }
+  ]
+}

@@ -237,7 +237,7 @@ def render_index(m, domains, coverage, counts):
         "- Name: %s" % m["scope"]["name"],
         "- Run: `%s`" % m["run"],
         "- Mode: %s" % m.get("mode", "full"),
-        "- Profile: base",
+        "- Profile: %s" % m.get("profile", "base"),
         "- Target repo: `%s`" % m["scope"].get("targetRepo", ""),
         "- Branch: `%s`" % m["scope"].get("branch", ""),
         "- Commit: `%s`" % m["scope"].get("shortCommit", ""),
@@ -418,8 +418,9 @@ def render_deterministic_report(d, rows):
 
 def register_md(run, m, findings):
     lines = ["# Follow-up register", "",
-             "Run: `%s` · Target: `%s` @ `%s` · Profile: base" % (
-                 run, m["scope"]["name"], m["scope"].get("shortCommit", "")), "",
+             "Run: `%s` · Target: `%s` @ `%s` · Profile: %s" % (
+                 run, m["scope"]["name"], m["scope"].get("shortCommit", ""),
+                 m.get("profile", "base")), "",
              "Register mirrored 1:1 with `risk_register.md` so `tools/check_run.sh` passes.", "",
              "| Finding | Severity | Title | Owner | Target | Status | Note |",
              "|---|---|---|---|---|---|---|"]
