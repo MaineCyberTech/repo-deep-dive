@@ -7,7 +7,7 @@
 491425bc3cc1f0040ed4f413e711abb01b9cc8f1cb736142dcb65b985543e201  ./.github/actionlint.yaml
 b3795375922e9bfac09154a0db9f59819ffe0ce3b6ff0301a21ba21290aad3fa  ./.github/dependabot.yml
 ab4eb90654586084c385ac8add5c2090fd723a2e49cdd1d59db4a87d3134744f  ./.github/pull_request_template.md
-4c942c9478086df741d68665e39c347be0804cd14dc13c83e695e26a2292b50f  ./.github/workflows/audit.yml
+ae0c8bb2d8aafb4d53bc327db6b9fdf96e467e887059ae56035bc00549389313  ./.github/workflows/audit.yml
 006110372ed17c35c29430bec367c5e5698d439187dbfbd5746a1087cdb292e5  ./.github/workflows/deep-dive-deterministic.yml
 a4806066c17a7a17f3e4a0763cbf9887f9c4de33a99b2a2668b5808f88854073  ./.github/workflows/gitleaks.yml
 3bfe60e3cc5a527261751b69b24f85964acd527f1937f09500acf62f0fdb444d  ./.github/workflows/lab-agent-offboard.yml
@@ -16,7 +16,7 @@ a4806066c17a7a17f3e4a0763cbf9887f9c4de33a99b2a2668b5808f88854073  ./.github/work
 6dc13b86528dfb646fe5a0de6f80fda98128d596724b017de7a7d585854ba42e  ./.github/workflows/lab-preflight.yml
 a48484ba129f6aaf574b9f35ad41d1df7aab49d8c471e9e5e49174d3a393131a  ./.github/workflows/lab-tests.yml
 38b110b3090700e8337bb9095a09981273a82af0a6b0f398561edf5f41221f86  ./.github/workflows/pack-digest.yml
-a652051f69f69983a06a3b398c398a429ed8e51097d65237f40401431ec65832  ./.github/workflows/pack-tests.yml
+7f80db654edbf5b5c26f8d704d3a0727309ec74580ce18081007580fd0265cfb  ./.github/workflows/pack-tests.yml
 d9b27f51a2a442da4c39f9b037ef5695e2f3dcd50e1d3cc4a8e8eba52848a2ef  ./.github/workflows/remediation-board.yml
 f1a95f6e08e811f2a08787451017bf9242ae7eaeff9892a30d9fed9ee1fcacde  ./.github/workflows/remediation.yml
 fc138c0e5a350cd76d7ea218b4d0758c85a7924fb9ccc22e046a60eaca0361e8  ./.github/workflows/verify-remediation.yml
